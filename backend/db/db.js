@@ -1,8 +1,9 @@
-import mongoose from "mongoose";
+import mongoose, {connect} from "mongoose";
 
 const connectDB= async()=>{
     try{
-     const connectionInstance= await mongoose.connect(`${process.env.MONGO_URI}/CodoShrine`)
+        
+     const connectionInstance= await mongoose.connect(`${process.env.MONGO_URI}Splitwise`)
      console.log(`\n MongoDb Connected !! DB HOST: ${connectionInstance.connection.host}`)
     }
     catch(err){
