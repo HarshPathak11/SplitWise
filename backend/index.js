@@ -5,7 +5,7 @@ import cors from 'cors'
 import connectDB from './db/db.js';
 import {addData} from './controllers/expenses.js'
 import { User } from './models/schema.js';
-import { userLogin, userLogUp } from './controllers/user.js';
+import { addEvent, addFriends, userLogin, userLogUp } from './controllers/user.js';
 
 const app=express();
 
@@ -31,6 +31,8 @@ app.get('/',(req,res)=>{
 })
 app.get('/logup',userLogUp)
 app.get('/login',userLogin)
+app.get('/addEvent',addEvent)
+app.get('addf',addFriends)
 
 
 
