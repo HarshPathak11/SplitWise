@@ -5,13 +5,31 @@ import cors from 'cors'
 import connectDB from './db/db.js';
 import {addData} from './controllers/expenses.js'
 import { User } from './models/schema.js';
-import { addEvent, addFriends, userLogin, userLogUp } from './controllers/user.js';
+import { addEvent, addFriends, addPay, userLogin, userLogUp } from './controllers/user.js';
+import mysql2 from 'mysql2'
 
 const app=express();
 
 app.use(express.json({extended:true}))
 app.use(cors())
 connectDB()
+
+
+const db = mysql2.createConnection({
+    host: process.env.host,
+    user: process.env.user,
+    password: process.env.password,
+    database: process.env.database
+});
+
+db.connect((err) => {
+    if (err) {
+        console.error('Error connecting to MySQL:', err);
+        return;
+    }
+    console.log('Connected to MySQL database');
+});
+
 
 
 app.get('/addData',addData);
@@ -33,6 +51,7 @@ app.get('/logup',userLogUp)
 app.get('/login',userLogin)
 app.get('/addEvent',addEvent)
 app.get('addf',addFriends)
+app.get('/pay',addPay)
 
 
 
@@ -40,3 +59,5 @@ app.get('addf',addFriends)
 app.listen(8000,()=>{
     console.log('Server running on PORT:8000')
 })
+
+export default db;

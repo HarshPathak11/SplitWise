@@ -1,5 +1,6 @@
 import {User} from '../models/schema.js'
 import mongoose from 'mongoose'
+import db from '../index.js'
 const userLogUp=async(req,res)=>{
     const {username, email, password}=req.body
     if(!username || !email || !password)
@@ -14,6 +15,24 @@ const userLogUp=async(req,res)=>{
     const newuser= await User.create({
        username,email,password
     })
+    const alterQuery = `ALTER TABLE user_matrix ADD COLUMN \`${username}\` DECIMAL(10, 2) DEFAULT 0;`;
+
+    db.query(alterQuery, (err, result) => {
+        if (err) {
+            console.error('Error altering table:', err);
+            return res.status(500).json({ error: 'Failed to add column in matrix' });
+        }
+
+        // Second query: Add a new row
+        const insertQuery = `INSERT INTO user_matrix (user_name) VALUES (?);`;
+        
+        db.query(insertQuery, [username], (err, result) => {
+            if (err) {
+                console.error('Error inserting into table:', err);
+                return res.status(500).json({ error: 'Failed to add row in matrix' });
+            }
+        });
+    });
 
     return res.status(200).json(newuser);
 }
@@ -91,8 +110,27 @@ const addFriends=async(req,res)=>{
     res.status(200).json({"message":"friend added",user})
 }
 
+const addPay=async(req,res)=>{
+    const {payBy,payFor,amt}=req.body
+    if(!payBy || !payFor || !amt)
+        res.status(400).json({"message":"Incomplete information"})
+    const share=amt/(payFor.length+1).toFixed(2);
+    console.log(share,payBy,payFor)
+
+    for(let i=0;i<payFor.length;++i){
+        const x=payFor[i]
+        console.log(x);
+        const query = `UPDATE user_matrix SET \`${x}\` = \`${x}\` + ${share} WHERE user_name = '${payBy}';`;
+        db.query(query, (err, result) => {
+            if (err) {
+                console.error('Error inserting into table:', err);
+                return res.status(500).json({ error: 'Failed to add row in matrix' });
+            }
+        });
+    }
+    res.status(200).json({"message":"Entries added successfully"})
+}
 
 
 
-
-export {userLogUp,userLogin,addEvent,addFriends}
+export {userLogUp,userLogin,addEvent,addFriends,addPay}
