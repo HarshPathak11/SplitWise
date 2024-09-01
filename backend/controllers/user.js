@@ -4,13 +4,16 @@ import db from '../index.js'
 const userLogUp=async(req,res)=>{
     const {username, email, password}=req.body
     if(!username || !email || !password)
-        res.status(400).json({"message":"Not complete data received"})
+        return res.status(400).json({"message":"Not complete data received"})
 
-    const user= await User.findOne(
-        {username,email}
-    )
+    const user = await User.findOne({
+        $or: [
+            { username: username },
+            { email: email }
+        ]
+    });
     if(user)
-        res.status(410).json({"message":"Username or email already taken"});
+        return res.status(410).json({"message":"Username or email already taken"});
 
     const newuser= await User.create({
        username,email,password
@@ -40,14 +43,14 @@ const userLogUp=async(req,res)=>{
 const userLogin= async(req,res)=>{
     const {email, password}=req.body
     if(!password || !email){
-        res.status(400).json({"message":"Not complete data received"})
+       return res.status(400).json({"message":"Not complete data received"})
     }
 
     const user=await User.findOne({
         email
     })
     if(!user)
-        res.status(400).json({"message":"User not found"})
+       return res.status(400).json({"message":"User not found"})
     const isPasswordOkay= await user.isPasswordCorrect(password);
     console.log(isPasswordOkay,password)
     if(!isPasswordOkay)
@@ -59,7 +62,7 @@ const userLogin= async(req,res)=>{
 const addEvent=async(req,res)=>{
     const {email,eventName, eventDesc, amt, paidBy, paidFor}=req.body
     if(!email || !eventName || !amt || !paidBy || !paidFor){
-        res.status(400).json({"message":"Not complete data received"})
+        return res.status(400).json({"message":"Not complete data received"})
     }
     const expenseDetails = [{
         _id: new mongoose.Types.ObjectId(),
@@ -83,22 +86,22 @@ const addEvent=async(req,res)=>{
         new:true
     })
     if(!user)
-        res.status(500).json({"message":"User not found"})
+        return res.status(500).json({"message":"User not found"})
     return res.status(200).json({user})
 }
 
 const addFriends=async(req,res)=>{
     const {email, friendEmail}=req.body;
     if(!email || !friendEmail)
-        res.status(400).json({"message":"Not complete data received"})
+       return res.status(400).json({"message":"Not complete data received"})
     const friend=await User.findOne({friendEmail})
     if(!friend)
-        res.status(400).json({"message":"Wrong email of friend"})
+       return res.status(400).json({"message":"Wrong email of friend"})
     const user=await User.findOneAndUpdate({email},{$push:{
         friends:{type:friend.username}
     }},{new:true})
     if(!user)
-        res.status(500).json({"message":"User not found"})
+       return res.status(500).json({"message":"User not found"})
 
     const updatedFriendUser = await User.findOneAndUpdate(
         { email: friendEmail },
@@ -106,14 +109,14 @@ const addFriends=async(req,res)=>{
         { new: true, runValidators: true }
     );
     if(!updatedFriendUser)
-        res.status(500).json({"message":"Something went wrong"});
-    res.status(200).json({"message":"friend added",user})
+       return res.status(500).json({"message":"Something went wrong"});
+    return res.status(200).json({"message":"friend added",user})
 }
 
 const addPay=async(req,res)=>{
     const {payBy,payFor,amt}=req.body
     if(!payBy || !payFor || !amt)
-        res.status(400).json({"message":"Incomplete information"})
+       return res.status(400).json({"message":"Incomplete information"})
     const share=amt/(payFor.length+1).toFixed(2);
     console.log(share,payBy,payFor)
 
@@ -128,9 +131,24 @@ const addPay=async(req,res)=>{
             }
         });
     }
-    res.status(200).json({"message":"Entries added successfully"})
+    return res.status(200).json({"message":"Entries added successfully"})
 }
 
+const resolvePay=async(req,res)=>{
+     const {payBy,payFor,amt}=req.body
+     if(!payBy || !payFor ||!amt)
+        return res.status(400).json({"message":"Information is incomplete"});
+     const x=payFor
+     const share=x;
+     const query = `UPDATE user_matrix SET \`${x}\` = \`${x}\` + ${share} WHERE user_name = '${payBy}';`;
+     db.query(query, (err, result) => {
+         if (err) {
+             console.error('Error inserting into table:', err);
+             return res.status(500).json({ error: 'Failed to add row in matrix' });
+         }
+     });
+     return res.status(200).json({"message":"Payment added!!"});
+}
 
 
 export {userLogUp,userLogin,addEvent,addFriends,addPay}
