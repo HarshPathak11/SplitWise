@@ -5,7 +5,7 @@ import cors from 'cors'
 import connectDB from './db/db.js';
 import {addData} from './controllers/expenses.js'
 import { User } from './models/schema.js';
-import { addEvent, addFriends, addPay, userLogin, userLogUp } from './controllers/user.js';
+import { addEvent, addFriends, addPay, userLogin,otpVerification, userLogUp, createNewUser } from './controllers/user.js';
 import mysql2 from 'mysql2'
 
 const app=express();
@@ -35,7 +35,7 @@ db.connect((err) => {
 app.get('/addData',addData);
 app.get('/data',async(req,res)=>{
     const username=req.body.username;
-    if(!username) return res.json({status:"Bhadwe poori info de!"});
+    if(!username) return res.json({status:"Bhai poori info de!"});
     const user=await User.findOne({
         username:username
     })
@@ -48,6 +48,8 @@ app.get('/',(req,res)=>{
     })
 })
 app.get('/logup',userLogUp)
+app.get('/otp-verification',otpVerification)
+app.get('/createUser/:value',createNewUser)
 app.get('/login',userLogin)
 app.get('/addEvent',addEvent)
 app.get('addf',addFriends)

@@ -24,12 +24,12 @@ const LandingPage = () => {
       {/* Main Content */}
       <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-10 lg:px-20 py-10">
         <div className="lg:w-1/2 text-center lg:text-left">
-          <h1 className="text-4xl lg:text-5xl font-bold mb-6">Introduce Your Product <br/> Quickly & Effectively</h1>
+          <h1 className="text-4xl lg:text-5xl font-bold mb-6">Split it <br/> Its easy this way.</h1>
           <p className="text-gray-400 mb-8">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa.
+            Why use Splitwise if we can do the same job but for free.
           </p>
           <div className="flex justify-center lg:justify-start space-x-4">
-            <button className="bg-blue-600 text-white py-3 px-6 rounded hover:bg-blue-700">Purchase UI Kit</button>
+            <button className="bg-blue-600 text-white py-3 px-6 rounded hover:bg-blue-700">Login</button>
             <button className="bg-transparent border border-white py-3 px-6 rounded hover:bg-white hover:text-gray-900">Learn More</button>
           </div>
         </div>

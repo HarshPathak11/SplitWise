@@ -29,7 +29,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-800 p-8">
-      <div className="flex flex-col md:flex-row md:space-x-4">
+      <div className="flex flex-col flex-row md:flex-row md:space-x-4 ">
         <ProfileCard name={user.name} email={user.email} avatar={user.avatar} />
         <div className="flex flex-col space-y-4 mt-4 md:mt-0">
           {events.map((event, index) => (

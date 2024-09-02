@@ -1,23 +1,94 @@
 import {User} from '../models/schema.js'
 import mongoose from 'mongoose'
+import nodemailer from 'nodemailer'
 import db from '../index.js'
-const userLogUp=async(req,res)=>{
-    const {username, email, password}=req.body
+import bcrypt from 'bcrypt'
+
+//Function to handle a signup request
+const userLogUp=async(req,res,)=>{
+    const {username, email, password}=req.body;
     if(!username || !email || !password)
         return res.status(400).json({"message":"Not complete data received"})
 
+    //Finding if a user exists with same username or email
     const user = await User.findOne({
         $or: [
             { username: username },
             { email: email }
         ]
     });
+    
+    //If username exists then return username already taken
     if(user)
         return res.status(410).json({"message":"Username or email already taken"});
 
+    //If no such user exists then redirect to next page which is otp verification
+    res.redirect(`/otp-verification`);}
+    
+    //Function to send otp
+    const otpVerification=async(req,res)=>{
+        
+        //Fetching user email
+        const Email=req.body.email;
+
+        //Checking if no email is passed then return
+        if(!Email) 
+            return res.status(400).json({
+        Status: "No email detected"
+    })
+    
+    //Generating OTP
+    const otp=Math.ceil(1000000*Math.random()).toString();
+    
+    //Sending OTP via Email using Node Mailer API call
+    let transportmail = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'splitwise666@gmail.com',
+            pass:'tsumbpqsbzzddsel'
+        }
+    })
+    
+    let mailcontent ={
+        from:"splitwise666@gmail.com",
+            to: Email,
+            subject: 'OTP for your SplitIt Account',
+            text:`Your One Time Password Is : ${otp}`
+        }
+  
+        transportmail. sendMail(mailcontent, async(err,val)=>{
+            if(err){
+                 console.log(err)}
+            else{
+                console.log("OTP Sent Successfully!",`OTP is:${otp}`);
+                //Here we are hashing the otp and sending it as params to another route
+                const OTP = await bcrypt.hash(otp,9);
+                console.log("Hashed OTP is:",OTP);                
+                return res.status(200).redirect(`/createUser/${OTP}`);
+              }
+            })
+    }
+    
+    //Function to verify otp and create new user otherwise showing wrong otp
+    const createNewUser=async(req,res)=>{
+
+        //Requiring hashed otp value from params
+        let value = req.params.value;
+        console.log("params otp is ",value);
+
+        //Fetching necessary data from request body
+        let {username, email, password, otp}=req.body;
+        console.log("req.opt is ",otp);
+
+        //comparing if provided otp is equal to the hashed otp or not
+        if(await bcrypt.compare(otp,value)){
+
+    //Creating new user
     const newuser= await User.create({
        username,email,password
     })
+    
+    //Adding a new column in matrix
     const alterQuery = `ALTER TABLE user_matrix ADD COLUMN \`${username}\` DECIMAL(10, 2) DEFAULT 0;`;
 
     db.query(alterQuery, (err, result) => {
@@ -36,10 +107,15 @@ const userLogUp=async(req,res)=>{
             }
         });
     });
-
-    return res.status(200).json(newuser);
+    //Returning new user after creation
+    return res.status(200).json(newuser);}
+    //If wrong otp provided then returning that wrong otp is given
+    return res.status(400).json({
+        "Status":"Wrong otp or otp not found"
+    })
 }
 
+//User login route
 const userLogin= async(req,res)=>{
     const {email, password}=req.body
     if(!password || !email){
@@ -151,4 +227,4 @@ const resolvePay=async(req,res)=>{
 }
 
 
-export {userLogUp,userLogin,addEvent,addFriends,addPay}
+export {userLogUp,userLogin,addEvent,addFriends,addPay,otpVerification,createNewUser}
