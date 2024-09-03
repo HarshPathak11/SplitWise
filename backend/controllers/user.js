@@ -74,11 +74,17 @@ const userLogUp=async(req,res,)=>{
 
         //Requiring hashed otp value from params
         let value = req.params.value;
-        console.log("params otp is ",value);
+        // console.log("params otp is ",value);
 
         //Fetching necessary data from request body
         let {username, email, password, otp}=req.body;
         console.log("req.opt is ",otp);
+
+        //Checking if otp is passed or not
+        if(!otp) {
+            console.log("Was sending and again redirect to:");
+            console.log(`/createUser/${value}`);
+            return res.status(200).json({"Status:":`OTP Sent to ${email}`});}
 
         //comparing if provided otp is equal to the hashed otp or not
         if(await bcrypt.compare(otp,value)){
