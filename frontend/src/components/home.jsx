@@ -1,6 +1,7 @@
 import React from 'react';
 import ComparisonTable from './check';
 import Footer from './footer';
+import oye from '../../save.svg'
 
 
 const LandingPage = () => {
@@ -23,7 +24,9 @@ const LandingPage = () => {
 
       {/* Main Content */}
       <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-10 lg:px-20 py-10">
+      <img src={oye}/>
         <div className="lg:w-1/2 text-center lg:text-left">
+        
           <h1 className="text-4xl lg:text-5xl font-bold mb-6">Split it <br/> Its easy this way.</h1>
           <p className="text-gray-400 mb-8">
             Why use Splitwise if we can do the same job but for free.
@@ -33,9 +36,9 @@ const LandingPage = () => {
             <button className="bg-transparent border border-white py-3 px-6 rounded hover:bg-white hover:text-gray-900">Learn More</button>
           </div>
         </div>
-        <div className="md:w-1/2 mb-10 lg:mb-0">
+        {/* <div className="md:w-1/2 mb-10 lg:mb-0">
           <img src="div.png" alt="Illustration" className="w-full h-auto"/>
-        </div>
+        </div> */}
       </div>
       <ComparisonTable/>
       <section className="bg-gray-800 py-20">

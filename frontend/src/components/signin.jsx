@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const SignIn = () => {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    // <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="relative w-full max-w-sm p-8 bg-slate-500 rounded-lg shadow-md overflow-hidden">
         
         <div className="absolute inset-x-0 top-0 -translate-y-1/2 flex justify-center">
@@ -61,7 +61,7 @@ const SignIn = () => {
           </div>
         </div>
       </div>
-    </div>
+    // </div>
   );
 };
 
