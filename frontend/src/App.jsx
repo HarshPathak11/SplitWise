@@ -17,8 +17,8 @@ function App() {
     <Routes>
      <Route path='/login' element={<LandingSignin/>}/>
      <Route path='/logup' element={<LandingSignup/>}/>
-     <Route path='/' element={<Dashboard />}/>
-     <Route path='/home' element={<LandingPage />}/>
+     <Route path='/dash/:email' element={<Dashboard />}/>
+     <Route path='/' element={<LandingPage />}/>
     </Routes>
     </BrowserRouter>
     </>

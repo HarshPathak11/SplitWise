@@ -5,13 +5,20 @@ import cors from 'cors'
 import connectDB from './db/db.js';
 import {addData} from './controllers/expenses.js'
 import { User } from './models/schema.js';
-import { addEvent, addFriends, addPay, userLogin,otpVerification, userLogUp, createNewUser } from './controllers/user.js';
+import { addEvent, addFriends, addPay, userLogin,otpVerification, userLogUp, createNewUser, fetchUserMatrixData, userData } from './controllers/user.js';
 import mysql2 from 'mysql2'
+import session from 'express-session'
 
 const app=express();
 
 app.use(express.json({extended:true}))
 app.use(cors())
+app.use(session({
+    secret: 'erfghluhafs',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 10 * 60 * 1000 }  // 10-minute expiration for OTP session
+}));
 connectDB()
 
 
@@ -49,12 +56,14 @@ app.get('/',(req,res)=>{
 })
 app.get('/logup',userLogUp)
 app.get('/otp-verification',otpVerification)
-app.get('/createUser/:value',createNewUser)
+app.get('/createUser',createNewUser)
 app.get('/login',userLogin)
 app.get('/addEvent',addEvent)
-app.get('addf',addFriends)
+app.get('/addf',addFriends)
 app.get('/pay',addPay)
-
+app.get('/payData',fetchUserMatrixData)
+app.get('/user',userData)
+ 
 
 
 

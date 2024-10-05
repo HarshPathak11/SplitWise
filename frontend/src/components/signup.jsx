@@ -1,78 +1,30 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link , useNavigate} from 'react-router-dom';
 
 const SignUp = () => {
-//   return (
-//     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-//       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
-//         <div className="flex justify-between items-center mb-8">
-//           <div className="text-2xl font-bold text-green-600">SIGN UP</div>
-//           <div className="text-xl text-gray-500 cursor-pointer">LOGIN</div>
-//         </div>
-//         <form>
-//           <div className="mb-4">
-//             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-//               Name
-//             </label>
-//             <input
-//               id="name"
-//               type="text"
-//               placeholder="Name"
-//               className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline"
-//             />
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-//               Email Address
-//             </label>
-//             <input
-//               id="email"
-//               type="email"
-//               placeholder="Email Address"
-//               className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline"
-//             />
-//           </div>
-//           <div className="mb-4">
-//             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
-//               Password
-//             </label>
-//             <input
-//               id="password"
-//               type="password"
-//               placeholder="Password"
-//               className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline"
-//             />
-//           </div>
-//           <div className="mb-6">
-//             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="phone">
-//               Phone Number
-//             </label>
-//             <input
-//               id="phone"
-//               type="tel"
-//               placeholder="Phone Number"
-//               className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline"
-//             />
-//           </div>
-//           <button
-//             type="submit"
-//             className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:shadow-outline"
-//           >
-//             Sign Up
-//           </button>
-//         </form>
-//         <div className="flex justify-between items-center mt-6">
-//           <button className="flex items-center justify-center w-10 h-10 bg-white border rounded-full shadow-md hover:bg-gray-100">
-//             <img src="google-logo.png" alt="Google" className="w-5 h-5" />
-//           </button>
-//           <button className="flex items-center justify-center w-10 h-10 bg-white border rounded-full shadow-md hover:bg-gray-100">
-//             <img src="facebook-logo.png" alt="Facebook" className="w-5 h-5" />
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
+
+  const [name,setName]=React.useState();
+  const [email,setEmail]=React.useState();
+  const [password,setPassword]=React.useState();
+  const [no,setNo]=React.useState();
+  const navigate=useNavigate()
+  
+async function handleSubmit(event){
+  const response=await fetch("http://localhost:8000/logup",{
+    method:'POST',
+    headers: {
+          'Content-Type': 'application/json' // Specify the content type as JSON
+        },
+    body: JSON.stringify({
+          username:name,
+          email: email,
+          password: password
+        })
+  })
+  if(response.ok){
+    return navigate(`/dash/${encodeURIComponent(email)}`);
+  }
+}
 return (
     // <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="relative w-full max-w-sm p-8 bg-slate-500 rounded-lg shadow-md overflow-hidden">
@@ -86,16 +38,18 @@ return (
             <div className="text-2xl font-bold text-white">SIGN UP</div>
             <Link to='/login'><div className="text-xl text-white cursor-pointer">LOGIN</div></Link>
           </div>
-          <form>
+          <form onSubmit={handleSubmit}>
           <div className="mb-4">
            <label className="block text-white text-sm font-bold mb-2" htmlFor="name">
              Name
           </label>
             <input
               id="name"
+              value={name}
+              onChange={(event)=>setName(event.target.value)}
               type="text"
               placeholder="Name"
-              className="w-full px-3 py-2 text-white border rounded-lg focus:outline-none focus:shadow-outline"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:shadow-outline"
             />
            </div>
           <div className="mb-4">
@@ -105,6 +59,8 @@ return (
             <input
               id="email"
               type="email"
+              value={email}
+              onChange={(event)=>setEmail(event.target.value)}
               placeholder="Email Address"
               className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline"
             />
@@ -116,6 +72,8 @@ return (
              <input
               id="password"
               type="password"
+              value={password}
+              onChange={(event)=>setPassword(event.target.value)}
               placeholder="Password"
               className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline"
             />
@@ -127,8 +85,10 @@ return (
             <input
               id="phone"
               type="tel"
+              value={no}
+              onChange={(event)=>setNo(event.target.value)}
               placeholder="Phone Number"
-              className="w-full px-3 py-2 text-white border rounded-lg focus:outline-none focus:shadow-outline"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:shadow-outline"
             />
           </div>
           <button

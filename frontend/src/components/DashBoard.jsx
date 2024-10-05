@@ -1,71 +1,35 @@
-// import React from 'react';
-// import ProfileCard from './profilecard';
-// import EventCard from './eventsCard';
-
-
-// const Dashboard = () => {
-//   const user = {
-//     name: 'John Doe',
-//     email: 'john.doe@example.com',
-//     avatar: 'https://via.placeholder.com/150',
-//   };
-
-//   const events = [
-//     {
-//       title: 'Dinner at ABC Restaurant',
-//       payer: 'John Doe',
-//       amount: 120,
-//       participants: ['Jane Doe', 'Mike Ross', 'Rachel Zane'],
-//     },
-//     {
-//       title: 'Movie Night',
-//       payer: 'Jane Doe',
-//       amount: 45,
-//       participants: ['John Doe', 'Harvey Specter'],
-//     },
-//   ];
-
-//   const friends = ['Jane Doe', 'Mike Ross', 'Rachel Zane', 'Harvey Specter'];
-
-//   return (
-//     <div className="min-h-screen bg-slate-800 p-8">
-//       <div className="flex flex-col flex-row md:flex-row md:space-x-4 ">
-//         <ProfileCard name={user.name} email={user.email} avatar={user.avatar} />
-//         <div className="flex flex-col space-y-4 mt-4 md:mt-0">
-//           {events.map((event, index) => (
-//             <EventCard
-//               key={index}
-//               title={event.title}
-//               payer={event.payer}
-//               amount={event.amount}
-//               participants={event.participants}
-//             />
-//           ))}
-//         </div>
-//       </div>
-
-//       <div className="mt-8">
-//         <h2 className="text-xl font-bold text-gray-700 mb-4">Friends</h2>
-//         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-//           {friends.map((friend, index) => (
-//             <div
-//               key={index}
-//               className="bg-white p-4 rounded-lg shadow-md text-center text-gray-600"
-//             >
-//               {friend} owes you $500
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Dashboard;
 import React from 'react';
 import ExpenseCard from './expenseCard';
+import {useParams} from 'react-router-dom'
 
 const Dashboard = () => {
+  const [friends,setFriends]=React.useState([]);
+  const [groups,setGroups]=React.useState([]);
+  const [name,setName]=React.useState("");
+
+  // const {email}=useParams();
+  
+
+  // React.useEffect(async()=>{
+  //   const response= await fetch('http://localhost:8000/user',{
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json' // Specify the content type as JSON
+  //     },
+  //     body: JSON.stringify({
+  //       email: email,
+  //     })
+  //   });
+  //   if(response.ok){
+  //     const data=await response.json()
+  //     setName(data.username);
+  //     setGroups(data.groups);
+  //     setFriends(data.friends);
+  //   }
+  //   // else
+  //   // alert("oops");
+  // },[friends])
+
   return (
     <div className="bg-gray-900 text-white min-h-screen p-6">
       {/* Main container */}
@@ -90,8 +54,8 @@ const Dashboard = () => {
                   alt="User Avatar"
                 />
                 <div>
-                  <h2 className="text-xl font-bold">Name : user@123</h2>
-                  <p className="text-sm">Email : lodu@1233</p>
+                  <h2 className="text-xl font-bold">Name : {name}</h2>
+                  <p className="text-sm">Email :</p>
                 </div>
               </div>
             </div> {/* Placeholder for a graph */}
@@ -100,27 +64,6 @@ const Dashboard = () => {
           {/* Today's expenses */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-4">Today</h2>
-            {/* <ExpenseCard
-              category="Grocery"
-              time="5:12 pm"
-              description="Belanja di pasar"
-              amount="-326.800"
-              iconColor="bg-blue-500"
-            />
-            <ExpenseCard
-              category="Transportation"
-              time="5:12 pm"
-              description="Naik bus umum"
-              amount="-15.000"
-              iconColor="bg-purple-500"
-            />
-            <ExpenseCard
-              category="Housing"
-              time="5:12 pm"
-              description="Bayar Listrik"
-              amount="-185.750"
-              iconColor="bg-orange-500"
-            /> */}
             <ExpenseCard
               category="Grocery"
               time="5:12 pm"
@@ -163,21 +106,6 @@ const Dashboard = () => {
   );
 };
 
-// Expense Card Component
-// const ExpenseCard = ({ category, time, description, amount, iconColor }) => {
-//   return (
-//     <div className="flex justify-between items-center mb-4 bg-gray-800 p-4 rounded-lg">
-//       <div className="flex items-center">
-//         <div className={`${iconColor} p-3 rounded-full`}></div>
-//         <div className="ml-4">
-//           <h3 className="font-semibold">{category}</h3>
-//           <p className="text-sm text-gray-400">{time} &bull; {description}</p>
-//         </div>
-//       </div>
-//       <div className="text-lg font-semibold">{amount}</div>
-//     </div>
-//   );
-// };
 
 // Friend Card Component
 const FriendCard = ({ name, amountOwed, amountLent }) => {

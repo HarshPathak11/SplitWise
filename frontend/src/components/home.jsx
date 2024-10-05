@@ -2,6 +2,7 @@ import React from 'react';
 import ComparisonTable from './check';
 import Footer from './footer';
 import oye from '../../save.svg'
+import { Link } from 'react-router-dom';
 
 
 const LandingPage = () => {
@@ -9,14 +10,14 @@ const LandingPage = () => {
     <div className="min-h-screen bg-black text-white flex flex-col items-center">
       {/* Navbar */}
       <nav className="w-full flex justify-between items-center px-10 py-5">
-      <div className="font-bold text-xl">Landing</div>
+      <div className="font-bold text-2xl">Split✂️It</div>
         <div className="flex space-x-8">
-          <a href="#" className="hover:text-gray-300">Feature</a>
-          <a href="#" className="hover:text-gray-300">About</a>
-          <a href="#" className="hover:text-gray-300">Contact</a>
-          <button className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
+          <a href="#" className="hover:text-gray-300 p-2">Feature</a>
+          <a href="#" className="hover:text-gray-300 p-2 ">About</a>
+          <a href="#" className="hover:text-gray-300 p-2 ">Contact</a>
+          <Link to="/logup"><button className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
           SignIn/SignUp
-        </button>
+        </button></Link>
         </div>
         
         
@@ -32,7 +33,7 @@ const LandingPage = () => {
             Why use Splitwise if we can do the same job but for free.
           </p>
           <div className="flex justify-center lg:justify-start space-x-4">
-            <button className="bg-blue-600 text-white py-3 px-6 rounded hover:bg-blue-700">Login</button>
+            <Link to="/login"><button className="bg-blue-600 text-white py-3 px-6 rounded hover:bg-blue-700">Login</button></Link>
             <button className="bg-transparent border border-white py-3 px-6 rounded hover:bg-white hover:text-gray-900">Learn More</button>
           </div>
         </div>
