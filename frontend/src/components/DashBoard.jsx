@@ -1,11 +1,14 @@
 import React from 'react';
 import ExpenseCard from './expenseCard';
 import {useParams} from 'react-router-dom'
+import { SignOutButton, useUser } from '@clerk/clerk-react';
 
 const Dashboard = () => {
   const [friends,setFriends]=React.useState([]);
   const [groups,setGroups]=React.useState([]);
   const [name,setName]=React.useState("");
+  const {user}=useUser();
+  console.log(user)
 
   // const {email}=useParams();
   
@@ -41,6 +44,7 @@ const Dashboard = () => {
             <h1 className="text-2xl font-bold">SplitIt</h1>
             <p className="text-gray-400">DashBoard</p>
           </div>
+          <SignOutButton/>
 
           {/* Graph placeholder */}
           <div className="bg-gray-800 p-4 rounded-lg mb-6">

@@ -1,7 +1,8 @@
 import React from "react";
 import './landing.css';
+import { SignUp } from "@clerk/clerk-react";
 
-import SignUp from "./signup";
+// import SignUp from "./signup";
 
 
 function LandingSignup(){

@@ -1,15 +1,19 @@
 import React from "react";
 import './landing.css';
-import SignIn from "./signin";
+import { SignedIn, SignIn , useUser} from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
+// import SignIn from "./signin";
 
 
 function LandingSignin(){
     const[signin,setsignin]=React.useState(true);
+    const navigate = useNavigate();
+    
     return(
         <div>
             <section>
       <div class="content h-auto flex-col">   
-      <SignIn/>
+      <SignIn forceRedirectUrl="/dash"/>
       </div>
 
       <ul class="circles">

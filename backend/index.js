@@ -63,6 +63,22 @@ app.get('/addf',addFriends)
 app.get('/pay',addPay)
 app.get('/payData',fetchUserMatrixData)
 app.get('/user',userData)
+app.post('/demo',(req, res) => {
+    const event = req.body;
+  
+    // Verify webhook signature if needed
+    // Process the email.created event
+    if (event.type === 'user.created') {
+      const emailData = event.data;
+      
+      console.log('New email created:', emailData);
+      
+      // Perform necessary actions, like storing data in a database
+    }
+  
+    // Always return a 200 status to acknowledge receipt
+    res.status(200).send('Webhook received');
+  });
  
 
 
