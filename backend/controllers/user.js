@@ -289,14 +289,14 @@ const addFriends = async (req, res) => {
           name: friend.username || friend.email,
         });
       } else {
-        // Friend does not exist — send email (placeholder)
+        // Friend does not exist — send email (placeholder) 
         const mailOptions = {
           from: '"Fair Fare" <splitwise666@gmail.com>',
           to: friendEmail,
           subject: `Heartfelt invitation from ${user.username}`,
           html: `<h1>Hi user,</h1><p>Your friend <strong>${
             user.username
-          }</strong> has added you as a friend on the Fare Fare App</p><p>Please click on the link below to see what happens next ${"http://192.168.1.5:8000/"}</p><p>Thanks, Fair Fare Team</p>`,
+          }</strong> has added you as a friend on the Fare Fare App</p><p>Please click on the link below to see what happens next ${`http://192.168.1.5:5173/${user._id}`}</p><p>Thanks, Fair Fare Team</p>`,
         };
         await transporter
           .sendMail(mailOptions)
@@ -304,8 +304,8 @@ const addFriends = async (req, res) => {
             console.log("Email sent to new friend ", friendEmail);
           })
           .finally(() => {
-            addedFriends.push({ email: friendEmail, name: friendEmail });
-            user.friends.push({ email: friendEmail, name: friendEmail });
+            // addedFriends.push({ email: friendEmail, name: friendEmail });
+            // user.friends.push({ email: friendEmail, name: friendEmail });
           });
       }
     }

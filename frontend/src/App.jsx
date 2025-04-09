@@ -10,6 +10,7 @@ import NotFound from "./NotFound";
 import AddFriend from "./components/addFriend";
 import AddTrip from "./components/addTrip";
 import ForgotPassword from "./components/forgotPassword";
+import TripDetails from "./components/tripDetails";
 
 const router = createBrowserRouter([
   {
@@ -33,6 +34,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AddFriend />
+      </ProtectedRoute> 
+    ),
+  },
+  {
+    path: "/tripDetails",
+    element: (
+      <ProtectedRoute>
+        <TripDetails />
       </ProtectedRoute> 
     ),
   },
