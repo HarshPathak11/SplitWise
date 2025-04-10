@@ -1,0 +1,101 @@
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import Cookies from 'js-cookie';
+
+const LogIn = () => {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log('email and password ', email, password);
+    try {
+      if (!email || !password) {
+        alert('Please fill in all fields.');
+        return;
+      }
+
+      const response = await axios.post(`http://192.168.1.5:8000/login`, {
+        email,
+        password,
+      });
+      
+      if (response.data.user) {
+        Cookies.set('id', response.data.user._id, { expires: 7 });
+        navigate('/dash');
+      }
+    } catch (error) {
+      console.error('Error logging in:', error);
+      console.log('error ', error.response.data);
+      alert('Login failed');
+    }
+  };
+
+  return (
+    <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex items-center justify-center min-h-screen overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
+        <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
+        <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
+        <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
+        <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
+      </div>
+
+      {/* Login Card */}
+      <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
+        <div className="relative z-10">
+          <div className="flex justify-between items-center mb-6 mt-16">
+            <div className="text-2xl font-bold text-white">LOGIN</div>
+            <Link to="/signup">
+              <div className="text-xl text-white cursor-pointer hover:underline">SIGN UP</div>
+            </Link>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-white text-sm font-bold mb-2" htmlFor="email">
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Email Address"
+                className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-white text-sm font-bold mb-2" htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Password"
+                className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300"
+              />
+            </div>
+            <div className="text-right mb-4">
+              <Link to="/forgot-password" className="text-sm text-slate-300 hover:text-blue-300 hover:underline">
+                Forgot your password?
+              </Link>
+            </div>
+            <button
+              type="submit"
+              className="w-full py-2 px-4 bg-slate-900 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105"
+            >
+              Login
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LogIn;

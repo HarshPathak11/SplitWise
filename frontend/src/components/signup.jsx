@@ -1,115 +1,153 @@
-import React from 'react';
-import { Link , useNavigate} from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const SignUp = () => {
+  const [username, setUserName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpGenerated, setOtpGenerated] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const [name,setName]=React.useState();
-  const [email,setEmail]=React.useState();
-  const [password,setPassword]=React.useState();
-  const [no,setNo]=React.useState();
-  const navigate=useNavigate()
-  
-async function handleSubmit(event){
-  const response=await fetch("http://localhost:8000/logup",{
-    method:'POST',
-    headers: {
-          'Content-Type': 'application/json' // Specify the content type as JSON
-        },
-    body: JSON.stringify({
-          username:name,
-          email: email,
-          password: password
-        })
-  })
-  if(response.ok){
-    return navigate(`/dash/${encodeURIComponent(email)}`);
-  }
-}
-return (
-    // <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="relative w-full max-w-sm p-8 bg-slate-500 rounded-lg shadow-md overflow-hidden">
+  const navigate = useNavigate();
+
+  const handleOtpSend = async () => {
+    if (!email || !username || !password) {
+      alert('Please fill in all fields.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post('http://192.168.1.5:8000/send-otp', {
+        email,
+        username,
+      });
+
+      if (response.status === 200) {
+        setOtpSent(response.data.otp);
+        setOtpGenerated(response.data.otp);
+      }
+    } catch (error) {
+
+       if (error.response && error.response.status === 410) {
+      alert('Email already Taken!');
+    } else {
+
+      alert('Failed to send OTP.');
+    }
+    } finally {
+
+      setLoading(false);
+    }
+  };
+
+  const handleOtpVerify = async () => {
+    try {
+      const response = await axios.post('http://192.168.1.5:8000/verify-otp', {
+        email,
+        otp,
+        otpGenerated,
+        password,
+        username,
+      });
+      
+      if (response.status === 200) {
         
-        <div className="absolute inset-x-0 top-0 -translate-y-1/2 flex justify-center">
-          <div className=" w-96 h-96 bg-slate-800 rounded-full"></div>
-        </div>
+        Cookies.set('id', response.data._id, { expires: 7 });
+        navigate('/profile');
+      }
 
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      alert('OTP verification failed.');
+    }
+  };
+
+  return (
+    <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center min-h-screen overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move-opposite"></div>
+        <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate-opposite delay-2000"></div>
+        <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move-opposite delay-4000"></div>
+        <div className="absolute top-10 right-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce-opposite"></div>
+        <div className="absolute bottom-10 left-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce-opposite delay-3000"></div>
+      </div>
+
+      {/* SignUp Card */}
+      <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
           <div className="flex justify-between items-center mb-6 mt-16">
             <div className="text-2xl font-bold text-white">SIGN UP</div>
-            <Link to='/login'><div className="text-xl text-white cursor-pointer">LOGIN</div></Link>
+            <Link to="/login" className="text-xl text-white cursor-pointer">
+              LOGIN
+            </Link>
           </div>
-          <form onSubmit={handleSubmit}>
+
           <div className="mb-4">
-           <label className="block text-white text-sm font-bold mb-2" htmlFor="name">
-             Name
-          </label>
+            <label className="block text-white text-sm font-bold mb-2">Name</label>
             <input
-              id="name"
-              value={name}
-              onChange={(event)=>setName(event.target.value)}
+              value={username}
+              onChange={(e) => setUserName(e.target.value)}
               type="text"
               placeholder="Name"
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:shadow-outline"
+              className="w-full px-3 py-2 border rounded-lg"
             />
-           </div>
+          </div>
+
           <div className="mb-4">
-            <label className="block text-white text-sm font-bold mb-2" htmlFor="email">
-              Email Address
-            </label>
+            <label className="block text-white text-sm font-bold mb-2">Email</label>
             <input
-              id="email"
-              type="email"
               value={email}
-              onChange={(event)=>setEmail(event.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
               placeholder="Email Address"
-              className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline"
-            />
-         </div>
-           <div className="mb-4">
-           <label className="block text-white text-sm font-bold mb-2" htmlFor="password">
-             Password
-             </label>
-             <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(event)=>setPassword(event.target.value)}
-              placeholder="Password"
-              className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline"
+              className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
-         <div className="mb-6">
-           <label className="block text-white text-sm font-bold mb-2" htmlFor="phone">
-             Phone Number
-         </label>
+
+          <div className="mb-4">
+            <label className="block text-white text-sm font-bold mb-2">Password</label>
             <input
-              id="phone"
-              type="tel"
-              value={no}
-              onChange={(event)=>setNo(event.target.value)}
-              placeholder="Phone Number"
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:shadow-outline"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              placeholder="Password"
+              className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
+
+          {/* OTP input only shows after send OTP */}
+          {otpSent && (
+            <div className="mb-6">
+              <label className="block text-white text-sm font-bold mb-2">Verify OTP</label>
+              <input
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                type="text"
+                placeholder="Enter OTP"
+                className="w-full px-3 py-2 border rounded-lg"
+              />
+            </div>
+          )}
+
           <button
-            type="submit"
-            className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:shadow-outline"
-          >            Sign Up
+            onClick={otpSent ? handleOtpVerify : handleOtpSend}
+            disabled={loading}
+            className={`w-full py-2 px-4 rounded-lg text-white ${
+              loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+            }`}
+          >
+            {loading ? 'Sending...' : otpSent ? 'Verify OTP' : 'Send OTP'}
           </button>
-        </form>
-          <div className="flex justify-center items-center mt-6 space-x-4">
-            <button className="flex items-center justify-center w-12 h-12 bg-white border rounded-full shadow-md hover:bg-gray-100">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chrome"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" x2="12" y1="8" y2="8"/><line x1="3.95" x2="8.54" y1="6.06" y2="14"/><line x1="10.88" x2="15.46" y1="21.94" y2="14"/></svg>
-            </button>
-            <button className="flex items-center justify-center w-12 h-12 bg-white border rounded-full shadow-md hover:bg-gray-100">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chrome"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" x2="12" y1="8" y2="8"/><line x1="3.95" x2="8.54" y1="6.06" y2="14"/><line x1="10.88" x2="15.46" y1="21.94" y2="14"/></svg>
-            </button>
-          </div>
         </div>
       </div>
-    // </div>
+    </div>
   );
 };
-
 
 export default SignUp;

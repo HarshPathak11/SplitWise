@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 
 const ExpenseCard = ({ category, time, description, amount, iconColor, paidBy, beneficiaries }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -42,6 +43,15 @@ const ExpenseCard = ({ category, time, description, amount, iconColor, paidBy, b
       )}
     </div>
   );
+};
+ExpenseCard.propTypes = {
+  category: PropTypes.string.isRequired,
+  time: PropTypes.string.isRequired,
+  description: PropTypes.string.isRequired,
+  amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  iconColor: PropTypes.string.isRequired,
+  paidBy: PropTypes.string.isRequired,
+  beneficiaries: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 export default ExpenseCard;

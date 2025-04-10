@@ -1,94 +1,204 @@
-import React from 'react';
-import ComparisonTable from './check';
-import Footer from './footer';
-import oye from '../../save.svg'
-import { Link } from 'react-router-dom';
-
-
+import ComparisonTable from "./check";
+import Footer from "./footer";
+import oye from "../../save.svg";
+import { Link } from "react-router-dom";
 const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center">
-      {/* Navbar */}
-      <nav className="w-full flex justify-between items-center px-10 py-5">
-      <div className="font-bold text-2xl">Split✂️It</div>
-        <div className="flex space-x-8">
-          <a href="#" className="hover:text-gray-300 p-2">Feature</a>
-          <a href="#" className="hover:text-gray-300 p-2 ">About</a>
-          <a href="#" className="hover:text-gray-300 p-2 ">Contact</a>
-          <Link to="/logup"><button className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
-          SignIn/SignUp
-        </button></Link>
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white flex flex-col items-center relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -inset-[10px] opacity-30">
+          <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
-        
-        
+      </div>
+
+      {/* Navbar */}
+      <nav className="w-full flex justify-between items-center px-10 py-5 backdrop-blur-lg bg-black/20 border-b border-white/10 z-50">
+        <div className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
+          FairFare
+        </div>
+        <div className="flex space-x-8">
+          <Link to="/features">
+            <button className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 hover:scale-105 border border-blue-400/30">
+              Features
+            </button>
+          </Link>
+
+          <Link to="/signup">
+            <button className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 hover:scale-105 border border-blue-400/30">
+              SignUp
+            </button>
+          </Link>
+        </div>
       </nav>
 
       {/* Main Content */}
-      <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-10 lg:px-20 py-10">
-      <img src={oye}/>
-        <div className="lg:w-1/2 text-center lg:text-left">
-        
-          <h1 className="text-4xl lg:text-5xl font-bold mb-6">Split it <br/> Its easy this way.</h1>
+      <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-11 lg:px-10 py-20 relative z-10">
+        <div className="transform hover:scale-105 transition-transform duration-300">
+          <img
+            src={oye}
+            className="drop-shadow-2xl hover:animate-blob animate-blob animation-delay-2000"
+            alt="Illustration"
+          />
+        </div>
+
+        <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
+          <h1 className="text-4xl lg:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
+            Split it <br /> Its easy this way.
+          </h1>
           <p className="text-gray-400 mb-8">
             Why use Splitwise if we can do the same job but for free.
           </p>
           <div className="flex justify-center lg:justify-start space-x-4">
-            <Link to="/login"><button className="bg-blue-600 text-white py-3 px-6 rounded hover:bg-blue-700">Login</button></Link>
-            <button className="bg-transparent border border-white py-3 px-6 rounded hover:bg-white hover:text-gray-900">Learn More</button>
+            <Link to="/login">
+              <button className="bg-blue-600/80 backdrop-blur-sm text-white py-3 px-6 rounded-lg hover:bg-blue-700/80 transition-all duration-300 hover:scale-105 border border-blue-400/30">
+                Login
+              </button>
+            </Link>
+            <button
+              className="bg-transparent border border-white/30 py-3 px-6 rounded-lg hover:bg-white/10 transition-all duration-300 hover:scale-105"
+              onClick={() => {
+                const comparisonTable =
+                  document.getElementById("comparison-table");
+                if (comparisonTable) {
+                  comparisonTable.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+            >
+              Learn More
+            </button>
           </div>
         </div>
-        {/* <div className="md:w-1/2 mb-10 lg:mb-0">
-          <img src="div.png" alt="Illustration" className="w-full h-auto"/>
-        </div> */}
       </div>
-      <ComparisonTable/>
-      <section className="bg-gray-800 py-20">
+
+      <div id="comparison-table">
+        <ComparisonTable />
+      </div>
+
+      {/* Testimonials Section */}
+      <section className="w-full backdrop-blur-lg bg-gray-800/50 py-20 relative z-10">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center text-center mb-24">
             <div className="w-full lg:w-6/12 px-4">
-              <h2 className="text-4xl font-semibold text-white">What Our Users Say</h2>
+              <h2 className="text-4xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
+                What Our Users Say
+              </h2>
               <p className="text-lg leading-relaxed m-4 text-gray-400">
                 Hear from our satisfied users
               </p>
             </div>
           </div>
           <div className="flex flex-wrap">
+            {/* Testimonial Cards */}
             <div className="w-full md:w-4/12 px-4 text-center">
-              <div className="relative flex flex-col min-w-0 break-words bg-gray-700 w-full mb-8 shadow-lg rounded-lg p-6">
+              <div className="relative flex flex-col min-w-0 break-words backdrop-blur-lg bg-white/5 w-full mb-8 shadow-lg rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:transform hover:scale-105 hover:animate-float">
                 <div className="px-4 py-5 flex-auto">
                   <p className="mt-2 mb-4 text-gray-400">
-                    "Knowledge is power, and CodeShrine is a treasure trove. Imagine having all your coding profiles in one place and tracking upcoming contests effortlessly. It's like having a map to navigate the coding world. CodeShrine is my indispensable companion, helping me achieve my goals and share my journey with others."
+                  &quot;FairFare makes managing expenses with friends so easy! The
+                    interface is clean, and splitting bills has never been this
+                    hassle-free.&quot;
                   </p>
-                  <h6 className="text-xl font-semibold text-white">- Nico Robin</h6>
+                  <h6 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400">
+                    - Nico Robin
+                  </h6>
                 </div>
               </div>
             </div>
 
             <div className="w-full md:w-4/12 px-4 text-center">
-              <div className="relative flex flex-col min-w-0 break-words bg-gray-700 w-full mb-8 shadow-lg rounded-lg p-6">
+              <div className="relative flex flex-col min-w-0 break-words backdrop-blur-lg bg-white/5 w-full mb-8 shadow-lg rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:transform hover:scale-105 hover:animate-float">
                 <div className="px-4 py-5 flex-auto">
                   <p className="mt-2 mb-4 text-gray-400">
-                    "With CodeShrine, I can see all my coding profiles in one place and never miss a contest. It's like seeing infinity in a single glance! The reminders are a lifesaver, and sharing my profile with friends and rivals has never been easier. CodeShrine keeps me sharp and ready for the next big challenge."
+                  &quot;I love how intuitive and fast FairFare is. No more awkward
+                    conversations about who owes what—this app does it all!&quot;
                   </p>
-                  <h6 className="text-xl font-semibold text-white">- Satoru Gojo</h6>
+                  <h6 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400">
+                    - Satoru Gojo
+                  </h6>
                 </div>
               </div>
             </div>
 
             <div className="w-full md:w-4/12 px-4 text-center">
-              <div className="relative flex flex-col min-w-0 break-words bg-gray-700 w-full mb-8 shadow-lg rounded-lg p-6">
+              <div className="relative flex flex-col min-w-0 break-words backdrop-blur-lg bg-white/5 w-full mb-8 shadow-lg rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:transform hover:scale-105 hover:animate-float">
                 <div className="px-4 py-5 flex-auto">
                   <p className="mt-2 mb-4 text-gray-400">
-                    "Believe it! CodeShrine is my secret weapon to track upcoming contests and share my coding journey with friends. Dattebayo! Whether it's seeing all my profiles in one place or getting crucial reminders, CodeShrine keeps me pumped and ready for every challenge. It's a must-have for every coding ninja!"
+                  &quot;FairFare is a lifesaver for group trips! Tracking expenses
+                    and settling up is super simple. Highly recommend it!&quot;
                   </p>
-                  <h6 className="text-xl font-semibold text-white">- Naruto Uzumaki</h6>
+                  <h6 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400">
+                    - Naruto Uzumaki
+                  </h6>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
-      <Footer/>
+
+      {/* Add the animation keyframes */}
+      <style>{`
+        @keyframes blob {
+          0% {
+            transform: translate(0px, 0px) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+          100% {
+            transform: translate(0px, 0px) scale(1);
+          }
+        }
+
+        @keyframes float {
+          0% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+          100% {
+            transform: translateY(0px);
+          }
+        }
+
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+
+        .hover\\:animate-text:hover {
+          animation: text-flicker 1.5s infinite;
+        }
+
+        @keyframes text-flicker {
+          0%,
+          100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+      `}</style>
+
+      <Footer />
     </div>
   );
 };
