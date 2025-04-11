@@ -1,182 +1,248 @@
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios"; // Import axios
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
 
 const AddExpense = () => {
-  const location = useLocation(); // Access the passed trip details
   const navigate = useNavigate();
-  const initialTrip = location.state?.trip; // Destructure the trip object
-  const [trip, setTrip] = useState(initialTrip || { friends: [] }); // Use state to manage trip data
-  const [selectedFriends, setSelectedFriends] = useState([]); // State for selected friends
-  const [paidBy, setPaidBy] = useState(""); // State for who paid
-  const [newExpense, setNewExpense] = useState({ amount: 0, description: "" }); // State for new expense
-  const [paymentType, setPaymentType] = useState("equal"); // State for payment type
-  const [customAmounts, setCustomAmounts] = useState({}); // State for custom amounts
+  const [splitMode, setSplitMode] = useState("equally");
+  const [selected, setSelected] = useState([]);
+  const [amounts, setAmounts] = useState({});
+  const [selectAll, setSelectAll] = useState(false);
+  const [paidBy, setPaidBy] = useState();
+  const [members, setmembers] = useState([]);
+  const [title, setTitle] = useState("");
+  const [mainAmount, setMainAmount] = useState("");
 
-  const handleAddExpense = async () => {
+  useEffect(() => {
+    setSelectAll(selected.length === filteredMember.length);
+  }, [selected, members]);
+
+  useEffect(() => {
     try {
-      const response = await axios.post("http://localhost:8000/api/expenses", {
-        email: "user@example.com", // Replace with actual user email
-        eventName: trip.name,
-        eventDesc: selectedFriends.join(", "), // Use selected friends' names as description
-        amt: newExpense.amount,
-        paidBy: paidBy, // Who paid
-        paidFor: selectedFriends, // Split with selected friends
-        paymentType: paymentType, // Equal or Unequal
-      });
-
-      // Update the trip state with the new expense
-      const updatedExpenses = [...trip.expenses, response.data]; // Assuming the response returns the new expense
-      const updatedTrip = { ...trip, expenses: updatedExpenses };
-
-      // Update friends' balances based on the payment type
-      const amountPerFriend =
-        paymentType === "equal"
-          ? newExpense.amount / selectedFriends.length
-          : newExpense.amount; // For unequal, you can customize this logic
-
-      // Update balances for selected friends
-      updatedTrip.friends.forEach((friend) => {
-        if (selectedFriends.includes(friend.name)) {
-          friend.balance = (friend.balance || 0) - amountPerFriend; // Deduct from the friend's balance
+      const tripMembers = localStorage.getItem("tripMembers");
+      if (tripMembers) {
+        const members = JSON.parse(tripMembers);
+        if (members.length > 0) {
+          const memberList = Object.values(members);
+          setmembers(memberList);
         }
-      });
-
-      // Set the updated trip state
-      setTrip(updatedTrip);
-
-      // Reset the input fields
-      setNewExpense({ amount: 0, description: "" }); // Reset the input fields
-      setSelectedFriends([]); // Reset selected friends
-      setPaidBy(""); // Reset who paid
-      setPaymentType("equal"); // Reset payment type
-      setCustomAmounts({}); // Reset custom amounts
-    } catch (error) {
-      console.error("Error adding expense:", error);
+      }
+    } catch (err) {
+      console.error("Error parsing user from localStorage:", err);
     }
-  };
+  }, []);
 
-  // Function to handle friend selection
-  const handleFriendSelection = (friend) => {
-    if (selectedFriends.includes(friend)) {
-      setSelectedFriends(selectedFriends.filter((f) => f !== friend));
+  const handleCheckboxChange = (name) => {
+    if (selected.includes(name)) {
+      setSelected(selected.filter((n) => n !== name));
     } else {
-      setSelectedFriends([...selectedFriends, friend]);
+      setSelected([...selected, name]);
     }
   };
 
-  // Function to handle custom amount input
-  const handleCustomAmountChange = (friend, amount) => {
-    setCustomAmounts({ ...customAmounts, [friend]: amount });
+  const filteredMember = members.filter((member) => member.toLowerCase());
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelected([]);
+    } else {
+      setSelected([...filteredMember.map((member) => member)]);
+    }
   };
+
+  const handleAmountChange = (e, name) => {
+    const value = e.target.value;
+    if (/^\d*\.?\d{0,2}$/.test(value)) {
+      setAmounts({ ...amounts, [name]: value });
+    }
+  };
+
+  const calculateTotal = () => {
+    return selected.reduce((sum, name) => {
+      const value = parseFloat(amounts[name]) || 0;
+      return sum + value;
+    }, 0);
+  };
+
+  const handleAddExpense = () => {
+    console.log("Adding expense...");
+
+    const totalEntered = parseFloat(mainAmount) || 0;
+    const customTotal = calculateTotal();
+
+    if (
+      splitMode === "unequally" &&
+      totalEntered.toFixed(2) !== customTotal.toFixed(2)
+    ) {
+      const diff = (customTotal - totalEntered).toFixed(2);
+      alert(
+        `Calculation mismatch of ₹${Math.abs(diff)}. Please correct the values.`
+      );
+      return;
+    }
+
+    // Continue with actual form submission logic here
+    console.log("Expense added!");
+  };
+
+  const customTotal = calculateTotal();
+  const totalDiff = parseFloat(mainAmount || 0) - customTotal;
+  const isMismatch = totalDiff.toFixed(2) !== "0.00";
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen p-6 flex items-center justify-center">
-      <div className="absolute top-4 left-4">
-        <button
-          onClick={() => navigate("/tripDetails")}
-          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-110 transition-transform duration-300 ease-in-out"
-          title="Back to Dashboard"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 sm:h-6 sm:w-6 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+    <div className="min-h-screen bg-black text-white p-4 sm:p-6 md:p-10 font-sans">
+      <button
+        className="flex items-center text-white mb-6 hover:text-gray-300 transition"
+        onClick={() => navigate(-1)}
+      >
+        <FaArrowLeft className="w-5 h-5 mr-2" />
+        Back
+      </button>
+
+      <div className="max-w-3xl mx-auto bg-black p-4 sm:p-6 md:p-10 rounded-2xl shadow-2xl space-y-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <h1 className="text-3xl sm:text-4xl font-bold text-center sm:text-left">
+            Add Expense
+          </h1>
+        </div>
+
+        {/* Title + Amount */}
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="bg-[#121212] border border-gray-600 text-white w-full px-4 py-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white"
+          />
+          <input
+            type="text"
+            placeholder="Amount"
+            inputMode="decimal"
+            value={mainAmount}
+            onChange={(e) => setMainAmount(e.target.value)}
+            pattern="^\d*(\.\d{0,2})?$"
+            className="bg-[#121212] border border-gray-600 text-white w-full px-4 py-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white"
+          />
+        </div>
+
+        {/* Paid By */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+          <label className="text-lg font-medium whitespace-nowrap">
+            Paid By:
+          </label>
+          <select
+            className="bg-[#121212] border border-gray-600 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-white"
+            value={paidBy}
+            onChange={(e) => setPaidBy(e.target.value)}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-      </div>
+            {filteredMember.map((member) => (
+              <option key={member._id} value={member}>
+                {member}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <div className="w-full max-w-lg">
-        <h1 className="text-2xl font-bold mb-4">Add Expense</h1>
+        {/* Split Mode */}
+        <div className="space-y-2">
+          <p className="text-lg font-medium">Split:</p>
+          <div className="flex flex-wrap gap-4">
+            <button
+              className={`px-6 py-2 rounded-lg ${
+                splitMode === "equally"
+                  ? "bg-white text-black font-semibold"
+                  : "bg-[#121212] border border-gray-600 hover:bg-gray-800"
+              } transition`}
+              onClick={() => setSplitMode("equally")}
+            >
+              Equally
+            </button>
+            <button
+              className={`px-6 py-2 rounded-lg ${
+                splitMode === "unequally"
+                  ? "bg-white text-black font-semibold"
+                  : "bg-[#121212] border border-gray-600 hover:bg-gray-800"
+              } transition`}
+              onClick={() => setSplitMode("unequally")}
+            >
+              Unequally
+            </button>
+          </div>
+        </div>
 
-        {/* Friends Selection */}
-        <h2 className="text-lg font-semibold mb-2">Select Friends:</h2>
-        {trip.friends.map((friend) => (
-          <label key={friend.name} className="flex items-center mb-2">
+        {/* Split Details */}
+        <div className="space-y-3">
+          <label className="flex items-center space-x-2">
             <input
               type="checkbox"
-              value={friend.name}
-              checked={selectedFriends.includes(friend.name)}
-              onChange={() => handleFriendSelection(friend.name)}
-              className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
+              checked={selectAll}
+              onChange={handleSelectAll}
+              className="w-4 h-4"
             />
-            <span className="text-sm text-gray-300">{friend.name}</span>
+            <span className="text-sm">Select All</span>
           </label>
-        ))}
 
-        <input
-          type="text"
-          placeholder="Enter a description"
-          className="p-2 rounded-lg bg-gray-700 border border-gray-600 text-white w-full mb-4"
-          onChange={(e) =>
-            setNewExpense({ ...newExpense, description: e.target.value })
-          }
-        />
-        <input
-          type="number"
-          placeholder="Amount"
-          className="p-2 rounded-lg bg-gray-700 border border-gray-600 text-white w-full mb-4"
-          onChange={(e) =>
-            setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) })
-          }
-        />
-        <select
-          value={paidBy}
-          onChange={(e) => setPaidBy(e.target.value)}
-          className="p-2 rounded-lg bg-gray-700 border border-gray-600 text-white w-full mb-4"
-        >
-          <option value="">Who paid?</option>
-          {trip.friends.map((friend, index) => (
-            <option key={index} value={friend.name}>
-              {friend.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={paymentType}
-          onChange={(e) => setPaymentType(e.target.value)}
-          className="p-2 rounded-lg bg-gray-700 border border-gray-600 text-white w-full mb-4"
-        >
-          <option value="equal">Split Equally</option>
-          <option value="custom">Custom Split</option>
-        </select>
-
-        {paymentType === "custom" && (
-          <div className="mb-4">
-            {trip.friends.map((friend) => (
-              <div key={friend.name} className="flex items-center mb-2">
-                <span className="text-gray-300 mr-2">{friend.name}:</span>
+          {filteredMember.map((member) => (
+            <div
+              key={member}
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-[#121212] p-3 rounded-lg"
+            >
+              <div className="flex items-center gap-3">
                 <input
-                  type="number"
-                  placeholder="Amount"
-                  className="p-2 rounded-lg bg-gray-700 border border-gray-600 text-white w-full"
-                  onChange={(e) =>
-                    handleCustomAmountChange(
-                      friend.name,
-                      parseFloat(e.target.value)
-                    )
-                  }
+                  type="checkbox"
+                  checked={selected.includes(member)}
+                  onChange={() => handleCheckboxChange(member)}
+                  className="w-4 h-4"
                 />
+                <span className="max-w-3xl">{member}</span>
               </div>
-            ))}
+              {splitMode === "unequally" && selected.includes(member) && (
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  pattern="^\d*(\.\d{0,2})?$"
+                  placeholder="Amount"
+                  value={amounts[member] || ""}
+                  onChange={(e) => handleAmountChange(e, member)}
+                  className="px-3 py-2 bg-black border border-gray-600 text-white rounded-lg w-full sm:w-40 focus:outline-none focus:ring-2 focus:ring-white"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Amount Tracker */}
+        {splitMode === "unequally" && (
+          <div className="text-center text-lg font-semibold">
+            Total Difference:{" "}
+            <span
+              className={`${isMismatch ? "text-red-500" : "text-green-500"}`}
+            >
+              {-1 * totalDiff.toFixed(2)}
+            </span>{" "}
+            From:{" "}
+            <span className={"text-white-500"}>
+              ₹{Math.abs(mainAmount).toFixed(2)}
+            </span>
           </div>
         )}
 
-        <button
-          onClick={handleAddExpense}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg"
-        >
-          Add Expense
-        </button>
+        {/* Add Button */}
+        <div className="text-center pt-6">
+          <button
+            onClick={handleAddExpense}
+            disabled={mainAmount === "" || title === ""}
+            className={`font-semibold px-10 py-3 rounded-xl transition text-lg 
+    ${
+      mainAmount === "" || title === ""
+        ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+        : "bg-white text-black hover:bg-gray-200"
+    }`}
+          >
+            Add
+          </button>
+        </div>
       </div>
     </div>
   );

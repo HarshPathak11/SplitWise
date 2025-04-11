@@ -1,92 +1,183 @@
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 
 const TripDetails = () => {
-  const location = useLocation(); // Access the passed trip details
   const navigate = useNavigate();
-  const initialTrip = {name:"Goa_trip" , description:"this is the desvciption"}; // Destructure the trip object
-  const [trip, setTrip] = useState(initialTrip); // Use state to manage trip data
-  const [newExpense, setNewExpense] = useState({ amount: 0 }); // State for new expense
-  const [showExpenses, setShowExpenses] = useState(false);
+  const location = useLocation();
 
-  // if (!trip) {
-  //   return (
-  //     <div className="text-center text-red-500 font-semibold mt-10">
-  //       No trip details found. <br />
-  //     </div>
-  //   );
-  // }
+  const [members, setMembers] = useState([]);
+
+  // Utility to deduplicate members (assuming members are strings or objects with 'username')
+  const dedupeMembers = (list) => {
+    const map = new Map();
+    list.forEach((member) => {
+      const key =
+        typeof member === "string" ? member : member?.username || member;
+      if (!map.has(key)) {
+        map.set(key, member);
+      }
+    });
+    return Array.from(map.values());
+  };
+
+  // Initial loading of trip members + add current user
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem("user"));
+    const currentUser = userData?.user?.username;
+
+    const stored = JSON.parse(localStorage.getItem("tripMembers"));
+
+    if (!stored && currentUser) {
+      // If tripMembers does not exist, create it with current user
+      localStorage.setItem("tripMembers", JSON.stringify([currentUser]));
+      setMembers([currentUser]);
+    } else {
+      // If it exists, ensure current user is included
+      let initialMembers = stored || [];
+      if (currentUser && !initialMembers.includes(currentUser)) {
+        initialMembers.push(currentUser);
+      }
+
+      const uniqueMembers = dedupeMembers(initialMembers);
+      setMembers(uniqueMembers);
+      localStorage.setItem("tripMembers", JSON.stringify(uniqueMembers));
+    }
+  }, []);
+
+  // Handle incoming new members from "Add Members" screen
+  useEffect(() => {
+    if (location.state?.selectedMembers?.length) {
+      const stored = JSON.parse(localStorage.getItem("tripMembers")) || [];
+      const incoming = location.state.selectedMembers;
+
+      const allMembers = dedupeMembers([...stored, ...incoming]);
+      setMembers(allMembers);
+      localStorage.setItem("tripMembers", JSON.stringify(allMembers));
+    }
+  }, [location.state]);
+
+  const handleAddExpenseClick = () => {
+    if (members.length === 0) {
+      alert(
+        "Please add at least one member to the group before adding an expense."
+      );
+      return;
+    }
+    navigate("/add-expense", { state: { members } });
+  };
+
+  const handleAddMember = () => {
+    navigate("/add-members", { state: { members } });
+  };
+
+  const expenses = [
+    {
+      category: "Grocery",
+      time: "5:12 pm",
+      description: "Belanja di pasar",
+      amount: "1289.80",
+      iconColor: "bg-blue-500",
+      paidBy: "John Doe",
+      beneficiaries: ["Alice", "Bob", "Charlie", "John Doe"],
+    },
+  ];
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen p-6 flex items-center justify-center">
-      
-      <div className="absolute top-4 left-4">
-        <button
-          onClick={() => navigate("/dash")}
-          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-110 transition-transform duration-300 ease-in-out"
-          title="Back to Dashboard"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 sm:h-6 sm:w-6 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-      </div>
-      
-      <div className="w-full max-w-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">{trip.name}</h1>
-          <button
-            onClick={() => navigate("/addExpense")}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-          >
-            Add Expense
-          </button>
+    <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -inset-[10px] opacity-50">
+          <div className="absolute top-0 -left-4 w-48 md:w-72 h-48 md:h-72 bg-[#9e27ff] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute top-0 -right-4 w-48 md:w-72 h-48 md:h-72 bg-[#00FFA3] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-48 md:w-72 h-48 md:h-72 bg-gray-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
-        <p className="text-gray-400 mb-2">
-          Description: {trip.description || "No description available."}
-        </p>
+      </div>
 
+      {/* Back Button */}
+      
+        <button
+          className="flex items-center text-white hover:text-gray-300 backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5  sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300"
+          onClick={() => navigate("/dash")}
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back
+        </button>
+      {/* Card Container */}
+      <div className="backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
+        {/* Trip Header */}
+        <div className="flex justify-between items-center flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-5xl mr-auto pb-3 mb-1 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
+              Goa Trip
+            </h1>
+            <p className="text-base sm:text-lg mt-2 mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
+              Trip Description
+            </p>
+          </div>
+        </div>
+
+        {/* Members Section */}
         <div>
-          <h2
-            className="text-xl font-semibold mb-3 cursor-pointer"
-            onClick={() => setShowExpenses(!showExpenses)}
-          >
-            Expense Breakdown
-          </h2>
-          {showExpenses && (
-            <div className="space-y-3">
-              {trip.expenses && trip.expenses.length > 0 ? (
-                trip.expenses.map((expense, index) => (
-                  <div
-                    key={index}
-                    className="bg-gray-700/50 p-3 rounded-lg border border-gray-600/30 flex justify-between items-center"
-                  >
-                    <p className="text-sm text-white">{expense.description}</p>
-                    <p className="text-sm text-white">₹{expense.amount}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-400">No expenses recorded.</p>
-              )}
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-xl sm:text-2xl font-semibold">Members</h2>
+            <button
+              onClick={handleAddMember}
+              className="text-sm border border-white px-3 py-1 rounded hover:bg-white hover:text-black transition"
+            >
+              + Add Member
+            </button>
+          </div>
+          {members.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {members.map((member, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-800 text-white py-2 px-4 rounded-xl text-center"
+                >
+                  {typeof member === "string"
+                    ? member
+                    : member?.username || JSON.stringify(member)}
+                </div>
+              ))}
             </div>
+          ) : (
+            <p className="text-gray-400 italic">No members added yet.</p>
           )}
+        </div>
 
-          <button
-            onClick={() => navigate("/dash")}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg">
-            Go Back to Dashboard
-          </button>
+        {/* Expenses Section */}
+        <div>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl sm:text-2xl font-semibold">Expenses</h2>
+            <button
+              className="border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-black transition whitespace-nowrap"
+              onClick={handleAddExpenseClick}
+            >
+              Add Expense
+            </button>
+          </div>
+
+          <div className="mt-10">
+            {expenses.length === 0 ? (
+              <div className="text-center text-xl sm:text-2xl font-medium text-gray-300 mt-16">
+                No Expenses Yet
+              </div>
+            ) : (
+              expenses.map((expense, idx) => (
+                <ExpenseCard
+                  key={idx}
+                  category={expense.category}
+                  time={expense.time}
+                  description={expense.description}
+                  amount={expense.amount}
+                  iconColor={expense.iconColor}
+                  paidBy={expense.paidBy}
+                  beneficiaries={expense.beneficiaries}
+                />
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

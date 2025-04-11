@@ -11,7 +11,8 @@ import AddFriend from "./components/addFriend";
 import AddTrip from "./components/addTrip";
 import ForgotPassword from "./components/forgotPassword";
 import TripDetails from "./components/tripDetails";
-import AddExpense from "./components/addExpense"
+import AddExpense from "./components/addExpense";
+import AddMembers from "./components/addMembers";
 
 const router = createBrowserRouter([
   {
@@ -31,10 +32,18 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/addExpense",
+    path: "/add-expense",
     element: (
       <ProtectedRoute>
         <AddExpense />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/add-members",
+    element: (
+      <ProtectedRoute>
+        <AddMembers />
       </ProtectedRoute>
     ),
   },
