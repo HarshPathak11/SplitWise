@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { FaHome } from 'react-icons/fa';
 
 const SignUp = () => {
   const [username, setUserName] = useState('');
@@ -22,7 +23,7 @@ const SignUp = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://192.168.1.5:8000/send-otp', {
+      const response = await axios.post('http://192.168.1.7:8000/send-otp', {
         email,
         username,
       });
@@ -47,7 +48,7 @@ const SignUp = () => {
 
   const handleOtpVerify = async () => {
     try {
-      const response = await axios.post('http://192.168.1.5:8000/verify-otp', {
+      const response = await axios.post('http://192.168.1.7:8000/verify-otp', {
         email,
         otp,
         otpGenerated,
@@ -69,6 +70,15 @@ const SignUp = () => {
 
   return (
     <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center min-h-screen overflow-hidden">
+      <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
+        <button
+          onClick={() => navigate("/")} // Navigate to the landing page route
+          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
+          title="Back to Landing Page"
+        >
+          <FaHome className="text-white text-xl" />
+        </button>
+      </div>
       {/* Animated Background */}
       <div className="absolute inset-0 z-0">
         <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move-opposite"></div>

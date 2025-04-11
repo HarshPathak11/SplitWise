@@ -56,6 +56,28 @@ const ForgotPassword = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+    <div className="absolute top-4 left-4">
+        <button
+          onClick={() => navigate("/login")}
+          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-110 transition-transform duration-300 ease-in-out"
+          title="Back to Login"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 sm:h-6 sm:w-6 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+      </div>
       <div className="max-w-md w-full p-8 bg-glass rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold mb-6">Forgot Password</h2>
         <p className="mb-4">

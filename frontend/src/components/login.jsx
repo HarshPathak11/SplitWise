@@ -1,40 +1,67 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import React, { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { FaHome } from "react-icons/fa";
 
 const LogIn = () => {
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const navigate = useNavigate();
+
+  //UseEffect to Check if user logged in before or not if yes then directly take them to dashboard
+  useEffect(() => {
+    async function getDetails() {
+      const userId = Cookies.get("id");
+      if (userId) {
+        try {
+          navigate("/dash");
+        } catch (err) {
+          console.error("Error fetching user:", err);
+        }
+      }
+    }
+    // console.log("user set as ",user);
+
+    getDetails();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('email and password ', email, password);
+    console.log("email and password ", email, password);
     try {
       if (!email || !password) {
-        alert('Please fill in all fields.');
+        alert("Please fill in all fields.");
         return;
       }
 
-      const response = await axios.post(`http://192.168.1.5:8000/login`, {
+      const response = await axios.post(`http://192.168.1.7:8000/login`, {
         email,
         password,
       });
-      
+
       if (response.data.user) {
-        Cookies.set('id', response.data.user._id, { expires: 7 });
-        navigate('/dash');
+        Cookies.set("id", response.data.user._id, { expires: 7 });
+        navigate("/dash");
       }
     } catch (error) {
-      console.error('Error logging in:', error);
-      console.log('error ', error.response.data);
-      alert('Login failed');
+      console.error("Error logging in:", error);
+      console.log("error ", error.response.data);
+      alert("Login failed");
     }
   };
 
   return (
     <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex items-center justify-center min-h-screen overflow-hidden">
+      <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
+        <button
+          onClick={() => navigate("/")} // Navigate to the landing page route
+          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
+          title="Back to Landing Page"
+        >
+          <FaHome className="text-white text-xl" />
+        </button>
+      </div>
       {/* Animated Background */}
       <div className="absolute inset-0 z-0">
         <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
@@ -50,12 +77,17 @@ const LogIn = () => {
           <div className="flex justify-between items-center mb-6 mt-16">
             <div className="text-2xl font-bold text-white">LOGIN</div>
             <Link to="/signup">
-              <div className="text-xl text-white cursor-pointer hover:underline">SIGN UP</div>
+              <div className="text-xl text-white cursor-pointer hover:underline">
+                SIGN UP
+              </div>
             </Link>
           </div>
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label className="block text-white text-sm font-bold mb-2" htmlFor="email">
+              <label
+                className="block text-white text-sm font-bold mb-2"
+                htmlFor="email"
+              >
                 Email Address
               </label>
               <input
@@ -68,7 +100,10 @@ const LogIn = () => {
               />
             </div>
             <div className="mb-4">
-              <label className="block text-white text-sm font-bold mb-2" htmlFor="password">
+              <label
+                className="block text-white text-sm font-bold mb-2"
+                htmlFor="password"
+              >
                 Password
               </label>
               <input
@@ -81,7 +116,10 @@ const LogIn = () => {
               />
             </div>
             <div className="text-right mb-4">
-              <Link to="/forgot-password" className="text-sm text-slate-300 hover:text-blue-300 hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-slate-300 hover:text-blue-300 hover:underline"
+              >
                 Forgot your password?
               </Link>
             </div>

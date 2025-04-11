@@ -12,7 +12,7 @@ import FriendCard from "./FriendCard";
 const Dashboard = () => {
   const navigate = useNavigate();
   const [friends, setFriends] = useState([
-    { name: "Alice", balance: 50, }, // Positive balance means they owe you
+    { name: "Alice", balance: 50 }, // Positive balance means they owe you
     { name: "Bob", balance: -30 }, // Negative balance means you owe them
     { name: "Charlie", balance: 0 }, // Zero balance means settled
     { name: "John", balance: 100 },
@@ -76,7 +76,7 @@ const Dashboard = () => {
       if (!user) {
         try {
           const response = await axios.get(
-            `http://localhost:8000/user/${userId}`
+            `http://192.168.1.7:8000/user/${userId}`
           );
           // console.log("response is ", response);
 
@@ -218,19 +218,67 @@ const Dashboard = () => {
                   <div className="absolute top-4 right-4 bg-yellow-400 text-black px-2 py-0.5 rounded-full text-xs font-semibold">
                     GOLD MEMBER
                   </div>
-                  <div className="w-12 h-8 bg-yellow-300 rounded-sm mb-4 shadow-md"></div>
-                  <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-16 h-12 rounded-lg shadow-md flex items-center justify-center p-1">
+                    <svg viewBox="0 0 100 80" width="100%" height="100%">
+                      <rect
+                        x="5"
+                        y="5"
+                        width="90"
+                        height="70"
+                        rx="10"
+                        ry="10"
+                        fill="#facc15"
+                        stroke="#b45309"
+                        strokeWidth="2"
+                      />
+
+                      <line
+                        x1="5"
+                        y1="30"
+                        x2="95"
+                        y2="30"
+                        stroke="#78350f"
+                        strokeWidth="2"
+                      />
+                      <line
+                        x1="5"
+                        y1="50"
+                        x2="95"
+                        y2="50"
+                        stroke="#78350f"
+                        strokeWidth="2"
+                      />
+
+                      <line
+                        x1="35"
+                        y1="5"
+                        x2="35"
+                        y2="75"
+                        stroke="#78350f"
+                        strokeWidth="2"
+                      />
+                      <line
+                        x1="65"
+                        y1="5"
+                        x2="65"
+                        y2="75"
+                        stroke="#78350f"
+                        strokeWidth="2"
+                      />
+                    </svg>
+                  </div>
+
+                  <div className="flex items-center mt-2 space-x-4 mb-1">
                     <div className="w-10 h-10 bg-white text-indigo-700 rounded-full flex items-center justify-center font-bold text-md border-2 border-white shadow">
                       {initials}
                     </div>
                     <div className="text-lg font-semibold tracking-wider uppercase">
-                      {user?.fullName}
+                      {user?.username}
                     </div>
                   </div>
                   <div className="font-mono text-xl tracking-widest mb-2">
                     1234 5688 9012 {last4}
                   </div>
-
                   <div className="text-sm mb-4">
                     <p className="text-gray-300">Joined</p>
                     <p className="font-semibold">01/25</p>
@@ -290,7 +338,7 @@ const Dashboard = () => {
                 amount="326.80"
                 iconColor="bg-blue-500"
                 paidBy="John Doe"
-                beneficiaries={["Alice", "Bob", "Charlie"]}
+                beneficiaries={["Alice", "Bob", "Charlie", "Jane"]}
               />
               <ExpenseCard
                 category="Transportation"
@@ -369,10 +417,10 @@ const Dashboard = () => {
           </div>
           <div className="backdrop-blur-lg bg-gray-800/30 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1 p-2 mb-auto h-42">
             <div className="flex justify-between items-center mb-2 sm:mb-1">
-              <h2 className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 mr-12">
+              <h2 className="text-lg sm:text-xl mb-2 font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 mr-12">
                 Friends
               </h2>
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center mb-2 gap-2 ml-auto">
                 {/* Search Input */}
                 <input
                   type="text"
