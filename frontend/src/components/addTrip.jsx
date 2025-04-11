@@ -1,28 +1,50 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom"; // Import useNavigate and Link for navigation
+import { Link } from "react-router-dom";
+import axios from "axios";
+import Cookies from "js-cookie";
 
 const AddTrip = () => {
-  const navigate = useNavigate(); // Initialize the navigation hook
+  const [tripName, setTripName] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [totalAmount, setTotalAmount] = useState("");
+  const [description, setDescription] = useState("");
+  const [error, setError] = useState("");
 
-  // State for friends list and selected friends
-  const [friends] = useState(["Alice", "Bob", "Charlie", "David"]); // Example friends list
-  const [selectedFriends, setSelectedFriends] = useState([]);
-
-  // Handle friend selection
-  const handleFriendSelection = (friend) => {
-    if (selectedFriends.includes(friend)) {
-      setSelectedFriends(selectedFriends.filter((f) => f !== friend));
-    } else {
-      setSelectedFriends([...selectedFriends, friend]);
+  const handleAddTrip = async (e) => {
+    e.preventDefault();
+    try {
+      const userId = Cookies.get("id");
+      const response = await axios.post("http://localhost:8000/trip", {
+        name: tripName,
+        fromDate,
+        toDate,
+        totalAmount,
+        description,
+        userId,
+      });
+      if (response.status === 200) {
+        // Redirect to dashboard or another page
+      }
+    } catch (err) {
+      setError("Error adding trip");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col items-center justify-center px-4 sm:px-6 py-6 sm:py-8 ">
-      {/* Back to Dashboard Button */}
+    <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
+
+      <div className="absolute inset-0 z-0">
+        <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
+        <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
+        <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
+        <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
+        <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
+      </div>
+      
       <div className="absolute top-4 left-4">
+        <Link to="/dash">
         <button
-          onClick={() => navigate("/dash")}
           className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-110 transition-transform duration-300 ease-in-out"
           title="Back to Dashboard"
         >
@@ -41,82 +63,67 @@ const AddTrip = () => {
             />
           </svg>
         </button>
+        </Link>
       </div>
-
-      {/* Add Trip Form */}
-      <div className="bg-white/10 backdrop-blur-md p-6 sm:p-8 rounded-lg shadow-lg border border-white/20 w-full max-w-sm sm:max-w-md">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-          Add New Trip
-        </h2>
-        <form className="flex flex-col gap-4">
-          {/* Trip Name */}
-          <input
-            type="text"
-            placeholder="Enter trip name"
-            className="p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm sm:text-base"
-          />
-
-          {/* From and To Date Section */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* From Date */}
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1 text-gray-300">
-                From
+      
+      <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
+        <h2 className="text-2xl font-bold text-[#00F5FF] mb-4">Add Trip</h2>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        <form onSubmit={handleAddTrip}>
+          <div className="mb-4">
+            <label className="block text-white mb-2" htmlFor="tripName">
+              Trip Name
+            </label>
+            <input
+              type="text"
+              id="tripName"
+              value={tripName}
+              onChange={(e) => setTripName(e.target.value)}
+              className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3]"
+              required
+            />
+          </div>
+          <div className="mb-4 flex justify-between">
+            <div className="w-1/2 pr-2">
+              <label className="block text-white mb-2" htmlFor="fromDate">
+                From Date
               </label>
               <input
                 type="date"
-                className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm sm:text-base"
+                id="fromDate"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  // Reset toDate if fromDate changes
+                  if (toDate < e.target.value) {
+                    setToDate("");
+                  }
+                }}
+                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3]"
+                required
               />
             </div>
-
-            {/* To Date */}
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1 text-gray-300">
-                To
+            <div className="w-1/2 pl-2">
+              <label className="block text-white mb-2" htmlFor="toDate">
+                To Date
               </label>
               <input
                 type="date"
-                className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm sm:text-base"
+                id="toDate"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                min={fromDate} // Set min date to fromDate
+                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3]"
+                required
               />
             </div>
           </div>
-
-          {/* Trip Description */}
-          <textarea
-            placeholder="Enter trip description"
-            className="p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm sm:text-base resize-none"
-            rows="4"
-          ></textarea>
-
-          {/* Add Friends Section */}
-          <div>
-            <h3 className="text-lg font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-              Add Friends
-            </h3>
-            <div className="flex flex-col gap-2">
-              {friends.map((friend, index) => (
-                <label key={index} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    value={friend}
-                    checked={selectedFriends.includes(friend)}
-                    onChange={() => handleFriendSelection(friend)}
-                    className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
-                  />
-                  <span className="text-sm text-gray-300">{friend}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="p-3 rounded-full shadow-lg bg-gradient-to-r from-blue-800 via-sky-500 to-indigo-900 hover:from-purple-500 hover:via-blue-600 hover:to-green-600 text-white transition-transform duration-300 ease-in-out hover:scale-110 w-full flex justify-center">
-            <Link className="w-full flex justify-center" to="/dash">
-              <button >
-                Add Trip
-              </button>
-            </Link>
-          </div>
+          <button
+            type="submit"
+            className="w-full p-2 rounded bg-[#00F5FF] hover:bg-[#00FFA3] text-black transition-colors"
+          >
+            Add Trip
+          </button>
         </form>
       </div>
     </div>

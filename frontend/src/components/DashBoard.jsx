@@ -12,15 +12,15 @@ import FriendCard from "./FriendCard";
 const Dashboard = () => {
   const navigate = useNavigate();
   const [friends, setFriends] = useState([
-    { name: "Alice", balance: 50, }, // Positive balance means they owe you
-    { name: "Bob", balance: -30 }, // Negative balance means you owe them
-    { name: "Charlie", balance: 0 }, // Zero balance means settled
+    { name: "Alice", balance: 50 },
+    { name: "Bob", balance: -30 },
+    { name: "Charlie", balance: 0 },
     { name: "John", balance: 100 },
     { name: "Jane", balance: -20 },
-  ]); // Example friends list with balances
-  const [last4, setLast4] = useState(""); // State for last4
+  ]);
+  const [last4, setLast4] = useState("");
   const [isFlipped, setIsFlipped] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(""); // State for search query
+  const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState();
 
   const [trips] = React.useState([
@@ -60,7 +60,6 @@ const Dashboard = () => {
     },
   ]);
 
-  //UseEffect to set friends array when user changes
   useEffect(() => {
     if (user?.friends) {
       const friendsArray = Object.values(user.friends);
@@ -68,8 +67,6 @@ const Dashboard = () => {
     }
   }, [user]);
 
-  //UseEffect to fetch user details from backend
-  // and set it in state and localStorage whenever the page loads
   useEffect(() => {
     async function getDetails() {
       const userId = Cookies.get("id");
@@ -78,24 +75,21 @@ const Dashboard = () => {
           const response = await axios.get(
             `http://localhost:8000/user/${userId}`
           );
-          // console.log("response is ", response);
 
           if (response.status === 200) {
-            setUser(response.data.user); // Update state with fetched user data
-
-            localStorage.setItem("user", JSON.stringify(response.data)); // Cache in localStorage
+            setUser(response.data.user);
+            localStorage.setItem("user", JSON.stringify(response.data));
           }
         } catch (err) {
           console.error("Error fetching user:", err);
         }
       }
     }
-    // console.log("user set as ",user);
 
     getDetails();
   }, []);
 
-  const upiId = user?.upiId || ""; // Replace with actual UPI ID logic
+  const upiId = user?.upiId || "";
 
   const getInitials = (name) =>
     name
@@ -117,51 +111,43 @@ const Dashboard = () => {
     fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
 
   const qrValue = upiId ? `upi://pay?pa=${upiId}&cu=INR` : randomQuote;
-  // const joinDate = new Date(user.createdAt).toLocaleDateString();
   const initials = getInitials(user?.username);
 
-  // Generate or retrieve last4 using cookies
   useEffect(() => {
     let storedLast4 = Cookies.get("last4");
 
     if (!storedLast4) {
       storedLast4 = Math.floor(1000 + Math.random() * 9000).toString();
-      Cookies.set("last4", storedLast4); // Store in cookies
+      Cookies.set("last4", storedLast4);
     }
 
     setLast4(storedLast4);
   }, []);
 
-  // Function to handle friend deletion
   const handleDeleteFriend = (friendToDelete) => {
     setFriends(friends.filter((friend) => friend.name !== friendToDelete));
   };
 
-  // Function to handle trip click
   const handleTripClick = (trip) => {
-    navigate("/tripDetails", { state: { trip } }); // Pass trip details to TripDetails page
+    navigate("/tripDetails", { state: { trip } });
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
-      {/* Animated background elements */}
+    <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-[10px] opacity-50">
-          <div className="absolute top-0 -left-4 w-48 md:w-72 h-48 md:h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-          <div className="absolute top-0 -right-4 w-48 md:w-72 h-48 md:h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute top-0 -left-4 w-48 md:w-72 h-48 md:h-72 bg-[#9e27ff] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute top-0 -right-4 w-48 md:w-72 h-48 md:h-72 bg-[#00FFA3] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
           <div className="absolute -bottom-8 left-20 w-48 md:w-72 h-48 md:h-72 bg-gray-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
       </div>
 
-      {/* Main container */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 ">
-        {/* Left side: Expenses */}
         <div className="lg:col-span-1 space-y-4 md:space-y-6">
-          {/* Title */}
-          <div className="backdrop-blur-lg bg-gray-800/30 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
+          <div className="backdrop-blur-lg bg-[rgba(255,255,255,0.1)] p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 hover:animate-text">
+                <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
                   Fair Fare
                 </h1>
                 <p className="text-sm sm:text-base text-gray-400">DashBoard</p>
@@ -177,7 +163,6 @@ const Dashboard = () => {
                     </button>
                   </Link>
                 </div>
-                {/* Sign Out Button */}
                 <Link to="/">
                   <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer">
                     <svg
@@ -199,7 +184,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Flippable Card */}
           <div
             className="col-span-1 relative cursor-pointer"
             onClick={() => setIsFlipped(!isFlipped)}
@@ -210,7 +194,6 @@ const Dashboard = () => {
                   isFlipped ? "rotate-y-180" : ""
                 }`}
               >
-                {/* Front Side */}
                 <div className="absolute w-full h-full backface-hidden bg-gradient-to-tr from-indigo-700 via-purple-700 to-pink-600 text-white rounded-2xl p-6 shadow-2xl">
                   <div className="text-lg font-bold tracking-widest uppercase mt-4 mb-2">
                     FairFare Card
@@ -218,13 +201,59 @@ const Dashboard = () => {
                   <div className="absolute top-4 right-4 bg-yellow-400 text-black px-2 py-0.5 rounded-full text-xs font-semibold">
                     GOLD MEMBER
                   </div>
-                  <div className="w-12 h-8 bg-yellow-300 rounded-sm mb-4 shadow-md"></div>
-                  <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-16 h-12 mb-1 rounded-lg shadow-md flex items-center justify-center p-1">
+                    <svg viewBox="0 0 100 80" width="100%" height="100%">
+                      <rect
+                        x="5"
+                        y="5"
+                        width="90"
+                        height="70"
+                        rx="10"
+                        ry="10"
+                        fill="#facc15"
+                        stroke="#b45309"
+                        strokeWidth="2"
+                      />
+                      <line
+                        x1="5"
+                        y1="30"
+                        x2="95"
+                        y2="30"
+                        stroke="#78350f"
+                        strokeWidth="2"
+                      />
+                      <line
+                        x1="5"
+                        y1="50"
+                        x2="95"
+                        y2="50"
+                        stroke="#78350f"
+                        strokeWidth="2"
+                      />
+                      <line
+                        x1="35"
+                        y1="5"
+                        x2="35"
+                        y2="75"
+                        stroke="#78350f"
+                        strokeWidth="2"
+                      />
+                      <line
+                        x1="65"
+                        y1="5"
+                        x2="65"
+                        y2="75"
+                        stroke="#78350f"
+                        strokeWidth="2"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex items-center space-x-4 mb-1 mt-2">
                     <div className="w-10 h-10 bg-white text-indigo-700 rounded-full flex items-center justify-center font-bold text-md border-2 border-white shadow">
                       {initials}
                     </div>
                     <div className="text-lg font-semibold tracking-wider uppercase">
-                      {user?.fullName}
+                      {user?.username}
                     </div>
                   </div>
                   <div className="font-mono text-xl tracking-widest mb-2">
@@ -240,7 +269,6 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Back Side */}
                 <div className="absolute w-full h-full backface-hidden bg-gray-800 text-white rounded-2xl p-6 shadow-2xl transform rotate-y-180 flex flex-col items-center justify-center">
                   <h3 className="text-lg font-semibold mb-2">
                     {upiId ? "Scan to Pay" : "Your Daily Motivation"}
@@ -277,9 +305,8 @@ const Dashboard = () => {
       `}</style>
           </div>
 
-          {/* Today's expenses */}
-          <div className="backdrop-blur-lg bg-gray-800/30 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
-            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+          <div className="backdrop-blur-lg bg-[rgba(255,255,255,0.1)] p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
+            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3]">
               Recent
             </h2>
             <div className="space-y-3 sm:space-y-4">
@@ -305,18 +332,16 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Right side: Trips, Friends and Groups */}
         <div className="space-y-4 h-full flex flex-col">
-          {/* Trips Section */}
-          <div className="backdrop-blur-lg bg-gray-800/30 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1">
+          <div className="backdrop-blur-lg bg-[rgba(255,255,255,0.1)] p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1">
             <div className="flex justify-between items-center mb-2 sm:mb-3">
-              <h2 className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+              <h2 className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3]">
                 Trips & Events
               </h2>
               <Link to="/addTrip">
                 <button
                   type="submit"
-                  className="p-2 rounded-full bg-green-600 hover:bg-green-700 text-white transition-colors"
+                  className="p-2 rounded-full bg-blue-600 hover:bg-blue-800 text-white transition-colors"
                   title="Add Trip"
                 >
                   <svg
@@ -339,18 +364,16 @@ const Dashboard = () => {
 
             <div className="space-y-2 cursor-pointer overflow-y-auto">
               {trips.length === 0 ? (
-                // Error message when no trips are found
                 <p className="text-red-500 text-center font-semibold">
                   No trips found.
                 </p>
               ) : (
-                // Render trips list if trips are found
                 trips.map((trip) => (
                   <TripCard
                     key={trip.id}
                     trip={trip}
                     onClick={() => handleTripClick(trip)}
-                  ></TripCard> // Pass trip details to TripDetails page
+                  ></TripCard>
                 ))
               )}
             </div>
@@ -367,13 +390,13 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="backdrop-blur-lg bg-gray-800/30 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1 p-2 mb-auto h-42">
+          
+          <div className="backdrop-blur-lg bg-[rgba(255,255,255,0.1)] sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1 p-2 mb-auto h-42">
             <div className="flex justify-between items-center mb-2 sm:mb-1">
-              <h2 className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 mr-12">
+              <h2 className="text-lg sm:text-xl mb-2 font-semibold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] mr-12">
                 Friends
               </h2>
-              <div className="flex items-center gap-2 ml-auto">
-                {/* Search Input */}
+              <div className="flex items-center mb-2 gap-2 ml-auto">
                 <input
                   type="text"
                   value={searchQuery}
@@ -381,12 +404,10 @@ const Dashboard = () => {
                   placeholder="Search friend's name"
                   className="bg-gray-700/50 text-white px-2 py-1 rounded-lg border border-gray-600/30 focus:outline-none focus:border-blue-500 text-xs sm:text-sm"
                 />
-
-                {/* Add Friend Button */}
                 <Link to="/addFriend">
                   <button
                     type="submit"
-                    className="p-2 rounded-full bg-green-600 hover:bg-green-700 text-white transition-colors"
+                    className="p-2 rounded-full bg-blue-600 hover:bg-blue-800 text-white transition-colors"
                     title="Add Friend"
                   >
                     <svg
@@ -408,17 +429,14 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Friends List */}
             <div className="space-y-2 overflow-y-auto">
               {friends.filter((friend) =>
                 friend.name.toLowerCase().includes(searchQuery.toLowerCase())
               ).length === 0 ? (
-                // Error message when no friends are found
                 <p className="text-red-500 text-center font-semibold">
                   No friends found.
                 </p>
               ) : (
-                // Render friends list if friends are found
                 friends
                   .filter((friend) =>
                     friend.name

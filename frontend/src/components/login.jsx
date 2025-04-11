@@ -1,40 +1,50 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import Cookies from 'js-cookie';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { FaHome } from "react-icons/fa"; // Import the home icon
 
 const LogIn = () => {
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('email and password ', email, password);
+    console.log("email and password ", email, password);
     try {
       if (!email || !password) {
-        alert('Please fill in all fields.');
+        alert("Please fill in all fields.");
         return;
       }
 
-      const response = await axios.post(`http://192.168.1.5:8000/login`, {
+      const response = await axios.post(`http://192.168.156.226:8000/login`, {
         email,
         password,
       });
-      
+
       if (response.data.user) {
-        Cookies.set('id', response.data.user._id, { expires: 7 });
-        navigate('/dash');
+        Cookies.set("id", response.data.user._id, { expires: 7 });
+        navigate("/dash");
       }
     } catch (error) {
-      console.error('Error logging in:', error);
-      console.log('error ', error.response.data);
-      alert('Login failed');
+      console.error("Error logging in:", error);
+      console.log("error ", error.response.data);
+      alert("Login failed");
     }
   };
 
   return (
-    <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex items-center justify-center min-h-screen overflow-hidden">
+    <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
+      <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
+        <button
+          onClick={() => navigate("/")} // Navigate to the landing page route
+          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
+          title="Back to Landing Page"
+        >
+          <FaHome className="text-white text-xl" />
+        </button>
+      </div>
       {/* Animated Background */}
       <div className="absolute inset-0 z-0">
         <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
@@ -48,14 +58,17 @@ const LogIn = () => {
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
           <div className="flex justify-between items-center mb-6 mt-16">
-            <div className="text-2xl font-bold text-white">LOGIN</div>
+            <div className="text-2xl font-bold text-[#00F5FF]">LOGIN</div>
+
             <Link to="/signup">
-              <div className="text-xl text-white cursor-pointer hover:underline">SIGN UP</div>
+              <div className="text-xl text-[#00F5FF] cursor-pointer hover:underline">
+                SIGN UP
+              </div>
             </Link>
           </div>
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label className="block text-white text-sm font-bold mb-2" htmlFor="email">
+              <label className="block text-white mb-2" htmlFor="email">
                 Email Address
               </label>
               <input
@@ -63,12 +76,12 @@ const LogIn = () => {
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="Email Address"
+                placeholder="Enter your Email Address"
                 className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300"
               />
             </div>
             <div className="mb-4">
-              <label className="block text-white text-sm font-bold mb-2" htmlFor="password">
+              <label className="block text-white mb-2" htmlFor="password">
                 Password
               </label>
               <input
@@ -81,13 +94,16 @@ const LogIn = () => {
               />
             </div>
             <div className="text-right mb-4">
-              <Link to="/forgot-password" className="text-sm text-slate-300 hover:text-blue-300 hover:underline">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-slate-300 hover:text-blue-300 hover:underline"
+              >
                 Forgot your password?
               </Link>
             </div>
             <button
               type="submit"
-              className="w-full py-2 px-4 bg-slate-900 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105"
+              className="w-full py-2 px-4 bg-[#00F5FF] text-black rounded-lg hover:bg-green-400 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105"
             >
               Login
             </button>

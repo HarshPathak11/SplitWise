@@ -5,7 +5,7 @@ const Features = () => {
   const navigate = useNavigate(); // Initialize the navigation hook
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#000000]  text-white flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
       {/* Back to Landing Page Icon */}
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
         <button

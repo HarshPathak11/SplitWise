@@ -11,6 +11,7 @@ import AddFriend from "./components/addFriend";
 import AddTrip from "./components/addTrip";
 import ForgotPassword from "./components/forgotPassword";
 import TripDetails from "./components/tripDetails";
+import AddExpense from "./components/addExpense"
 
 const router = createBrowserRouter([
   {
@@ -26,6 +27,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <Profile />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/addExpense",
+    element: (
+      <ProtectedRoute>
+        <AddExpense />
       </ProtectedRoute>
     ),
   },

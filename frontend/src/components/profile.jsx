@@ -23,7 +23,9 @@ const Profile = () => {
     async function getDetails() {
       if (!user && userId) {
         try {
-          const response = await axios.get(`http://localhost:8000/user/${userId}`);
+          const response = await axios.get(
+            `http://localhost:8000/user/${userId}`
+          );
           if (response.status === 200) {
             const fetchedUser = response.data.user;
             setUser(fetchedUser);
@@ -49,7 +51,10 @@ const Profile = () => {
 
     try {
       const userId = Cookies.get("id");
-      const response = await axios.put(`http://localhost:8000/user/${userId}`, profile);
+      const response = await axios.put(
+        `http://localhost:8000/user/${userId}`,
+        profile
+      );
 
       if (response.status === 200) {
         const fetchedUser = response.data.user;
@@ -60,8 +65,6 @@ const Profile = () => {
           email: fetchedUser.email || "",
           mobile: fetchedUser.mobile || "",
           upiId: fetchedUser.upiId || "",
-          dob: fetchedUser.dob || "",
-          currency: fetchedUser.currency || ""
         });
 
         navigate("/dash");
@@ -74,7 +77,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white flex flex-col items-center justify-center px-6 p-8">
+    <div className=" relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
         <button
           onClick={() => navigate("/dash")}
@@ -89,32 +92,49 @@ const Profile = () => {
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
+      </div>
+
+       {/* Animated Background */}
+       <div className="absolute inset-0 z-0">
+        <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
+        <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
+        <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
+        <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
+        <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
       </div>
 
       <form
         onSubmit={handleSubmit}
         action="javascript:void(0);"
-        className="bg-white/10 backdrop-blur-md p-8 rounded-lg shadow-lg border border-white/20 w-full max-w-md"
+        className="bg-[rgba(255,255,255,0.1)] backdrop-blur-md p-8 rounded-lg shadow-lg border border-white/20 w-full max-w-md"
       >
-        <h2 className="text-2xl font-bold mb-6 text-center">Edit Profile</h2>
+        <h2 className="text-2xl font-bold mb-4 text-center text-[#00F5FF]">Edit Profile</h2>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Username</label>
+          <label className="block text-sm font-medium mb-2 text-[#00F5FF]">
+            Username
+          </label>
           <input
             type="text"
             name="username"
             value={profile.username}
             onChange={handleChange}
-            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Enter your username"
           />
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Email</label>
+          <label className="block text-sm font-medium mb-2 text-[#00F5FF]">
+            Email
+          </label>
           <input
             type="email"
             name="email"
@@ -126,19 +146,9 @@ const Profile = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Mobile Number</label>
-          <input
-            type="tel"
-            name="mobile"
-            value={profile.mobile}
-            onChange={handleChange}
-            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your mobile number"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">UPI ID [Mandatory Field]</label>
+          <label className="block text-sm font-medium mb-2 text-[#00F5FF]">
+            UPI ID [Mandatory Field]
+          </label>
           <input
             type="text"
             name="upiId"
@@ -149,36 +159,9 @@ const Profile = () => {
           />
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Date of Birth</label>
-          <input
-            type="date"
-            name="dob"
-            value={profile.dob}
-            onChange={handleChange}
-            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Default Currency</label>
-          <select
-            name="currency"
-            value={profile.currency}
-            onChange={handleChange}
-            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select Currency</option>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="INR">INR</option>
-            <option value="GBP">GBP</option>
-          </select>
-        </div>
-
         <button
           type="submit"
-          className="w-full p-2 rounded-lg bg-gradient-to-r from-blue-800 via-sky-500 to-indigo-900 hover:from-purple-500 hover:via-blue-600 hover:to-green-600"
+          className="w-full p-2 mt-3 rounded-lg bg-gradient-to-r from-[#00FFA3] to-[#A020F0] hover:from-purple-500 hover:to-[#00FFA3]"
         >
           Save Changes
         </button>

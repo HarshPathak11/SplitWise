@@ -5,7 +5,7 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
   return (
     <div
       key={index}
-      className="bg-gray-700/50 backdrop-blur-sm rounded-lg border border-gray-600/30 p-2 sm:p-3 flex justify-between items-center"
+      className="bg-gray-700/50 backdrop-blur-sm rounded-lg border border-gray-600/30 p-2 sm:p-3 flex justify-between items-center cursor-pointer"
     >
       <div>
         <p className="text-sm text-white">{friend.name}</p>
