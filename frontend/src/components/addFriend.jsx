@@ -51,7 +51,7 @@ const AddFriend = () => {
 
   const handleDone = async () => {
 
-    if (!user.user?.email) {
+    if (!user?.email) {
       alert("User not loaded. Please wait a moment.");
       return;
     }
@@ -64,8 +64,8 @@ const AddFriend = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post("http://192.168.1.7:8000/add-friends", {
-        email: user.user?.email,
+      const response = await axios.post("http://192.168.1.7:8000/user/add-friends", {
+        email: user?.email,
         friendsArray: friends.map((friend) => friend.email),
       });
 
@@ -89,7 +89,14 @@ const AddFriend = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col items-center justify-center px-4 sm:px-6 py-6 sm:py-8">
+    <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
+        <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
+        <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
+        <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
+        <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
+      </div>
       {/* Back to Dashboard Button */}
       <div className="absolute top-4 left-4">
         <button
@@ -115,8 +122,8 @@ const AddFriend = () => {
       </div>
 
       {/* Add Friend Form */}
-      <div className="bg-white/10 backdrop-blur-md p-6 sm:p-8 rounded-lg shadow-lg border border-white/20 w-full max-w-sm sm:max-w-md">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-center bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+      <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
+        <h2 className="text-2xl font-bold text-[#00F5FF] mb-6 text-center">
           Add New Friend
         </h2>
         <div className="flex flex-col gap-3 mb-4 sm:mb-6">
@@ -132,7 +139,7 @@ const AddFriend = () => {
           <button
             onClick={handleAddFriend}
             disabled={loading}
-            className="p-2 sm:p-3 rounded-full shadow-lg bg-gradient-to-r from-blue-800 via-sky-500 to-indigo-900 text-white transition-transform duration-300 ease-in-out hover:scale-110 w-16 sm:w-20 flex justify-center ml-auto"
+            className="p-2 sm:p-3 rounded-full shadow-lg bg-[#00F5FF] text-black hover:bg-green-400 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105 flex justify-center ml-auto"
             title="Add Friend"
           >
             <svg
@@ -153,7 +160,7 @@ const AddFriend = () => {
         </div>
 
         {/* Friends List */}
-        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 bg-clip-text text-transparent bg-[#00F5FF]">
           Friends List
         </h3>
         <ul className="space-y-2">
@@ -184,10 +191,10 @@ const AddFriend = () => {
         <button
           onClick={handleDone}
           disabled={friends.length === 0 || loading}
-          className={`mt-6 w-full py-2 px-4 rounded-lg text-white ${
+          className={`mt-6 w-full py-2 px-4 rounded-lg text-black ${
             friends.length === 0
               ? "bg-gray-500 cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-800 via-sky-500 to-indigo-900 hover:from-purple-500 hover:via-blue-600 hover:to-green-600"
+              : "bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:from-[#00FFA3] hover:to-[#00F5FF]"
           } transition-colors duration-300`}
         >
           {loading ? "Saving..." : "DONE"}

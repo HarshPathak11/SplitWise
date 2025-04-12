@@ -1,56 +1,45 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import TripCard from "./tripCard"; // Adjust the path if needed
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import Cookies from "js-cookie";
+import TripCard from "./tripCard"; // adjust path as needed
 
 const TripsSection = () => {
   const navigate = useNavigate();
-  const [trips] = useState([
-    {
-      id: 1,
-      name: "Goa Trip",
-      date: "15-20 May 2023",
-      totalAmount: 25000,
-      participants: 5,
-      friends: [
-        { name: "Alice", balance: 500 },
-        { name: "Bob", balance: -300 },
-        { name: "Charlie", balance: 0 },
-      ],
-    },
-    {
-      id: 2,
-      name: "Weekend Getaway",
-      date: "10-12 Aug 2023",
-      totalAmount: 12000,
-      participants: 3,
-      friends: [
-        { name: "John", balance: 200 },
-        { name: "Jane", balance: -150 },
-      ],
-    },
-    {
-      id: 3,
-      name: "Birthday Party",
-      date: "5 Sep 2023",
-      totalAmount: 8000,
-      participants: 8,
-      friends: [
-        { name: "John", balance: 200 },
-        { name: "Jane", balance: -150 },
-      ],
-    },
-  ]);
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Function to handle trip click
+  // Fetch trips for the current user
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        const userId = Cookies.get("id"); // user ID stored in cookies as "id"
+
+        if (!userId) {
+          console.error("User ID not found in cookies.");
+          return;
+        }
+
+        const response = await axios.get(`http://192.168.1.7:8000/group/user-groups/${userId}`);
+        setTrips(response.data || []);
+      } catch (error) {
+        console.error("Error fetching trips:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrips();
+  }, []);
+
   const handleTripClick = (trip) => {
-    navigate("/tripDetails", { state: { trip } }); // Pass trip details to TripDetails page
+    navigate(`/tripDetails/${trip._id}`);
   };
 
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1">
       <div className="flex justify-between items-center mb-2 sm:mb-3">
-        <h2 className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+        <h2 className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3]">
           Trips & Events
         </h2>
 
@@ -58,7 +47,7 @@ const TripsSection = () => {
           <Link to="/allTrips">
             <button
               type="button"
-              className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+              className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors mt-1"
               title="Show All Trips"
             >
               Show All
@@ -67,8 +56,8 @@ const TripsSection = () => {
 
           <Link to="/addTrip">
             <button
-              type="submit"
-              className="p-2 rounded-full bg-green-600 hover:bg-green-700 text-white transition-colors"
+              type="button"
+              className="p-2 rounded-full bg-blue-600 hover:bg-blue-800 text-white transition-colors"
               title="Add Trip"
             >
               <svg
@@ -91,14 +80,16 @@ const TripsSection = () => {
       </div>
 
       <div className="space-y-2 cursor-pointer overflow-y-auto">
-        {trips.length === 0 ? (
+        {loading ? (
+          <p className="text-blue-400 text-center">Loading trips...</p>
+        ) : trips.length === 0 ? (
           <p className="text-red-500 text-center font-semibold">
             No trips found.
           </p>
         ) : (
-          trips.map((trip) => (
+          trips.map((trip) => (            
             <TripCard
-              key={trip.id}
+              key={trip._id}
               trip={trip}
               onClick={() => handleTripClick(trip)}
             />
@@ -106,17 +97,19 @@ const TripsSection = () => {
         )}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-gray-700/50">
-        <div className="flex justify-between items-center">
-          <p className="text-sm font-medium">Total Spent on Trips:</p>
-          <p className="text-lg font-bold text-green-400">
-            ₹
-            {trips
-              .reduce((sum, trip) => sum + trip.totalAmount, 0)
-              .toLocaleString()}
-          </p>
+      {/* {!loading && trips.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-700/50">
+          <div className="flex justify-between items-center">
+            <p className="text-sm font-medium">Total Spent on Trips:</p>
+            <p className="text-lg font-bold text-green-400">
+              ₹
+              {trips
+                .reduce((sum, trip) => sum + (trip.totalAmount || 0), 0)
+                .toLocaleString()}
+            </p>
+          </div>
         </div>
-      </div>
+      )} */}
     </div>
   );
 };

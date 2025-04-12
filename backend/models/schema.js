@@ -17,6 +17,9 @@ const expenseSchema = new mongoose.Schema({
 // Group schema
 const groupSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  description: { type: String },
+  from: {type:Date},
+  to: {type:Date},
   members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   expenses: [expenseSchema],
 }, { timestamps: true });
@@ -29,8 +32,8 @@ const userSchema = new mongoose.Schema({
   friends: [
     {
       friend: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      balance: { type: Number, default: 0 }
-    }
+      balance: { type: Number, default: 0 },
+    },
   ],
   groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
   recentExpense: [expenseSchema],

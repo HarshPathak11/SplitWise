@@ -35,11 +35,11 @@ const LogIn = () => {
         return;
       }
 
-      const response = await axios.post(`http://192.168.1.7:8000/login`, {
+      const response = await axios.post(`http://192.168.1.7:8000/user/login`, {
         email,
         password,
       });
-
+      console.log("response ", response.data);
       if (response.data.user) {
         Cookies.set("id", response.data.user._id, { expires: 7 });
         navigate("/dash");
@@ -52,7 +52,7 @@ const LogIn = () => {
   };
 
   return (
-    <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex items-center justify-center min-h-screen overflow-hidden">
+    <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
         <button
           onClick={() => navigate("/")} // Navigate to the landing page route
@@ -70,14 +70,13 @@ const LogIn = () => {
         <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
         <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
       </div>
-
       {/* Login Card */}
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
           <div className="flex justify-between items-center mb-6 mt-16">
-            <div className="text-2xl font-bold text-white">LOGIN</div>
+            <div className="text-2xl font-bold text-[#00f5ff]">LOGIN</div>
             <Link to="/signup">
-              <div className="text-xl text-white cursor-pointer hover:underline">
+              <div className="text-xl text-[#00f5ff] cursor-pointer hover:underline">
                 SIGN UP
               </div>
             </Link>
@@ -95,7 +94,7 @@ const LogIn = () => {
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="Email Address"
+                placeholder="Enter your your Email Address"
                 className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300"
               />
             </div>
@@ -125,7 +124,7 @@ const LogIn = () => {
             </div>
             <button
               type="submit"
-              className="w-full py-2 px-4 bg-slate-900 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105"
+              className="w-full py-2 px-4 bg-[#00f5ff] text-black rounded-lg hover:bg-green-700 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105"
             >
               Login
             </button>

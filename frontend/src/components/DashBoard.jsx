@@ -15,32 +15,32 @@ const Dashboard = () => {
   useEffect(() => {
     async function getDetails() {
       const userId = Cookies.get("id");
-      // console.log("userId is ", userId);
+      console.log("userId is ", userId);
       
       // if (!user) {
         try {
           const response = await axios.get(
             `http://192.168.1.7:8000/user/${userId}`
           );
-          // console.log("response is ", response);
+          console.log("response is ", response);
 
           if (response.status === 200) {
             setUser(response.data.user); // Update state with fetched user data
 
-            localStorage.setItem("user", JSON.stringify(response.data)); // Cache in localStorage
+            localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
           }
         } catch (err) {
           console.error("Error fetching user:", err);
         }
       // }
     }
-    // console.log("user set as ",user);
-
+    
     getDetails();
   }, []);
+  console.log("user set as ",user);
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
+    <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-[10px] opacity-50">
