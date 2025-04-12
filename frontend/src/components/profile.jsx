@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link , useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -158,6 +158,15 @@ const Profile = () => {
             placeholder="Enter your UPI ID"
           />
         </div>
+
+        <div className="text-right mb-4">
+              <Link
+                to="/reset-password"
+                className="text-sm text-slate-300 hover:text-blue-300 hover:underline"
+              >
+                Reset your password?
+              </Link>
+            </div>
 
         <button
           type="submit"

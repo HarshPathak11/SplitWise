@@ -18,7 +18,7 @@ const LogIn = () => {
         return;
       }
 
-      const response = await axios.post(`http://192.168.156.226:8000/login`, {
+      const response = await axios.post(`http://192.168.1.11:8000/login`, {
         email,
         password,
       });

@@ -122,6 +122,7 @@ const userLogin = async (req, res) => {
     // console.log("Stored password type:", typeof user.password);
 
     // Clean the input password
+    
     const cleanPassword = String(password).trim();
     // console.log("Cleaned input password:", cleanPassword);
 

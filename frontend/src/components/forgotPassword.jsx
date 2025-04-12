@@ -15,18 +15,19 @@ const ForgotPassword = () => {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-
-      const response = await axios.post("http://192.168.1.5:8000/forgot-password", {
-        email,
-      });
+      const response = await axios.post(
+        "http://192.168.1.5:8000/forgot-password",
+        {
+          email,
+        }
+      );
       if (response.status === 200) {
         setOtpSent(true);
         setOtpGenerated(response.data.otp);
       }
     } catch (error) {
       alert("Failed to send OTP.");
-      console.log("error is ",error);
-      
+      console.log("error is ", error);
     } finally {
       setLoading(false);
     }
@@ -35,21 +36,24 @@ const ForgotPassword = () => {
   const handleVerifyOtp = async () => {
     setLoading(true);
     try {
-      const response = await axios.post("http://192.168.1.5:8000/verify-forgot-password", {
-        otpGenerated,
-        otp,
-        email
-      });
+      const response = await axios.post(
+        "http://192.168.1.5:8000/verify-forgot-password",
+        {
+          otpGenerated,
+          otp,
+          email,
+        }
+      );
       if (response.status === 200) {
-        const user=response.data.user;
-        Cookies.set('id', user._id, { expires: 7 });
+        const user = response.data.user;
+        Cookies.set("id", user._id, { expires: 7 });
         localStorage.setItem("user", JSON.stringify({ user: user }));
         // Redirect to profile page
         navigate("/profile");
       }
     } catch (error) {
       alert("OTP verification failed.");
-      console.log("error is ",error);
+      console.log("error is ", error);
     } finally {
       setLoading(false);
     }
@@ -57,9 +61,8 @@ const ForgotPassword = () => {
 
   return (
     <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
-
-{/* Animated Background */}
-<div className="absolute inset-0 z-0">
+      {/* Animated Background */}
+      <div className="absolute inset-0 z-0">
         <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
         <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
         <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
@@ -77,9 +80,11 @@ const ForgotPassword = () => {
         </button>
       </div>
       <div className="max-w-md w-full p-8 bg-glass rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-[#00F5FF]">Forgot Password</h2>
+        <h2 className="text-2xl font-bold mb-6 text-[#00F5FF]">
+          Forgot Password
+        </h2>
         <p className="mb-4 text-white">
-          Please enter your email address to receive a password reset link.
+          Please enter your email address to varify otp.
         </p>
         <input
           type="email"

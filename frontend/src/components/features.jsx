@@ -5,7 +5,7 @@ const Features = () => {
   const navigate = useNavigate(); // Initialize the navigation hook
 
   return (
-    <div className="min-h-screen bg-[#000000]  text-white flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
       {/* Back to Landing Page Icon */}
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
         <button
@@ -35,56 +35,62 @@ const Features = () => {
       {/* Features Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Feature 1 */}
-        <div className="glass-container text-center p-6 sm:p-8 rounded-lg shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4">Make Unlimited Events</h2>
+        <div className="glass-container text-center p-6 sm:p-8 rounded-lg shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out  ">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">
+            Interactive Event Cards
+          </h2>
           <p className="text-sm sm:text-lg">
-            Create as many events as you want without any restrictions, making
-            it easier to manage group activities.
+            Event cards with detailed information and interactivity make it easier to track expenses.
           </p>
         </div>
 
         {/* Feature 2 */}
         <div className="glass-container text-center p-6 sm:p-8 rounded-lg shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4">Smart Settlement System</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">
+            Unlimited Events
+          </h2>
           <p className="text-sm sm:text-lg">
-            Automatically calculate and simplify settlements among group members
-            with ease.
+            Unlike Splitwise, our app allows users to create unlimited events without restrictions.
           </p>
         </div>
 
         {/* Feature 3 */}
         <div className="glass-container text-center p-6 sm:p-8 rounded-lg shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4">Smart Reminders</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">
+            Expense Tracking
+          </h2>
           <p className="text-sm sm:text-lg">
-            Get timely reminders to ensure no expense or payment is forgotten.
+            Detailed expense tracking with categories, descriptions, and beneficiaries.
           </p>
         </div>
 
         {/* Feature 4 */}
         <div className="glass-container text-center p-6 sm:p-8 rounded-lg shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4">No Credit Check Required</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">
+            Transparent Pricing
+          </h2>
           <p className="text-sm sm:text-lg">
-            Sign up without worrying about credit checks or financial history.
+            Clear and straightforward pricing plans (free and premium) make it easier for users to understand the value proposition.
           </p>
         </div>
 
         {/* Feature 5 */}
         <div className="glass-container text-center p-6 sm:p-8 rounded-lg shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out">
           <h2 className="text-xl sm:text-2xl font-bold mb-4">
-            Privacy-Focused Expense Management
+            Trip Management
           </h2>
           <p className="text-sm sm:text-lg">
-            Keep your financial data secure with our privacy-first approach to
-            expense management.
+            Features for managing trips, including expense breakdowns, friend selection, and payment types (equal/unequal).
           </p>
         </div>
 
         {/* Feature 6 */}
         <div className="glass-container text-center p-6 sm:p-8 rounded-lg shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4">Secure & Private</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">
+            Enhanced Aesthetics
+          </h2>
           <p className="text-sm sm:text-lg">
-            Protect your data with advanced encryption and privacy-focused
-            measures, ensuring your information stays safe.
+            A modern, visually appealing UI could attract users who value design and usability.
           </p>
         </div>
       </div>

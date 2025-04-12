@@ -9,11 +9,11 @@ import ProtectedRoute from "./components/ProtectedRoutes";
 import NotFound from "./NotFound";
 import AddFriend from "./components/addFriend";
 import AddTrip from "./components/addTrip";
-import ForgotPassword from "./components/forgotPassword";
 import TripDetails from "./components/tripDetails";
 import AddExpense from "./components/addExpense";
 import AddMembers from "./components/addMembers";
-
+import ForgotPassword from "./components/forgotPassword";
+import ResetPassword from "./components/resetPassword"
 const router = createBrowserRouter([
   {
     path: "/dash",
@@ -90,6 +90,10 @@ const router = createBrowserRouter([
   {
     path: "/forgot-password",
     element: <ForgotPassword />
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPassword />
   },
   {
     path: "*",

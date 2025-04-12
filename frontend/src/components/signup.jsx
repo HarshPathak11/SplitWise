@@ -25,7 +25,7 @@ const SignUp = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://192.168.156.226:8000/send-otp",
+        "http://192.168.1.11:5173/send-otp",
         {
           email,
           username,
@@ -50,7 +50,7 @@ const SignUp = () => {
   const handleOtpVerify = async () => {
     try {
       const response = await axios.post(
-        "http://192.168.156.226:8000/verify-otp",
+        "http://192.168.1.11:5173/verify-otp",
         {
           email,
           otp,

@@ -390,7 +390,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="backdrop-blur-lg bg-[rgba(255,255,255,0.1)] sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1 p-2 mb-auto h-42">
             <div className="flex justify-between items-center mb-2 sm:mb-1">
               <h2 className="text-lg sm:text-xl mb-2 font-semibold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] mr-12">
@@ -430,18 +430,22 @@ const Dashboard = () => {
             </div>
 
             <div className="space-y-2 overflow-y-auto">
-              {friends.filter((friend) =>
-                friend.name.toLowerCase().includes(searchQuery.toLowerCase())
+              {friends.filter(
+                (friend) =>
+                  friend.name &&
+                  friend.name.toLowerCase().includes(searchQuery.toLowerCase())
               ).length === 0 ? (
                 <p className="text-red-500 text-center font-semibold">
                   No friends found.
                 </p>
               ) : (
                 friends
-                  .filter((friend) =>
-                    friend.name
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase())
+                  .filter(
+                    (friend) =>
+                      friend.name &&
+                      friend.name
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase())
                   )
                   .map((friend, index) => (
                     <FriendCard
