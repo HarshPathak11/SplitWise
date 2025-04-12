@@ -9,10 +9,7 @@ const Profile = () => {
   const [profile, setProfile] = useState({
     username: "",
     email: "",
-    mobile: "",
     upiId: "",
-    dob: "",
-    currency: "",
   });
 
   const [user, setUser] = useState(null);
@@ -22,6 +19,8 @@ const Profile = () => {
 
     async function getDetails() {
       if (!user && userId) {
+        console.log("Fetching user details from backend...");
+        
         try {
           const response = await axios.get(
             `http://192.168.1.7:8000/user/${userId}`
@@ -62,11 +61,7 @@ const Profile = () => {
         setUser(fetchedUser);
         setProfile({
           username: fetchedUser.username || "",
-          email: fetchedUser.email || "",
-          mobile: fetchedUser.mobile || "",
           upiId: fetchedUser.upiId || "",
-          dob: fetchedUser.dob || "",
-          currency: fetchedUser.currency || "",
         });
 
         navigate("/dash");
@@ -128,33 +123,11 @@ const Profile = () => {
             type="email"
             name="email"
             value={profile.email}
-            onChange={handleChange}
-            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your email"
+            readOnly
+            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white cursor-not-allowed opacity-80"
+            placeholder="Email is not editable"
           />
         </div>
-
-        {/* <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">
-            Mobile Number
-          </label>
-          <input
-            type="tel"
-            name="mobile"
-            value={profile.mobile}
-            onChange={(e) => {
-              const value = e.target.value;
-              // Allow only digits
-              if (/^\d{0,10}$/.test(value)) {
-                handleChange(e);
-              }
-            }}
-            pattern="\d{10}"
-            maxLength={10}
-            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your 10-digit mobile number"
-          />
-        </div> */}
 
         <div className="mb-4">
           <label className="block text-sm font-medium mb-2">
@@ -170,45 +143,14 @@ const Profile = () => {
           />
         </div>
 
-        {/* <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">
-            Date of Birth
-          </label>
-          <input
-            type="date"
-            name="dob"
-            value={profile.dob}
-            onChange={handleChange}
-            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">
-            Default Currency
-          </label>
-          <select
-            name="currency"
-            value={profile.currency}
-            onChange={handleChange}
-            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select Currency</option>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="INR">INR</option>
-            <option value="GBP">GBP</option>
-          </select>
-        </div> */}
-
         <button
           type="submit"
-          disabled={profile.upiId === ""}
-          className={`w-full p-2 rounded-lg cursor-pointer transition
+          disabled={!profile.upiId}
+          className={`w-full p-2 rounded-lg transition
     ${
-      profile.upiId === ""
+      !profile.upiId
         ? "bg-gray-400 cursor-not-allowed"
-        : "bg-gradient-to-r from-blue-800 via-sky-500 to-indigo-900 hover:from-purple-500 hover:via-blue-600 hover:to-green-600"
+        : "bg-gradient-to-r from-blue-800 via-sky-500 to-indigo-900 hover:from-purple-500 cursor-pointer hover:via-blue-600 hover:to-green-600"
     }
   `}
         >

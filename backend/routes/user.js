@@ -4,13 +4,11 @@ import {
   verifyOtp,
   userDetails,
   userLogin,
-  addEvent,
   addFriends,
   updateUserProfile,
-  addPay,
+  removeFriend,
   forgotPassword,
   verifyForgotPassword,
-  fetchUserMatrixData,
   userData,
 } from '../controllers/user.js';
 
@@ -25,15 +23,13 @@ router.post('/login', userLogin);
 router.post('/forgot-password', forgotPassword);
 router.post('/verify-forgot-password', verifyForgotPassword);
 router.post('/add-friends', addFriends);
+router.post('/remove-friend', removeFriend);
 
 //PUT routes
 router.put('/user/:id', updateUserProfile);
 
 //GET routes
 router.get('/user/:id',userDetails);
-router.get('/addEvent', addEvent);
-router.get('/pay', addPay);
-router.get('/payData', fetchUserMatrixData);
 router.get('/user', userData);
 
 export default router;

@@ -9,22 +9,22 @@ const AddExpense = () => {
   const [amounts, setAmounts] = useState({});
   const [selectAll, setSelectAll] = useState(false);
   const [paidBy, setPaidBy] = useState();
-  const [friends, setFriends] = useState([]);
+  const [members, setmembers] = useState([]);
   const [title, setTitle] = useState("");
   const [mainAmount, setMainAmount] = useState("");
 
   useEffect(() => {
-    setSelectAll(selected.length === filteredFriends.length);
-  }, [selected, friends]);
+    setSelectAll(selected.length === filteredMember.length);
+  }, [selected, members]);
 
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (user.user.friends.length > 0) {
-          const friendList = Object.values(user.user.friends);
-          setFriends(friendList);
+      const tripMembers = localStorage.getItem("tripMembers");
+      if (tripMembers) {
+        const members = JSON.parse(tripMembers);
+        if (members.length > 0) {
+          const memberList = Object.values(members);
+          setmembers(memberList);
         }
       }
     } catch (err) {
@@ -40,13 +40,13 @@ const AddExpense = () => {
     }
   };
 
-  const filteredFriends = friends.filter((friend) => friend.name.toLowerCase());
+  const filteredMember = members.filter((member) => member.toLowerCase());
 
   const handleSelectAll = () => {
     if (selectAll) {
       setSelected([]);
     } else {
-      setSelected([...filteredFriends.map((friend) => friend.name)]);
+      setSelected([...filteredMember.map((member) => member)]);
     }
   };
 
@@ -66,13 +66,18 @@ const AddExpense = () => {
 
   const handleAddExpense = () => {
     console.log("Adding expense...");
-    
+
     const totalEntered = parseFloat(mainAmount) || 0;
     const customTotal = calculateTotal();
 
-    if (splitMode === "unequally" && totalEntered.toFixed(2) !== customTotal.toFixed(2)) {
+    if (
+      splitMode === "unequally" &&
+      totalEntered.toFixed(2) !== customTotal.toFixed(2)
+    ) {
       const diff = (customTotal - totalEntered).toFixed(2);
-      alert(`Calculation mismatch of ₹${Math.abs(diff)}. Please correct the values.`);
+      alert(
+        `Calculation mismatch of ₹${Math.abs(diff)}. Please correct the values.`
+      );
       return;
     }
 
@@ -96,7 +101,9 @@ const AddExpense = () => {
 
       <div className="max-w-3xl mx-auto bg-black p-4 sm:p-6 md:p-10 rounded-2xl shadow-2xl space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-center sm:text-left">Add Expense</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-center sm:text-left">
+            Add Expense
+          </h1>
         </div>
 
         {/* Title + Amount */}
@@ -121,15 +128,17 @@ const AddExpense = () => {
 
         {/* Paid By */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-          <label className="text-lg font-medium whitespace-nowrap">Paid By:</label>
+          <label className="text-lg font-medium whitespace-nowrap">
+            Paid By:
+          </label>
           <select
             className="bg-[#121212] border border-gray-600 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-white"
             value={paidBy}
             onChange={(e) => setPaidBy(e.target.value)}
           >
-            {filteredFriends.map((friend) => (
-              <option key={friend._id} value={friend.name}>
-                {friend.name}
+            {filteredMember.map((member) => (
+              <option key={member._id} value={member}>
+                {member}
               </option>
             ))}
           </select>
@@ -174,28 +183,28 @@ const AddExpense = () => {
             <span className="text-sm">Select All</span>
           </label>
 
-          {filteredFriends.map((friend) => (
+          {filteredMember.map((member) => (
             <div
-              key={friend.name}
+              key={member}
               className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-[#121212] p-3 rounded-lg"
             >
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  checked={selected.includes(friend.name)}
-                  onChange={() => handleCheckboxChange(friend.name)}
+                  checked={selected.includes(member)}
+                  onChange={() => handleCheckboxChange(member)}
                   className="w-4 h-4"
                 />
-                <span className="max-w-3xl">{friend.name}</span>
+                <span className="max-w-3xl">{member}</span>
               </div>
-              {splitMode === "unequally" && selected.includes(friend.name) && (
+              {splitMode === "unequally" && selected.includes(member) && (
                 <input
                   type="text"
                   inputMode="decimal"
                   pattern="^\d*(\.\d{0,2})?$"
                   placeholder="Amount"
-                  value={amounts[friend.name] || ""}
-                  onChange={(e) => handleAmountChange(e, friend.name)}
+                  value={amounts[member] || ""}
+                  onChange={(e) => handleAmountChange(e, member)}
                   className="px-3 py-2 bg-black border border-gray-600 text-white rounded-lg w-full sm:w-40 focus:outline-none focus:ring-2 focus:ring-white"
                 />
               )}
@@ -207,10 +216,12 @@ const AddExpense = () => {
         {splitMode === "unequally" && (
           <div className="text-center text-lg font-semibold">
             Total Difference:{" "}
-            <span className={`${isMismatch ? "text-red-500" : "text-green-500"}`}>
-              {(-1)*(totalDiff).toFixed(2)}
-            </span>
-            {" "}From:{" "}
+            <span
+              className={`${isMismatch ? "text-red-500" : "text-green-500"}`}
+            >
+              {-1 * totalDiff.toFixed(2)}
+            </span>{" "}
+            From:{" "}
             <span className={"text-white-500"}>
               ₹{Math.abs(mainAmount).toFixed(2)}
             </span>
@@ -219,17 +230,18 @@ const AddExpense = () => {
 
         {/* Add Button */}
         <div className="text-center pt-6">
-        <button
-  onClick={handleAddExpense}
-  disabled={mainAmount === "" || title === ""}
-  className={`font-semibold px-10 py-3 rounded-xl transition text-lg 
-    ${mainAmount === "" || title === ""
-      ? "bg-gray-400 text-gray-700 cursor-not-allowed" 
-      : "bg-white text-black hover:bg-gray-200"}`}
->
-  Add
-</button>
-
+          <button
+            onClick={handleAddExpense}
+            disabled={mainAmount === "" || title === ""}
+            className={`font-semibold px-10 py-3 rounded-xl transition text-lg 
+    ${
+      mainAmount === "" || title === ""
+        ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+        : "bg-white text-black hover:bg-gray-200"
+    }`}
+          >
+            Add
+          </button>
         </div>
       </div>
     </div>
