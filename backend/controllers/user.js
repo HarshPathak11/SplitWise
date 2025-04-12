@@ -216,16 +216,21 @@ const addFriends = async (req, res) => {
       console.log("friend ", friend);
 
       if (friend) {
-        // Check if friend is already added using ObjectId comparison.
-        if (!user.friends.some((fId) => fId.equals(friend._id))) {
-          user.friends.push(friend._id);
+        // Check if the friend reference already exists in the user's friends array.
+        if (!user.friends.some((f) => f.friend.equals(friend._id))) {
+          user.friends.push({ friend: friend._id, balance: 0 });
         }
-        if (!friend.friends.some((fId) => fId.equals(user._id))) {
-          friend.friends.push(user._id);
+        // Similarly, ensure the friendship is mutual.
+        if (!friend.friends.some((f) => f.friend.equals(user._id))) {
+          friend.friends.push({ friend: user._id, balance: 0 });
           await friend.save();
         }
-        // For reporting purposes you can push details of the added friend.
-        addedFriends.push({ _id: friend._id, email: friend.email, username: friend.username });
+        // Keep track of added friend details for reporting.
+        addedFriends.push({
+          _id: friend._id,
+          email: friend.email,
+          username: friend.username,
+        });
       } else {
         // Friend does not exist — send invitation email.
         const mailOptions = {
@@ -241,6 +246,9 @@ const addFriends = async (req, res) => {
         await transporter.sendMail(mailOptions)
           .then(() => {
             console.log("Email sent to new friend ", friendEmail);
+          })
+          .catch((err) => {
+            console.error("Failed to send email to ", friendEmail, err);
           });
       }
     }
@@ -254,6 +262,73 @@ const addFriends = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in addFriends:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const updateFriendBalance = async (req, res) => {
+  const { userEmail, friendEmail, amount, action } = req.body;
+  console.log("userEmail", userEmail, "friendEmail", friendEmail, "amount", amount, "action", action);
+  
+  if (!userEmail || !friendEmail || !amount || !action) {
+    return res.status(400).json({ message: "Incomplete data received" });
+  }
+
+  const value = parseFloat(amount);
+  if (isNaN(value) || value <= 0) {
+    return res.status(400).json({ message: "Amount must be a positive number" });
+  }
+
+  try {
+    // Fetch both users
+    const user = await User.findOne({ email: userEmail });
+    const friend = await User.findOne({ email: friendEmail });
+    
+    if (!user || !friend) {
+      return res.status(404).json({ message: "User or friend not found" });
+    }
+    
+    let userIncrement, friendIncrement;
+    
+    // When user pays friend, update as follows:
+    // - In user's friends array (for the friend): balance increases (+amount)
+    // - In friend's friends array (for the user): balance decreases (-amount)
+    if (action === "paid") {
+      userIncrement = value;
+      friendIncrement = -value;
+    } 
+    // When user receives from friend, the reverse logic applies:
+    // - In user's friends array (for the friend): balance decreases (-amount)
+    // - In friend's friends array (for the user): balance increases (+amount)
+    else if (action === "received") {
+      userIncrement = -value;
+      friendIncrement = value;
+    } else {
+      return res.status(400).json({ message: "Invalid action type" });
+    }
+    
+    // Update the user's friend record (user -> friend)
+    const userUpdateResult = await User.updateOne(
+      { email: userEmail, "friends.friend": friend._id },
+      { $inc: { "friends.$.balance": userIncrement } }
+    );
+    
+    // Update the friend's record (friend -> user)
+    const friendUpdateResult = await User.updateOne(
+      { email: friendEmail, "friends.friend": user._id },
+      { $inc: { "friends.$.balance": friendIncrement } }
+    );
+    
+    // If one of the update operations did not match a document, you might consider
+    // creating the missing subdocument. Here we assume that friendship already exists.
+    
+    return res.status(200).json({ 
+      message: "Friend balance updated",
+      userUpdate: userUpdateResult,
+      friendUpdate: friendUpdateResult
+    });
+  } catch (error) {
+    console.error("Error updating friend balance:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -368,4 +443,5 @@ export {
   removeFriend,
   userDetails,
   userData,
+  updateFriendBalance,
 };

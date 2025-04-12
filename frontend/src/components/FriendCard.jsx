@@ -2,47 +2,93 @@ import PropTypes from "prop-types";
 import { useState } from "react";
 import { FaTrash } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
+import axios from "axios";
 
 const FriendCard = ({ friend, index, handleDeleteFriend }) => {
+  console.log("card", friend);
   const [showDropdown, setShowDropdown] = useState(false);
   const [settleAmount, setSettleAmount] = useState(friend.balance);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+
+  // Get current user info (assumed stored in localStorage)
+  const currentUser = JSON.parse(localStorage.getItem("user"));
 
   const toggleDropdown = () => {
     setShowDropdown((prev) => !prev);
     setSettleAmount(friend.balance);
   };
 
-  const handleSettleBalance = () => {
-    friend.balance = 0;
-    setSettleAmount(0);
-    setShowDropdown(false);
+  // This function calls the API to update balances in both documents when the user pays their friend.
+  const handlePaid = async () => {
+    console.log("hii")
+    if (settleAmount === "" || settleAmount === 0) return;
+    const amount = Math.abs(settleAmount);
+    try {
+      await axios.post("http://localhost:8000/update-friend-balance", {
+        userEmail: currentUser.email,
+        friendEmail: friend.email,
+        amount,
+        action: "paid",
+      });
+      // Locally update: when you pay them, your friend's balance increases (they owe you more).
+      friend.balance = parseFloat((friend.balance + amount).toFixed(2));
+      setSettleAmount(friend.balance);
+      setShowDropdown(false);
+    } catch (error) {
+      console.error("Error updating friend balance (paid):", error);
+    }
   };
 
-  const handleReceived = () => {
+  // This function calls the API to update balances when you receive money from your friend.
+  const handleReceived = async () => {
     if (settleAmount === "" || settleAmount === 0) return;
-
     const amount = Math.abs(settleAmount);
-    let updatedBalance = friend.balance;
-
-    // You received money → you owe them more
-    updatedBalance -= amount;
-
-    friend.balance = parseFloat(updatedBalance.toFixed(2));
-    setShowDropdown(false);
+    try {
+      await axios.post("http://localhost:8000/update-friend-balance", {
+        userEmail: currentUser.email,
+        friendEmail: friend.email,
+        amount,
+        action: "received",
+      });
+      // Locally update: when you receive money, your friend's balance decreases.
+      friend.balance = parseFloat((friend.balance - amount).toFixed(2));
+      setSettleAmount(friend.balance);
+      setShowDropdown(false);
+    } catch (error) {
+      console.error("Error updating friend balance (received):", error);
+    }
   };
 
-  const handlePaid = () => {
-    if (settleAmount === "" || settleAmount === 0) return;
+  // Settle balance means zeroing out the current debt. Here we simulate it by calling the API
+  // with the proper action based on whether friend.balance is positive or negative.
+  const handleSettleBalance = async () => {
+    const currentBalance = friend.balance;
+    if (currentBalance === 0) return;
 
-    const amount = Math.abs(settleAmount);
-    let updatedBalance = friend.balance;
-
-    // You paid them → they owe you more
-    updatedBalance += amount;
-
-    friend.balance = parseFloat(updatedBalance.toFixed(2));
-    setShowDropdown(false);
+    try {
+      if (currentBalance > 0) {
+        // If friend owes you money, then receiving money will reduce the balance.
+        await axios.post("http://localhost:8000/update-friend-balance", {
+          userEmail: currentUser.email,
+          friendEmail: friend.email,
+          amount: currentBalance,
+          action: "received",
+        });
+      } else {
+        // If you owe friend money, paying them will reduce the negative balance.
+        await axios.post("http://localhost:8000/update-friend-balance", {
+          userEmail: currentUser.email,
+          friendEmail: friend.email,
+          amount: Math.abs(currentBalance),
+          action: "paid",
+        });
+      }
+      friend.balance = 0;
+      setSettleAmount(0);
+      setShowDropdown(false);
+    } catch (error) {
+      console.error("Error settling friend balance:", error);
+    }
   };
 
   return (
@@ -55,7 +101,7 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
         className="flex justify-between items-center"
       >
         <div>
-          <p className="text-sm text-white">{friend.name}</p>
+          <p className="text-sm text-white">{friend.username}</p>
           <p
             className={`text-xs ${
               friend.balance > 0
@@ -72,7 +118,6 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
               : "Settled"}
           </p>
         </div>
-
         <div
           className="flex items-center gap-5 z-10"
           onClick={(e) => e.stopPropagation()}
@@ -85,7 +130,6 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
           >
             <MdOutlineCurrencyExchange className="w-5 h-5" />
           </button>
-
           {/* 🗑️ Delete Icon */}
           <button
             onClick={() => {
@@ -114,7 +158,6 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
             onChange={(e) => {
               let value = e.target.value;
               if (value === "") return setSettleAmount("");
-
               if (
                 !value.startsWith("0.") &&
                 !value.startsWith("-0.") &&
@@ -129,7 +172,6 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
               ) {
                 value = "-" + value.replace(/^-0+/, "");
               }
-
               const parsed = parseFloat(value);
               setSettleAmount(isNaN(parsed) ? "" : parsed);
             }}
@@ -166,7 +208,7 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
             {friend.upiId && (
               <a
                 href={`upi://pay?pa=${friend.upiId}&pn=${encodeURIComponent(
-                  friend.name
+                  friend.username
                 )}&am=${Math.abs(settleAmount)}&cu=INR&tn=${encodeURIComponent(
                   "FairFare - Friend Settlement"
                 )}`}
@@ -185,12 +227,13 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-600 text-center w-[90%] max-w-md">
             <p className="text-white text-lg mb-4">
-              Are you sure you want to delete <strong>{friend.name}</strong>?
+              Are you sure you want to delete{" "}
+              <strong>{friend.username}</strong>?
             </p>
             <div className="flex justify-center gap-4">
               <button
                 onClick={() => {
-                  handleDeleteFriend(friend.name);
+                  handleDeleteFriend(friend.username);
                   setShowConfirmDelete(false);
                 }}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
@@ -213,9 +256,10 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
 
 FriendCard.propTypes = {
   friend: PropTypes.shape({
-    name: PropTypes.string.isRequired,
+    username: PropTypes.string.isRequired,
     balance: PropTypes.number.isRequired,
     upiId: PropTypes.string,
+    email: PropTypes.string.isRequired,
   }).isRequired,
   index: PropTypes.number.isRequired,
   handleDeleteFriend: PropTypes.func.isRequired,

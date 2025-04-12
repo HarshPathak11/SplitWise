@@ -51,7 +51,7 @@ const AddFriend = () => {
 
   const handleDone = async () => {
 
-    if (!user.user?.email) {
+    if (!user?.email) {
       alert("User not loaded. Please wait a moment.");
       return;
     }
@@ -65,7 +65,7 @@ const AddFriend = () => {
       setLoading(true);
 
       const response = await axios.post("http://localhost:8000/add-friends", {
-        email: user.user?.email,
+        email: user?.email,
         friendsArray: friends.map((friend) => friend.email),
       });
 

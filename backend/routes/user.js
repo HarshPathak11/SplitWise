@@ -10,6 +10,7 @@ import {
   forgotPassword,
   verifyForgotPassword,
   userData,
+  updateFriendBalance
 } from '../controllers/user.js';
 
 const router = express.Router();
@@ -24,6 +25,7 @@ router.post('/forgot-password', forgotPassword);
 router.post('/verify-forgot-password', verifyForgotPassword);
 router.post('/add-friends', addFriends);
 router.post('/remove-friend', removeFriend);
+router.post('/update-friend-balance', updateFriendBalance);
 
 //PUT routes
 router.put('/user/:id', updateUserProfile);

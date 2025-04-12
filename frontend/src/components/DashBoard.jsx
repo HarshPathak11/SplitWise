@@ -26,7 +26,6 @@ const Dashboard = () => {
 
           if (response.status === 200) {
             setUser(response.data.user); // Update state with fetched user data
-            console.log(user)
 
             localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
           }
@@ -35,10 +34,10 @@ const Dashboard = () => {
         }
       // }
     }
-    // console.log("user set as ",user);
 
     getDetails();
   }, []);
+  console.log("User", user);
 
   return (
     <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
