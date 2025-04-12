@@ -29,8 +29,7 @@ const userSchema = new mongoose.Schema({
   friends: [
     {
       friend: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      balance: { type: Number, default: 0 },
-      createdAt: { type: Date, default: Date.now }
+      balance: { type: Number, default: 0 }
     }
   ],
   groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],

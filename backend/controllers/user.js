@@ -238,7 +238,7 @@ const addFriends = async (req, res) => {
           subject: `Heartfelt invitation from ${user.username}`,
           html: `<h1>Hi user,</h1><p>Your friend <strong>${
             user.username
-          }</strong> has added you as a friend on the Fare Fare App</p><p>Please click on the link below to see what happens next ${`http://192.168.1.5:5173/${user._id}`}</p><p>Thanks, Fair Fare Team</p>`,
+          }</strong> has added you as a friend on the Fare Fare App</p><p>Please click on the link below to see what happens next ${`http://192.168.1.7:5173/${user._id}`}</p><p>Thanks, Fair Fare Team</p>`,
         };
         await transporter
           .sendMail(mailOptions)

@@ -64,7 +64,7 @@ const AddFriend = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post("http://192.168.1.5:8000/add-friends", {
+      const response = await axios.post("http://192.168.1.7:8000/add-friends", {
         email: user.user?.email,
         friendsArray: friends.map((friend) => friend.email),
       });
