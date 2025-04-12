@@ -157,8 +157,11 @@ const userDetails = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    const user = await User.findById(userId); // exclude sensitive fields
-
+    const user = await User.findById(userId).populate({
+      path: "friends.friend",
+      select: "username email", // optional: select only needed fields
+    });
+    console.log(user.friends) // exclude sensitive fields
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -240,6 +243,7 @@ const addEvent = async (req, res) => {
   return res.status(200).json({ user });
 };
 
+
 const addFriends = async (req, res) => {
   const { email, friendsArray } = req.body;
 
@@ -252,7 +256,7 @@ const addFriends = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    console.log("friends array recieved ", friendsArray);
+    console.log("friends array received ", friendsArray);
 
     const addedFriends = [];
     const transporter = nodemailer.createTransport({
@@ -264,48 +268,41 @@ const addFriends = async (req, res) => {
     });
 
     for (const friendEmail of friendsArray) {
-      if (friendEmail === email) continue; // skip self
+      // Skip adding self
+      if (friendEmail === email) continue;
 
       const friend = await User.findOne({ email: friendEmail });
+      console.log("friend ", friend);
 
       if (friend) {
-        if (user.friends.some((f) => f.email === email)) continue;
-        // If not already friends, add both ways
-        if (!user.friends.some((f) => f.email === friendEmail)) {
-          user.friends.push({
-            email: friendEmail,
-            name: friend.username || friend.email,
-          });
+        // Check if friend is already added using ObjectId comparison.
+        if (!user.friends.some((fId) => fId.equals(friend._id))) {
+          user.friends.push(friend._id);
         }
-        if (!friend.friends.some((f) => f.email === email)) {
-          friend.friends.push({
-            email: email,
-            name: user.username || user.email,
-          });
+        if (!friend.friends.some((fId) => fId.equals(user._id))) {
+          friend.friends.push(user._id);
           await friend.save();
         }
-        addedFriends.push({
-          email: friendEmail,
-          name: friend.username || friend.email,
-        });
+        // For reporting purposes you can push details of the added friend.
+        addedFriends.push({ _id: friend._id, email: friend.email, username: friend.username });
       } else {
-        // Friend does not exist — send email (placeholder) 
+        // Friend does not exist — send invitation email.
         const mailOptions = {
           from: '"Fair Fare" <splitwise666@gmail.com>',
           to: friendEmail,
           subject: `Heartfelt invitation from ${user.username}`,
-          html: `<h1>Hi user,</h1><p>Your friend <strong>${
-            user.username
-          }</strong> has added you as a friend on the Fare Fare App</p><p>Please click on the link below to see what happens next ${`http://192.168.1.5:5173/${user._id}`}</p><p>Thanks, Fair Fare Team</p>`,
+          html: `<h1>Hi,</h1>
+                 <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
+                 <p>Please click on the link below to join: 
+                 <a href="http://192.168.1.5:5173/${user._id}">Join Fair Fare</a></p>
+                 <p>Thanks,<br/>Fair Fare Team</p>`,
         };
-        await transporter
-          .sendMail(mailOptions)
+        await transporter.sendMail(mailOptions)
           .then(() => {
-            console.log("Email sent to new friend ", friendEmail);
+            console.log("Invitation email sent to ", friendEmail);
           })
-          .finally(() => {
-            // addedFriends.push({ email: friendEmail, name: friendEmail });
-            // user.friends.push({ email: friendEmail, name: friendEmail });
+          .catch((err) => {
+            console.error("Failed to send email to ", friendEmail, err);
           });
       }
     }
@@ -322,6 +319,7 @@ const addFriends = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 const addPay = async (req, res) => {
   const { payBy, payFor, amt } = req.body;

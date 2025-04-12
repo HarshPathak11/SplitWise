@@ -23,7 +23,9 @@ const Profile = () => {
     async function getDetails() {
       if (!user && userId) {
         try {
-          const response = await axios.get(`http://localhost:8000/user/${userId}`);
+          const response = await axios.get(
+            `http://localhost:8000/user/${userId}`
+          );
           if (response.status === 200) {
             const fetchedUser = response.data.user;
             setUser(fetchedUser);
@@ -49,7 +51,10 @@ const Profile = () => {
 
     try {
       const userId = Cookies.get("id");
-      const response = await axios.put(`http://localhost:8000/user/${userId}`, profile);
+      const response = await axios.put(
+        `http://localhost:8000/user/${userId}`,
+        profile
+      );
 
       if (response.status === 200) {
         const fetchedUser = response.data.user;
@@ -61,7 +66,7 @@ const Profile = () => {
           mobile: fetchedUser.mobile || "",
           upiId: fetchedUser.upiId || "",
           dob: fetchedUser.dob || "",
-          currency: fetchedUser.currency || ""
+          currency: fetchedUser.currency || "",
         });
 
         navigate("/dash");
@@ -89,7 +94,11 @@ const Profile = () => {
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
       </div>
@@ -125,20 +134,32 @@ const Profile = () => {
           />
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Mobile Number</label>
+        {/* <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">
+            Mobile Number
+          </label>
           <input
             type="tel"
             name="mobile"
             value={profile.mobile}
-            onChange={handleChange}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Allow only digits
+              if (/^\d{0,10}$/.test(value)) {
+                handleChange(e);
+              }
+            }}
+            pattern="\d{10}"
+            maxLength={10}
             className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your mobile number"
+            placeholder="Enter your 10-digit mobile number"
           />
-        </div>
+        </div> */}
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">UPI ID [Mandatory Field]</label>
+          <label className="block text-sm font-medium mb-2">
+            UPI ID [Mandatory Field]
+          </label>
           <input
             type="text"
             name="upiId"
@@ -149,8 +170,10 @@ const Profile = () => {
           />
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Date of Birth</label>
+        {/* <div className="mb-4">
+          <label className="block text-sm font-medium mb-2">
+            Date of Birth
+          </label>
           <input
             type="date"
             name="dob"
@@ -161,7 +184,9 @@ const Profile = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Default Currency</label>
+          <label className="block text-sm font-medium mb-2">
+            Default Currency
+          </label>
           <select
             name="currency"
             value={profile.currency}
@@ -174,11 +199,18 @@ const Profile = () => {
             <option value="INR">INR</option>
             <option value="GBP">GBP</option>
           </select>
-        </div>
+        </div> */}
 
         <button
           type="submit"
-          className="w-full p-2 rounded-lg bg-gradient-to-r from-blue-800 via-sky-500 to-indigo-900 hover:from-purple-500 hover:via-blue-600 hover:to-green-600"
+          disabled={profile.upiId === ""}
+          className={`w-full p-2 rounded-lg cursor-pointer transition
+    ${
+      profile.upiId === ""
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-gradient-to-r from-blue-800 via-sky-500 to-indigo-900 hover:from-purple-500 hover:via-blue-600 hover:to-green-600"
+    }
+  `}
         >
           Save Changes
         </button>

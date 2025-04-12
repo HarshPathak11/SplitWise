@@ -7,7 +7,6 @@ const AddFriend = () => {
   const navigate = useNavigate();
 
   const [friends, setFriends] = useState([]);
-  const [newFriend, setNewFriend] = useState("");
   const [newFriendEmail, setNewFriendEmail] = useState("");
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
@@ -24,7 +23,7 @@ const AddFriend = () => {
   const handleAddFriend = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (newFriend.trim() === "" || newFriendEmail.trim() === "") {
+    if ( newFriendEmail.trim() === "") {
       setError("All fields are required. Please fill in both name and email.");
       return;
     }
@@ -38,11 +37,9 @@ const AddFriend = () => {
       setError("This friend is already added.");
       return;
     }
-    const trimmedName = newFriend.trim();
     const trimmedEmail = newFriendEmail.trim();
 
-    setFriends([...friends, { name: trimmedName, email: trimmedEmail }]);
-    setNewFriend("");
+    setFriends([...friends, { email: trimmedEmail }]);
     setNewFriendEmail("");
     setError("");
   };
@@ -67,7 +64,7 @@ const AddFriend = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post("http://192.168.1.5:8000/add-friends", {
+      const response = await axios.post("http://localhost:8000/add-friends", {
         email: user.user?.email,
         friendsArray: friends.map((friend) => friend.email),
       });
@@ -123,14 +120,6 @@ const AddFriend = () => {
           Add New Friend
         </h2>
         <div className="flex flex-col gap-3 mb-4 sm:mb-6">
-          <input
-            type="text"
-            placeholder="Enter friend's name"
-            value={newFriend}
-            disabled={loading}
-            onChange={(e) => setNewFriend(e.target.value)}
-            className="p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 text-sm sm:text-base"
-          />
           <input
             type="email"
             placeholder="Enter friend's email"
