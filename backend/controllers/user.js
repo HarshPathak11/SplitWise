@@ -1,8 +1,9 @@
 import { User } from "../models/schema.js";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
-import { db } from "../db/mysqlDB.js";
 import bcrypt from "bcrypt";
+import dotenv from "dotenv";
+dotenv.config();
 
 // Send OTP to email
 const sendOtp = async (req, res) => {
@@ -23,13 +24,13 @@ const sendOtp = async (req, res) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "splitwise666@gmail.com",
-      pass: "gtqn wjdh ztkf vfkf",
+      user: process.env.SENDING_EMAIL,
+      pass: process.env.SENDING_PASSWORD,
     },
   });
 
   const mailOptions = {
-    from: '"Fair Fare" <splitwise666@gmail.com>',
+    from: `"Fair Fare" <${process.env.SENDING_EMAIL}>`,
     to: email,
     subject: `Welcome Onboard ${username}`,
     html: `<h1>Hi ${username},</h1><p>Your OTP for signup is: <h2><strong>${otp}</strong></h2></p><p>This code is valid for 5 minutes.</p><p>Thanks, Fair Fare Team</p>`,
@@ -63,40 +64,20 @@ const verifyOtp = async (req, res) => {
   }
 
   try {
-    // Clean the password but don't hash it (schema middleware will handle hashing)
+    // 1️⃣ Clean the password
     const cleanPassword = String(password).trim();
-    console.log("Password before saving:", cleanPassword);
 
-    const alterQuery = `ALTER TABLE user_matrix ADD COLUMN \`${email}\` DECIMAL(10, 2) DEFAULT 0;`;
-    db.query(alterQuery, (err) => {
-      if (err) {
-        console.error("Error altering table:", err);
-        return res
-          .status(500)
-          .json({ error: "Failed to add column in matrix" });
-      }
-
-      const insertQuery = `INSERT INTO user_matrix (user_name) VALUES (?);`;
-      db.query(insertQuery, [email], (err) => {
-        if (err) {
-          console.error("Error inserting into table:", err);
-          return res.status(500).json({ error: "Failed to add row in matrix" });
-        }
-      });
-    });
-
+    // 4️⃣ Create user in MongoDB
     const newUser = await User.create({
       username,
       email,
-      password: cleanPassword, // Schema middleware will hash this
+      password: cleanPassword, // schema middleware handles hashing
     });
 
     return res.status(200).json(newUser);
   } catch (error) {
     console.error("Error during user creation:", error);
-    return res
-      .status(500)
-      .json({ message: "Server error while creating user" });
+    return res.status(500).json({ message: "Server error while creating user" });
   }
 };
 
@@ -186,11 +167,7 @@ const updateUserProfile = async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(userId, {
       username,
-      email,
-      mobile,
       upiId,
-      dob,
-      currency,
     });
 
     if (!updatedUser) {
@@ -207,43 +184,7 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-const addEvent = async (req, res) => {
-  const { email, eventName, eventDesc, amt, paidBy, paidFor } = req.body;
-  if (!email || !eventName || !amt || !paidBy || !paidFor) {
-    return res.status(400).json({ message: "Not complete data received" });
-  }
-  const expenseDetails = [
-    {
-      _id: new mongoose.Types.ObjectId(),
-      description: eventDesc,
-      amount: amt,
-      paidBy: paidBy,
-      owedBy: paidFor,
-    },
-  ];
-  const groupId = new mongoose.Types.ObjectId();
-  const user = await User.findOneAndUpdate(
-    {
-      email,
-    },
-    {
-      $push: {
-        groups: {
-          _id: groupId,
-          name: eventName,
-          expenses: expenseDetails,
-        },
-      },
-    },
-    {
-      new: true,
-    }
-  );
-  if (!user) return res.status(500).json({ message: "User not found" });
-  return res.status(200).json({ user });
-};
-
-
+//Adding the friends
 const addFriends = async (req, res) => {
   const { email, friendsArray } = req.body;
 
@@ -262,8 +203,8 @@ const addFriends = async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "splitwise666@gmail.com",
-        pass: "gtqn wjdh ztkf vfkf",
+        user: process.env.SENDING_EMAIL,
+        pass: process.env.SENDING_PASSWORD,
       },
     });
 
@@ -288,7 +229,7 @@ const addFriends = async (req, res) => {
       } else {
         // Friend does not exist — send invitation email.
         const mailOptions = {
-          from: '"Fair Fare" <splitwise666@gmail.com>',
+          from: `"Fair Fare" <${process.env.SENDING_EMAIL}>`,
           to: friendEmail,
           subject: `Heartfelt invitation from ${user.username}`,
           html: `<h1>Hi,</h1>
@@ -299,10 +240,7 @@ const addFriends = async (req, res) => {
         };
         await transporter.sendMail(mailOptions)
           .then(() => {
-            console.log("Invitation email sent to ", friendEmail);
-          })
-          .catch((err) => {
-            console.error("Failed to send email to ", friendEmail, err);
+            console.log("Email sent to new friend ", friendEmail);
           });
       }
     }
@@ -320,87 +258,33 @@ const addFriends = async (req, res) => {
   }
 };
 
+const removeFriend = async (req, res) => {
+  const userId = req.user._id;
+  const { friendId } = req.body;
 
-const addPay = async (req, res) => {
-  const { payBy, payFor, amt } = req.body;
-  if (!payBy || !payFor || !amt)
-    return res.status(400).json({ message: "Incomplete information" });
-  const share = amt / (payFor.length + 1).toFixed(2);
-  console.log(share, payBy, payFor);
-
-  for (let i = 0; i < payFor.length; ++i) {
-    const x = payFor[i];
-    console.log(x);
-    const query = `UPDATE user_matrix SET \`${x}\` = \`${x}\` + ${share} WHERE user_name = '${payBy}';`;
-    db.query(query, (err, result) => {
-      if (err) {
-        console.error("Error inserting into table:", err);
-        return res.status(500).json({ error: "Failed to add row in matrix" });
-      }
-    });
-  }
-  return res.status(200).json({ message: "Entries added successfully" });
-};
-
-const resolvePay = async (req, res) => {
-  const { payBy, payFor, amt } = req.body;
-  if (!payBy || !payFor || !amt)
-    return res.status(400).json({ message: "Information is incomplete" });
-  const x = payFor;
-  const share = x;
-  const query = `UPDATE user_matrix SET \`${x}\` = \`${x}\` + ${share} WHERE user_name = '${payBy}';`;
-  db.query(query, (err, result) => {
-    if (err) {
-      console.error("Error inserting into table:", err);
-      return res.status(500).json({ error: "Failed to add row in matrix" });
-    }
-  });
-  return res.status(200).json({ message: "Payment added!!" });
-};
-
-const fetchUserMatrixData = async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: "Email is required" });
+  if (!friendId) {
+    return res.status(400).json({ message: "Friend ID is required." });
   }
 
   try {
-    // First, fetch the entire row where the user_name is the entered email
-    const rowQuery = `SELECT * FROM user_matrix WHERE user_name = ?`;
-
-    db.query(rowQuery, [email], (err, rowResult) => {
-      if (err) {
-        console.error("Error fetching row:", err);
-        return res.status(500).json({ error: "Failed to fetch row" });
-      }
-
-      if (rowResult.length === 0) {
-        return res.status(404).json({ message: "User not found in matrix" });
-      }
-
-      // Now, fetch all values from the column corresponding to the email (dynamic column name)
-      const columnQuery = `SELECT user_name, \`${email}\` FROM user_matrix`;
-
-      db.query(columnQuery, (err, columnResult) => {
-        if (err) {
-          console.error("Error fetching column:", err);
-          return res.status(500).json({ error: "Failed to fetch column" });
-        }
-
-        // Return both row and column data
-        return res.status(200).json({
-          row: rowResult[0], // The entire row corresponding to the entered email
-          column: columnResult, // The entire column corresponding to the entered email
-        });
-      });
+    // Remove friend from current user
+    await User.findByIdAndUpdate(userId, {
+      $pull: { friends: { friend: friendId } },
     });
-  } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).json({ error: "Server error" });
-  }
-};
 
+    // Remove current user from friend's list
+    await User.findByIdAndUpdate(friendId, {
+      $pull: { friends: { friend: userId } },
+    });
+
+    return res.status(200).json({ message: "Friend removed successfully." });
+  } catch (error) {
+    console.error("Error removing friend:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
+
+//Fetching user details
 const userData = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "incomplete data" });
@@ -426,13 +310,13 @@ const forgotPassword = async (req, res) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "splitwise666@gmail.com",
-      pass: "gtqn wjdh ztkf vfkf",
+      user: process.env.SENDING_EMAIL,
+      pass: process.env.SENDING_PASSWORD,
     },
   });
 
   const mailOptions = {
-    from: '"Fair Fare" <splitwise666@gmail.com>',
+    from: `"Fair Fare" <${process.env.SENDING_EMAIL}>`,
     to: email,
     subject: `Account recovery initiated`,
     html: `<h1>Hi user,</h1><p>Your OTP for account recovery is: <h2><strong>${otp}</strong></h2></p><p>This code is valid for 5 minutes.</p><p>Thanks, Fair Fare Team</p>`,
@@ -476,14 +360,12 @@ const verifyForgotPassword = async (req, res) => {
 export {
   sendOtp,
   userLogin,
-  addEvent,
   addFriends,
   verifyForgotPassword,
   forgotPassword,
-  addPay,
   updateUserProfile,
   verifyOtp,
+  removeFriend,
   userDetails,
-  fetchUserMatrixData,
   userData,
 };

@@ -1,23 +1,75 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { useLocation } from "react-router-dom";
-import ExpenseCard from "./expenseCard"; // Ensure the correct path to ExpenseCard
+import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 
 const TripDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Local state for demo; ideally manage members globally or via backend
-  // const [members, setMembers] = useState(["Shubhankar", "Pathak"]);
+  const [members, setMembers] = useState([]);
 
-  // Set members from location state if available
-  const [members, setMembers] = useState(() => {
-    const stored = localStorage.getItem("tripMembers");
-    return stored ? JSON.parse(stored) : [];
-  });
+  // Utility to deduplicate members (assuming members are strings or objects with 'username')
+  const dedupeMembers = (list) => {
+    const map = new Map();
+    list.forEach((member) => {
+      const key = typeof member === "string" ? member : member?.username || member;
+      if (!map.has(key)) {
+        map.set(key, member);
+      }
+    });
+    return Array.from(map.values());
+  };
+
+  // Initial loading of trip members + add current user
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem("user"));
+    const currentUser = userData?.user?.username;
+  
+    const stored = JSON.parse(localStorage.getItem("tripMembers"));
+  
+    if (!stored && currentUser) {
+      // If tripMembers does not exist, create it with current user
+      localStorage.setItem("tripMembers", JSON.stringify([currentUser]));
+      setMembers([currentUser]);
+    } else {
+      // If it exists, ensure current user is included
+      let initialMembers = stored || [];
+      if (currentUser && !initialMembers.includes(currentUser)) {
+        initialMembers.push(currentUser);
+      }
+  
+      const uniqueMembers = dedupeMembers(initialMembers);
+      setMembers(uniqueMembers);
+      localStorage.setItem("tripMembers", JSON.stringify(uniqueMembers));
+    }
+  }, []);
+  
+  // Handle incoming new members from "Add Members" screen
+  useEffect(() => {
+    if (location.state?.selectedMembers?.length) {
+      const stored = JSON.parse(localStorage.getItem("tripMembers")) || [];
+      const incoming = location.state.selectedMembers;
+
+      const allMembers = dedupeMembers([...stored, ...incoming]);
+      setMembers(allMembers);
+      localStorage.setItem("tripMembers", JSON.stringify(allMembers));
+    }
+  }, [location.state]);
+
+  const handleAddExpenseClick = () => {
+    if (members.length === 1) {
+      alert("Please add at least one more member to the group before adding an expense.");
+      return;
+    }
+    navigate("/add-expense", { state: { members } });
+  };
+
+  const handleAddMember = () => {
+    navigate("/add-members", { state: { members } });
+  };
+
   const expenses = [
-    // Uncomment below to test real rendering
     {
       category: "Grocery",
       time: "5:12 pm",
@@ -25,33 +77,9 @@ const TripDetails = () => {
       amount: "1289.80",
       iconColor: "bg-blue-500",
       paidBy: "John Doe",
-      beneficiaries: ["Alice", "Bob", "Charlie","John Doe"],
+      beneficiaries: ["Alice", "Bob", "Charlie", "John Doe"],
     },
   ];
-
-  useEffect(() => {
-    if (location.state?.selectedMembers?.length) {
-      const newMembers = location.state.selectedMembers;
-      const merged = Array.from(new Set([...members, ...newMembers])); // merge + dedupe
-      setMembers(merged);
-      localStorage.setItem("tripMembers", JSON.stringify(merged));
-    }
-  }, [location.state]);
-
-  const handleAddExpenseClick = () => {
-    if (members.length === 0) {
-      alert(
-        "Please add at least one member to the group before adding an expense."
-      );
-      return;
-    }
-    // Passing members for now, ideally from global store/context
-    navigate("/add-expense", { state: { members } });
-  };
-
-  const handleAddMember = () => {
-    navigate("/add-members", { state: { members } });
-  };
 
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
@@ -94,7 +122,9 @@ const TripDetails = () => {
                   key={index}
                   className="bg-gray-800 text-white py-2 px-4 rounded-xl text-center"
                 >
-                  {member}
+                  {typeof member === "string"
+                    ? member
+                    : member?.username || JSON.stringify(member)}
                 </div>
               ))}
             </div>
