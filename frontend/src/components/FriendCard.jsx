@@ -4,10 +4,10 @@ import { FaTrash } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
 import axios from "axios";
 
-const FriendCard = ({ friend, index, handleDeleteFriend }) => {
+const FriendCard = ({ friend, index, handleDeleteFriend, balance }) => {
   console.log("card", friend);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [settleAmount, setSettleAmount] = useState(friend.balance);
+  const [settleAmount, setSettleAmount] = useState(balance);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   // Get current user info (assumed stored in localStorage)
@@ -15,7 +15,7 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
 
   const toggleDropdown = () => {
     setShowDropdown((prev) => !prev);
-    setSettleAmount(friend.balance);
+    setSettleAmount(balance);
   };
 
   // This function calls the API to update balances in both documents when the user pays their friend.
@@ -31,8 +31,8 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
         action: "paid",
       });
       // Locally update: when you pay them, your friend's balance increases (they owe you more).
-      friend.balance = parseFloat((friend.balance + amount).toFixed(2));
-      setSettleAmount(friend.balance);
+      balance = parseFloat((balance + amount).toFixed(2));
+      setSettleAmount(balance);
       setShowDropdown(false);
     } catch (error) {
       console.error("Error updating friend balance (paid):", error);
@@ -51,8 +51,8 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
         action: "received",
       });
       // Locally update: when you receive money, your friend's balance decreases.
-      friend.balance = parseFloat((friend.balance - amount).toFixed(2));
-      setSettleAmount(friend.balance);
+      balance = parseFloat((balance - amount).toFixed(2));
+      setSettleAmount(balance);
       setShowDropdown(false);
     } catch (error) {
       console.error("Error updating friend balance (received):", error);
@@ -60,9 +60,9 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
   };
 
   // Settle balance means zeroing out the current debt. Here we simulate it by calling the API
-  // with the proper action based on whether friend.balance is positive or negative.
+  // with the proper action based on whether balance is positive or negative.
   const handleSettleBalance = async () => {
-    const currentBalance = friend.balance;
+    const currentBalance = balance;
     if (currentBalance === 0) return;
 
     try {
@@ -83,7 +83,7 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
           action: "paid",
         });
       }
-      friend.balance = 0;
+      balance = 0;
       setSettleAmount(0);
       setShowDropdown(false);
     } catch (error) {
@@ -104,17 +104,17 @@ const FriendCard = ({ friend, index, handleDeleteFriend }) => {
           <p className="text-sm text-white">{friend.username}</p>
           <p
             className={`text-xs ${
-              friend.balance > 0
+              balance > 0
                 ? "text-green-400"
-                : friend.balance < 0
+                : balance < 0
                 ? "text-red-400"
                 : "text-gray-400"
             }`}
           >
-            {friend.balance > 0
-              ? `Owes you ₹${friend.balance}`
-              : friend.balance < 0
-              ? `You owe ₹${Math.abs(friend.balance)}`
+            {balance > 0
+              ? `Owes you ₹${balance}`
+              : balance < 0
+              ? `You owe ₹${Math.abs(balance)}`
               : "Settled"}
           </p>
         </div>

@@ -58,7 +58,7 @@ const TripDetails = () => {
   }, [location.state]);
 
   const handleAddExpenseClick = () => {
-    if (members.length === 1) {
+    if (members.length === 0) {
       alert("Please add at least one more member to the group before adding an expense.");
       return;
     }

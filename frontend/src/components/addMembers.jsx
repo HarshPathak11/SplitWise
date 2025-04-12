@@ -8,62 +8,61 @@ const AddMembers = () => {
   const [search, setSearch] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
 
+  // Load friends from localStorage (expected structure: { friends: [{ friend: {...}, balance: 0 }, ...] })
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem("user");
-      
       if (storedUser) {
         const user = JSON.parse(storedUser);
-  
-        if (user.user.friends.length > 0) {
-          const friendList = Object.values(user.user.friends);
-          setFriends(friendList);
-        }
+        // Ensure friends is an array; if not, default to empty array
+        const friendList = Array.isArray(user.friends) ? user.friends : [];
+        setFriends(friendList);
       }
     } catch (err) {
       console.error("Error parsing user from localStorage:", err);
     }
   }, []);
-  
+
+  // This effect also filters out friends already added in a trip (if stored in localStorage)
   useEffect(() => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        const existingTripMembers = JSON.parse(localStorage.getItem("tripMembers")) || [];
-    
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          const allFriends = user.user.friends || [];
-    
-          const notAlreadyAdded = allFriends.filter(
-            (f) => !existingTripMembers.includes(f.name)
-          );
-    
-          setFriends(notAlreadyAdded);
-        }
-      } catch (err) {
-        console.error("Error loading friends:", err);
-      }
-    }, []);
-    
+    try {
+      const existingTripMembers =
+        JSON.parse(localStorage.getItem("tripMembers")) || [];
+      // Filter out friends whose username is in the existingTripMembers array.
+      // Note: existingTripMembers should be an array of usernames.
+      setFriends((prevFriends) =>
+        prevFriends.filter(
+          (f) => !existingTripMembers.includes(f.friend.username)
+        )
+      );
+    } catch (err) {
+      console.error("Error loading friends:", err);
+    }
+  }, []);
 
-
-const handleSelect = (friend) => {
-    if (selectedFriends.some((f) => f._id === friend._id)) {
-      setSelectedFriends((prev) => prev.filter((f) => f._id !== friend._id));
+  // Select or deselect friend based on nested _id
+  const handleSelect = (friendItem) => {
+    if (selectedFriends.some((f) => f.friend._id === friendItem.friend._id)) {
+      setSelectedFriends((prev) =>
+        prev.filter((f) => f.friend._id !== friendItem.friend._id)
+      );
     } else {
-      setSelectedFriends((prev) => [friend, ...prev]);
+      setSelectedFriends((prev) => [friendItem, ...prev]);
     }
     setSearch("");
   };
 
-  const filteredFriends = friends.filter((friend) =>
-    friend.name.toLowerCase().includes(search.toLowerCase())
+  // Filter friends based on friend.friend.username
+  const filteredFriends = friends.filter((friendItem) =>
+    friendItem.friend.username.toLowerCase().includes(search.toLowerCase())
   );
 
+  // For navigation, we pass the selected friends (here using usernames; adjust as needed)
   const handleAdd = () => {
     navigate("/tripDetails", {
       state: {
-        selectedMembers: selectedFriends.map((f) => f.name),
+        // If you prefer the entire friend object, you can pass friendItem.friend instead.
+        selectedMembers: selectedFriends.map((f) => f.friend.username),
       },
     });
   };
@@ -73,7 +72,7 @@ const handleSelect = (friend) => {
       {/* Back Button */}
       <button
         className="flex items-center text-white mb-6 hover:text-gray-300"
-        onClick={() => navigate('/tripDetails')}
+        onClick={() => navigate("/tripDetails")}
       >
         <ArrowLeft className="w-5 h-5 mr-2" />
         Back
@@ -82,7 +81,7 @@ const handleSelect = (friend) => {
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold mb-4 text-center">Add Members</h1>
 
-        {/* Search */}
+        {/* Search Input */}
         <input
           type="text"
           placeholder="Search friends..."
@@ -91,39 +90,40 @@ const handleSelect = (friend) => {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* Selected Friends */}
+        {/* Selected Friends Display */}
         {selectedFriends.length > 0 && (
           <div className="mt-4">
             <p className="text-gray-300 mb-2">Selected:</p>
             <div className="flex flex-wrap gap-3">
-              {selectedFriends.map((friend) => (
+              {selectedFriends.map((friendItem) => (
                 <span
-                  key={friend._id}
+                  key={friendItem.friend._id}
                   className="bg-green-700 px-3 py-1 rounded-full text-sm"
                 >
-                  {friend.name}
+                  {friendItem.friend.username}
                 </span>
               ))}
             </div>
           </div>
         )}
 
-        {/* Friend List */}
+        {/* Friend List Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-          {filteredFriends.map((friend) => {
-            const isSelected = selectedFriends.some((f) => f._id === friend._id);
+          {filteredFriends.map((friendItem) => {
+            const isSelected = selectedFriends.some(
+              (f) => f.friend._id === friendItem.friend._id
+            );
             return (
               <div
-                key={friend._id}
-                onClick={() => handleSelect(friend)}
-                className={`cursor-pointer px-4 py-3 rounded-lg border transition 
-                  ${
-                    isSelected
-                      ? "border-green-500 bg-green-800 text-white"
-                      : "border-gray-600 bg-[#121212] hover:bg-gray-800"
-                  }`}
+                key={friendItem.friend._id}
+                onClick={() => handleSelect(friendItem)}
+                className={`cursor-pointer px-4 py-3 rounded-lg border transition ${
+                  isSelected
+                    ? "border-green-500 bg-green-800 text-white"
+                    : "border-gray-600 bg-[#121212] hover:bg-gray-800"
+                }`}
               >
-                {friend.name}
+                {friendItem.friend.username}
               </div>
             );
           })}
