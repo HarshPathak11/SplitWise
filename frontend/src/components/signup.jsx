@@ -155,7 +155,7 @@ const SignUp = () => {
           <button
             onClick={otpSent ? handleOtpVerify : handleOtpSend}
             disabled={loading}
-            className={`w-full py-2 px-4 rounded-lg text-black bg-[#00F5FF] hover:bg-[#00FFA3] transition-colors ${
+            className={`w-full py-2 px-4 rounded-lg text-white bg-[#00F5FF] hover:bg-[#00FFA3] transition-colors ${
               loading
                 ? "bg-gray-500 cursor-not-allowed"
                 : "bg-green-600 hover:bg-green-700"

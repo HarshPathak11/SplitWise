@@ -84,7 +84,7 @@ const ForgotPassword = () => {
           Forgot Password
         </h2>
         <p className="mb-4 text-white">
-          Please enter your email address to varify otp.
+          Please enter your email address to varify otp
         </p>
         <input
           type="email"

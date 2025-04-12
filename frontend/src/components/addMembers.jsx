@@ -29,6 +29,7 @@ const AddMembers = () => {
       try {
         const storedUser = localStorage.getItem("user");
         const existingTripMembers = JSON.parse(localStorage.getItem("tripMembers")) || [];
+    console.log("User ",storedUser);
     
         if (storedUser) {
           const user = JSON.parse(storedUser);

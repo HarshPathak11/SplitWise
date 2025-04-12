@@ -191,10 +191,10 @@ const AddFriend = () => {
         <button
           onClick={handleDone}
           disabled={friends.length === 0 || loading}
-          className={`mt-6 w-full py-2 px-4 rounded-lg text-white ${
+          className={`mt-6 w-full py-2 px-4 rounded-lg text-black ${
             friends.length === 0
               ? "bg-gray-500 cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-800 via-sky-500 to-indigo-900 hover:from-purple-500 hover:via-blue-600 hover:to-green-600"
+              : "bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:from-[#00FFA3] hover:to-[#00F5FF]"
           } transition-colors duration-300`}
         >
           {loading ? "Saving..." : "DONE"}

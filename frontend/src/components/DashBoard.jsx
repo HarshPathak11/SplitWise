@@ -78,7 +78,7 @@ const Dashboard = () => {
 
           if (response.status === 200) {
             setUser(response.data.user);
-            localStorage.setItem("user", JSON.stringify(response.data));
+            localStorage.setItem("user", JSON.stringify(response.data.user));
           }
         } catch (err) {
           console.error("Error fetching user:", err);
