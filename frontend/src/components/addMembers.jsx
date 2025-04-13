@@ -62,7 +62,7 @@ const AddMembers = () => {
       console.log("Selected Usernames:", selectedUsernames);
 
       const res = await axios.post(
-        `http://192.168.1.11:8000/group/add-members/${groupId}`,
+        `http://192.168.1.10:8000/group/add-members/${groupId}`,
         {
           groupId,
           members: selectedUsernames,

@@ -20,7 +20,7 @@ const FriendsSection = ({ user }) => {
       const userId = currentUser._id;
 
       const res = await axios.delete(
-        `http://192.168.1.11:8000/user/remove-friend`,
+        `http://192.168.1.10:8000/user/remove-friend`,
         {
           data: {
             userId,

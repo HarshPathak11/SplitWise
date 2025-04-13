@@ -21,7 +21,7 @@ const TripsSection = () => {
         }
 
         const response = await axios.get(
-          `http://192.168.1.11:8000/group/user-groups/${userId}`
+          `http://192.168.1.10:8000/group/user-groups/${userId}`
         );
         setTrips(response.data || []);
       } catch (error) {

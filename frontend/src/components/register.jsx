@@ -10,7 +10,7 @@ function LandingSignup() {
       const token = await signUp.getToken();
 
       const response = await axios.post(
-        "http://192.168.1.11:8000/demo",
+        "http://192.168.1.10:8000/demo",
         {},
         {
           headers: {

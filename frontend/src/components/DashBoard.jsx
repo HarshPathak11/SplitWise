@@ -18,7 +18,7 @@ const Dashboard = () => {
       // if (!user) {
       try {
         const response = await axios.get(
-          `http://192.168.1.11:8000/user/${userId}`
+          `http://192.168.1.10:8000/user/${userId}`
         );
         console.log("response is ", response);
 

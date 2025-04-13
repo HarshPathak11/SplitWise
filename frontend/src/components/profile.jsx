@@ -23,7 +23,7 @@ const Profile = () => {
 
         try {
           const response = await axios.get(
-            `http://192.168.1.11:8000/user/${userId}`
+            `http://192.168.1.10:8000/user/${userId}`
           );
           if (response.status === 200) {
             const fetchedUser = response.data.user;
@@ -51,7 +51,7 @@ const Profile = () => {
     try {
       const userId = Cookies.get("id");
       const response = await axios.put(
-        `http://192.168.1.11:8000/user/${userId}`,
+        `http://192.168.1.10:8000/user/${userId}`,
         profile
       );
 
