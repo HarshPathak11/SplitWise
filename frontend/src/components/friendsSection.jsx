@@ -55,9 +55,6 @@ const FriendsSection = ({ user }) => {
     );
   };
 
-  const filteredFriends = friends.filter((f) =>
-    f.friend.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1 p-2 mb-auto">
