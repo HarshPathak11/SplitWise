@@ -9,10 +9,7 @@ const Profile = () => {
   const [profile, setProfile] = useState({
     username: "",
     email: "",
-    mobile: "",
     upiId: "",
-    dob: "",
-    currency: "",
   });
 
   const [user, setUser] = useState(null);
@@ -22,9 +19,11 @@ const Profile = () => {
 
     async function getDetails() {
       if (!user && userId) {
+        console.log("Fetching user details from backend...");
+
         try {
           const response = await axios.get(
-            `http://localhost:8000/user/${userId}`
+            `http://192.168.1.7:8000/user/${userId}`
           );
           if (response.status === 200) {
             const fetchedUser = response.data.user;
@@ -52,7 +51,7 @@ const Profile = () => {
     try {
       const userId = Cookies.get("id");
       const response = await axios.put(
-        `http://localhost:8000/user/${userId}`,
+        `http://192.168.1.7:8000/user/${userId}`,
         profile
       );
 
@@ -62,8 +61,6 @@ const Profile = () => {
         setUser(fetchedUser);
         setProfile({
           username: fetchedUser.username || "",
-          email: fetchedUser.email || "",
-          mobile: fetchedUser.mobile || "",
           upiId: fetchedUser.upiId || "",
         });
 
@@ -101,8 +98,8 @@ const Profile = () => {
         </button>
       </div>
 
-       {/* Animated Background */}
-       <div className="absolute inset-0 z-0">
+      {/* Animated Background */}
+      <div className="absolute inset-0 z-0">
         <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
         <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
         <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
@@ -115,12 +112,10 @@ const Profile = () => {
         action="javascript:void(0);"
         className="bg-[rgba(255,255,255,0.1)] backdrop-blur-md p-8 rounded-lg shadow-lg border border-white/20 w-full max-w-md"
       >
-        <h2 className="text-2xl font-bold mb-4 text-center text-[#00F5FF]">Edit Profile</h2>
+        <h2 className="text-2xl font-bold mb-4 text-center text-[#00f5ff]">Edit Profile</h2>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2 text-[#00F5FF]">
-            Username
-          </label>
+          <label className="block text-sm font-medium mb-2 text-[#00f5ff]">Username</label>
           <input
             type="text"
             name="username"
@@ -132,21 +127,19 @@ const Profile = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2 text-[#00F5FF]">
-            Email
-          </label>
+          <label className="block text-sm font-medium mb-2 text-[#00f5ff]">Email</label>
           <input
             type="email"
             name="email"
             value={profile.email}
-            onChange={handleChange}
-            className="w-full p-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your email"
+            readOnly
+            className="w-full h-full p-2 rounded-lg bg-white/20 border border-white/30 text-white cursor-not-allowed opacity-80"
+            placeholder="Email is not editable"
           />
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2 text-[#00F5FF]">
+          <label className="block text-sm font-medium mb-2 text-[#00f5ff]">
             UPI ID [Mandatory Field]
           </label>
           <input
@@ -158,7 +151,6 @@ const Profile = () => {
             placeholder="Enter your UPI ID"
           />
         </div>
-
         <div className="text-right mb-4">
               <Link
                 to="/reset-password"
@@ -167,10 +159,16 @@ const Profile = () => {
                 Reset your password?
               </Link>
             </div>
-
         <button
           type="submit"
-          className="w-full p-2 mt-3 rounded-lg bg-gradient-to-r from-[#00FFA3] to-[#A020F0] hover:from-purple-500 hover:to-[#00FFA3]"
+          disabled={!profile.upiId}
+          className={`w-full p-2 rounded-lg transition
+    ${
+      !profile.upiId
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-gradient-to-r from-[#00FFA3] to-[#A020F0] hover:from-purple-500 hover:to-[#00FFA3]"
+    }
+  `}
         >
           Save Changes
         </button>

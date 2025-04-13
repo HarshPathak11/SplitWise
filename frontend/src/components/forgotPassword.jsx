@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://192.168.1.5:8000/forgot-password",
+        "http://192.168.1.7:8000/user/forgot-password",
         {
           email,
         }
@@ -37,7 +37,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://192.168.1.5:8000/verify-forgot-password",
+        "http://192.168.1.7:8000/user/verify-forgot-password",
         {
           otpGenerated,
           otp,
@@ -69,7 +69,6 @@ const ForgotPassword = () => {
         <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
         <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
       </div>
-
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
         <button
           onClick={() => navigate("/login")} // Navigate to the landing page route
@@ -78,13 +77,11 @@ const ForgotPassword = () => {
         >
           <FaArrowLeft className="text-white text-xl" />
         </button>
-      </div>
+      </div>{" "}
       <div className="max-w-md w-full p-8 bg-glass rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-[#00F5FF]">
-          Forgot Password
-        </h2>
+        <h2 className="text-2xl font-bold mb-6 text-[#00f5ff] ">Forgot Password</h2>
         <p className="mb-4 text-white">
-          Please enter your email address to varify otp
+          Please enter your email address to verify OTP
         </p>
         <input
           type="email"

@@ -1,8 +1,9 @@
 import { User } from "../models/schema.js";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
-import { db } from "../db/mysqlDB.js";
 import bcrypt from "bcrypt";
+import dotenv from "dotenv";
+dotenv.config();
 
 // Send OTP to email
 const sendOtp = async (req, res) => {
@@ -23,13 +24,13 @@ const sendOtp = async (req, res) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "splitwise666@gmail.com",
-      pass: "gtqn wjdh ztkf vfkf",
+      user: process.env.SENDING_EMAIL,
+      pass: process.env.SENDING_PASSWORD,
     },
   });
 
   const mailOptions = {
-    from: '"Fair Fare" <splitwise666@gmail.com>',
+    from: `"Fair Fare" <${process.env.SENDING_EMAIL}>`,
     to: email,
     subject: `Welcome Onboard ${username}`,
     html: `<h1>Hi ${username},</h1><p>Your OTP for signup is: <h2><strong>${otp}</strong></h2></p><p>This code is valid for 5 minutes.</p><p>Thanks, Fair Fare Team</p>`,
@@ -63,40 +64,20 @@ const verifyOtp = async (req, res) => {
   }
 
   try {
-    // Clean the password but don't hash it (schema middleware will handle hashing)
+    // 1️⃣ Clean the password
     const cleanPassword = String(password).trim();
-    console.log("Password before saving:", cleanPassword);
 
-    const alterQuery = `ALTER TABLE user_matrix ADD COLUMN \`${email}\` DECIMAL(10, 2) DEFAULT 0;`;
-    db.query(alterQuery, (err) => {
-      if (err) {
-        console.error("Error altering table:", err);
-        return res
-          .status(500)
-          .json({ error: "Failed to add column in matrix" });
-      }
-
-      const insertQuery = `INSERT INTO user_matrix (user_name) VALUES (?);`;
-      db.query(insertQuery, [email], (err) => {
-        if (err) {
-          console.error("Error inserting into table:", err);
-          return res.status(500).json({ error: "Failed to add row in matrix" });
-        }
-      });
-    });
-
+    // 4️⃣ Create user in MongoDB
     const newUser = await User.create({
       username,
       email,
-      password: cleanPassword, // Schema middleware will hash this
+      password: cleanPassword, // schema middleware handles hashing
     });
 
     return res.status(200).json(newUser);
   } catch (error) {
     console.error("Error during user creation:", error);
-    return res
-      .status(500)
-      .json({ message: "Server error while creating user" });
+    return res.status(500).json({ message: "Server error while creating user" });
   }
 };
 
@@ -104,6 +85,8 @@ const verifyOtp = async (req, res) => {
 const userLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log("email and password ", email, password);
+    
 
     if (!email || !password) {
       return res.status(400).json({ message: "Incomplete data received" });
@@ -115,20 +98,14 @@ const userLogin = async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // Debug logs
-    // console.log("=== Login Debug Information ===");
-    // console.log("Email:", email);
-    // console.log("Input password type:", typeof password);
-    // console.log("Stored password type:", typeof user.password);
-
     // Clean the input password
     
     const cleanPassword = String(password).trim();
-    // console.log("Cleaned input password:", cleanPassword);
+    console.log("clean password ", cleanPassword);    
 
     // Use the schema's comparePassword method
     const isPasswordValid = await user.comparePassword(cleanPassword);
-    // console.log("Password comparison result:", isPasswordValid);
+    console.log("Password comparison result: ", isPasswordValid);    
 
     if (!isPasswordValid) {
       return res.status(400).json({
@@ -157,9 +134,13 @@ const userLogin = async (req, res) => {
 const userDetails = async (req, res) => {
   try {
     const userId = req.params.id;
+    
 
-    const user = await User.findById(userId); // exclude sensitive fields
-
+    const user = await User.findById(userId).populate({
+      path: "friends.friend",
+      select: "username email", // optional: select only needed fields
+    });
+    // console.log(user.friends) // exclude sensitive fields
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -176,7 +157,7 @@ const updateUserProfile = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    const { username, email, mobile, upiId, dob, currency } = req.body;
+    const { username, upiId } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
@@ -184,11 +165,7 @@ const updateUserProfile = async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(userId, {
       username,
-      email,
-      mobile,
       upiId,
-      dob,
-      currency,
     });
 
     if (!updatedUser) {
@@ -205,42 +182,7 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-const addEvent = async (req, res) => {
-  const { email, eventName, eventDesc, amt, paidBy, paidFor } = req.body;
-  if (!email || !eventName || !amt || !paidBy || !paidFor) {
-    return res.status(400).json({ message: "Not complete data received" });
-  }
-  const expenseDetails = [
-    {
-      _id: new mongoose.Types.ObjectId(),
-      description: eventDesc,
-      amount: amt,
-      paidBy: paidBy,
-      owedBy: paidFor,
-    },
-  ];
-  const groupId = new mongoose.Types.ObjectId();
-  const user = await User.findOneAndUpdate(
-    {
-      email,
-    },
-    {
-      $push: {
-        groups: {
-          _id: groupId,
-          name: eventName,
-          expenses: expenseDetails,
-        },
-      },
-    },
-    {
-      new: true,
-    }
-  );
-  if (!user) return res.status(500).json({ message: "User not found" });
-  return res.status(200).json({ user });
-};
-
+//Adding the friends
 const addFriends = async (req, res) => {
   const { email, friendsArray } = req.body;
 
@@ -253,66 +195,64 @@ const addFriends = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    console.log("friends array recieved ", friendsArray);
+    // console.log("friends array received ", friendsArray);
 
     const addedFriends = [];
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "splitwise666@gmail.com",
-        pass: "gtqn wjdh ztkf vfkf",
+        user: process.env.SENDING_EMAIL,
+        pass: process.env.SENDING_PASSWORD,
       },
     });
 
     for (const friendEmail of friendsArray) {
-      if (friendEmail === email) continue; // skip self
+      // Skip adding self
+      if (friendEmail === email) continue;
 
       const friend = await User.findOne({ email: friendEmail });
+      // console.log("friend ", friend);
 
       if (friend) {
-        if (user.friends.some((f) => f.email === email)) continue;
-        // If not already friends, add both ways
-        if (!user.friends.some((f) => f.email === friendEmail)) {
-          user.friends.push({
-            email: friendEmail,
-            name: friend.username || friend.email,
-          });
+        // Check if the friend reference already exists in the user's friends array.
+        if (!user.friends.some((f) => f.friend.equals(friend._id))) {
+          user.friends.push({ friend: friend._id, balance: 0 });
         }
-        if (!friend.friends.some((f) => f.email === email)) {
-          friend.friends.push({
-            email: email,
-            name: user.username || user.email,
-          });
+        // Similarly, ensure the friendship is mutual.
+        if (!friend.friends.some((f) => f.friend.equals(user._id))) {
+          friend.friends.push({ friend: user._id, balance: 0 });
           await friend.save();
         }
+        // Keep track of added friend details for reporting.
         addedFriends.push({
-          email: friendEmail,
-          name: friend.username || friend.email,
+          _id: friend._id,
+          email: friend.email,
+          username: friend.username,
         });
       } else {
-        // Friend does not exist — send email (placeholder) 
+        // Friend does not exist — send invitation email.
         const mailOptions = {
-          from: '"Fair Fare" <splitwise666@gmail.com>',
+          from: `"Fair Fare" <${process.env.SENDING_EMAIL}>`,
           to: friendEmail,
           subject: `Heartfelt invitation from ${user.username}`,
-          html: `<h1>Hi user,</h1><p>Your friend <strong>${
-            user.username
-          }</strong> has added you as a friend on the Fare Fare App</p><p>Please click on the link below to see what happens next ${`http://192.168.1.5:5173/${user._id}`}</p><p>Thanks, Fair Fare Team</p>`,
+          html: `<h1>Hi,</h1>
+                 <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
+                 <p>Please click on the link below to join: 
+                 <a href="http://192.168.1.5:5173/${user._id}">Join Fair Fare</a></p>
+                 <p>Thanks,<br/>Fair Fare Team</p>`,
         };
-        await transporter
-          .sendMail(mailOptions)
+        await transporter.sendMail(mailOptions)
           .then(() => {
             console.log("Email sent to new friend ", friendEmail);
           })
-          .finally(() => {
-            // addedFriends.push({ email: friendEmail, name: friendEmail });
-            // user.friends.push({ email: friendEmail, name: friendEmail });
+          .catch((err) => {
+            console.error("Failed to send email to ", friendEmail, err);
           });
       }
     }
 
     await user.save();
-    console.log("new friends added ", addedFriends);
+    // console.log("new friends added ", addedFriends);
 
     return res.status(200).json({
       message: "Friends processed",
@@ -324,96 +264,101 @@ const addFriends = async (req, res) => {
   }
 };
 
-const addPay = async (req, res) => {
-  const { payBy, payFor, amt } = req.body;
-  if (!payBy || !payFor || !amt)
-    return res.status(400).json({ message: "Incomplete information" });
-  const share = amt / (payFor.length + 1).toFixed(2);
-  console.log(share, payBy, payFor);
-
-  for (let i = 0; i < payFor.length; ++i) {
-    const x = payFor[i];
-    console.log(x);
-    const query = `UPDATE user_matrix SET \`${x}\` = \`${x}\` + ${share} WHERE user_name = '${payBy}';`;
-    db.query(query, (err, result) => {
-      if (err) {
-        console.error("Error inserting into table:", err);
-        return res.status(500).json({ error: "Failed to add row in matrix" });
-      }
-    });
+const updateFriendBalance = async (req, res) => {
+  const { userEmail, friendEmail, amount, action } = req.body;
+  // console.log("userEmail", userEmail, "friendEmail", friendEmail, "amount", amount, "action", action);
+  
+  if (!userEmail || !friendEmail || !amount || !action) {
+    return res.status(400).json({ message: "Incomplete data received" });
   }
-  return res.status(200).json({ message: "Entries added successfully" });
-};
 
-const resolvePay = async (req, res) => {
-  const { payBy, payFor, amt } = req.body;
-  if (!payBy || !payFor || !amt)
-    return res.status(400).json({ message: "Information is incomplete" });
-  const x = payFor;
-  const share = x;
-  const query = `UPDATE user_matrix SET \`${x}\` = \`${x}\` + ${share} WHERE user_name = '${payBy}';`;
-  db.query(query, (err, result) => {
-    if (err) {
-      console.error("Error inserting into table:", err);
-      return res.status(500).json({ error: "Failed to add row in matrix" });
-    }
-  });
-  return res.status(200).json({ message: "Payment added!!" });
-};
-
-const fetchUserMatrixData = async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: "Email is required" });
+  const value = parseFloat(amount);
+  if (isNaN(value) || value <= 0) {
+    return res.status(400).json({ message: "Amount must be a positive number" });
   }
 
   try {
-    // First, fetch the entire row where the user_name is the entered email
-    const rowQuery = `SELECT * FROM user_matrix WHERE user_name = ?`;
-
-    db.query(rowQuery, [email], (err, rowResult) => {
-      if (err) {
-        console.error("Error fetching row:", err);
-        return res.status(500).json({ error: "Failed to fetch row" });
-      }
-
-      if (rowResult.length === 0) {
-        return res.status(404).json({ message: "User not found in matrix" });
-      }
-
-      // Now, fetch all values from the column corresponding to the email (dynamic column name)
-      const columnQuery = `SELECT user_name, \`${email}\` FROM user_matrix`;
-
-      db.query(columnQuery, (err, columnResult) => {
-        if (err) {
-          console.error("Error fetching column:", err);
-          return res.status(500).json({ error: "Failed to fetch column" });
-        }
-
-        // Return both row and column data
-        return res.status(200).json({
-          row: rowResult[0], // The entire row corresponding to the entered email
-          column: columnResult, // The entire column corresponding to the entered email
-        });
-      });
+    // Fetch both users
+    const user = await User.findOne({ email: userEmail });
+    const friend = await User.findOne({ email: friendEmail });
+    
+    if (!user || !friend) {
+      return res.status(404).json({ message: "User or friend not found" });
+    }
+    
+    let userIncrement, friendIncrement;
+    
+    // When user pays friend, update as follows:
+    // - In user's friends array (for the friend): balance increases (+amount)
+    // - In friend's friends array (for the user): balance decreases (-amount)
+    if (action === "paid") {
+      console.log("paid action detected");
+      
+      userIncrement = value;
+      friendIncrement = -value;
+    } 
+    // When user receives from friend, the reverse logic applies:
+    // - In user's friends array (for the friend): balance decreases (-amount)
+    // - In friend's friends array (for the user): balance increases (+amount)
+    else if (action === "received") {
+      userIncrement = -value;
+      friendIncrement = value;
+    } else {
+      return res.status(400).json({ message: "Invalid action type" });
+    }
+    
+    // Update the user's friend record (user -> friend)
+    const userUpdateResult = await User.updateOne(
+      { email: userEmail, "friends.friend": friend._id },
+      { $inc: { "friends.$.balance": userIncrement } }
+    );
+    
+    // Update the friend's record (friend -> user)
+    const friendUpdateResult = await User.updateOne(
+      { email: friendEmail, "friends.friend": user._id },
+      { $inc: { "friends.$.balance": friendIncrement } }
+    );
+    
+    // If one of the update operations did not match a document, you might consider
+    // creating the missing subdocument. Here we assume that friendship already exists.
+    
+    return res.status(200).json({ 
+      message: "Friend balance updated",
+      userUpdate: userUpdateResult,
+      friendUpdate: friendUpdateResult
     });
   } catch (error) {
-    console.error("Error:", error);
-    return res.status(500).json({ error: "Server error" });
+    console.error("Error updating friend balance:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-const userData = async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ message: "incomplete data" });
+const removeFriend = async (req, res) => {
+  console.log("Body received: ", req.body);
+  
+  const { friendId, userId } = req.body;
 
-  const user = await User.findOne({ email: email }, "--password");
-  if (!user) {
-    return res.status(500).json({ message: "user not found" });
+  if (!friendId) {
+    return res.status(400).json({ message: "Friend ID is required." });
   }
-  return res.status(200).json({ user });
-};
+
+  try {
+    // Remove friend from current user
+    await User.findByIdAndUpdate(userId, {
+      $pull: { friends: { friend: friendId } },
+    });
+
+    // Remove current user from friend's list
+    await User.findByIdAndUpdate(friendId, {
+      $pull: { friends: { friend: userId } },
+    });
+
+    return res.status(200).json({ message: "Friend removed successfully." });
+  } catch (error) {
+    console.error("Error removing friend:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -429,13 +374,13 @@ const forgotPassword = async (req, res) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "splitwise666@gmail.com",
-      pass: "gtqn wjdh ztkf vfkf",
+      user: process.env.SENDING_EMAIL,
+      pass: process.env.SENDING_PASSWORD,
     },
   });
 
   const mailOptions = {
-    from: '"Fair Fare" <splitwise666@gmail.com>',
+    from: `"Fair Fare" <${process.env.SENDING_EMAIL}>`,
     to: email,
     subject: `Account recovery initiated`,
     html: `<h1>Hi user,</h1><p>Your OTP for account recovery is: <h2><strong>${otp}</strong></h2></p><p>This code is valid for 5 minutes.</p><p>Thanks, Fair Fare Team</p>`,
@@ -479,14 +424,12 @@ const verifyForgotPassword = async (req, res) => {
 export {
   sendOtp,
   userLogin,
-  addEvent,
   addFriends,
   verifyForgotPassword,
   forgotPassword,
-  addPay,
   updateUserProfile,
   verifyOtp,
+  removeFriend,
   userDetails,
-  fetchUserMatrixData,
-  userData,
+  updateFriendBalance,
 };

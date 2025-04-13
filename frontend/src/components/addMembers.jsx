@@ -1,54 +1,45 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import axios from "axios";
+import { useParams } from "react-router-dom";
+
 
 const AddMembers = () => {
   const navigate = useNavigate();
   const [friends, setFriends] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
-
+  const { groupId } = useParams();
+  console.log("Group ID:", groupId);
+  
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem("user");
+      const existingTripMembers =
+      JSON.parse(localStorage.getItem("tripMembers")) || [];
       
+      console.log("Existing tripMembers:", existingTripMembers);
       if (storedUser) {
         const user = JSON.parse(storedUser);
   
-        if (user.user.friends.length > 0) {
-          const friendList = Object.values(user.user.friends);
-          setFriends(friendList);
-        }
+        const friendsList = (user.friends || [])
+          .filter((f) => f?.friend?.username)
+          .map((f) => ({
+            _id: f.friend._id,
+            username: f.friend.username,
+            balance: f.balance || 0,
+          }))
+          .filter((f) => !existingTripMembers.includes(f.username)); // Exclude already added
+  
+        setFriends(friendsList);
       }
     } catch (err) {
-      console.error("Error parsing user from localStorage:", err);
+      console.error("Error loading friends:", err);
     }
-  }, []);
-  
-  useEffect(() => {
-      try {
-        const storedUser = localStorage.getItem("user");
-        const existingTripMembers = JSON.parse(localStorage.getItem("tripMembers")) || [];
-    console.log("User ",storedUser);
-    
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          const allFriends = user.user.friends || [];
-    
-          const notAlreadyAdded = allFriends.filter(
-            (f) => !existingTripMembers.includes(f.name)
-          );
-    
-          setFriends(notAlreadyAdded);
-        }
-      } catch (err) {
-        console.error("Error loading friends:", err);
-      }
-    }, []);
-    
+  }, []);  
 
-
-const handleSelect = (friend) => {
+  const handleSelect = (friend) => {
     if (selectedFriends.some((f) => f._id === friend._id)) {
       setSelectedFriends((prev) => prev.filter((f) => f._id !== friend._id));
     } else {
@@ -58,23 +49,48 @@ const handleSelect = (friend) => {
   };
 
   const filteredFriends = friends.filter((friend) =>
-    friend.name.toLowerCase().includes(search.toLowerCase())
+    friend.username.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = () => {
-    navigate("/tripDetails", {
-      state: {
-        selectedMembers: selectedFriends.map((f) => f.name),
-      },
-    });
-  };
-
+  const handleAdd = async () => {
+    try {
+      console.log("Selected Friends:", selectedFriends);
+      console.log("Group ID:", groupId);
+      
+      if (!groupId || selectedFriends.length === 0) return;
+  
+      const selectedUsernames = selectedFriends.map((f) => f._id);
+      console.log("Selected Usernames:", selectedUsernames);
+  
+      const res = await axios.post(`http://192.168.1.7:8000/group/add-members/${groupId}`, {
+        groupId,
+        members: selectedUsernames,
+      });
+  
+      console.log("Response:", res);
+  
+      if (res.status !== 200) {
+        throw new Error(res.data.message || "Failed to add members");
+      }
+  
+      // Update local storage
+      const updatedGroup = res.data;
+      localStorage.setItem("currentGroup", JSON.stringify(updatedGroup));
+  
+      // Go back or redirect
+      navigate(-1);
+    } catch (err) {
+      console.error("Failed to add members:", err.message);
+      alert("Could not add members. Try again.");
+    }
+  };  
+  
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
       {/* Back Button */}
       <button
         className="flex items-center text-white mb-6 hover:text-gray-300"
-        onClick={() => navigate('/tripDetails')}
+        onClick={() => navigate(-1)}
       >
         <ArrowLeft className="w-5 h-5 mr-2" />
         Back
@@ -102,7 +118,7 @@ const handleSelect = (friend) => {
                   key={friend._id}
                   className="bg-green-700 px-3 py-1 rounded-full text-sm"
                 >
-                  {friend.name}
+                  {friend.username}
                 </span>
               ))}
             </div>
@@ -112,7 +128,9 @@ const handleSelect = (friend) => {
         {/* Friend List */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
           {filteredFriends.map((friend) => {
-            const isSelected = selectedFriends.some((f) => f._id === friend._id);
+            const isSelected = selectedFriends.some(
+              (f) => f._id === friend._id
+            );
             return (
               <div
                 key={friend._id}
@@ -124,7 +142,7 @@ const handleSelect = (friend) => {
                       : "border-gray-600 bg-[#121212] hover:bg-gray-800"
                   }`}
               >
-                {friend.name}
+                {friend.username}
               </div>
             );
           })}

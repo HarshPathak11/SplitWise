@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { FaHome } from "react-icons/fa"; // Import the home icon
-
+import { FaHome } from "react-icons/fa";
 
 const SignUp = () => {
   const [username, setUserName] = useState("");
@@ -25,7 +24,7 @@ const SignUp = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://192.168.1.11:5173/send-otp",
+        "http://192.168.1.7:8000/user/send-otp",
         {
           email,
           username,
@@ -50,7 +49,7 @@ const SignUp = () => {
   const handleOtpVerify = async () => {
     try {
       const response = await axios.post(
-        "http://192.168.1.11:5173/verify-otp",
+        "http://192.168.1.7:8000/user/verify-otp",
         {
           email,
           otp,
@@ -72,14 +71,17 @@ const SignUp = () => {
 
   return (
     <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
+      {" "}
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
-        <button
-          onClick={() => navigate("/")} // Navigate to the landing page route
-          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
-          title="Back to Landing Page"
-        >
-          <FaHome className="text-white text-xl" />
-        </button>
+        <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
+          <button
+            onClick={() => navigate("/")} // Navigate to the landing page route
+            className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
+            title="Back to Landing Page"
+          >
+            <FaHome className="text-white text-xl" />
+          </button>
+        </div>
       </div>
       {/* Animated Background */}
       <div className="absolute inset-0 z-0">
@@ -89,19 +91,20 @@ const SignUp = () => {
         <div className="absolute top-10 right-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce-opposite"></div>
         <div className="absolute bottom-10 left-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce-opposite delay-3000"></div>
       </div>
-
       {/* SignUp Card */}
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
           <div className="flex justify-between items-center mb-6 mt-16">
-            <div className="text-2xl font-bold text-[#00F5FF]">SIGN UP</div>
-            <Link to="/login" className="text-xl text-[#00F5FF] cursor-pointer">
+            <div className="text-2xl font-bold text-[#00f5ff]">SIGN UP</div>
+            <Link to="/login" className="text-xl text-white cursor-pointer">
               LOGIN
             </Link>
           </div>
 
           <div className="mb-4">
-            <label className="block text-white mb-2">Name</label>
+            <label className="block text-white text-sm font-bold mb-2">
+              Name
+            </label>
             <input
               value={username}
               onChange={(e) => setUserName(e.target.value)}
@@ -140,7 +143,7 @@ const SignUp = () => {
           {/* OTP input only shows after send OTP */}
           {otpSent && (
             <div className="mb-6">
-              <label className="block text-black text-sm font-bold mb-2">
+              <label className="block text-white text-sm font-bold mb-2">
                 Verify OTP
               </label>
               <input
@@ -155,7 +158,7 @@ const SignUp = () => {
           <button
             onClick={otpSent ? handleOtpVerify : handleOtpSend}
             disabled={loading}
-            className={`w-full py-2 px-4 rounded-lg text-white bg-[#00F5FF] hover:bg-[#00FFA3] transition-colors ${
+            className={`w-full py-2 px-4 rounded-lg text-white ${
               loading
                 ? "bg-gray-500 cursor-not-allowed"
                 : "bg-green-600 hover:bg-green-700"

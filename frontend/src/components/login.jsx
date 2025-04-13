@@ -1,13 +1,30 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { FaHome } from "react-icons/fa"; // Import the home icon
+import { FaHome } from "react-icons/fa";
 
 const LogIn = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const navigate = useNavigate();
+
+  //UseEffect to Check if user logged in before or not if yes then directly take them to dashboard
+  useEffect(() => {
+    async function getDetails() {
+      const userId = Cookies.get("id");
+      if (userId) {
+        try {
+          navigate("/dash");
+        } catch (err) {
+          console.error("Error fetching user:", err);
+        }
+      }
+    }
+    // console.log("user set as ",user);
+
+    getDetails();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,11 +35,11 @@ const LogIn = () => {
         return;
       }
 
-      const response = await axios.post(`http://192.168.1.11:8000/login`, {
+      const response = await axios.post(`http://192.168.1.7:8000/user/login`, {
         email,
         password,
       });
-
+      console.log("response ", response.data);
       if (response.data.user) {
         Cookies.set("id", response.data.user._id, { expires: 7 });
         navigate("/dash");
@@ -53,22 +70,23 @@ const LogIn = () => {
         <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
         <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
       </div>
-
       {/* Login Card */}
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
           <div className="flex justify-between items-center mb-6 mt-16">
-            <div className="text-2xl font-bold text-[#00F5FF]">LOGIN</div>
-
+            <div className="text-2xl font-bold text-[#00f5ff]">LOGIN</div>
             <Link to="/signup">
-              <div className="text-xl text-[#00F5FF] cursor-pointer hover:underline">
+              <div className="text-xl text-[#00f5ff] cursor-pointer hover:underline">
                 SIGN UP
               </div>
             </Link>
           </div>
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
-              <label className="block text-white mb-2" htmlFor="email">
+              <label
+                className="block text-white text-sm font-bold mb-2"
+                htmlFor="email"
+              >
                 Email Address
               </label>
               <input
@@ -76,12 +94,15 @@ const LogIn = () => {
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="Enter your Email Address"
+                placeholder="Enter your your Email Address"
                 className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300"
               />
             </div>
             <div className="mb-4">
-              <label className="block text-white mb-2" htmlFor="password">
+              <label
+                className="block text-white text-sm font-bold mb-2"
+                htmlFor="password"
+              >
                 Password
               </label>
               <input
@@ -103,7 +124,7 @@ const LogIn = () => {
             </div>
             <button
               type="submit"
-              className="w-full py-2 px-4 bg-[#00F5FF] text-black rounded-lg hover:bg-green-400 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105"
+              className="w-full py-2 px-4 bg-[#00f5ff] text-black rounded-lg hover:bg-green-700 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105"
             >
               Login
             </button>

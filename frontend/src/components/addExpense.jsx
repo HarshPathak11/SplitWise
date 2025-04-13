@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import { ArrowLeft } from "lucide-react";
 
 const AddExpense = () => {
   const navigate = useNavigate();
@@ -95,7 +95,7 @@ const AddExpense = () => {
         className="flex items-center text-white mb-6 hover:text-gray-300 transition"
         onClick={() => navigate(-1)}
       >
-        <FaArrowLeft className="w-5 h-5 mr-2" />
+        <ArrowLeft className="w-5 h-5 mr-2" />
         Back
       </button>
 

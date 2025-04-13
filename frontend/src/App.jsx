@@ -13,7 +13,13 @@ import TripDetails from "./components/tripDetails";
 import AddExpense from "./components/addExpense";
 import AddMembers from "./components/addMembers";
 import ForgotPassword from "./components/forgotPassword";
-import ResetPassword from "./components/resetPassword"
+import ResetPassword from "./components/resetPassword";
+import TripDetails from "./components/tripDetails";
+import AddExpense from "./components/addExpense";
+import AddMembers from "./components/addMembers";
+import AllTripsPage from "./components/AllTripsPage";
+import AllExpenses from "./components/AllExpenses";
+
 const router = createBrowserRouter([
   {
     path: "/dash",
@@ -40,10 +46,18 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/add-members",
+    path: "/add-members/:groupId",
     element: (
       <ProtectedRoute>
         <AddMembers />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/allExpenses",
+    element: (
+      <ProtectedRoute>
+        <AllExpenses />
       </ProtectedRoute>
     ),
   },
@@ -56,7 +70,15 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: "/tripDetails",
+    path: "/allTrips",
+    element: (
+      <ProtectedRoute>
+        <AllTripsPage />
+      </ProtectedRoute> 
+    ),
+  },
+  {
+    path: "/tripDetails/:tripId",
     element: (
       <ProtectedRoute>
         <TripDetails />
