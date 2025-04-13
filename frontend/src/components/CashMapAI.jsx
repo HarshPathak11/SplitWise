@@ -1,26 +1,82 @@
-import React, { useState } from 'react';
-import {FaArrowLeft,FaArrowRight,FaRobot} from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { FaArrowLeft, FaArrowRight, FaRobot } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 
 function CashMapAI() {
-  const [messages, setMessages] = useState([
-    {
-      type: 'bot',
-      content: "Hello! I'm CashMap AI, your personal finance assistant. How can I help you today?"
+  // Lazy initialization: check localStorage and load the chat history if it exists.
+  const [messages, setMessages] = useState(() => {
+    const storedChat = localStorage.getItem("chatMessages");
+    if (storedChat) {
+      try {
+        return JSON.parse(storedChat);
+      } catch (error) {
+        console.error("Error parsing chatMessages:", error);
+      }
     }
-  ]);
+    return [
+      {
+        type: 'bot',
+        content: "Hello! I'm CashMap AI, your personal finance assistant. How can I help you today?"
+      }
+    ];
+  });
   const [input, setInput] = useState('');
 
-  const handleSend = (e) => {
+  // Persist messages to localStorage on every change.
+  useEffect(() => {
+    localStorage.setItem("chatMessages", JSON.stringify(messages));
+  }, [messages]);
+
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    setMessages(prev => [...prev, { type: 'user', content: input }]);
-    // Here you would typically make an API call to your AI service
-    setMessages(prev => [...prev, {
+    // Append user's message.
+    const userMessage = { type: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+
+    // Get the user id from localStorage.
+    let userId = "";
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        userId = user?._id || "";
+      } catch (error) {
+        console.error("Error parsing user from localStorage:", error);
+      }
+    }
+
+    // Append a temporary bot message.
+    const tempBotMessage = {
       type: 'bot',
       content: "I'm analyzing your spending patterns and will provide insights shortly..."
-    }]);
+    };
+    setMessages(prev => [...prev, tempBotMessage]);
+
+    try {
+      // Call the /assist endpoint with the userId and query.
+      const response = await axios.post('http://localhost:5000/assist', { userId, query: input });
+      // Assume the API returns an object with an 'answer' property.
+      const answer = response.data?.answer || "Sorry, something went wrong!";
+      
+      // Replace the temporary bot message with the API response.
+      setMessages(prev => {
+        const updated = [...prev];
+        updated.pop(); // Remove the temporary message.
+        return [...updated, { type: 'bot', content: answer }];
+      });
+    } catch (error) {
+      console.error("Error calling /assist API:", error);
+      // Remove the temporary message and add an error message.
+      setMessages(prev => {
+        const updated = [...prev];
+        updated.pop();
+        return [...updated, { type: 'bot', content: "Error retrieving response. Please try again." }];
+      });
+    }
+    
     setInput('');
   };
 
@@ -72,7 +128,7 @@ function CashMapAI() {
       </div>
 
       {/* Input Field */}
-      <div className=" bottom-0 bg-glass-800 border-t border-gray-700 p-4 z-10 relative">
+      <div className="bottom-0 bg-glass-800 border-t border-gray-700 p-4 z-10 relative">
         <form onSubmit={handleSend} className="max-w-4xl mx-auto flex gap-4">
           <input
             type="text"

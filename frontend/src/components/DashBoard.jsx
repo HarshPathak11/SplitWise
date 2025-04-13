@@ -13,14 +13,14 @@ const Dashboard = () => {
   useEffect(() => {
     async function getDetails() {
       const userId = Cookies.get("id");
-      console.log("userId is ", userId);
+      // console.log("userId is ", userId);
 
       // if (!user) {
         try {
           const response = await axios.get(
-            `http://192.168.1.7:8000/user/${userId}`
+            `http://localhost:8000/user/${userId}`
           );
-          console.log("response is ", response);
+          // console.log("response is ", response);
         
 
         if (response.status === 200) {
@@ -38,7 +38,7 @@ const Dashboard = () => {
     
     getDetails();
   }, []);
-  console.log("User", user);
+  // console.log("User", user);
 
 
   return (

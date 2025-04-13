@@ -2,6 +2,7 @@ import os
 import hashlib
 from bson import ObjectId
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Import Flask-CORS
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from groq import Groq
@@ -16,10 +17,8 @@ ASTRA_DB_APPLICATION_TOKEN = os.getenv("ASTRA_DB_APPLICATION_TOKEN")
 ASTRA_DB_KEYSPACE = os.getenv("ASTRA_DB_KEYSPACE")
 VECTOR_COLLECTION = os.getenv("VECTOR_COLLECTION", "user_data_vector")
 
-print(MONGO_URI, GROQ_API_KEY, ASTRA_DB_API_ENDPOINT, ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_KEYSPACE, VECTOR_COLLECTION)
-
-print(ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_API_ENDPOINT, ASTRA_DB_KEYSPACE, VECTOR_COLLECTION)
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # MongoDB connection
 mongo_client = MongoClient(MONGO_URI)
@@ -38,56 +37,113 @@ def generate_doc_id(text):
     return hashlib.md5(text.encode("utf-8")).hexdigest()
 
 def upsert_user_documents(user_id, documents):
+    # For each aggregated document, check if the stored "content" is different.
+    # If so, update it (which also triggers the re-vectorization via the "$vectorize" operator).
     for doc in documents:
         doc_id = generate_doc_id(doc)
-        collection.update_one(
-            {"_id": doc_id},
-            {"$set": {"user_id": user_id, "content": doc, "$vectorize": doc}},
-            upsert=True
-        )
+        existing_doc = collection.find_one({"_id": doc_id})
+        if not existing_doc or existing_doc.get("content") != doc:
+            collection.update_one(
+                {"_id": doc_id},
+                {"$set": {"user_id": user_id, "content": doc, "$vectorize": doc}},
+                upsert=True
+            )
 
 def search_vectors(query_text, limit=5):
     results = collection.find({}, sort={"$vectorize": query_text}, limit=limit)
     return [doc for doc in results]
 
 def aggregate_user_data(user):
+    """Aggregate data in a human-friendly way.
+    
+    This function:
+      - Adds the user's own name.
+      - For each trip in the user's groups, fetches the trip name and replaces member IDs with their usernames.
+      - For each recent expense, replaces payer and owedBy IDs with corresponding usernames.
+      - For each friend, fetches and shows the friend’s username and email.
+    """
     docs = []
-
-    # Groups (need to fetch group docs by ID)
+    
+    # Add a header for the user.
+    user_name = user.get("username", "Unnamed User")
+    docs.append(f"User: {user_name}")
+    
+    # Groups / Trips
     if "groups" in user:
         for group_id in user["groups"]:
             if isinstance(group_id, ObjectId):
                 group = db.groups.find_one({"_id": group_id})
                 if group:
-                    name = group.get("name", "Unnamed trip")
-                    members = group.get("members", [])
-                    docs.append(f"Trip '{name}' with members {members}")
-
-    # Recent Expenses (embedded)
+                    trip_name = group.get("name", "Unnamed Trip")
+                    member_ids = group.get("members", [])
+                    member_names = []
+                    for m_id in member_ids:
+                        member_doc = db.users.find_one({"_id": m_id})
+                        if member_doc:
+                            member_names.append(member_doc.get("username", "Unknown"))
+                        else:
+                            member_names.append(str(m_id))
+                    docs.append(f"Trip '{trip_name}' with members: {', '.join(member_names)}")
+    
+    # Recent Expenses
     if "recentExpense" in user:
         for expense in user["recentExpense"]:
             title = expense.get("title", "No title")
             amount = expense.get("amount", 0)
-            paid_by = expense.get("paidBy", "Unknown")
-            docs.append(f"Expense '{title}' of ₹{amount}, paid by {paid_by}")
-
-    # Friends (need to fetch actual friend user docs)
+            # Replace the paidBy ID with username.
+            paid_by_id = expense.get("paidBy")
+            if isinstance(paid_by_id, ObjectId):
+                payer_doc = db.users.find_one({"_id": paid_by_id})
+                paid_by = payer_doc.get("username", str(paid_by_id)) if payer_doc else str(paid_by_id)
+            else:
+                paid_by = str(paid_by_id)
+            # For each entry in owedBy, replace the user ID with username.
+            owed_entries = expense.get("owedBy", [])
+            owed_details = []
+            for entry in owed_entries:
+                owed_user_id = entry.get("user")
+                owed_amount = entry.get("amount", 0)
+                if isinstance(owed_user_id, ObjectId):
+                    owed_user_doc = db.users.find_one({"_id": owed_user_id})
+                    owed_username = owed_user_doc.get("username", str(owed_user_id)) if owed_user_doc else str(owed_user_id)
+                else:
+                    owed_username = str(owed_user_id)
+                owed_details.append(f"{owed_username}: ₹{owed_amount}")
+            docs.append(f"Expense '{title}' of ₹{amount}, paid by {paid_by}. Split: {', '.join(owed_details)}")
+    
+    # Friends
     if "friends" in user:
         for entry in user["friends"]:
             friend_id = entry.get("friend")
             balance = entry.get("balance", 0)
-
             if isinstance(friend_id, ObjectId):
-                friend = db.users.find_one({"_id": friend_id})
-                if friend:
-                    name = friend.get("username", "Unnamed")
-                    email = friend.get("email", "No email")
-                    docs.append(f"Friend: {name} ({email}) | Balance: ₹{balance}")
-
+                friend_doc = db.users.find_one({"_id": friend_id})
+                if friend_doc:
+                    friend_name = friend_doc.get("username", "Unnamed")
+                    email = friend_doc.get("email", "No email")
+                else:
+                    friend_name = str(friend_id)
+                    email = "No email"
+            else:
+                friend_name = str(friend_id)
+                email = "No email"
+            docs.append(f"Friend: {friend_name} ({email}) | Balance: ₹{balance}")
+    
     return docs
 
 def construct_prompt(context, query):
-    return f"You are a personal assistant for finance.\nContext:\n{context}\n\nQuery: {query}\n"
+    # Provide detailed instructions and definitions for CashMap AI.
+    improved_context = (
+        "You are CashMap AI, a personal finance assistant designed to help users manage their expenses and financial relationships. "
+        "Your role is to analyze the user's financial history and provide personalized insights. Here are key definitions:\n\n"
+        "User: The person using CashMap AI. Their name and details are provided so you know whom you are assisting.\n\n"
+        "Friends: Individuals with whom the user shares expenses. Their names and contact details (like email) are provided along with current balances.\n\n"
+        "Trips: Shared events or journeys where expenses are recorded and later split among the participants. Each trip lists its members by name.\n\n"
+        "Expenses: Transactions recorded by the user. Each expense has a title, amount, the person who paid, and how the amount is split among participants (shown by usernames rather than database IDs).\n\n"
+        "Your task is to use this context to answer queries in a detailed and personalized manner.\n\n"
+        "Context Details:\n"
+    )
+    return improved_context + context + f"\n\nQuery: {query}\n"
 
 def generate_answer(prompt):
     chat = groq_client.chat.completions.create(
@@ -109,7 +165,9 @@ def assist():
     if not user:
         return jsonify({"message": "User not found"}), 404
 
+    # Aggregate data with human-friendly details.
     docs = aggregate_user_data(user)
+    # Update vector embeddings if necessary.
     upsert_user_documents(user_id, docs)
     vector_docs = search_vectors(query, limit=5)
     context = "\n".join(doc.get("content", "") for doc in vector_docs)

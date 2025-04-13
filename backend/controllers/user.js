@@ -139,6 +139,13 @@ const userDetails = async (req, res) => {
     const user = await User.findById(userId).populate({
       path: "friends.friend",
       select: "username email upiId", // optional: select only needed fields
+    }).populate({
+      path: "recentExpense",
+      populate: [
+        { path: "paidBy", select: "username email" },
+        { path: "owedBy.user", select: "username email" },
+        { path: "group", select: "name description" }
+      ]
     });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
@@ -418,6 +425,36 @@ const verifyForgotPassword = async (req, res) => {
   }
 };
 
+const changePassword = async (req, res) => {
+  const { userId, newPassword } = req.body;
+  console.log(userId,newPassword)
+
+  // Validate required fields
+  if (!userId || !newPassword) {
+    return res.status(400).json({ message: "Please provide userId and newPassword." });
+  }
+
+  try {
+    // Find the user. Note: If the password field is excluded by default,
+    // you may use `.select("+password")` if needed for the pre-save hook.
+    const user = await User.findById(userId).select("+password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Set the new password. The pre-save middleware in your schema will hash it.
+    user.password = newPassword;
+
+    // Save the updated user document
+    await user.save();
+
+    res.status(200).json({ message: "Password changed successfully." });
+  } catch (error) {
+    console.error("Error changing password:", error);
+    res.status(500).json({ message: "Internal server error.", error: error.message });
+  }
+};
+
 export {
   sendOtp,
   userLogin,
@@ -429,4 +466,5 @@ export {
   removeFriend,
   userDetails,
   updateFriendBalance,
+  changePassword,
 };

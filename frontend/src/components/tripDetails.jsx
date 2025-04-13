@@ -28,6 +28,7 @@ const TripDetails = () => {
           typeof m === "string" ? m : m.username
         );
 
+        setExpenses(parsedGroup.expenses)
         // Set directly to localStorage (no merge)
         localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
         setMembers(groupMembers);
@@ -36,12 +37,13 @@ const TripDetails = () => {
       }
       try {
         const response = await axios.get(
-          `http://192.168.1.7:8000/group/get-group/${tripId}`
+          `http://localhost:8000/group/get-group/${tripId}`
         );
         if (response.status === 200) {
           const group = response.data;
           setTripDetails(group);
           setLoading(false);
+          console.log(group,"group")
           setExpenses(group.expenses);
 
           // Extract only the usernames from group members
@@ -87,6 +89,7 @@ const TripDetails = () => {
     // Navigate back to the dashboard
     navigate("/dash");
   };
+  console.log(expenses,"asfa")
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
       <div className="absolute inset-0 overflow-hidden">
@@ -170,7 +173,9 @@ const TripDetails = () => {
                 No Expenses Yet
               </div>
             ) : (
-              expenses.map((expense, idx) => (
+              expenses.map((expense, idx) => {
+                console.log(expense)
+                return(
                 <ExpenseCard
                   key={idx}
                   category={expense.title}
@@ -181,7 +186,7 @@ const TripDetails = () => {
                   paidBy={expense.paidBy}
                   beneficiaries={expense.owedBy}
                 />
-              ))
+              )})
             )}
           </div>
         </div>

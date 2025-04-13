@@ -116,7 +116,7 @@ const AddExpense = () => {
 
     try {
       // Replace with your backend endpoint
-      const response = await axios.post("http://192.168.1.7:8000/group/add-expense", payload);
+      const response = await axios.post("http://localhost:8000/group/add-expense", payload);
       console.log("Expense created successfully", response.data);
       alert("Expense added successfully!");
       // Reset form fields
