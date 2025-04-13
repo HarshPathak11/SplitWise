@@ -20,7 +20,7 @@ const FriendsSection = ({ user }) => {
       const userId = currentUser._id;
 
       const res = await axios.delete(
-        `http://192.168.1.7:8000/user/remove-friend`,
+        `http://192.168.56.1:8000/user/remove-friend`,
         {
           data: {
             userId,
@@ -31,6 +31,9 @@ const FriendsSection = ({ user }) => {
 
       if (res.status === 200) {
         // Remove from frontend state
+        setFriends((prev) =>
+          prev.filter((f) => f.friend._id !== friendIdToDelete)
+        );
         setFriends((prev) =>
           prev.filter((f) => f.friend._id !== friendIdToDelete)
         );
@@ -87,6 +90,11 @@ const FriendsSection = ({ user }) => {
                   strokeLinejoin="round"
                   d="M12 4v16m8-8H4"
                 />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
             </button>
           </Link>
@@ -102,9 +110,9 @@ const FriendsSection = ({ user }) => {
         }`}
       >
         {filteredFriends.length === 0 ? (
-          <p className="text-red-500 text-center font-semibold">
-            No friends found.
-          </p>
+            <p className="text-red-500 text-center font-semibold">
+              No friends found.
+            </p>
         ) : (
           filteredFriends.map((f, index) => (
             <FriendCard

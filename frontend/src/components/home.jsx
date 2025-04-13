@@ -4,13 +4,14 @@ import oye from "../../save.svg";
 import { Link } from "react-router-dom";
 const LandingPage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white flex flex-col items-center relative overflow-hidden">
+    <div className="min-h-screen bg-[#000000] flex flex-col items-center relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-[10px] opacity-30">
           <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
           <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
           <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+          <div className="absolute -bottom-8 right-20 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
       </div>
 
@@ -58,7 +59,7 @@ const LandingPage = () => {
               </button>
             </Link>
             <button
-              className="bg-transparent border border-white/30 py-3 px-6 rounded-lg hover:bg-white/10 transition-all duration-300 hover:scale-105"
+              className="bg-transparent border text-white border-white/30 py-3 px-6 rounded-lg hover:bg-white/10 transition-all duration-300 hover:scale-105"
               onClick={() => {
                 const comparisonTable =
                   document.getElementById("comparison-table");
@@ -78,7 +79,7 @@ const LandingPage = () => {
       </div>
 
       {/* Testimonials Section */}
-      <section className="w-full backdrop-blur-lg bg-gray-800/50 py-20 relative z-10">
+      <section className="w-full backdrop-blur-lg bg-[#000000] py-20 relative z-10">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center text-center mb-24">
             <div className="w-full lg:w-6/12 px-4">

@@ -16,9 +16,26 @@ const TripDetails = () => {
   useEffect(() => {
     const fetchTripDetails = async () => {
       if (!tripId) return;
+      const getCurrentGroup = localStorage.getItem("currentGroup");
+      console.log("Current Group:", getCurrentGroup);
+
+      if (getCurrentGroup) {
+        const parsedGroup = JSON.parse(getCurrentGroup); // Parse the string into an object
+        setTripDetails(parsedGroup);
+        // Extract only the usernames from group members
+        const groupMembers = parsedGroup.members.map((m) =>
+          typeof m === "string" ? m : m.username
+        );
+
+        // Set directly to localStorage (no merge)
+        localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
+        setMembers(groupMembers);
+        setLoading(false);
+        return;
+      }
       try {
         const response = await axios.get(
-          `http://192.168.1.7:8000/group/get-group/${tripId}`
+          `http://192.168.56.1:8000/group/get-group/${tripId}`
         );
         if (response.status === 200) {
           const group = response.data;
@@ -32,6 +49,7 @@ const TripDetails = () => {
 
           // Set directly to localStorage (no merge)
           localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
+          localStorage.setItem("currentGroup", JSON.stringify(group));
           setMembers(groupMembers);
         }
       } catch (error) {
@@ -70,6 +88,15 @@ const TripDetails = () => {
     },
   ];
 
+  const handleBackClick = () => {
+    // Remove trip members and current group from localStorage
+    localStorage.removeItem("tripMembers");
+    localStorage.removeItem("currentGroup");
+
+    // Navigate back to the dashboard
+    navigate("/dash");
+  };
+
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
       <div className="absolute inset-0 overflow-hidden">
@@ -82,7 +109,7 @@ const TripDetails = () => {
       {/* Back Button */}
       <button
         className="flex items-center text-white hover:text-gray-300 backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5  sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300"
-        onClick={() => navigate("/dash")}
+        onClick={handleBackClick}
       >
         <ArrowLeft className="w-5 h-5 mr-2" />
         Back

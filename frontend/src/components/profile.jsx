@@ -1,4 +1,4 @@
-import { Link , useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -23,7 +23,7 @@ const Profile = () => {
 
         try {
           const response = await axios.get(
-            `http://192.168.1.7:8000/user/${userId}`
+            `http://192.168.56.1:8000/user/${userId}`
           );
           if (response.status === 200) {
             const fetchedUser = response.data.user;
@@ -51,7 +51,7 @@ const Profile = () => {
     try {
       const userId = Cookies.get("id");
       const response = await axios.put(
-        `http://192.168.1.7:8000/user/${userId}`,
+        `http://192.168.56.1:8000/user/${userId}`,
         profile
       );
 
@@ -112,10 +112,14 @@ const Profile = () => {
         action="javascript:void(0);"
         className="bg-[rgba(255,255,255,0.1)] backdrop-blur-md p-8 rounded-lg shadow-lg border border-white/20 w-full max-w-md"
       >
-        <h2 className="text-2xl font-bold mb-4 text-center text-[#00f5ff]">Edit Profile</h2>
+        <h2 className="text-2xl font-bold mb-4 text-center text-[#00f5ff]">
+          Edit Profile
+        </h2>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2 text-[#00f5ff]">Username</label>
+          <label className="block text-sm font-medium mb-2 text-[#00f5ff]">
+            Username
+          </label>
           <input
             type="text"
             name="username"
@@ -127,7 +131,9 @@ const Profile = () => {
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-2 text-[#00f5ff]">Email</label>
+          <label className="block text-sm font-medium mb-2 text-[#00f5ff]">
+            Email
+          </label>
           <input
             type="email"
             name="email"
@@ -152,13 +158,13 @@ const Profile = () => {
           />
         </div>
         <div className="text-right mb-4">
-              <Link
-                to="/reset-password"
-                className="text-sm text-slate-300 hover:text-blue-300 hover:underline"
-              >
-                Reset your password?
-              </Link>
-            </div>
+          <Link
+            to="/change-password"
+            className="text-sm text-slate-300 hover:text-blue-300 hover:underline"
+          >
+            Reset your password?
+          </Link>
+        </div>
         <button
           type="submit"
           disabled={!profile.upiId}

@@ -4,108 +4,108 @@
 
 /* Glassmorphism effect */
 .bg-glass {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Fade-in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  
-  /* Fade-in animation */
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .animate-fade-in {
-    animation: fade-in 0.8s ease-in-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease-in-out;
+}
+
+/* Moving gradient animation */
+@keyframes move {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
   }
-  
-  /* Moving gradient animation */
-  @keyframes move {
-    0% {
-      transform: translate(-50%, -50%) scale(1);
-    }
-    50% {
-      transform: translate(50%, 50%) scale(1.2);
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(1);
-    }
+  50% {
+    transform: translate(50%, 50%) scale(1.2);
   }
-  
-  /* Moving gradient animation (opposite direction) */
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Moving gradient animation (opposite direction) */
 @keyframes move-opposite {
-    0% {
-      transform: translate(50%, 50%) scale(1);
-    }
-    50% {
-      transform: translate(-50%, -50%) scale(1.2);
-    }
-    100% {
-      transform: translate(50%, 50%) scale(1);
-    }
+  0% {
+    transform: translate(50%, 50%) scale(1);
   }
-  
-  .animate-move {
-    position: absolute;
-    animation: move 10s infinite ease-in-out;
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
   }
+  100% {
+    transform: translate(50%, 50%) scale(1);
+  }
+}
 
-  .animate-move-opposite {
-    position: absolute;
-    animation: move-opposite 10s infinite ease-in-out;
-  }
-  
-  
-  /* Rotating animation */
-  @keyframes rotate {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-  
-  .animate-rotate {
-    animation: rotate 15s linear infinite;
-  }
+.animate-move {
+  position: absolute;
+  animation: move 10s infinite ease-in-out;
+}
 
-  /* Rotating animation (opposite direction) */
+.animate-move-opposite {
+  position: absolute;
+  animation: move-opposite 10s infinite ease-in-out;
+}
+
+/* Rotating animation */
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-rotate {
+  animation: rotate 15s linear infinite;
+}
+
+/* Rotating animation (opposite direction) */
 @keyframes rotate-opposite {
-    0% {
-      transform: rotate(360deg);
-    }
-    100% {
-      transform: rotate(0deg);
-    }
+  0% {
+    transform: rotate(360deg);
   }
-  
-  .animate-rotate-opposite {
-    animation: rotate-opposite 15s linear infinite;
-  }  
-  
-  /* Bounce animation */
-  @keyframes bounce {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-20px);
-    }
+  100% {
+    transform: rotate(0deg);
   }
-  
-  .animate-bounce {
-    animation: bounce 3s infinite;
-  }
+}
 
-  /* Bounce animation (opposite direction) */
+.animate-rotate-opposite {
+  animation: rotate-opposite 15s linear infinite;
+}
+
+/* Bounce animation */
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 3s infinite;
+}
+
+/* Bounce animation (opposite direction) */
 @keyframes bounce-opposite {
     0%, 100% {
       transform: translateY(20px);

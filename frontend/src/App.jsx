@@ -9,10 +9,10 @@ import ProtectedRoute from "./components/ProtectedRoutes";
 import NotFound from "./NotFound";
 import AddFriend from "./components/addFriend";
 import AddTrip from "./components/addTrip";
-import ForgotPassword from "./components/forgotPassword";
-import ResetPassword from "./components/resetPassword";
-import TripDetails from "./components/tripDetails";
 import AddExpense from "./components/addExpense";
+import ForgotPassword from "./components/forgotPassword";
+import ChangePassword from "./components/changePassword";
+import TripDetails from "./components/tripDetails";
 import AddMembers from "./components/addMembers";
 import AllTripsPage from "./components/AllTripsPage";
 import AllExpenses from "./components/AllExpenses";
@@ -111,8 +111,8 @@ const router = createBrowserRouter([
     element: <ForgotPassword />
   },
   {
-    path: "/reset-password",
-    element: <ResetPassword />
+    path: "/change-password",
+    element: <ChangePassword />
   },
   {
     path: "*",

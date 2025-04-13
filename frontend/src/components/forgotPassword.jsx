@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://192.168.1.7:8000/user/forgot-password",
+        "http://192.168.56.1:8000/user/forgot-password",
         {
           email,
         }
@@ -37,7 +37,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://192.168.1.7:8000/user/verify-forgot-password",
+        "http://192.168.56.1:8000/user/verify-forgot-password",
         {
           otpGenerated,
           otp,
@@ -79,7 +79,9 @@ const ForgotPassword = () => {
         </button>
       </div>{" "}
       <div className="max-w-md w-full p-8 bg-glass rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-[#00f5ff] ">Forgot Password</h2>
+        <h2 className="text-2xl font-bold mb-6 text-[#00f5ff] ">
+          Forgot Password
+        </h2>
         <p className="mb-4 text-white">
           Please enter your email address to verify OTP
         </p>

@@ -60,7 +60,7 @@ const AddTrip = () => {
       }
 
       const res = await axios.post(
-        "http://192.168.1.7:8000/group/create-group",
+        "http://192.168.56.1:8000/group/create-group",
         tripData
       );
       console.log("Response:", res.data); // Log the response for debugging
@@ -137,11 +137,9 @@ const AddTrip = () => {
                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3]"
               />
             </div>
-
-            {/* To Date */}
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-1 text-gray-300">
-                To
+            <div className="w-1/2 pl-2">
+              <label className="block text-white mb-2" htmlFor="toDate">
+                To Date
               </label>
               <input
                 type="date"
@@ -167,16 +165,15 @@ const AddTrip = () => {
             </h3>
 
             <label className="flex items-center space-x-2 py-3 text-white">
-            <input
-              type="checkbox"
-              checked={selectAll}
-              onChange={handleSelectAll}
-              className="w-4 h-4"
-            />
-            <span className="text-sm">Select All</span>
-          </label>
+              <input
+                type="checkbox"
+                checked={selectAll}
+                onChange={handleSelectAll}
+                className="w-4 h-4"
+              />
+              <span className="text-sm">Select All</span>
+            </label>
 
-        
             <div className="flex flex-col gap-2">
               {friends.map((friend, index) => (
                 <label key={index} className="flex items-center gap-2">

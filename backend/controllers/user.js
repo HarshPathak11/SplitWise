@@ -99,6 +99,7 @@ const userLogin = async (req, res) => {
     }
 
     // Clean the input password
+    
     const cleanPassword = String(password).trim();
     console.log("clean password ", cleanPassword);    
 
@@ -237,7 +238,7 @@ const addFriends = async (req, res) => {
           html: `<h1>Hi,</h1>
                  <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
                  <p>Please click on the link below to join: 
-                 <a href="http://192.168.1.5:5173/${user._id}">Join Fair Fare</a></p>
+                 <a href="http://192.168.56.1:5173/${user._id}">Join Fair Fare</a></p>
                  <p>Thanks,<br/>Fair Fare Team</p>`,
         };
         await transporter.sendMail(mailOptions)

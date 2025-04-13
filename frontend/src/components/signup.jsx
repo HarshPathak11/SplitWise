@@ -24,7 +24,7 @@ const SignUp = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://192.168.1.7:8000/user/send-otp",
+        "http://192.168.56.1:8000/user/send-otp",
         {
           email,
           username,
@@ -49,7 +49,7 @@ const SignUp = () => {
   const handleOtpVerify = async () => {
     try {
       const response = await axios.post(
-        "http://192.168.1.7:8000/user/verify-otp",
+        "http://192.168.56.1:8000/user/verify-otp",
         {
           email,
           otp,
@@ -94,9 +94,13 @@ const SignUp = () => {
       {/* SignUp Card */}
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
-          <div className="flex justify-between items-center mb-6 mt-16">
+        <div className="flex items-center ">
+            <img src="../icon.svg" alt="Icon" className="w-8 h-8 mr-2" />
+            <span className="text-4xl text-center font-bold text-white">FairFare</span>
+          </div>
+          <div className="flex justify-between items-center mb-6 mt-6">
             <div className="text-2xl font-bold text-[#00f5ff]">SIGN UP</div>
-            <Link to="/login" className="text-xl text-white cursor-pointer">
+            <Link to="/login" className=" text-[#00f5ff] cursor-pointer hover:underline">
               LOGIN
             </Link>
           </div>
@@ -143,7 +147,6 @@ const SignUp = () => {
               />
             </div>
           )}
-
           <button
             onClick={otpSent ? handleOtpVerify : handleOtpSend}
             disabled={loading}
