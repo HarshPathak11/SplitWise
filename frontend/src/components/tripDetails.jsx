@@ -12,18 +12,20 @@ const TripDetails = () => {
   const [members, setMembers] = useState([]);
   const [tripDetails, setTripDetails] = useState(null); // Store trip details
   const [loading, setLoading] = useState(true); // Loading state for the GET request
+  const [expenses, setExpenses] = useState([]);
 
   useEffect(() => {
     const fetchTripDetails = async () => {
       if (!tripId) return;
       try {
         const response = await axios.get(
-          `http://192.168.1.7:8000/group/get-group/${tripId}`
+          `http://localhost:8000/group/get-group/${tripId}`
         );
         if (response.status === 200) {
           const group = response.data;
           setTripDetails(group);
           setLoading(false);
+          setExpenses(group.expenses);
 
           // Extract only the usernames from group members
           const groupMembers = group.members.map((m) =>
@@ -55,20 +57,10 @@ const TripDetails = () => {
       );
       return;
     }
-    navigate("/add-expense", { state: { members } });
+    navigate("/add-expense", { state: { members, propGroupId: tripId } });
   };
 
-  const expenses = [
-    {
-      category: "Grocery",
-      time: "5:12 pm",
-      description: "Belanja di pasar",
-      amount: "1289.80",
-      iconColor: "bg-blue-500",
-      paidBy: "John Doe",
-      beneficiaries: ["Alice", "Bob", "Charlie", "John Doe"],
-    },
-  ];
+
 
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
@@ -156,13 +148,13 @@ const TripDetails = () => {
               expenses.map((expense, idx) => (
                 <ExpenseCard
                   key={idx}
-                  category={expense.category}
-                  time={expense.time}
-                  description={expense.description}
+                  category={expense.title}
+                  time={expense.createdAt}
+                  description={""}
                   amount={expense.amount}
-                  iconColor={expense.iconColor}
+                  iconColor={"bg-blue-500"}
                   paidBy={expense.paidBy}
-                  beneficiaries={expense.beneficiaries}
+                  beneficiaries={expense.owedBy}
                 />
               ))
             )}
