@@ -1,5 +1,7 @@
 import { Group } from "../models/schema.js";
 import { User } from "../models/schema.js";
+import { Expense } from "../models/schema.js";
+import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -92,7 +94,7 @@ const getGroupDetails = async (req, res) => {
   try {
     const group = await Group.findById(groupId).populate(
       "members",
-      "username email"
+      "username email",
     ); // Populate members with their username and email
     if (!group) {
       return res.status(404).json({ message: "Group not found" });
@@ -104,4 +106,145 @@ const getGroupDetails = async (req, res) => {
   }
 };
 
-export { createGroup, getGroupDetails, addMembers, getAllGroupsOfAUser };
+/**
+ * addExpenseController
+ *
+ * This controller:
+ * - Creates a new Expense document.
+ * - Depending on the split mode, calculates the owedBy details.
+ * - Pushes the entire expense document (as an embedded subdocument) into:
+ *    - the Group's expenses array (if a group is specified),
+ *    - the payer User’s recentExpense field.
+ * - Updates friend balances based on the shared expense.
+ *
+ * Expected req.body:
+ * {
+ *   title: String,
+ *   amount: Number, // total expense amount
+ *   paidBy: String, // payer's user _id
+ *   groupId: String, // optional if expense belongs to a group
+ *   splitMode: 'equally' | 'unequally',
+ *   involvedMembers: Array of user _ids,  // for the expense splitting (owedBy)
+ *   customAmounts: { [userId]: Number }    // provided only if splitMode === 'unequally'
+ * }
+ */
+const addExpenseController = async (req, res) => {
+  const {
+    title,
+    amount,             // e.g., "300"
+    paidBy,             // payer's user _id
+    groupId,            // group _id if applicable (or null)
+    splitMode,          // either "equally" or "unequally"
+    involvedMembers,    // array of user _ids who are part of the expense splitting
+    customAmounts       // object mapping user _id to amount (for uneven splits)
+  } = req.body;
+
+  // Basic validation
+  if (!title || !amount || !paidBy || !involvedMembers || !Array.isArray(involvedMembers) || involvedMembers.length === 0) {
+    return res.status(400).json({ success: false, message: 'Missing required fields' });
+  }
+
+  // Start a transaction session
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // Build the owedBy array for the expense document
+    let owedByArray = [];
+
+    if (splitMode === 'equally') {
+      // Equal splitting: Divide the amount evenly among all involved members.
+      // Note: Even if the payer is in involvedMembers, that's fine; we’ll skip balance updates for self-payments.
+      const share = parseFloat(amount) / involvedMembers.length;
+      owedByArray = involvedMembers.map(memberId => ({
+        user: memberId,
+        amount: parseFloat(share.toFixed(2))
+      }));
+    } else if (splitMode === 'unequally') {
+      // Unequal splitting: Ensure provided custom amounts add up correctly.
+      const totalCustom = Object.values(customAmounts)
+        .reduce((sum, val) => sum + parseFloat(val || 0), 0);
+
+      if (parseFloat(totalCustom.toFixed(2)) !== parseFloat(parseFloat(amount).toFixed(2))) {
+        throw new Error('Total of custom amounts does not match the expense amount.');
+      }
+
+      owedByArray = involvedMembers.map(memberId => ({
+        user: memberId,
+        amount: parseFloat(parseFloat(customAmounts[memberId]).toFixed(2))
+      }));
+    } else {
+      throw new Error('Invalid split mode provided.');
+    }
+
+    // Create a new Expense document (from the Expense collection)
+    const newExpense = new Expense({
+      title,
+      amount: parseFloat(amount),
+      paidBy,
+      owedBy: owedByArray,
+      group: groupId || null
+    });
+
+    // Save the new expense within the transaction
+    await newExpense.save({ session });
+
+    // -------------------------------
+    // Update Group and User by pushing the entire expense document as an embedded subdocument.
+    // Since the Group.expenses and User.recentExpense fields are defined using expenseSchema,
+    // pushing newExpense.toObject() embeds the complete expense data (with createdAt, updatedAt, etc.).
+    // -------------------------------
+    if (groupId) {
+      await Group.findByIdAndUpdate(
+        groupId,
+        { $push: { expenses: newExpense.toObject() } },
+        { session }
+      );
+    }
+
+    await User.findByIdAndUpdate(
+      paidBy,
+      { $push: { recentExpense: newExpense.toObject() } },
+      { session }
+    );
+
+    // -------------------------------
+    // Update friend balances:
+    // For each owedBy entry, if the owed user is not the payer, update balances.
+    // In the payer's document, increase the balance for that friend.
+    // In the friend's document, decrease the balance for the payer.
+    // -------------------------------
+    for (const owed of owedByArray) {
+      if (owed.user.toString() === paidBy.toString()) continue;  // Skip self-payment
+
+      // Update payer's record: increment the balance for this friend
+      await User.updateOne(
+        { _id: paidBy, "friends.friend": owed.user },
+        { $inc: { "friends.$.balance": owed.amount } },
+        { session }
+      );
+
+      // Update the friend's record: decrement the balance for the payer
+      await User.updateOne(
+        { _id: owed.user, "friends.friend": paidBy },
+        { $inc: { "friends.$.balance": -owed.amount } },
+        { session }
+      );
+    }
+
+    // Commit transaction if all operations succeed
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.status(200).json({ success: true, expense: newExpense });
+  } catch (error) {
+    // Abort transaction on error
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Error in addExpenseController:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+export { createGroup, getGroupDetails, addMembers, getAllGroupsOfAUser, addExpenseController };

@@ -1,7 +1,31 @@
 import ExpenseCard from "./expenseCard"; // Make sure this path is correct based on your folder structure
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 const RecentExpenses = () => {
+  const [recentExpenses, setRecentExpenses] = useState([]);
+
+  useEffect(() => {
+    // Retrieve user from localStorage and parse the recentExpense field.
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        if (user?.recentExpense && Array.isArray(user.recentExpense)) {
+          // Sort expenses by createdAt in descending order (most recent first)
+          const sortedExpenses = [...user.recentExpense].sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          // Take the top 4 expenses after sorting.
+          const topExpenses = sortedExpenses.slice(0, 4);
+          setRecentExpenses(topExpenses);
+        }
+      } catch (error) {
+        console.error("Error parsing user from localStorage:", error);
+      }
+    }
+  }, []);
+
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
       <div className="flex justify-between items-center mb-2 sm:mb-3">
@@ -20,33 +44,21 @@ const RecentExpenses = () => {
       </div>
 
       <div className="space-y-3 sm:space-y-4">
-        <ExpenseCard
-          category="Grocery"
-          time="5:12 pm"
-          description="Belanja di pasar"
-          amount="326.80"
-          iconColor="bg-blue-500"
-          paidBy="John Doe"
-          beneficiaries={["Alice", "Bob", "Charlie", "Jane"]}
-        />
-        <ExpenseCard
-          category="Pizza"
-          time="3:12 am"
-          description="Pizza 50"
-          amount="180.00"
-          iconColor="bg-blue-500"
-          paidBy="Richard"
-          beneficiaries={["Alice", "Bob", "Charlie", "Jane"]}
-        />
-        <ExpenseCard
-          category="Transportation"
-          time="5:12 pm"
-          description="Naik bus umum"
-          amount="15"
-          iconColor="bg-purple-500"
-          paidBy="Jane Smith"
-          beneficiaries={["John", "Alice"]}
-        />
+        {recentExpenses && recentExpenses.length > 0 ? (
+          recentExpenses.map((expense) => (
+            <ExpenseCard
+              category={expense.title}
+              time={expense.createdAt}
+              description={""}
+              amount={expense.amount}
+              iconColor={"bg-blue-500"}
+              paidBy={expense.paidBy}
+              beneficiaries={expense.owedBy}
+            />
+          ))
+        ) : (
+          <div className="text-center text-gray-300">No recent expenses</div>
+        )}
       </div>
     </div>
   );

@@ -3,13 +3,14 @@ import PropTypes from 'prop-types';
 
 const ExpenseCard = ({ category, time, description, amount, iconColor, paidBy, beneficiaries }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  console.log("beneficiaries", beneficiaries)
+  console.log("amount", amount);
 
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
   };
 
   // Calculate individual share
-  const share = (Number(amount) / beneficiaries.length).toFixed(2);
 
   return (
     <div 
@@ -40,7 +41,7 @@ const ExpenseCard = ({ category, time, description, amount, iconColor, paidBy, b
           <ul className="text-gray-400">
             {beneficiaries.map((person, index) => (
               <li key={index} className="ml-4 list-disc">
-                {person} owes ₹{share}
+                {person.user} has a share of ₹{person.amount}
               </li>
             ))}
           </ul>

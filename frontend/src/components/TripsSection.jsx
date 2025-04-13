@@ -20,9 +20,7 @@ const TripsSection = () => {
           return;
         }
 
-        const response = await axios.get(
-          `http://192.168.56.1:8000/group/user-groups/${userId}`
-        );
+        const response = await axios.get(`http://192.168.1.7:8000/group/user-groups/${userId}`);
         setTrips(response.data || []);
       } catch (error) {
         console.error("Error fetching trips:", error);

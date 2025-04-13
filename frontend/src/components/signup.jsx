@@ -23,13 +23,10 @@ const SignUp = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(
-        "http://192.168.56.1:8000/user/send-otp",
-        {
-          email,
-          username,
-        }
-      );
+      const response = await axios.post('http://192.168.1.7:8000/user/send-otp', {
+        email,
+        username,
+      });
 
       if (response.status === 200) {
         setOtpSent(response.data.otp);
@@ -48,17 +45,14 @@ const SignUp = () => {
 
   const handleOtpVerify = async () => {
     try {
-      const response = await axios.post(
-        "http://192.168.56.1:8000/user/verify-otp",
-        {
-          email,
-          otp,
-          otpGenerated,
-          password,
-          username,
-        }
-      );
-
+      const response = await axios.post('http://192.168.1.7:8000/user/verify-otp', {
+        email,
+        otp,
+        otpGenerated,
+        password,
+        username,
+      });
+      
       if (response.status === 200) {
         Cookies.set("id", response.data._id, { expires: 7 });
         navigate("/profile");

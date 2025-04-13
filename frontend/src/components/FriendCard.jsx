@@ -32,7 +32,7 @@ const FriendCard = ({
     console.log("friend", friend);
 
     try {
-      await axios.post("http://192.168.56.1:8000/user/update-friend-balance", {
+      await axios.post("http://localhost/user/update-friend-balance", {
         userEmail: currentUser.email,
         friendEmail: friend.email,
         amount,
@@ -58,7 +58,7 @@ const FriendCard = ({
     console.log("currentUser", currentUser);
 
     try {
-      await axios.post("http://192.168.56.1:8000/user/update-friend-balance", {
+      await axios.post("http://192.168.1.7:8000/user/update-friend-balance", {
         userEmail: currentUser.email,
         friendEmail: friend.email,
         amount,
@@ -83,26 +83,20 @@ const FriendCard = ({
     try {
       if (currentBalance > 0) {
         // If friend owes you money, then receiving money will reduce the balance.
-        await axios.post(
-          "http://192.168.56.1:8000/user/update-friend-balance",
-          {
-            userEmail: currentUser.email,
-            friendEmail: friend.email,
-            amount: currentBalance,
-            action: "received",
-          }
-        );
+        await axios.post("http://192.168.1.7:8000/user/update-friend-balance", {
+          userEmail: currentUser.email,
+          friendEmail: friend.email,
+          amount: currentBalance,
+          action: "received",
+        });
       } else {
         // If you owe friend money, paying them will reduce the negative balance.
-        await axios.post(
-          "http://192.168.56.1:8000/user/update-friend-balance",
-          {
-            userEmail: currentUser.email,
-            friendEmail: friend.email,
-            amount: Math.abs(currentBalance),
-            action: "paid",
-          }
-        );
+        await axios.post("http://192.168.1.7:8000/user/update-friend-balance", {
+          userEmail: currentUser.email,
+          friendEmail: friend.email,
+          amount: Math.abs(currentBalance),
+          action: "paid",
+        });
       }
       balance = 0;
       updateFriendBalance(friend.email, balance);

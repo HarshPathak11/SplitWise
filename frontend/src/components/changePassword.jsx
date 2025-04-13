@@ -31,7 +31,7 @@ const ChangePassword = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/change-password",
+        "http://192.168.1.7:8000/change-password",
         { currentPassword, newPassword }
       );
       setMessage(response.data.message);

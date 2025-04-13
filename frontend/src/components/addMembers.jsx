@@ -42,7 +42,7 @@ const AddMembers = () => {
     if (selectedFriends.some((f) => f._id === friend._id)) {
       setSelectedFriends((prev) => prev.filter((f) => f._id !== friend._id));
     } else {
-      setSelectedFriends((prev) => [friend, ...prev]);
+      setSelectedFriends((prev) => [friendItem, ...prev]);
     }
     setSearch("");
   };
@@ -60,15 +60,12 @@ const AddMembers = () => {
 
       const selectedUsernames = selectedFriends.map((f) => f._id);
       console.log("Selected Usernames:", selectedUsernames);
-
-      const res = await axios.post(
-        `http://192.168.56.1:8000/group/add-members/${groupId}`,
-        {
-          groupId,
-          members: selectedUsernames,
-        }
-      );
-
+  
+      const res = await axios.post(`http://192.168.1.7:8000/group/add-members/${groupId}`, {
+        groupId,
+        members: selectedUsernames,
+      });
+  
       console.log("Response:", res);
 
       if (res.status !== 200) {
@@ -103,7 +100,7 @@ const AddMembers = () => {
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold mb-4 text-center">Add Members</h1>
 
-        {/* Search */}
+        {/* Search Input */}
         <input
           type="text"
           placeholder="Search friends..."
@@ -112,14 +109,14 @@ const AddMembers = () => {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {/* Selected Friends */}
+        {/* Selected Friends Display */}
         {selectedFriends.length > 0 && (
           <div className="mt-4">
             <p className="text-gray-300 mb-2">Selected:</p>
             <div className="flex flex-wrap gap-3">
-              {selectedFriends.map((friend) => (
+              {selectedFriends.map((friendItem) => (
                 <span
-                  key={friend._id}
+                  key={friendItem.friend._id}
                   className="bg-green-700 px-3 py-1 rounded-full text-sm"
                 >
                   {friend.username}
@@ -129,7 +126,7 @@ const AddMembers = () => {
           </div>
         )}
 
-        {/* Friend List */}
+        {/* Friend List Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
           {filteredFriends.map((friend) => {
             const isSelected = selectedFriends.some(
@@ -137,14 +134,13 @@ const AddMembers = () => {
             );
             return (
               <div
-                key={friend._id}
-                onClick={() => handleSelect(friend)}
-                className={`cursor-pointer px-4 py-3 rounded-lg border transition 
-                  ${
-                    isSelected
-                      ? "border-green-500 bg-green-800 text-white"
-                      : "border-gray-600 bg-[#121212] hover:bg-gray-800"
-                  }`}
+                key={friendItem.friend._id}
+                onClick={() => handleSelect(friendItem)}
+                className={`cursor-pointer px-4 py-3 rounded-lg border transition ${
+                  isSelected
+                    ? "border-green-500 bg-green-800 text-white"
+                    : "border-gray-600 bg-[#121212] hover:bg-gray-800"
+                }`}
               >
                 {friend.username}
               </div>
