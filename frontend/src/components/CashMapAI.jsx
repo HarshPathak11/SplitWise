@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Send, Bot } from 'lucide-react';
+import React, { useState } from 'react';
+import {FaArrowLeft,FaArrowRight,FaRobot} from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 function CashMapAI() {
@@ -25,21 +25,32 @@ function CashMapAI() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col text-white">
-      <div className="bg-gray-800 p-4 border-b border-gray-700">
+    <div className="min-h-screen flex flex-col bg-[#000000] text-white overflow-hidden relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
+        <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
+        <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
+        <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
+        <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
+      </div>
+
+      {/* Header */}
+      <div className="bg-glass-800 p-4 border-b border-gray-700 z-10 relative">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link to="/dash" className="flex items-center text-gray-400 hover:text-white">
-            <ArrowLeft className="h-5 w-5 mr-2" />
+          <Link to="/dash" className="flex items-center text-white-400">
+            <FaArrowLeft className="h-5 mr-2 w-5" cursor-pointer />
             Back to Dashboard
           </Link>
           <div className="flex items-center">
-            <Bot className="h-6 w-6 text-emerald-500 mr-2" />
+            <FaRobot className="h-6 w-6 text-emerald-500 mr-2" />
             <span className="font-semibold">CashMap AI Assistant</span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 max-w-4xl mx-auto w-full p-4 overflow-auto">
+      {/* Chat Messages */}
+      <div className="flex-1 max-w-4xl mx-auto w-full p-4 overflow-y-auto z-10 relative">
         <div className="space-y-4">
           {messages.map((message, index) => (
             <div
@@ -60,7 +71,8 @@ function CashMapAI() {
         </div>
       </div>
 
-      <div className="bg-gray-800 border-t border-gray-700 p-4">
+      {/* Input Field */}
+      <div className=" bottom-0 bg-glass-800 border-t border-gray-700 p-4 z-10 relative">
         <form onSubmit={handleSend} className="max-w-4xl mx-auto flex gap-4">
           <input
             type="text"
@@ -73,7 +85,7 @@ function CashMapAI() {
             type="submit"
             className="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
           >
-            <Send className="h-5 w-5" />
+            <FaArrowRight className="h-5 w-5" />
           </button>
         </form>
       </div>
