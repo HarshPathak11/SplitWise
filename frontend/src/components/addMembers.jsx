@@ -4,7 +4,6 @@ import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 
-
 const AddMembers = () => {
   const navigate = useNavigate();
   const [friends, setFriends] = useState([]);
@@ -12,17 +11,17 @@ const AddMembers = () => {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const { groupId } = useParams();
   console.log("Group ID:", groupId);
-  
+
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem("user");
       const existingTripMembers =
-      JSON.parse(localStorage.getItem("tripMembers")) || [];
-      
+        JSON.parse(localStorage.getItem("tripMembers")) || [];
+
       console.log("Existing tripMembers:", existingTripMembers);
       if (storedUser) {
         const user = JSON.parse(storedUser);
-  
+
         const friendsList = (user.friends || [])
           .filter((f) => f?.friend?.username)
           .map((f) => ({
@@ -31,13 +30,13 @@ const AddMembers = () => {
             balance: f.balance || 0,
           }))
           .filter((f) => !existingTripMembers.includes(f.username)); // Exclude already added
-  
+
         setFriends(friendsList);
       }
     } catch (err) {
       console.error("Error loading friends:", err);
     }
-  }, []);  
+  }, []);
 
   const handleSelect = (friend) => {
     if (selectedFriends.some((f) => f._id === friend._id)) {
@@ -56,35 +55,38 @@ const AddMembers = () => {
     try {
       console.log("Selected Friends:", selectedFriends);
       console.log("Group ID:", groupId);
-      
+
       if (!groupId || selectedFriends.length === 0) return;
-  
+
       const selectedUsernames = selectedFriends.map((f) => f._id);
       console.log("Selected Usernames:", selectedUsernames);
-  
-      const res = await axios.post(`http://192.168.1.7:8000/group/add-members/${groupId}`, {
-        groupId,
-        members: selectedUsernames,
-      });
-  
+
+      const res = await axios.post(
+        `http://192.168.1.11:8000/group/add-members/${groupId}`,
+        {
+          groupId,
+          members: selectedUsernames,
+        }
+      );
+
       console.log("Response:", res);
-  
+
       if (res.status !== 200) {
         throw new Error(res.data.message || "Failed to add members");
       }
-  
+
       // Update local storage
       const updatedGroup = res.data;
       localStorage.setItem("currentGroup", JSON.stringify(updatedGroup));
-  
+
       // Go back or redirect
       navigate(-1);
     } catch (err) {
       console.error("Failed to add members:", err.message);
       alert("Could not add members. Try again.");
     }
-  };  
-  
+  };
+
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
       {/* Back Button */}

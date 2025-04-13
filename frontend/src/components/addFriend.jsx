@@ -23,7 +23,7 @@ const AddFriend = () => {
   const handleAddFriend = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if ( newFriendEmail.trim() === "") {
+    if (newFriendEmail.trim() === "") {
       setError("All fields are required. Please fill in both name and email.");
       return;
     }
@@ -50,7 +50,6 @@ const AddFriend = () => {
   };
 
   const handleDone = async () => {
-
     if (!user?.email) {
       alert("User not loaded. Please wait a moment.");
       return;
@@ -64,10 +63,13 @@ const AddFriend = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post("http://192.168.1.7:8000/user/add-friends", {
-        email: user?.email,
-        friendsArray: friends.map((friend) => friend.email),
-      });
+      const response = await axios.post(
+        "http://192.168.1.11:8000/user/add-friends",
+        {
+          email: user?.email,
+          friendsArray: friends.map((friend) => friend.email),
+        }
+      );
 
       if (response.status === 200) {
         alert(

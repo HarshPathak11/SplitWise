@@ -14,28 +14,28 @@ const Dashboard = () => {
     async function getDetails() {
       const userId = Cookies.get("id");
       console.log("userId is ", userId);
-      
+
       // if (!user) {
-        try {
-          const response = await axios.get(
-            `http://192.168.1.7:8000/user/${userId}`
-          );
-          console.log("response is ", response);
+      try {
+        const response = await axios.get(
+          `http://192.168.1.11:8000/user/${userId}`
+        );
+        console.log("response is ", response);
 
-          if (response.status === 200) {
-            setUser(response.data.user); // Update state with fetched user data
+        if (response.status === 200) {
+          setUser(response.data.user); // Update state with fetched user data
 
-            localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
-          }
-        } catch (err) {
-          console.error("Error fetching user:", err);
+          localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
         }
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      }
       // }
     }
-    
+
     getDetails();
   }, []);
-  console.log("user set as ",user);
+  console.log("user set as ", user);
 
   return (
     <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
@@ -49,31 +49,24 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 ">
-
         {/* Left side: Expenses */}
         <div className="lg:col-span-1 space-y-4 md:space-y-6">
-
           {/* Title */}
-          <TopNavbar/>
+          <TopNavbar />
 
           {/* Flippable Card */}
-          <FairFareCard
-            user={user}
-          />
+          <FairFareCard user={user} />
 
           {/* Today's expenses */}
           <RecentExpenses />
-
         </div>
 
         <div className="space-y-4 h-full flex flex-col">
-
           {/* Trips Section */}
           <TripsSection />
 
           {/* Friends Section */}
           <FriendsSection user={user} />
-
         </div>
       </div>
     </div>

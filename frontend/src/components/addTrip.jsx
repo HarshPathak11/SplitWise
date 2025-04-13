@@ -60,7 +60,7 @@ const AddTrip = () => {
       }
 
       const res = await axios.post(
-        "http://192.168.1.7:8000/group/create-group",
+        "http://192.168.1.11:8000/group/create-group",
         tripData
       );
       console.log("Response:", res.data); // Log the response for debugging
@@ -165,16 +165,15 @@ const AddTrip = () => {
             </h3>
 
             <label className="flex items-center space-x-2 py-3 text-white">
-            <input
-              type="checkbox"
-              checked={selectAll}
-              onChange={handleSelectAll}
-              className="w-4 h-4"
-            />
-            <span className="text-sm">Select All</span>
-          </label>
+              <input
+                type="checkbox"
+                checked={selectAll}
+                onChange={handleSelectAll}
+                className="w-4 h-4"
+              />
+              <span className="text-sm">Select All</span>
+            </label>
 
-        
             <div className="flex flex-col gap-2">
               {friends.map((friend, index) => (
                 <label key={index} className="flex items-center gap-2">
