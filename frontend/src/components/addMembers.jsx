@@ -1,78 +1,96 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import axios from "axios";
+import { useParams } from "react-router-dom";
+
 
 const AddMembers = () => {
   const navigate = useNavigate();
   const [friends, setFriends] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
-
-  // Load friends from localStorage (expected structure: { friends: [{ friend: {...}, balance: 0 }, ...] })
+  const { groupId } = useParams();
+  console.log("Group ID:", groupId);
+  
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem("user");
+      const existingTripMembers =
+      JSON.parse(localStorage.getItem("tripMembers")) || [];
+      
+      console.log("Existing tripMembers:", existingTripMembers);
       if (storedUser) {
         const user = JSON.parse(storedUser);
-        // Ensure friends is an array; if not, default to empty array
-        const friendList = Array.isArray(user.friends) ? user.friends : [];
-        setFriends(friendList);
+  
+        const friendsList = (user.friends || [])
+          .filter((f) => f?.friend?.username)
+          .map((f) => ({
+            _id: f.friend._id,
+            username: f.friend.username,
+            balance: f.balance || 0,
+          }))
+          .filter((f) => !existingTripMembers.includes(f.username)); // Exclude already added
+  
+        setFriends(friendsList);
       }
-    } catch (err) {
-      console.error("Error parsing user from localStorage:", err);
-    }
-  }, []);
-
-  // This effect also filters out friends already added in a trip (if stored in localStorage)
-  useEffect(() => {
-    try {
-      const existingTripMembers =
-        JSON.parse(localStorage.getItem("tripMembers")) || [];
-      // Filter out friends whose username is in the existingTripMembers array.
-      // Note: existingTripMembers should be an array of usernames.
-      setFriends((prevFriends) =>
-        prevFriends.filter(
-          (f) => !existingTripMembers.includes(f.friend.username)
-        )
-      );
     } catch (err) {
       console.error("Error loading friends:", err);
     }
-  }, []);
+  }, []);  
 
-  // Select or deselect friend based on nested _id
-  const handleSelect = (friendItem) => {
-    if (selectedFriends.some((f) => f.friend._id === friendItem.friend._id)) {
-      setSelectedFriends((prev) =>
-        prev.filter((f) => f.friend._id !== friendItem.friend._id)
-      );
+  const handleSelect = (friend) => {
+    if (selectedFriends.some((f) => f._id === friend._id)) {
+      setSelectedFriends((prev) => prev.filter((f) => f._id !== friend._id));
     } else {
       setSelectedFriends((prev) => [friendItem, ...prev]);
     }
     setSearch("");
   };
 
-  // Filter friends based on friend.friend.username
-  const filteredFriends = friends.filter((friendItem) =>
-    friendItem.friend.username.toLowerCase().includes(search.toLowerCase())
+  const filteredFriends = friends.filter((friend) =>
+    friend.username.toLowerCase().includes(search.toLowerCase())
   );
 
-  // For navigation, we pass the selected friends (here using usernames; adjust as needed)
-  const handleAdd = () => {
-    navigate("/tripDetails", {
-      state: {
-        // If you prefer the entire friend object, you can pass friendItem.friend instead.
-        selectedMembers: selectedFriends.map((f) => f.friend.username),
-      },
-    });
-  };
-
+  const handleAdd = async () => {
+    try {
+      console.log("Selected Friends:", selectedFriends);
+      console.log("Group ID:", groupId);
+      
+      if (!groupId || selectedFriends.length === 0) return;
+  
+      const selectedUsernames = selectedFriends.map((f) => f._id);
+      console.log("Selected Usernames:", selectedUsernames);
+  
+      const res = await axios.post(`http://192.168.1.7:8000/group/add-members/${groupId}`, {
+        groupId,
+        members: selectedUsernames,
+      });
+  
+      console.log("Response:", res);
+  
+      if (res.status !== 200) {
+        throw new Error(res.data.message || "Failed to add members");
+      }
+  
+      // Update local storage
+      const updatedGroup = res.data;
+      localStorage.setItem("currentGroup", JSON.stringify(updatedGroup));
+  
+      // Go back or redirect
+      navigate(-1);
+    } catch (err) {
+      console.error("Failed to add members:", err.message);
+      alert("Could not add members. Try again.");
+    }
+  };  
+  
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
       {/* Back Button */}
       <button
         className="flex items-center text-white mb-6 hover:text-gray-300"
-        onClick={() => navigate("/tripDetails")}
+        onClick={() => navigate(-1)}
       >
         <ArrowLeft className="w-5 h-5 mr-2" />
         Back
@@ -100,7 +118,7 @@ const AddMembers = () => {
                   key={friendItem.friend._id}
                   className="bg-green-700 px-3 py-1 rounded-full text-sm"
                 >
-                  {friendItem.friend.username}
+                  {friend.username}
                 </span>
               ))}
             </div>
@@ -109,9 +127,9 @@ const AddMembers = () => {
 
         {/* Friend List Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-          {filteredFriends.map((friendItem) => {
+          {filteredFriends.map((friend) => {
             const isSelected = selectedFriends.some(
-              (f) => f.friend._id === friendItem.friend._id
+              (f) => f._id === friend._id
             );
             return (
               <div
@@ -123,7 +141,7 @@ const AddMembers = () => {
                     : "border-gray-600 bg-[#121212] hover:bg-gray-800"
                 }`}
               >
-                {friendItem.friend.username}
+                {friend.username}
               </div>
             );
           })}
@@ -132,7 +150,13 @@ const AddMembers = () => {
         {/* Add Members Button */}
         <div className="text-center pt-6">
           <button
-            className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-gray-200 transition text-lg"
+          disabled={selectedFriends.length === 0}
+            className={`${
+              selectedFriends.length === 0
+                ? "bg-black cursor-not-allowed"
+                : "bg-white"
+            } text-black font-semibold px-8 py-3 rounded-xl hover:bg-gray-200 transition text-lg`}
+            // className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-gray-200 transition text-lg"
             onClick={handleAdd}
           >
             Add Selected Members

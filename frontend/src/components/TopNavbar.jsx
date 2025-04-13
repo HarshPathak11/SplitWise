@@ -20,7 +20,7 @@ const TopNavbar = () => {
       <div className="flex justify-between items-center">
         <div>
           <Link to="/">
-            <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 hover:animate-text">
+            <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
               Fair Fare
             </h1>
           </Link>

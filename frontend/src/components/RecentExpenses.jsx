@@ -5,7 +5,7 @@ const RecentExpenses = () => {
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
       <div className="flex justify-between items-center mb-2 sm:mb-3">
-        <h2 className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+        <h2 className="text-lg sm:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
           Recent Expenses
         </h2>
 

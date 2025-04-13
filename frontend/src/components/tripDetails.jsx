@@ -1,72 +1,61 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
+import axios from "axios";
+import { useParams } from "react-router-dom";
 
 const TripDetails = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
+  const { tripId } = useParams(); // Now you get tripId directly from URL
   const [members, setMembers] = useState([]);
+  const [tripDetails, setTripDetails] = useState(null); // Store trip details
+  const [loading, setLoading] = useState(true); // Loading state for the GET request
 
-  // Utility to deduplicate members (assuming members are strings or objects with 'username')
-  const dedupeMembers = (list) => {
-    const map = new Map();
-    list.forEach((member) => {
-      const key = typeof member === "string" ? member : member?.username || member;
-      if (!map.has(key)) {
-        map.set(key, member);
+  useEffect(() => {
+    const fetchTripDetails = async () => {
+      if (!tripId) return;
+      try {
+        const response = await axios.get(
+          `http://192.168.1.7:8000/group/get-group/${tripId}`
+        );
+        if (response.status === 200) {
+          const group = response.data;
+          setTripDetails(group);
+          setLoading(false);
+
+          // Extract only the usernames from group members
+          const groupMembers = group.members.map((m) =>
+            typeof m === "string" ? m : m.username
+          );
+
+          // Set directly to localStorage (no merge)
+          localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
+          setMembers(groupMembers);
+        }
+      } catch (error) {
+        console.error("Error fetching trip details:", error);
+        setLoading(false);
       }
-    });
-    return Array.from(map.values());
+    };
+
+    fetchTripDetails();
+  }, [tripId]);
+
+  // Handle adding new members (avoid adding existing ones)
+  const handleAddMember = () => {
+    navigate(`/add-members/${tripId}`);
   };
 
-  // Initial loading of trip members + add current user
-  useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("user"));
-    const currentUser = userData?.user?.username;
-  
-    const stored = JSON.parse(localStorage.getItem("tripMembers"));
-  
-    if (!stored && currentUser) {
-      // If tripMembers does not exist, create it with current user
-      localStorage.setItem("tripMembers", JSON.stringify([currentUser]));
-      setMembers([currentUser]);
-    } else {
-      // If it exists, ensure current user is included
-      let initialMembers = stored || [];
-      if (currentUser && !initialMembers.includes(currentUser)) {
-        initialMembers.push(currentUser);
-      }
-  
-      const uniqueMembers = dedupeMembers(initialMembers);
-      setMembers(uniqueMembers);
-      localStorage.setItem("tripMembers", JSON.stringify(uniqueMembers));
-    }
-  }, []);
-  
-  // Handle incoming new members from "Add Members" screen
-  useEffect(() => {
-    if (location.state?.selectedMembers?.length) {
-      const stored = JSON.parse(localStorage.getItem("tripMembers")) || [];
-      const incoming = location.state.selectedMembers;
-
-      const allMembers = dedupeMembers([...stored, ...incoming]);
-      setMembers(allMembers);
-      localStorage.setItem("tripMembers", JSON.stringify(allMembers));
-    }
-  }, [location.state]);
-
   const handleAddExpenseClick = () => {
-    if (members.length === 0) {
-      alert("Please add at least one more member to the group before adding an expense.");
+    if (members.length <= 1) {
+      alert(
+        "Please add at least one more member to the group before adding an expense."
+      );
       return;
     }
     navigate("/add-expense", { state: { members } });
-  };
-
-  const handleAddMember = () => {
-    navigate("/add-members", { state: { members } });
   };
 
   const expenses = [
@@ -83,9 +72,16 @@ const TripDetails = () => {
 
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -inset-[10px] opacity-50">
+          <div className="absolute top-0 -left-4 w-48 md:w-72 h-48 md:h-72 bg-[#9e27ff] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute top-0 -right-4 w-48 md:w-72 h-48 md:h-72 bg-[#00FFA3] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-48 md:w-72 h-48 md:h-72 bg-gray-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+        </div>
+      </div>
       {/* Back Button */}
       <button
-        className="flex items-center text-white mb-6 hover:text-gray-300"
+        className="flex items-center text-white hover:text-gray-300 backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5  sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300"
         onClick={() => navigate("/dash")}
       >
         <ArrowLeft className="w-5 h-5 mr-2" />
@@ -93,17 +89,24 @@ const TripDetails = () => {
       </button>
 
       {/* Card Container */}
-      <div className="p-6 sm:p-8 max-w-4xl mx-auto shadow-lg rounded-2xl bg-black space-y-10">
+      <div className="backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
         {/* Trip Header */}
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl sm:text-5xl font-bold">Goa Trip</h1>
-            <p className="text-base sm:text-lg text-gray-300 mt-1">
-              Trip Description
-            </p>
+            {loading ? (
+              <p className="text-lg text-gray-300">Loading trip details...</p>
+            ) : (
+              <>
+                <h1 className="text-3xl sm:text-5xl mr-auto pb-3 mb-1 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3]">
+                  {tripDetails?.name}
+                </h1>
+                <p className="text-base sm:text-lg mt-2 mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
+                  {tripDetails?.description}
+                </p>
+              </>
+            )}
           </div>
         </div>
-
         {/* Members Section */}
         <div>
           <div className="flex justify-between items-center mb-3">
@@ -132,7 +135,6 @@ const TripDetails = () => {
             <p className="text-gray-400 italic">No members added yet.</p>
           )}
         </div>
-
         {/* Expenses Section */}
         <div>
           <div className="flex justify-between items-center mb-4">

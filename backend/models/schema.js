@@ -17,6 +17,9 @@ const expenseSchema = new mongoose.Schema({
 // Group schema
 const groupSchema = new mongoose.Schema({
   name: { type: String, required: true },
+  description: { type: String },
+  from: {type:Date},
+  to: {type:Date},
   members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   expenses: [expenseSchema],
 }, { timestamps: true });

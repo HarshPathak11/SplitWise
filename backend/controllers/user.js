@@ -85,6 +85,8 @@ const verifyOtp = async (req, res) => {
 const userLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log("email and password ", email, password);
+    
 
     if (!email || !password) {
       return res.status(400).json({ message: "Incomplete data received" });
@@ -96,19 +98,13 @@ const userLogin = async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // Debug logs
-    // console.log("=== Login Debug Information ===");
-    // console.log("Email:", email);
-    // console.log("Input password type:", typeof password);
-    // console.log("Stored password type:", typeof user.password);
-
     // Clean the input password
     const cleanPassword = String(password).trim();
-    // console.log("Cleaned input password:", cleanPassword);
+    console.log("clean password ", cleanPassword);    
 
     // Use the schema's comparePassword method
     const isPasswordValid = await user.comparePassword(cleanPassword);
-    // console.log("Password comparison result:", isPasswordValid);
+    console.log("Password comparison result: ", isPasswordValid);    
 
     if (!isPasswordValid) {
       return res.status(400).json({
@@ -137,12 +133,13 @@ const userLogin = async (req, res) => {
 const userDetails = async (req, res) => {
   try {
     const userId = req.params.id;
+    
 
     const user = await User.findById(userId).populate({
       path: "friends.friend",
-      select: "username email", // optional: select only needed fields
+      select: "username email upiId", // optional: select only needed fields
     });
-    console.log(user.friends) // exclude sensitive fields
+    // console.log(user.friends) // exclude sensitive fields
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -159,7 +156,7 @@ const updateUserProfile = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    const { username, email, mobile, upiId, dob, currency } = req.body;
+    const { username, upiId } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
@@ -197,7 +194,7 @@ const addFriends = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    console.log("friends array received ", friendsArray);
+    // console.log("friends array received ", friendsArray);
 
     const addedFriends = [];
     const transporter = nodemailer.createTransport({
@@ -213,7 +210,7 @@ const addFriends = async (req, res) => {
       if (friendEmail === email) continue;
 
       const friend = await User.findOne({ email: friendEmail });
-      console.log("friend ", friend);
+      // console.log("friend ", friend);
 
       if (friend) {
         // Check if the friend reference already exists in the user's friends array.
@@ -254,7 +251,7 @@ const addFriends = async (req, res) => {
     }
 
     await user.save();
-    console.log("new friends added ", addedFriends);
+    // console.log("new friends added ", addedFriends);
 
     return res.status(200).json({
       message: "Friends processed",
@@ -268,7 +265,7 @@ const addFriends = async (req, res) => {
 
 const updateFriendBalance = async (req, res) => {
   const { userEmail, friendEmail, amount, action } = req.body;
-  console.log("userEmail", userEmail, "friendEmail", friendEmail, "amount", amount, "action", action);
+  // console.log("userEmail", userEmail, "friendEmail", friendEmail, "amount", amount, "action", action);
   
   if (!userEmail || !friendEmail || !amount || !action) {
     return res.status(400).json({ message: "Incomplete data received" });
@@ -293,7 +290,7 @@ const updateFriendBalance = async (req, res) => {
     // When user pays friend, update as follows:
     // - In user's friends array (for the friend): balance increases (+amount)
     // - In friend's friends array (for the user): balance decreases (-amount)
-    if (action === "paid") {
+    if (action === "paid") {      
       userIncrement = value;
       friendIncrement = -value;
     } 
@@ -334,8 +331,8 @@ const updateFriendBalance = async (req, res) => {
 };
 
 const removeFriend = async (req, res) => {
-  const userId = req.user._id;
-  const { friendId } = req.body;
+  
+  const { friendId, userId } = req.body;
 
   if (!friendId) {
     return res.status(400).json({ message: "Friend ID is required." });
@@ -358,18 +355,6 @@ const removeFriend = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 }
-
-//Fetching user details
-const userData = async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ message: "incomplete data" });
-
-  const user = await User.findOne({ email: email }, "--password");
-  if (!user) {
-    return res.status(500).json({ message: "user not found" });
-  }
-  return res.status(200).json({ user });
-};
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -442,6 +427,5 @@ export {
   verifyOtp,
   removeFriend,
   userDetails,
-  userData,
   updateFriendBalance,
 };
