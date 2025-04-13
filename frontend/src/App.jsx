@@ -16,6 +16,7 @@ import TripDetails from "./components/tripDetails";
 import AddMembers from "./components/addMembers";
 import AllTripsPage from "./components/AllTripsPage";
 import AllExpenses from "./components/AllExpenses";
+import CashMapAI from "./components/CashMapAI";
 
 const router = createBrowserRouter([
   {
@@ -87,6 +88,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AddTrip />
+      </ProtectedRoute> 
+    ),
+  },
+  {
+    path: "/CashMapAI",
+    element: (
+      <ProtectedRoute>
+        <CashMapAI />
       </ProtectedRoute> 
     ),
   },

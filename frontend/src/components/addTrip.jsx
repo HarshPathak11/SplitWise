@@ -127,7 +127,7 @@ const AddTrip = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             {/* From Date */}
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1 text-gray-300">
+              <label className="block text-white mb-2">
                 From
               </label>
               <input
@@ -137,7 +137,7 @@ const AddTrip = () => {
                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3]"
               />
             </div>
-            <div className="w-1/2 pl-2">
+            <div className="flex-1">
               <label className="block text-white mb-2" htmlFor="toDate">
                 To Date
               </label>
