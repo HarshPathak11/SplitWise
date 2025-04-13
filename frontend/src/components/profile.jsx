@@ -159,7 +159,7 @@ const Profile = () => {
         </div>
         <div className="text-right mb-4">
           <Link
-            to="/reset-password"
+            to="/change-password"
             className="text-sm text-slate-300 hover:text-blue-300 hover:underline"
           >
             Reset your password?

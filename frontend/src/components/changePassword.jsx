@@ -1,35 +1,42 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa"; // Import the back icon
+import { FaArrowLeft } from "react-icons/fa";
 
-const ResetPassword = () => {
-  const [email, setEmail] = useState("");
+const ChangePassword = () => {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleReset = async (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
 
-    // Basic email validation
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(email)) {
-      setMessage("Please enter a valid email address.");
+    // Validate new password length
+    if (newPassword.length < 8) {
+      setMessage("Password must be at least 8 characters long.");
+      setLoading(false);
+      return;
+    }
+
+    // Validate password match
+    if (newPassword !== confirmPassword) {
+      setMessage("New password and confirm password do not match.");
       setLoading(false);
       return;
     }
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/reset-password",
-        { email }
+        "http://localhost:8000/change-password",
+        { currentPassword, newPassword }
       );
       setMessage(response.data.message);
     } catch (error) {
-      setMessage("Error resetting password. Please try again.");
+      setMessage("Error changing password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -47,7 +54,7 @@ const ResetPassword = () => {
       </div>
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
         <button
-          onClick={() => navigate("/profile")} // Navigate to the profile page
+          onClick={() => navigate("/profile")}
           className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
           title="Back to Profile Page"
         >
@@ -56,30 +63,36 @@ const ResetPassword = () => {
       </div>
       <div className="max-w-md w-full p-8 bg-glass rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold mb-6 text-[#00F5FF]">
-          Reset Password
+          Change Password
         </h2>
-        <p className="mb-4 text-white">
-          Please enter your email address to receive a password reset link.
-        </p>
+        
         <input
-          type="email"
-          placeholder="Email Address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="password"
+          placeholder="New Password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-gray-700"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Confirm New Password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
           className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-gray-700"
           required
         />
         <button
-          onClick={handleReset}
+          onClick={handleChangePassword}
           className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700"
           disabled={loading}
         >
-          {loading ? "Sending..." : "Send Link"}
+          {loading ? "Changing..." : "Change Password"}
         </button>
         {message && (
           <p
             className={`mt-4 ${
-              message.includes("valid") ? "text-red-500" : "text-white"
+              message.includes("Error") ? "text-red-500" : "text-white"
             }`}
           >
             {message}
@@ -90,4 +103,4 @@ const ResetPassword = () => {
   );
 };
 
-export default ResetPassword;
+export default ChangePassword;

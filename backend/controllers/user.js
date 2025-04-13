@@ -138,7 +138,7 @@ const userDetails = async (req, res) => {
 
     const user = await User.findById(userId).populate({
       path: "friends.friend",
-      select: "username email", // optional: select only needed fields
+      select: "username email upiId", // optional: select only needed fields
     });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
