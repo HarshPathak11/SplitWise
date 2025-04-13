@@ -60,7 +60,7 @@ const AddTrip = () => {
       }
 
       const res = await axios.post(
-        "http://192.168.1.7:8000/group/create-group",
+        "http://192.168.156.226:8000/group/create-group",
         tripData
       );
       console.log("Response:", res.data); // Log the response for debugging
@@ -127,9 +127,7 @@ const AddTrip = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             {/* From Date */}
             <div className="flex-1">
-              <label className="block text-white mb-2">
-                From
-              </label>
+              <label className="block text-white mb-2">From</label>
               <input
                 type="date"
                 value={fromDate}

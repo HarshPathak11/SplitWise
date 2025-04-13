@@ -15,10 +15,12 @@ const ForgotPassword = () => {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-
-      const response = await axios.post("http://192.168.1.7:8000/forgot-password", {
-        email,
-      });
+      const response = await axios.post(
+        "http://192.168.156.226:8000/forgot-password",
+        {
+          email,
+        }
+      );
       if (response.status === 200) {
         setOtpSent(true);
         setOtpGenerated(response.data.otp);
@@ -34,11 +36,14 @@ const ForgotPassword = () => {
   const handleVerifyOtp = async () => {
     setLoading(true);
     try {
-      const response = await axios.post("http://192.168.1.7:8000/verify-forgot-password", {
-        otpGenerated,
-        otp,
-        email
-      });
+      const response = await axios.post(
+        "http://192.168.156.226:8000/verify-forgot-password",
+        {
+          otpGenerated,
+          otp,
+          email,
+        }
+      );
       if (response.status === 200) {
         const user = response.data.user;
         Cookies.set("id", user._id, { expires: 7 });

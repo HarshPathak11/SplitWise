@@ -60,12 +60,15 @@ const AddMembers = () => {
 
       const selectedUsernames = selectedFriends.map((f) => f._id);
       console.log("Selected Usernames:", selectedUsernames);
-  
-      const res = await axios.post(`http://192.168.1.7:8000/group/add-members/${groupId}`, {
-        groupId,
-        members: selectedUsernames,
-      });
-  
+
+      const res = await axios.post(
+        `http://192.168.156.226:8000/group/add-members/${groupId}`,
+        {
+          groupId,
+          members: selectedUsernames,
+        }
+      );
+
       console.log("Response:", res);
 
       if (res.status !== 200) {
@@ -75,7 +78,7 @@ const AddMembers = () => {
       // Update local storage
       const updatedGroup = res.data;
       console.log("Updated Group:", updatedGroup);
-      
+
       localStorage.setItem("currentGroup", JSON.stringify(updatedGroup));
 
       // Go back or redirect
@@ -151,7 +154,7 @@ const AddMembers = () => {
         {/* Add Members Button */}
         <div className="text-center pt-6">
           <button
-          disabled={selectedFriends.length === 0}
+            disabled={selectedFriends.length === 0}
             className={`${
               selectedFriends.length === 0
                 ? "bg-black cursor-not-allowed"

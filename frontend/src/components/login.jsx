@@ -35,10 +35,13 @@ const LogIn = () => {
         return;
       }
 
-      const response = await axios.post(`http://192.168.1.7:8000/user/login`, {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        `http://192.168.156.226:8000/user/login`,
+        {
+          email,
+          password,
+        }
+      );
       console.log("response ", response.data);
       if (response.data.user) {
         Cookies.set("id", response.data.user._id, { expires: 7 });
@@ -73,12 +76,13 @@ const LogIn = () => {
       {/* Login Card */}
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
-        <div className="flex items-center ">
+          <div className="flex items-center ">
             <img src="../icon.svg" alt="Icon" className="w-8 h-8 mr-2" />
-            <span className="text-4xl text-center font-bold text-white">FairFare</span>
+            <span className="text-4xl text-center font-bold text-white">
+              FairFare
+            </span>
           </div>
           <div className="flex justify-between items-center mb-6 mt-6">
-            
             <div className="text-2xl font-bold text-[#00f5ff]">LOGIN</div>
             <Link to="/signup">
               <div className=" text-[#00f5ff] cursor-pointer hover:underline">
@@ -91,8 +95,7 @@ const LogIn = () => {
               <label
                 className="block text-white text-sm font-bold mb-2"
                 htmlFor="email"
-              >
-              </label>
+              ></label>
               <input
                 id="email"
                 type="email"
@@ -106,9 +109,7 @@ const LogIn = () => {
               <label
                 className="block text-white text-sm font-bold mb-2"
                 htmlFor="password"
-              >
-                
-              </label>
+              ></label>
               <input
                 id="password"
                 type="password"

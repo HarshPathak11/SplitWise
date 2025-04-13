@@ -31,7 +31,7 @@ const ChangePassword = () => {
 
     try {
       const response = await axios.post(
-        "http://192.168.1.7:8000/change-password",
+        "http://192.168.156.226:8000/change-password",
         { currentPassword, newPassword }
       );
       setMessage(response.data.message);
@@ -65,7 +65,7 @@ const ChangePassword = () => {
         <h2 className="text-2xl font-bold mb-6 text-[#00F5FF]">
           Change Password
         </h2>
-        
+
         <input
           type="password"
           placeholder="New Password"

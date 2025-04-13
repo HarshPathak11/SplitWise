@@ -63,10 +63,13 @@ const AddFriend = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post("http://192.168.1.7:8000/user/add-friends", {
-        email: user?.email,
-        friendsArray: friends.map((friend) => friend.email),
-      });
+      const response = await axios.post(
+        "http://192.168.156.226:8000/user/add-friends",
+        {
+          email: user?.email,
+          friendsArray: friends.map((friend) => friend.email),
+        }
+      );
 
       if (response.status === 200) {
         alert(
