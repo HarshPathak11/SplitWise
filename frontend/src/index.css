@@ -119,3 +119,17 @@
     animation: bounce-opposite 3s infinite;
   }
 
+  /* Custom Scrollbar Styles */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #00F5FF, #00FFA3); /* Gradient color */
+  border-radius: 4px; /* Rounded corners */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.8); /* Matches the gray-800 background */
+  border-radius: 4px; /* Rounded corners */
+}

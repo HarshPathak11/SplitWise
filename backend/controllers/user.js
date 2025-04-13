@@ -137,7 +137,7 @@ const userDetails = async (req, res) => {
 
     const user = await User.findById(userId).populate({
       path: "friends.friend",
-      select: "username email", // optional: select only needed fields
+      select: "username email upiId", // optional: select only needed fields
     });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
@@ -290,9 +290,7 @@ const updateFriendBalance = async (req, res) => {
     // When user pays friend, update as follows:
     // - In user's friends array (for the friend): balance increases (+amount)
     // - In friend's friends array (for the user): balance decreases (-amount)
-    if (action === "paid") {
-      console.log("paid action detected");
-      
+    if (action === "paid") {      
       userIncrement = value;
       friendIncrement = -value;
     } 
@@ -333,7 +331,6 @@ const updateFriendBalance = async (req, res) => {
 };
 
 const removeFriend = async (req, res) => {
-  console.log("Body received: ", req.body);
   
   const { friendId, userId } = req.body;
 

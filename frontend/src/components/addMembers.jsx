@@ -151,7 +151,13 @@ const AddMembers = () => {
         {/* Add Members Button */}
         <div className="text-center pt-6">
           <button
-            className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-gray-200 transition text-lg"
+          disabled={selectedFriends.length === 0}
+            className={`${
+              selectedFriends.length === 0
+                ? "bg-black cursor-not-allowed"
+                : "bg-white"
+            } text-black font-semibold px-8 py-3 rounded-xl hover:bg-gray-200 transition text-lg`}
+            // className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-gray-200 transition text-lg"
             onClick={handleAdd}
           >
             Add Selected Members

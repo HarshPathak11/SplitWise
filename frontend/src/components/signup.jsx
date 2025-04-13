@@ -102,9 +102,6 @@ const SignUp = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-white text-sm font-bold mb-2">
-              Name
-            </label>
             <input
               value={username}
               onChange={(e) => setUserName(e.target.value)}
@@ -115,9 +112,6 @@ const SignUp = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-white text-sm font-bold mb-2">
-              Email
-            </label>
             <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -128,9 +122,6 @@ const SignUp = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-white text-sm font-bold mb-2">
-              Password
-            </label>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -143,9 +134,6 @@ const SignUp = () => {
           {/* OTP input only shows after send OTP */}
           {otpSent && (
             <div className="mb-6">
-              <label className="block text-white text-sm font-bold mb-2">
-                Verify OTP
-              </label>
               <input
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}

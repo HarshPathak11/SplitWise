@@ -4,11 +4,16 @@ import { FaTrash } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
 import axios from "axios";
 
-const FriendCard = ({ friend, index, balance, handleDeleteFriend, updateFriendBalance }) => {
+const FriendCard = ({
+  friend,
+  index,
+  balance,
+  handleDeleteFriend,
+  updateFriendBalance,
+}) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [settleAmount, setSettleAmount] = useState(balance);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  
 
   // Get current user info (assumed stored in localStorage)
   const currentUser = JSON.parse(localStorage.getItem("user"));
@@ -20,12 +25,12 @@ const FriendCard = ({ friend, index, balance, handleDeleteFriend, updateFriendBa
 
   // This function calls the API to update balances in both documents when the user pays their friend.
   const handlePaid = async () => {
-    console.log("hii")
+    console.log("hii");
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
-    console.log("amount", amount)
+    console.log("amount", amount);
     console.log("friend", friend);
-    
+
     try {
       await axios.post("http://192.168.1.7:8000/user/update-friend-balance", {
         userEmail: currentUser.email,
@@ -48,10 +53,10 @@ const FriendCard = ({ friend, index, balance, handleDeleteFriend, updateFriendBa
   const handleReceived = async () => {
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
-    console.log("amount", amount)
+    console.log("amount", amount);
     console.log("friend", friend);
     console.log("currentUser", currentUser);
-    
+
     try {
       await axios.post("http://192.168.1.7:8000/user/update-friend-balance", {
         userEmail: currentUser.email,
@@ -101,6 +106,7 @@ const FriendCard = ({ friend, index, balance, handleDeleteFriend, updateFriendBa
       console.error("Error settling friend balance:", error);
     }
   };
+  console.log("friend", friend);
 
   return (
     <div
@@ -217,18 +223,23 @@ const FriendCard = ({ friend, index, balance, handleDeleteFriend, updateFriendBa
             </div>
 
             {friend.upiId && (
-              <a
+              <button
                 href={`upi://pay?pa=${friend.upiId}&pn=${encodeURIComponent(
                   friend.username
                 )}&am=${Math.abs(settleAmount)}&cu=INR&tn=${encodeURIComponent(
                   "FairFare - Friend Settlement"
                 )}`}
                 target="_blank"
+                disabled={Math.abs(settleAmount) < 1}
                 rel="noopener noreferrer"
-                className="block mt-2 text-center w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition-colors"
+                className={`block mt-2 text-center w-full py-2 px-4 rounded transition-colors ${
+                  Math.abs(settleAmount) < 1
+                    ? "bg-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
               >
                 Settle via UPI
-              </a>
+              </button>
             )}
           </div>
         </div>
@@ -238,8 +249,8 @@ const FriendCard = ({ friend, index, balance, handleDeleteFriend, updateFriendBa
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-600 text-center w-[90%] max-w-md">
             <p className="text-white text-lg mb-4">
-              Are you sure you want to delete{" "}
-              <strong>{friend.username}</strong>?
+              Are you sure you want to delete <strong>{friend.username}</strong>
+              ?
             </p>
             <div className="flex justify-center gap-4">
               <button

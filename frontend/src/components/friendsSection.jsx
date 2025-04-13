@@ -18,17 +18,22 @@ const FriendsSection = ({ user }) => {
     try {
       const currentUser = JSON.parse(localStorage.getItem("user"));
       const userId = currentUser._id;
-  
-      const res = await axios.delete(`http://192.168.1.7:8000/user/remove-friend`, {
-        data: {
-          userId,
-          friendId: friendIdToDelete,
-        },
-      });
-  
+
+      const res = await axios.delete(
+        `http://192.168.1.7:8000/user/remove-friend`,
+        {
+          data: {
+            userId,
+            friendId: friendIdToDelete,
+          },
+        }
+      );
+
       if (res.status === 200) {
         // Remove from frontend state
-        setFriends((prev) => prev.filter((f) => f.friend._id !== friendIdToDelete));
+        setFriends((prev) =>
+          prev.filter((f) => f.friend._id !== friendIdToDelete)
+        );
         alert("Friend removed successfully");
       }
     } catch (error) {
@@ -47,7 +52,7 @@ const FriendsSection = ({ user }) => {
         f.friend.email === email ? { ...f, balance: newBalance } : f
       )
     );
-  }
+  };
 
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1 p-2 mb-auto">
@@ -77,7 +82,11 @@ const FriendsSection = ({ user }) => {
                 stroke="currentColor"
                 strokeWidth={2}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
             </button>
           </Link>
@@ -85,9 +94,17 @@ const FriendsSection = ({ user }) => {
       </div>
 
       {/* Scrollable Friends List */}
-      <div className="space-y-2 overflow-y-auto max-h-[260px] pr-1 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+      <div
+        className={`space-y-2 ${
+          filteredFriends.length > 4
+            ? "overflow-y-auto max-h-[260px] pr-1 custom-scrollbar"
+            : ""
+        }`}
+      >
         {filteredFriends.length === 0 ? (
-          <p className="text-red-500 text-center font-semibold">No friends found.</p>
+          <p className="text-red-500 text-center font-semibold">
+            No friends found.
+          </p>
         ) : (
           filteredFriends.map((f, index) => (
             <FriendCard
@@ -96,7 +113,7 @@ const FriendsSection = ({ user }) => {
               balance={f.balance}
               index={index}
               handleDeleteFriend={() => handleDeleteFriend(f.friend._id)}
-              updateFriendBalance={handleUpdateFriendBalance}              
+              updateFriendBalance={handleUpdateFriendBalance}
             />
           ))
         )}
