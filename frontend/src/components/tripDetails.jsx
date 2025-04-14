@@ -155,7 +155,7 @@ const TripDetails = () => {
         </div>
         {/* Expenses Section */}
         <div>
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4 mt-4">
             <h2 className="text-xl sm:text-2xl font-semibold">Expenses</h2>
             <button
               className="border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-black transition whitespace-nowrap"

@@ -72,11 +72,18 @@ const AddFriend = () => {
       );
 
       if (response.status === 200) {
+        if(response.data.addedFriends?.length === 0){
+          alert(
+            `Invite sent to your friend(s)`
+          );
+        }
+        else{
         alert(
           `Successfully added ${
             response.data.addedFriends?.length || 0
           } friend(s)`
         );
+      }
         // Optionally redirect or reset the form
         navigate("/dash");
       } else {

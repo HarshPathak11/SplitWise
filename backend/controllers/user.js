@@ -215,17 +215,22 @@ const addFriends = async (req, res) => {
       if (friendEmail === email) continue;
 
       const friend = await User.findOne({ email: friendEmail });
-      // console.log("friend ", friend);
 
       if (friend) {
         // Check if the friend reference already exists in the user's friends array.
         if (!user.friends.some((f) => f.friend.equals(friend._id))) {
-          user.friends.push({ friend: friend._id, balance: 0 });
+          await User.updateOne(
+            { _id: user._id, "friends.friend": { $ne: friend._id } }, // prevent duplicates
+            { $push: { friends: { friend: friend._id, balance: 0 } } }
+          );
+          
         }
         // Similarly, ensure the friendship is mutual.
         if (!friend.friends.some((f) => f.friend.equals(user._id))) {
-          friend.friends.push({ friend: user._id, balance: 0 });
-          await friend.save();
+          await User.updateOne(
+            { _id: friend._id },
+            { $addToSet: { friends: { friend: user._id, balance: 0 } } }
+          );
         }
         // Keep track of added friend details for reporting.
         addedFriends.push({
@@ -254,9 +259,6 @@ const addFriends = async (req, res) => {
           });
       }
     }
-
-    await user.save();
-    // console.log("new friends added ", addedFriends);
 
     return res.status(200).json({
       message: "Friends processed",

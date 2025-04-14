@@ -6,18 +6,42 @@ import PropTypes from "prop-types";
 const FairFareCard = ({ user }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [last4, setLast4] = useState(""); // State for last4
+  const [netBalance, setNetBalance] = useState(0); // State for net balance
+  const [balanceMessage, setBalanceMessage] = useState(""); // State for balance message
 
-    // Generate or retrieve last4 using cookies
-    useEffect(() => {
-      let storedLast4 = Cookies.get("last4");
-  
-      if (!storedLast4) {
-        storedLast4 = Math.floor(1000 + Math.random() * 9000).toString();
-        Cookies.set("last4", storedLast4); // Store in cookies
+  // Generate or retrieve last4 using cookies
+  useEffect(() => {
+    let storedLast4 = Cookies.get("last4");
+
+    if (!storedLast4) {
+      storedLast4 = Math.floor(1000 + Math.random() * 9000).toString();
+      Cookies.set("last4", storedLast4); // Store in cookies
+    }
+
+    setLast4(storedLast4);
+  }, []);
+
+  // Calculate net balance
+  useEffect(() => {
+    const userFriends = user?.friends || [];
+    if (userFriends && userFriends.length > 0) {
+      const totalBalance = userFriends.reduce(
+        (sum, friend) => sum + Number(friend.balance || 0),
+        0
+      );
+      setNetBalance(totalBalance);
+
+      if (totalBalance > 0) {
+        setBalanceMessage(`Net Credit:`);
+      } else if (totalBalance < 0) {
+        setBalanceMessage(`Net Debt:`);
+      } else {
+        setBalanceMessage("All Settled");
       }
-  
-      setLast4(storedLast4);
-    }, []);
+    } else {
+      setBalanceMessage("No Friends Found");
+    }
+  }, []);
 
   const getInitials = (name) =>
     name
@@ -29,22 +53,19 @@ const FairFareCard = ({ user }) => {
           .join("")
       : "U";
 
-  const joinDate = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString("en-GB")
-    : "N/A";
-    const fallbackQuotes = [
-        "Believe in yourself.",
-        "Every day is a fresh start.",
-        "Progress, not perfection.",
-        "You are your only limit.",
-      ];
+  const fallbackQuotes = [
+    "Believe in yourself.",
+    "Every day is a fresh start.",
+    "Progress, not perfection.",
+    "You are your only limit.",
+  ];
 
-      const randomQuote =
-        fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+  const randomQuote =
+    fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
 
-    const qrValue = user?.upiId
-      ? `upi://pay?pa=${user?.upiId}&pn=${user?.username}&cu=INR&tn=Settling via FairFare`
-      : randomQuote;
+  const qrValue = user?.upiId
+    ? `upi://pay?pa=${user?.upiId}&pn=${user?.username}&cu=INR&tn=Settling via FairFare`
+    : randomQuote;
   return (
     <div
       className="col-span-1 relative cursor-pointer"
@@ -113,7 +134,7 @@ const FairFareCard = ({ user }) => {
             </div>
             <div className="flex items-center mt-2 space-x-4 mb-1">
               <div className="w-10 h-10 bg-white text-indigo-700 rounded-full flex items-center justify-center font-bold text-md border-2 border-white shadow">
-              {getInitials(user?.username)}
+                {getInitials(user?.username)}
               </div>
               <div className="text-lg font-semibold tracking-wider uppercase">
                 {user?.username}
@@ -122,9 +143,11 @@ const FairFareCard = ({ user }) => {
             <div className="font-mono text-xl tracking-widest mb-2">
               1234 5688 9012 {last4}
             </div>
-            <div className="text-sm mb-4">
-              <p className="text-gray-300">Joined</p>
-              <p className="font-semibold">{joinDate}</p>
+            <div className={`text-sm mb-4 text-white-700`}>
+              <p>{balanceMessage}</p>
+              <p className="font-semibold">
+                ₹{Math.abs(netBalance).toFixed(2)}
+              </p>
               <p className="italic text-xs text-gray-300 mt-2">
                 &quot;Spend smart, split easy.&quot;
               </p>
@@ -174,6 +197,11 @@ FairFareCard.propTypes = {
     username: PropTypes.string,
     upiId: PropTypes.string,
     createdAt: PropTypes.string,
+    friends: PropTypes.arrayOf(
+      PropTypes.shape({
+        balance: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      })
+    ),
   }).isRequired,
 };
 

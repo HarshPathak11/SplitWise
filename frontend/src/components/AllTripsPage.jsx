@@ -9,6 +9,7 @@ const AllTripsPage = () => {
   const navigate = useNavigate();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(""); // 🔍 Search query state
 
   // Fetch trips for the current user
   useEffect(() => {
@@ -24,7 +25,6 @@ const AllTripsPage = () => {
         const response = await axios.get(
           `http://192.168.1.5:8000/group/user-groups/${userId}`
         );
-        // console.log("Fetched trips:", response.data); // Debugging line
 
         if (Array.isArray(response.data)) {
           // Sort expenses by createdAt in descending order (most recent first)
@@ -45,12 +45,14 @@ const AllTripsPage = () => {
     fetchTrips();
   }, []);
 
-  console.log("trips ",trips); // Debugging line to check the fetched trips
-  
-
   const handleTripClick = (trip) => {
     navigate(`/tripDetails/${trip._id}`);
   };
+
+  // Filtered trips based on search
+  const filteredTrips = trips.filter((trip) =>
+    trip.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white overflow-hidden relative">
@@ -84,6 +86,16 @@ const AllTripsPage = () => {
         </p>
       </div>
 
+      <div className="z-10 relative max-w-4xl mx-auto mb-6 px-4">
+        <input
+          type="text"
+          placeholder="Search by trip name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-gray-700/50 backdrop-blur-sm text-white border border-gray-600/30 rounded-lg p-2 sm:p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+        />
+      </div>
+
       {/* Trips and Events List */}
       <div className="flex-1 max-w-4xl cursor-pointer space-y-2 mx-auto w-full p-4 overflow-y-auto z-10 relative">
         {loading ? (
@@ -93,12 +105,10 @@ const AllTripsPage = () => {
             No trips found.
           </p>
         ) : (
-          trips.map((trip) => (
-            console.log("trip is",trip),
-            
+          filteredTrips.map((trip) => (
             <TripCard
               key={trip._id}
-              amount={trip.tripTotal} 
+              amount={trip.tripTotal}
               trip={trip}
               onClick={() => handleTripClick(trip)}
             />

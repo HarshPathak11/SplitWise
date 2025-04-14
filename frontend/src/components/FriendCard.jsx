@@ -29,7 +29,7 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
 
     try {
-      await axios.post("http://192.168.1.5/user/update-friend-balance", {
+      await axios.post("http://192.168.1.5:8000/user/update-friend-balance", {
         userEmail: currentUser.email,
         friendEmail: friend.email,
         amount,
@@ -172,8 +172,9 @@ const FriendCard = ({
 
           <input
             type="number"
-            step="1"
-            value={settleAmount === "" ? "" : Math.abs(settleAmount).toFixed(2)}
+            step="0.01"
+            min="0"
+            value={Math.abs(settleAmount)}
             onChange={(e) => {
               let value = e.target.value;
               if (value === "") return setSettleAmount("");
@@ -225,13 +226,15 @@ const FriendCard = ({
             </div>
 
             {friend.upiId && (
-              <button
+              <a
                 href={`upi://pay?pa=${friend.upiId}&pn=${encodeURIComponent(
                   friend.username
                 )}&am=${Math.abs(settleAmount)}&cu=INR&tn=${encodeURIComponent(
                   "FairFare - Friend Settlement"
                 )}`}
                 target="_blank"
+                onClick={(e) => {console.log("UPI link clicked")}}
+                
                 disabled={Math.abs(settleAmount) < 1}
                 rel="noopener noreferrer"
                 className={`block mt-2 text-center w-full py-2 px-4 rounded transition-colors ${
@@ -241,7 +244,7 @@ const FriendCard = ({
                 }`}
               >
                 Settle via UPI
-              </button>
+              </a>
             )}
           </div>
         </div>
