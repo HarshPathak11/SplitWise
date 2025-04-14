@@ -11,7 +11,7 @@ const AllExpensesPage = () => {
     // Fetch expenses from backend API
     const fetchExpenses = async () => {
       try {
-        const response = await fetch("/api/user/expenses");
+        const response = await fetch("http://localhost:8000/user/expenses");
         const data = await response.json();
         setExpenses(data);
       } catch (error) {

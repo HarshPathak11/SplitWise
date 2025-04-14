@@ -11,7 +11,7 @@ const AllTripsPage = () => {
     // Fetch trips and events from backend API
     const fetchTrips = async () => {
       try {
-        const response = await fetch("/api/user/trips-events"); // Update the API endpoint
+        const response = await fetch("/http://localhost:8000/user/trips-events"); // Update the API endpoint
         const data = await response.json();
         setTrips(data);
       } catch (error) {
