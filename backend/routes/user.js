@@ -26,7 +26,7 @@ router.post('/verify-forgot-password', verifyForgotPassword);
 router.post('/add-friends', addFriends);
 router.post('/remove-friend', removeFriend);
 router.post('/update-friend-balance', updateFriendBalance);
-router.post('/change-password',changePassword)
+router.post('/change-password',changePassword);
 
 //PUT routes
 router.put('/:id', updateUserProfile);
