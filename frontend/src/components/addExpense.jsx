@@ -18,7 +18,7 @@ const AddExpense = () => {
   const [members, setMembers] = useState([]); // Combined list: logged-in user + friends
   const [title, setTitle] = useState("");
   const [mainAmount, setMainAmount] = useState("");
-console.log("Members ",members);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Determine groupId: either from prop or from localStorage ("currentGroup")
   const currentGroup = JSON.parse(
@@ -110,6 +110,7 @@ console.log("Members ",members);
     };
 
     try {
+      setIsLoading(true); // ✅ Start loading
       // Replace with your backend endpoint
       const response = await axios.post(
         "http://192.168.1.5:8000/group/add-expense",
@@ -138,6 +139,8 @@ console.log("Members ",members);
           error.response.data.message) ||
         "Error creating expense. Please try again.";
       alert(errorMsg);
+    } finally {
+      setIsLoading(false); // ✅ Stop loading
     }
   };
 
@@ -286,14 +289,14 @@ console.log("Members ",members);
         <div className="text-center pt-6">
           <button
             onClick={handleAddExpense}
-            disabled={!mainAmount || !title || !paidBy}
+            disabled={!mainAmount || !title || !paidBy || isLoading}
             className={`font-semibold px-10 py-3 rounded-xl transition text-lg ${
-              !mainAmount || !title || !paidBy
+              !mainAmount || !title || !paidBy || isLoading
                 ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                 : "bg-white text-black hover:bg-gray-200"
             }`}
           >
-            Add
+            {isLoading ? "Adding..." : "Add"}
           </button>
         </div>
       </div>
