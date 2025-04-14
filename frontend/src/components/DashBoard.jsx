@@ -55,7 +55,7 @@ const Dashboard = () => {
           <TopNavbar />
 
           {/* Flippable Card */}
-          <FairFareCard user={user} />
+          <FairFareCard />
 
           {/* Today's expenses */}
           <RecentExpenses user={user} />

@@ -466,6 +466,34 @@ const changePassword = async (req, res) => {
   }
 };
 
+const getUpdatedFriendBalances = async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
+  try {
+    // Fetch the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Create an array of friend balances in the desired format
+    const updatedData = user.friends.map((f) => ({
+      friendId: f.friend._id,  // friend ID
+      balance: f.balance,      // balance
+    }));
+
+    // Send the updated data as response
+    return res.status(200).json(updatedData);
+  } catch (error) {
+    console.error("Error fetching updated friend balances:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 export {
   sendOtp,
   userLogin,
@@ -478,4 +506,5 @@ export {
   userDetails,
   updateFriendBalance,
   changePassword,
+  getUpdatedFriendBalances,
 };

@@ -10,6 +10,7 @@ import {
   forgotPassword,
   verifyForgotPassword,
   updateFriendBalance,
+  getUpdatedFriendBalances,
   changePassword
 } from '../controllers/user.js';
 
@@ -27,6 +28,7 @@ router.post('/add-friends', addFriends);
 router.post('/remove-friend', removeFriend);
 router.post('/update-friend-balance', updateFriendBalance);
 router.post('/change-password',changePassword);
+router.post('/get-updated-friend-balances', getUpdatedFriendBalances);
 
 //PUT routes
 router.put('/:id', updateUserProfile);
