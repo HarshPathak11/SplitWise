@@ -17,7 +17,7 @@ function CashMapAI() {
     return [
       {
         type: 'bot',
-        content: "Hello! I'm CashMap AI, your personal finance assistant. How can I help you today?"
+        content: "Hello! I'm Fair AI, your personal finance assistant. How can I help you today?"
       }
     ];
   });
@@ -35,6 +35,7 @@ function CashMapAI() {
     // Append user's message.
     const userMessage = { type: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
+    setInput('');
 
     // Get the user id from localStorage.
     let userId = "";
@@ -96,11 +97,11 @@ function CashMapAI() {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link to="/dash" className="flex items-center text-white-400">
             <FaArrowLeft className="h-5 mr-2 w-5" cursor-pointer />
-            Back to Dashboard
+            
           </Link>
           <div className="flex items-center">
             <FaRobot className="h-6 w-6 text-emerald-500 mr-2" />
-            <span className="font-semibold">CashMap AI Assistant</span>
+            <span className="font-semibold">Fair AI</span>
           </div>
         </div>
       </div>

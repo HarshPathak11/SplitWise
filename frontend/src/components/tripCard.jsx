@@ -16,7 +16,7 @@ export default function TripCard({ trip, onClick, amount }) {
           Participants: {trip.members?.length || 0}
         </p>
       </div>
-      <div className="text-lg font-semibold">₹{amount}</div>
+      <div className="text-lg font-semibold">₹{amount.toFixed(2)}</div>
     </div>
   );
 }
