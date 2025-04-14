@@ -9,18 +9,21 @@ const ChangePassword = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
+    console.log("hii")
     setLoading(true);
     setMessage("");
 
     // Validate new password length
-    if (newPassword.length < 8) {
-      setMessage("Password must be at least 8 characters long.");
-      setLoading(false);
-      return;
-    }
+    // if (newPassword.length < 8) {
+    //   setMessage("Password must be at least 8 characters long.");
+    //   setLoading(false);
+    //   return;
+    // }
 
     // Validate password match
     if (newPassword !== confirmPassword) {
@@ -28,12 +31,17 @@ const ChangePassword = () => {
       setLoading(false);
       return;
     }
+    console.log(newPassword,confirmPassword)
 
     try {
+      console.log("inside try")
+      console.log(user.user._id,newPassword)
       const response = await axios.post(
-        "http://192.168.1.7:8000/change-password",
-        { currentPassword, newPassword }
+        "http://192.168.1.5:8000/user/change-password",
+        { userId:user.user._id, newPassword }
       );
+      console.log("after boom")
+      console.log(response,"hii")
       setMessage(response.data.message);
     } catch (error) {
       setMessage("Error changing password. Please try again.");

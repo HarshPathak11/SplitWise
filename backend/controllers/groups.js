@@ -89,22 +89,28 @@ const addMembers = async (req, res) => {
   };
   
 
-const getGroupDetails = async (req, res) => {
-  const groupId = req.params.id; // Assuming you have the group ID from the request
-  try {
-    const group = await Group.findById(groupId).populate(
-      "members",
-      "username email",
-    ); // Populate members with their username and email
-    if (!group) {
-      return res.status(404).json({ message: "Group not found" });
+  const getGroupDetails = async (req, res) => {
+    const groupId = req.params.id; // Assuming you have the group ID from the request
+    try {
+      const group = await Group.findById(groupId)
+        .populate("members", "username email")
+        .populate({
+          path: "expenses",
+          populate: [
+            { path: "paidBy", select: "username email" },
+            { path: "owedBy.user", select: "username email" }
+          ]
+        });
+  
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      res.status(200).json(group);
+    } catch (error) {
+      console.error("Error fetching group details:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
-    res.status(200).json(group);
-  } catch (error) {
-    console.error("Error fetching group details:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
+  };
 
 /**
  * addExpenseController
@@ -236,7 +242,8 @@ const addExpenseController = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    return res.status(200).json({ success: true, expense: newExpense });
+    const updatedGroup = await Group.findById(groupId).populate("members", "username email");
+    return res.status(200).json({ success: true, expense: newExpense, updatedGroup: updatedGroup });
   } catch (error) {
     // Abort transaction on error
     await session.abortTransaction();
@@ -246,5 +253,70 @@ const addExpenseController = async (req, res) => {
   }
 };
 
+const getUserTrips = async (req, res) => {
+  const { userId } = req.params; // Expecting URL like /api/user/:userId/trips
+  try {
+    // Find the user and populate their groups (trips) along with members.
+    const user = await User.findById(userId).populate({
+      path: "groups",
+      populate: {
+        path: "members", // Populate the members in each group.
+        select: "username email" // Only retrieve username and email.
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-export { createGroup, getGroupDetails, addMembers, getAllGroupsOfAUser, addExpenseController };
+    // Sort the groups (trips) in descending order (newest first) based on createdAt.
+    const sortedTrips = user.groups.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    // Return the sorted trips information.
+    return res.status(200).json({ trips: sortedTrips });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getRecentExpenses = async (req, res) => {
+  const { userId } = req.params; // Expecting URL like /api/user/:userId/recent-expenses
+  try {
+    // Find the user and populate the recentExpense field.
+    const user = await User.findById(userId).populate({
+      path: "recentExpense",
+      populate: [
+        {
+          path: "paidBy",
+          select: "username email"
+        },
+        {
+          path: "owedBy.user",
+          select: "username email"
+        },
+        {
+          path: "group",
+          select: "name description"
+        }
+      ]
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Sort the recent expenses by createdAt in descending order.
+    const sortedExpenses = user.recentExpense.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    // Return the sorted recent expenses.
+    return res.status(200).json({ recentExpenses: sortedExpenses });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+
+export { createGroup, getGroupDetails, addMembers, getAllGroupsOfAUser, addExpenseController , getUserTrips, getRecentExpenses};

@@ -25,14 +25,14 @@ const FriendCard = ({
 
   // This function calls the API to update balances in both documents when the user pays their friend.
   const handlePaid = async () => {
-    console.log("hii");
+    // console.log("hii");
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
-    console.log("amount", amount);
-    console.log("friend", friend);
+    // console.log("amount", amount);
+    // console.log("friend", friend);
 
     try {
-      await axios.post("http://localhost/user/update-friend-balance", {
+      await axios.post("http://192.168.1.5/user/update-friend-balance", {
         userEmail: currentUser.email,
         friendEmail: friend.email,
         amount,
@@ -53,12 +53,12 @@ const FriendCard = ({
   const handleReceived = async () => {
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
-    console.log("amount", amount);
-    console.log("friend", friend);
-    console.log("currentUser", currentUser);
+    // console.log("amount", amount);
+    // console.log("friend", friend);
+    // console.log("currentUser", currentUser);
 
     try {
-      await axios.post("http://192.168.1.7:8000/user/update-friend-balance", {
+      await axios.post("http://192.168.1.5:8000/user/update-friend-balance", {
         userEmail: currentUser.email,
         friendEmail: friend.email,
         amount,
@@ -83,7 +83,7 @@ const FriendCard = ({
     try {
       if (currentBalance > 0) {
         // If friend owes you money, then receiving money will reduce the balance.
-        await axios.post("http://192.168.1.7:8000/user/update-friend-balance", {
+        await axios.post("http://192.168.1.5:8000/user/update-friend-balance", {
           userEmail: currentUser.email,
           friendEmail: friend.email,
           amount: currentBalance,
@@ -91,7 +91,7 @@ const FriendCard = ({
         });
       } else {
         // If you owe friend money, paying them will reduce the negative balance.
-        await axios.post("http://192.168.1.7:8000/user/update-friend-balance", {
+        await axios.post("http://192.168.1.5:8000/user/update-friend-balance", {
           userEmail: currentUser.email,
           friendEmail: friend.email,
           amount: Math.abs(currentBalance),

@@ -45,8 +45,9 @@ const RecentExpenses = () => {
 
       <div className="space-y-3 sm:space-y-4">
         {recentExpenses && recentExpenses.length > 0 ? (
-          recentExpenses.map((expense) => (
+          recentExpenses.map((expense, index) => (
             <ExpenseCard
+              key={expense.id || index}
               category={expense.title}
               time={expense.createdAt}
               description={""}

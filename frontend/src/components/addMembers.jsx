@@ -61,7 +61,7 @@ const AddMembers = () => {
       const selectedUsernames = selectedFriends.map((f) => f._id);
       console.log("Selected Usernames:", selectedUsernames);
   
-      const res = await axios.post(`http://192.168.1.7:8000/group/add-members/${groupId}`, {
+      const res = await axios.post(`http://192.168.1.5:8000/group/add-members/${groupId}`, {
         groupId,
         members: selectedUsernames,
       });

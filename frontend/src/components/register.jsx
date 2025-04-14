@@ -9,7 +9,7 @@ function LandingSignup() {
     try {
       const token = await signUp.getToken();
   
-      const response = await axios.post("http://192.168.1.7:8000/demo", {}, {
+      const response = await axios.post("http://192.168.1.5:8000/demo", {}, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
