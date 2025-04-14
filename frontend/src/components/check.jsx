@@ -23,7 +23,7 @@ const ComparisonTable = () => {
         <div className="space-y-4 backdrop-blur-md bg-white/5 rounded-xl p-6 border border-white/20 hover:border-white/30 transition-all duration-300">
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
             <div className="text-white/80">
-              No monthly fees or minimum balance
+            Expense Tracking
             </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
@@ -34,7 +34,7 @@ const ComparisonTable = () => {
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
             <div className="text-white/80">
-              Make unlimited events with no limits
+            Unlimited Events
             </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
@@ -44,7 +44,7 @@ const ComparisonTable = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">Secure & Private </div>
+            <div className="text-white/80">Interactive Event Cards </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
@@ -53,7 +53,7 @@ const ComparisonTable = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">Smart Settlement System</div>
+            <div className="text-white/80">Personal AI Assisstant</div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
@@ -62,18 +62,7 @@ const ComparisonTable = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">Smart Reminders</div>
-            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
-              ✔️
-            </div>
-            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
-              ❌
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">
-              No credit check required for sign-up
-            </div>
+            <div className="text-white/80">User-Centric Features</div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
@@ -83,13 +72,24 @@ const ComparisonTable = () => {
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
             <div className="text-white/80">
-              Privacy-Focused Expense Management
+            Enhanced Aesthetics
             </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ❌
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
+            <div className="text-white/80">
+            Trip Management
+            </div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+              ✔️
+            </div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+            ✔️
             </div>
           </div>
         </div>

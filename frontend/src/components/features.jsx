@@ -62,10 +62,9 @@ const Features = () => {
 
       {/* Feature 4 */}
       <div className="div4 feature-item">
-        <h2>Transparent Pricing</h2>
+        <h2>Personal AI Assisstant</h2>
         <p>
-          Clear and straightforward pricing plans (free and premium) make it
-          easier for users to understand the value proposition.
+        Your Personal AI Assistant simplifies expense management with smart insights, automated calculations, and seamless organization, making group finances effortless.
         </p>
       </div>
 
