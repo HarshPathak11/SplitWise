@@ -18,7 +18,6 @@ const TripDetails = () => {
     const fetchTripDetails = async () => {
       if (!tripId) return;
       const getCurrentGroup = localStorage.getItem("currentGroup");
-      console.log("Current Group:", getCurrentGroup);
 
       if (getCurrentGroup) {
         const parsedGroup = JSON.parse(getCurrentGroup); // Parse the string into an object
@@ -28,6 +27,7 @@ const TripDetails = () => {
           typeof m === "string" ? m : m.username
         );
 
+        setExpenses(parsedGroup.expenses)
         // Set directly to localStorage (no merge)
         localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
         setMembers(groupMembers);
@@ -36,18 +36,20 @@ const TripDetails = () => {
       }
       try {
         const response = await axios.get(
-          `http://192.168.156.226:8000/group/get-group/${tripId}`
+          `http://192.168.1.5:8000/group/get-group/${tripId}`
         );
         if (response.status === 200) {
           const group = response.data;
+          
           setTripDetails(group);
           setLoading(false);
           setExpenses(group.expenses);
 
           // Extract only the usernames from group members
-          const groupMembers = group.members.map((m) =>
-            typeof m === "string" ? m : m.username
-          );
+          const groupMembers = group.members.map((m) => {
+              return { _id: m._id, username: m.username}
+          });
+          
 
           // Set directly to localStorage (no merge)
           localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
@@ -153,7 +155,7 @@ const TripDetails = () => {
         </div>
         {/* Expenses Section */}
         <div>
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4 mt-4">
             <h2 className="text-xl sm:text-2xl font-semibold">Expenses</h2>
             <button
               className="border border-white text-white px-4 py-2 rounded-md hover:bg-white hover:text-black transition whitespace-nowrap"
@@ -169,7 +171,8 @@ const TripDetails = () => {
                 No Expenses Yet
               </div>
             ) : (
-              expenses.map((expense, idx) => (
+              expenses.map((expense, idx) => {
+                return(
                 <ExpenseCard
                   key={idx}
                   category={expense.title}
@@ -180,7 +183,7 @@ const TripDetails = () => {
                   paidBy={expense.paidBy}
                   beneficiaries={expense.owedBy}
                 />
-              ))
+              )})
             )}
           </div>
         </div>

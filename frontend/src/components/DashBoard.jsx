@@ -13,12 +13,12 @@ const Dashboard = () => {
   useEffect(() => {
     async function getDetails() {
       const userId = Cookies.get("id");
-      console.log("userId is ", userId);
+      // console.log("userId is ", userId);
 
       // if (!user) {
       try {
         const response = await axios.get(
-          `http://192.168.156.226:8000/user/${userId}`
+          `http://192.168.1.5:8000/user/${userId}`
         );
         console.log("response is ", response);
 
@@ -58,7 +58,7 @@ const Dashboard = () => {
           <FairFareCard user={user} />
 
           {/* Today's expenses */}
-          <RecentExpenses />
+          <RecentExpenses user={user} />
         </div>
 
         <div className="space-y-4 h-full flex flex-col">

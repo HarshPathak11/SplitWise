@@ -18,6 +18,7 @@ const AddExpense = () => {
   const [members, setMembers] = useState([]); // Combined list: logged-in user + friends
   const [title, setTitle] = useState("");
   const [mainAmount, setMainAmount] = useState("");
+console.log("Members ",members);
 
   // Determine groupId: either from prop or from localStorage ("currentGroup")
   const currentGroup = JSON.parse(
@@ -29,22 +30,9 @@ const AddExpense = () => {
   // This list contains the logged-in user plus his friends.
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        // The logged-in user's own details
-        const userInfo = { _id: parsedUser._id, username: parsedUser.username };
-        // Extract the friends from the "friends" array where each element has a "friend" key.
-        let friendList = [];
-        if (parsedUser.friends && parsedUser.friends.length > 0) {
-          friendList = parsedUser.friends
-            .filter((f) => f.friend && f.friend.username)
-            .map((f) => f.friend);
-        }
-        // Combine logged-in user and friend list (if you need to avoid duplicates, you can filter by _id)
-        const allMembers = [userInfo, ...friendList];
-        setMembers(allMembers);
-      }
+      const currentGroup = localStorage.getItem("currentGroup");
+      const groupMembers = currentGroup ? JSON.parse(currentGroup).members : [];
+      setMembers(groupMembers);
     } catch (err) {
       console.error("Error loading user and friends from localStorage:", err);
     }
@@ -124,7 +112,7 @@ const AddExpense = () => {
     try {
       // Replace with your backend endpoint
       const response = await axios.post(
-        "http://192.168.156.226:8000/group/add-expense",
+        "http://192.168.1.5:8000/group/add-expense",
         payload
       );
       console.log("Expense created successfully", response.data);
@@ -135,6 +123,12 @@ const AddExpense = () => {
       setPaidBy("");
       setSelected([]);
       setAmounts({});
+
+      // Update local storage
+      const updatedGroup = response.data.updatedGroup;
+      console.log("Updated Group:", updatedGroup);
+      localStorage.setItem("currentGroup", JSON.stringify(updatedGroup));
+
       navigate(-1);
     } catch (error) {
       console.error("Error creating expense:", error);

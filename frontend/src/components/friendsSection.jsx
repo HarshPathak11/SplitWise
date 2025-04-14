@@ -13,7 +13,7 @@ const FriendsSection = ({ user }) => {
       setFriends(user.friends); // friends is an array
     }
   }, [user]);
-  console.log(friends, "friends");
+  // console.log(friends, "friends");
 
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
@@ -21,7 +21,7 @@ const FriendsSection = ({ user }) => {
       const userId = currentUser._id;
 
       const res = await axios.delete(
-        `http://192.168.156.226:8000/user/remove-friend`,
+        `http://192.168.1.5:8000/user/remove-friend`,
         {
           data: {
             userId,

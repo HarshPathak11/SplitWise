@@ -19,11 +19,9 @@ const Profile = () => {
 
     async function getDetails() {
       if (!user && userId) {
-        console.log("Fetching user details from backend...");
-
         try {
           const response = await axios.get(
-            `http://192.168.156.226:8000/user/${userId}`
+            `http://192.168.1.5:8000/user/${userId}`
           );
           if (response.status === 200) {
             const fetchedUser = response.data.user;
@@ -51,7 +49,7 @@ const Profile = () => {
     try {
       const userId = Cookies.get("id");
       const response = await axios.put(
-        `http://192.168.156.226:8000/user/${userId}`,
+        `http://192.168.1.5:8000/user/${userId}`,
         profile
       );
 

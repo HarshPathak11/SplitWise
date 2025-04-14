@@ -2,20 +2,43 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import TripCard from "./tripCard"; // Ensure this component is styled properly
 import { FaArrowLeft } from "react-icons/fa";
+import Cookies from "js-cookie"; // Import Cookies library
+import axios from "axios"; // Import Axios library
 
 const AllTripsPage = () => {
   const navigate = useNavigate();
   const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(""); // 🔍 Search query state
 
+  // Fetch trips for the current user
   useEffect(() => {
-    // Fetch trips and events from backend API
     const fetchTrips = async () => {
       try {
-        const response = await fetch("/http://localhost:8000/user/trips-events"); // Update the API endpoint
-        const data = await response.json();
-        setTrips(data);
+        const userId = Cookies.get("id"); // user ID stored in cookies as "id"
+
+        if (!userId) {
+          console.error("User ID not found in cookies.");
+          return;
+        }
+
+        const response = await axios.get(
+          `http://192.168.1.5:8000/group/user-groups/${userId}`
+        );
+
+        if (Array.isArray(response.data)) {
+          // Sort expenses by createdAt in descending order (most recent first)
+          const sortedTrips = [...response.data].sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          // Take the top 4 expenses after sorting.
+          const topTrips = sortedTrips.slice(0, 4);
+          setTrips(topTrips);
+        }
       } catch (error) {
-        console.error("Error fetching trips and events:", error);
+        console.error("Error fetching trips:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -23,8 +46,13 @@ const AllTripsPage = () => {
   }, []);
 
   const handleTripClick = (trip) => {
-    navigate("/tripDetails", { state: { trip } }); // Navigate to trip/event details page
+    navigate(`/tripDetails/${trip._id}`);
   };
+
+  // Filtered trips based on search
+  const filteredTrips = trips.filter((trip) =>
+    trip.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white overflow-hidden relative">
@@ -58,22 +86,33 @@ const AllTripsPage = () => {
         </p>
       </div>
 
+      <div className="z-10 relative max-w-4xl mx-auto mb-6 px-4">
+        <input
+          type="text"
+          placeholder="Search by trip name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-gray-700/50 backdrop-blur-sm text-white border border-gray-600/30 rounded-lg p-2 sm:p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+        />
+      </div>
+
       {/* Trips and Events List */}
-      <div className="flex-1 max-w-4xl mx-auto w-full p-4 overflow-y-auto z-10 relative">
-        {trips.length === 0 ? (
+      <div className="flex-1 max-w-4xl cursor-pointer space-y-2 mx-auto w-full p-4 overflow-y-auto z-10 relative">
+        {loading ? (
+          <p className="text-blue-400 text-center">Loading trips...</p>
+        ) : trips.length === 0 ? (
           <p className="text-red-500 text-center font-semibold">
-            No trips or events found.
+            No trips found.
           </p>
         ) : (
-          <div className="space-y-4">
-            {trips.map((trip) => (
-              <TripCard
-                key={trip._id || trip.id} // Adjust according to actual ID field
-                trip={trip}
-                onClick={() => handleTripClick(trip)}
-              />
-            ))}
-          </div>
+          filteredTrips.map((trip) => (
+            <TripCard
+              key={trip._id}
+              amount={trip.tripTotal}
+              trip={trip}
+              onClick={() => handleTripClick(trip)}
+            />
+          ))
         )}
       </div>
     </div>

@@ -21,6 +21,7 @@ const groupSchema = new mongoose.Schema({
   from: {type:Date},
   to: {type:Date},
   members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  tripTotal: { type: Number, default: 0 },
   expenses: [expenseSchema],
 }, { timestamps: true });
 

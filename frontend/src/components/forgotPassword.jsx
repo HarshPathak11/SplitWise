@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://192.168.156.226:8000/forgot-password",
+        "http://192.168.1.5:8000/forgot-password",
         {
           email,
         }
@@ -37,7 +37,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://192.168.156.226:8000/verify-forgot-password",
+        "http://192.168.1.5:8000/verify-forgot-password",
         {
           otpGenerated,
           otp,

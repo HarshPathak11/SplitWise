@@ -21,14 +21,12 @@ const LogIn = () => {
         }
       }
     }
-    // console.log("user set as ",user);
 
     getDetails();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("email and password ", email, password);
     try {
       if (!email || !password) {
         alert("Please fill in all fields.");
@@ -36,13 +34,12 @@ const LogIn = () => {
       }
 
       const response = await axios.post(
-        `http://192.168.156.226:8000/user/login`,
+        `http://192.168.1.5:8000/user/login`,
         {
           email,
           password,
         }
       );
-      console.log("response ", response.data);
       if (response.data.user) {
         Cookies.set("id", response.data.user._id, { expires: 7 });
         navigate("/dash");

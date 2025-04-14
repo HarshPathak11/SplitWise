@@ -3,13 +3,22 @@ import PropTypes from 'prop-types';
 
 const ExpenseCard = ({ category, time, description, amount, iconColor, paidBy, beneficiaries }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  console.log("beneficiaries", beneficiaries)
-  console.log("amount", amount);
+  // console.log("beneficiaries", beneficiaries)
+  // console.log("amount", amount);
+  // console.log(category,time,description,amount,paidBy)
 
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
   };
-
+  const options = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  };
+  const date = new Date(time).toLocaleString('en-US', options);  
   // Calculate individual share
 
   return (
@@ -23,7 +32,7 @@ const ExpenseCard = ({ category, time, description, amount, iconColor, paidBy, b
           <div className={`${iconColor} p-3 rounded-full`}></div>
           <div className="ml-4">
             <h3 className="font-semibold">{category}</h3>
-            <p className="text-sm text-gray-400">{time} &bull; {description}</p>
+            <p className="text-sm text-gray-400">{date}</p>
           </div>
         </div>
         <div className="text-lg font-semibold">₹{amount}</div>
@@ -33,7 +42,7 @@ const ExpenseCard = ({ category, time, description, amount, iconColor, paidBy, b
       {isExpanded && (
         <div className="mt-4 bg-gray-900 p-4 rounded-lg">
           <p className="text-gray-300 mb-2">
-            <strong>Paid by:</strong> {paidBy}
+            <strong>Paid by:</strong> {paidBy.username}
           </p>
           <p className="text-gray-300 mb-2">
             <strong>Beneficiaries</strong>
@@ -41,7 +50,7 @@ const ExpenseCard = ({ category, time, description, amount, iconColor, paidBy, b
           <ul className="text-gray-400">
             {beneficiaries.map((person, index) => (
               <li key={index} className="ml-4 list-disc">
-                {person.user} has a share of ₹{person.amount}
+                {person.user.username} has a share of ₹{person.amount}
               </li>
             ))}
           </ul>

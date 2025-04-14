@@ -2,29 +2,28 @@ import ExpenseCard from "./expenseCard"; // Make sure this path is correct based
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 
-const RecentExpenses = () => {
+const RecentExpenses = (user) => {
   const [recentExpenses, setRecentExpenses] = useState([]);
 
-  useEffect(() => {
-    // Retrieve user from localStorage and parse the recentExpense field.
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+  useEffect(() => {    
+    if (user) {
       try {
-        const user = JSON.parse(storedUser);
-        if (user?.recentExpense && Array.isArray(user.recentExpense)) {
+        const parsedUser = user?.user;
+        
+        if (parsedUser.recentExpense && Array.isArray(parsedUser.recentExpense)) {
           // Sort expenses by createdAt in descending order (most recent first)
-          const sortedExpenses = [...user.recentExpense].sort(
+          const sortedExpenses = [...parsedUser.recentExpense].sort(
             (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
           );
           // Take the top 4 expenses after sorting.
-          const topExpenses = sortedExpenses.slice(0, 4);
+          const topExpenses = sortedExpenses.slice(0, 3);
           setRecentExpenses(topExpenses);
         }
       } catch (error) {
         console.error("Error parsing user from localStorage:", error);
       }
     }
-  }, []);
+  }, [user]);
 
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
@@ -45,8 +44,9 @@ const RecentExpenses = () => {
 
       <div className="space-y-3 sm:space-y-4">
         {recentExpenses && recentExpenses.length > 0 ? (
-          recentExpenses.map((expense) => (
+          recentExpenses.map((expense, index) => (
             <ExpenseCard
+              key={expense.id || index}
               category={expense.title}
               time={expense.createdAt}
               description={""}

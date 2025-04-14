@@ -8,18 +8,24 @@ const AllExpensesPage = () => {
   const [expenses, setExpenses] = useState([]);
 
   useEffect(() => {
-    // Fetch expenses from backend API
-    const fetchExpenses = async () => {
+    // Retrieve user from localStorage and parse the recentExpense field.
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
       try {
-        const response = await fetch("http://localhost:8000/user/expenses");
-        const data = await response.json();
-        setExpenses(data);
+        const user = JSON.parse(storedUser);
+        if (user?.recentExpense && Array.isArray(user.recentExpense)) {
+          // Sort expenses by createdAt in descending order (most recent first)
+          const sortedExpenses = [...user.recentExpense].sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          // Take the top 4 expenses after sorting.
+          const topExpenses = sortedExpenses;
+          setExpenses(topExpenses);
+        }
       } catch (error) {
-        console.error("Error fetching expenses:", error);
+        console.error("Error parsing user from localStorage:", error);
       }
-    };
-
-    fetchExpenses();
+    }
   }, []);
 
   const handleExpenseClick = (expense) => {
@@ -68,10 +74,15 @@ const AllExpensesPage = () => {
           <div className="space-y-4">
             {expenses.map((expense) => (
               <ExpenseCard
-                key={expense._id || expense.id}
-                expense={expense}
-                onClick={() => handleExpenseClick(expense)}
-              />
+              key={expense.id}
+              category={expense.title}
+              time={expense.createdAt}
+              description={""}
+              amount={expense.amount}
+              iconColor={"bg-blue-500"}
+              paidBy={expense.paidBy}
+              beneficiaries={expense.owedBy}
+            />
             ))}
           </div>
         )}
