@@ -10,7 +10,6 @@ const AddMembers = () => {
   const [search, setSearch] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
   const { groupId } = useParams();
-  console.log("Group ID:", groupId);
 
   useEffect(() => {
     try {
@@ -18,7 +17,6 @@ const AddMembers = () => {
       const existingTripMembers =
         JSON.parse(localStorage.getItem("tripMembers")) || [];
 
-      console.log("Existing tripMembers:", existingTripMembers);
       if (storedUser) {
         const user = JSON.parse(storedUser);
 
@@ -29,7 +27,7 @@ const AddMembers = () => {
             username: f.friend.username,
             balance: f.balance || 0,
           }))
-          .filter((f) => !existingTripMembers.includes(f.username)); // Exclude already added
+          .filter((f) => !existingTripMembers.some((member) => member._id === f._id)); // Exclude already added
 
         setFriends(friendsList);
       }
@@ -42,7 +40,7 @@ const AddMembers = () => {
     if (selectedFriends.some((f) => f._id === friend._id)) {
       setSelectedFriends((prev) => prev.filter((f) => f._id !== friend._id));
     } else {
-      setSelectedFriends((prev) => [friendItem, ...prev]);
+      setSelectedFriends((prev) => [friend, ...prev]);
     }
     setSearch("");
   };
@@ -53,20 +51,16 @@ const AddMembers = () => {
 
   const handleAdd = async () => {
     try {
-      console.log("Selected Friends:", selectedFriends);
-      console.log("Group ID:", groupId);
-
       if (!groupId || selectedFriends.length === 0) return;
 
       const selectedUsernames = selectedFriends.map((f) => f._id);
-      console.log("Selected Usernames:", selectedUsernames);
-  
-      const res = await axios.post(`http://192.168.1.5:8000/group/add-members/${groupId}`, {
-        groupId,
-        members: selectedUsernames,
-      });
-  
-      console.log("Response:", res);
+
+      const res = await axios.post(
+        `http://192.168.1.5:8000/group/add-members/${groupId}`,
+        {
+          members: selectedUsernames,
+        }
+      );
 
       if (res.status !== 200) {
         throw new Error(res.data.message || "Failed to add members");
@@ -74,8 +68,7 @@ const AddMembers = () => {
 
       // Update local storage
       const updatedGroup = res.data;
-      console.log("Updated Group:", updatedGroup);
-      
+
       localStorage.setItem("currentGroup", JSON.stringify(updatedGroup));
 
       // Go back or redirect
@@ -116,10 +109,10 @@ const AddMembers = () => {
             <div className="flex flex-wrap gap-3">
               {selectedFriends.map((friendItem) => (
                 <span
-                  key={friendItem.friend._id}
+                  key={friendItem._id}
                   className="bg-green-700 px-3 py-1 rounded-full text-sm"
                 >
-                  {friend.username}
+                  {friendItem.username}
                 </span>
               ))}
             </div>
@@ -128,14 +121,14 @@ const AddMembers = () => {
 
         {/* Friend List Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-          {filteredFriends.map((friend) => {
+          {filteredFriends.map((friend) => {            
             const isSelected = selectedFriends.some(
               (f) => f._id === friend._id
             );
             return (
               <div
-                key={friendItem.friend._id}
-                onClick={() => handleSelect(friendItem)}
+                key={friend._id}
+                onClick={() => handleSelect(friend)}
                 className={`cursor-pointer px-4 py-3 rounded-lg border transition ${
                   isSelected
                     ? "border-green-500 bg-green-800 text-white"
@@ -151,7 +144,7 @@ const AddMembers = () => {
         {/* Add Members Button */}
         <div className="text-center pt-6">
           <button
-          disabled={selectedFriends.length === 0}
+            disabled={selectedFriends.length === 0}
             className={`${
               selectedFriends.length === 0
                 ? "bg-black cursor-not-allowed"

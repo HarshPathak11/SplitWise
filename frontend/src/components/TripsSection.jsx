@@ -20,15 +20,25 @@ const TripsSection = () => {
           return;
         }
 
-        const response = await axios.get(`http://192.168.1.5:8000/group/user-groups/${userId}`);
-        setTrips(response.data || []);
+        const response = await axios.get(
+          `http://192.168.1.5:8000/group/user-groups/${userId}`
+        );
+        
+        if (Array.isArray(response.data)) {
+          // Sort expenses by createdAt in descending order (most recent first)
+          const sortedTrips = [...response.data].sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          // Take the top 4 expenses after sorting.
+          const topTrips = sortedTrips.slice(0, 3);
+          setTrips(topTrips);
+        }
       } catch (error) {
         console.error("Error fetching trips:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchTrips();
   }, []);
 
@@ -90,6 +100,7 @@ const TripsSection = () => {
           trips.map((trip) => (
             <TripCard
               key={trip._id}
+              amount={trip.tripTotal}
               trip={trip}
               onClick={() => handleTripClick(trip)}
             />

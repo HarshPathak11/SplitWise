@@ -8,14 +8,18 @@ function LandingSignup() {
   async function handleUserSignup() {
     try {
       const token = await signUp.getToken();
-  
-      const response = await axios.post("http://192.168.1.5:8000/demo", {}, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
+
+      const response = await axios.post(
+        "http://192.168.1.5:8000/demo",
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       console.log(response.data);
     } catch (error) {
       console.error("Signup backend call failed:", error);

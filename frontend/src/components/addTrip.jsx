@@ -127,9 +127,7 @@ const AddTrip = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             {/* From Date */}
             <div className="flex-1">
-              <label className="block text-white mb-2">
-                From
-              </label>
+              <label className="block text-white mb-2">From</label>
               <input
                 type="date"
                 value={fromDate}

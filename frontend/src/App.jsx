@@ -17,115 +17,233 @@ import AddMembers from "./components/addMembers";
 import AllTripsPage from "./components/AllTripsPage";
 import AllExpenses from "./components/AllExpenses";
 import CashMapAI from "./components/CashMapAI";
+import AppLayout from "./AppLayout";
+
+// const router = createBrowserRouter([
+//   {
+//     path: "/dash",
+//     element: (
+//       <ProtectedRoute>
+//         <Dashboard />
+//       </ProtectedRoute> 
+//     ),
+//   },
+//   {
+//     path: "/profile",
+//     element: (
+//       <ProtectedRoute>
+//         <Profile />
+//       </ProtectedRoute>
+//     ),
+//   },
+//   {
+//     path: "/add-expense",
+//     element: (
+//       <ProtectedRoute>
+//         <AddExpense />
+//       </ProtectedRoute>
+//     ),
+//   },
+//   {
+//     path: "/add-members/:groupId",
+//     element: (
+//       <ProtectedRoute>
+//         <AddMembers />
+//       </ProtectedRoute>
+//     ),
+//   },
+//   {
+//     path: "/allExpenses",
+//     element: (
+//       <ProtectedRoute>
+//         <AllExpenses />
+//       </ProtectedRoute>
+//     ),
+//   },
+//   {
+//     path: "/addFriend",
+//     element: (
+//       <ProtectedRoute>
+//         <AddFriend />
+//       </ProtectedRoute> 
+//     ),
+//   },
+//   {
+//     path: "/allTrips",
+//     element: (
+//       <ProtectedRoute>
+//         <AllTripsPage />
+//       </ProtectedRoute> 
+//     ),
+//   },
+//   {
+//     path: "/tripDetails/:tripId",
+//     element: (
+//       <ProtectedRoute>
+//         <TripDetails />
+//       </ProtectedRoute> 
+//     ),
+//   },
+//   {
+//     path: "/addTrip",
+//     element: (
+//       <ProtectedRoute>
+//         <AddTrip />
+//       </ProtectedRoute> 
+//     ),
+//   },
+//   {
+//     path: "/CashMapAI",
+//     element: (
+//       <ProtectedRoute>
+//         <CashMapAI />
+//       </ProtectedRoute> 
+//     ),
+//   },
+//   {
+//     path: "/signup",
+//     element: <SignUp />,
+//   },
+//   {
+//     path: "/login",
+//     element: <LogIn />,
+//   },
+//   {
+//     path: "/",
+//     element: <LandingPage />,
+//   },
+//   {
+//     path: "/features",
+//     element: <Features />,
+//   },
+//   {
+//     path: "/forgot-password",
+//     element: <ForgotPassword />
+//   },
+//   {
+//     path: "/change-password",
+//     element: <ChangePassword />
+//   },
+//   {
+//     path: "*",
+//     element: <NotFound />,
+//   },
+// ]);
 
 const router = createBrowserRouter([
   {
-    path: "/dash",
-    element: (
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute> 
-    ),
-  },
-  {
-    path: "/profile",
-    element: (
-      <ProtectedRoute>
-        <Profile />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/add-expense",
-    element: (
-      <ProtectedRoute>
-        <AddExpense />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/add-members/:groupId",
-    element: (
-      <ProtectedRoute>
-        <AddMembers />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/allExpenses",
-    element: (
-      <ProtectedRoute>
-        <AllExpenses />
-      </ProtectedRoute>
-    ),
-  },
-  {
-    path: "/addFriend",
-    element: (
-      <ProtectedRoute>
-        <AddFriend />
-      </ProtectedRoute> 
-    ),
-  },
-  {
-    path: "/allTrips",
-    element: (
-      <ProtectedRoute>
-        <AllTripsPage />
-      </ProtectedRoute> 
-    ),
-  },
-  {
-    path: "/tripDetails/:tripId",
-    element: (
-      <ProtectedRoute>
-        <TripDetails />
-      </ProtectedRoute> 
-    ),
-  },
-  {
-    path: "/addTrip",
-    element: (
-      <ProtectedRoute>
-        <AddTrip />
-      </ProtectedRoute> 
-    ),
-  },
-  {
-    path: "/CashMapAI",
-    element: (
-      <ProtectedRoute>
-        <CashMapAI />
-      </ProtectedRoute> 
-    ),
-  },
-  {
-    path: "/signup",
-    element: <SignUp />,
-  },
-  {
-    path: "/login",
-    element: <LogIn />,
-  },
-  {
     path: "/",
-    element: <LandingPage />,
-  },
-  {
-    path: "/features",
-    element: <Features />,
-  },
-  {
-    path: "/forgot-password",
-    element: <ForgotPassword />
-  },
-  {
-    path: "/change-password",
-    element: <ChangePassword />
-  },
-  {
-    path: "*",
-    element: <NotFound />,
+    element: <AppLayout />, // Wraps everything in ErrorBoundary
+    children: [
+      {
+        path: "dash",
+        element: (
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile",
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "add-expense",
+        element: (
+          <ProtectedRoute>
+            <AddExpense />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "add-members/:groupId",
+        element: (
+          <ProtectedRoute>
+            <AddMembers />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "allExpenses",
+        element: (
+          <ProtectedRoute>
+            <AllExpenses />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "addFriend",
+        element: (
+          <ProtectedRoute>
+            <AddFriend />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "allTrips",
+        element: (
+          <ProtectedRoute>
+            <AllTripsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "tripDetails/:tripId",
+        element: (
+          <ProtectedRoute>
+            <TripDetails />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "addTrip",
+        element: (
+          <ProtectedRoute>
+            <AddTrip />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "CashMapAI",
+        element: (
+          <ProtectedRoute>
+            <CashMapAI />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "signup",
+        element: <SignUp />,
+      },
+      {
+        path: "login",
+        element: <LogIn />,
+      },
+      {
+        path: "",
+        element: <LandingPage />,
+      },
+      {
+        path: "features",
+        element: <Features />,
+      },
+      {
+        path: "forgot-password",
+        element: <ForgotPassword />,
+      },
+      {
+        path: "change-password",
+        element: <ChangePassword />,
+      },
+      {
+        path: "*",
+        element: <NotFound />,
+      },
+    ],
   },
 ]);
 

@@ -19,8 +19,6 @@ const Profile = () => {
 
     async function getDetails() {
       if (!user && userId) {
-        console.log("Fetching user details from backend...");
-
         try {
           const response = await axios.get(
             `http://192.168.1.5:8000/user/${userId}`

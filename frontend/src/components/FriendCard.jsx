@@ -25,11 +25,8 @@ const FriendCard = ({
 
   // This function calls the API to update balances in both documents when the user pays their friend.
   const handlePaid = async () => {
-    // console.log("hii");
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
-    // console.log("amount", amount);
-    // console.log("friend", friend);
 
     try {
       await axios.post("http://192.168.1.5/user/update-friend-balance", {
@@ -53,17 +50,17 @@ const FriendCard = ({
   const handleReceived = async () => {
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
-    // console.log("amount", amount);
-    // console.log("friend", friend);
-    // console.log("currentUser", currentUser);
 
     try {
-      await axios.post("http://192.168.1.5:8000/user/update-friend-balance", {
-        userEmail: currentUser.email,
-        friendEmail: friend.email,
-        amount,
-        action: "received",
-      });
+      await axios.post(
+        "http://192.168.1.5:8000/user/update-friend-balance",
+        {
+          userEmail: currentUser.email,
+          friendEmail: friend.email,
+          amount,
+          action: "received",
+        }
+      );
       // Locally update: when you receive money, your friend's balance decreases.
       balance = parseFloat((Number(balance) - amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
@@ -83,20 +80,26 @@ const FriendCard = ({
     try {
       if (currentBalance > 0) {
         // If friend owes you money, then receiving money will reduce the balance.
-        await axios.post("http://192.168.1.5:8000/user/update-friend-balance", {
-          userEmail: currentUser.email,
-          friendEmail: friend.email,
-          amount: currentBalance,
-          action: "received",
-        });
+        await axios.post(
+          "http://192.168.1.5:8000/user/update-friend-balance",
+          {
+            userEmail: currentUser.email,
+            friendEmail: friend.email,
+            amount: currentBalance,
+            action: "received",
+          }
+        );
       } else {
         // If you owe friend money, paying them will reduce the negative balance.
-        await axios.post("http://192.168.1.5:8000/user/update-friend-balance", {
-          userEmail: currentUser.email,
-          friendEmail: friend.email,
-          amount: Math.abs(currentBalance),
-          action: "paid",
-        });
+        await axios.post(
+          "http://192.168.1.5:8000/user/update-friend-balance",
+          {
+            userEmail: currentUser.email,
+            friendEmail: friend.email,
+            amount: Math.abs(currentBalance),
+            action: "paid",
+          }
+        );
       }
       balance = 0;
       updateFriendBalance(friend.email, balance);
@@ -106,7 +109,6 @@ const FriendCard = ({
       console.error("Error settling friend balance:", error);
     }
   };
-  console.log("friend", friend);
 
   return (
     <div
@@ -129,9 +131,9 @@ const FriendCard = ({
             }`}
           >
             {Number(balance) > 0
-              ? `Owes you ₹${Number(balance)}`
+              ? `Owes you ₹${Number(balance).toFixed(2)}`
               : Number(balance) < 0
-              ? `You owe ₹${Math.abs(Number(balance))}`
+              ? `You owe ₹${Math.abs(Number(balance).toFixed(2))}`
               : "Settled"}
           </p>
         </div>
@@ -170,8 +172,8 @@ const FriendCard = ({
 
           <input
             type="number"
-            step="0.01"
-            value={settleAmount === "" ? "" : Math.abs(settleAmount)}
+            step="1"
+            value={settleAmount === "" ? "" : Math.abs(settleAmount).toFixed(2)}
             onChange={(e) => {
               let value = e.target.value;
               if (value === "") return setSettleAmount("");

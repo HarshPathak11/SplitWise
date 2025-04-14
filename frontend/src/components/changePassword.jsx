@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 import { FaArrowLeft } from "react-icons/fa";
 
 const ChangePassword = () => {
@@ -11,19 +12,11 @@ const ChangePassword = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    console.log("hii")
+    console.log("hii");
     setLoading(true);
     setMessage("");
-
-    // Validate new password length
-    // if (newPassword.length < 8) {
-    //   setMessage("Password must be at least 8 characters long.");
-    //   setLoading(false);
-    //   return;
-    // }
 
     // Validate password match
     if (newPassword !== confirmPassword) {
@@ -31,20 +24,23 @@ const ChangePassword = () => {
       setLoading(false);
       return;
     }
-    console.log(newPassword,confirmPassword)
+    console.log(newPassword, confirmPassword);
 
     try {
-      console.log("inside try")
-      console.log(user.user._id,newPassword)
+      console.log("inside try");
+      console.log(user.user._id, newPassword);
       const response = await axios.post(
         "http://192.168.1.5:8000/user/change-password",
-        { userId:user.user._id, newPassword }
+        { userId: user.user._id, newPassword: newPassword }
       );
-      console.log("after boom")
-      console.log(response,"hii")
       setMessage(response.data.message);
+      Cookies.remove("id");
+      Cookies.remove("last4");
+      localStorage.clear();
+      navigate("/login"); // Redirect to login page after successful password change
     } catch (error) {
       setMessage("Error changing password. Please try again.");
+      console.log("Error changing password:", error);
     } finally {
       setLoading(false);
     }
@@ -73,7 +69,7 @@ const ChangePassword = () => {
         <h2 className="text-2xl font-bold mb-6 text-[#00F5FF]">
           Change Password
         </h2>
-        
+
         <input
           type="password"
           placeholder="New Password"

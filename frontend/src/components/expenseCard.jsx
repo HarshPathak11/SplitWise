@@ -10,7 +10,15 @@ const ExpenseCard = ({ category, time, description, amount, iconColor, paidBy, b
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
   };
-
+  const options = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  };
+  const date = new Date(time).toLocaleString('en-US', options);  
   // Calculate individual share
 
   return (
@@ -24,7 +32,7 @@ const ExpenseCard = ({ category, time, description, amount, iconColor, paidBy, b
           <div className={`${iconColor} p-3 rounded-full`}></div>
           <div className="ml-4">
             <h3 className="font-semibold">{category}</h3>
-            <p className="text-sm text-gray-400">{time} &bull; {description}</p>
+            <p className="text-sm text-gray-400">{date}</p>
           </div>
         </div>
         <div className="text-lg font-semibold">₹{amount}</div>

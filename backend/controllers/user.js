@@ -98,10 +98,7 @@ const userLogin = async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    // Clean the input password
-    
     const cleanPassword = String(password).trim();
-    console.log("clean password ", cleanPassword);    
 
     // Use the schema's comparePassword method
     const isPasswordValid = await user.comparePassword(cleanPassword);
@@ -440,6 +437,18 @@ const changePassword = async (req, res) => {
     const user = await User.findById(userId).select("+password");
     if (!user) {
       return res.status(404).json({ message: "User not found." });
+    }
+
+    const cleanPassword = String(newPassword).trim();
+
+    // Use the schema's comparePassword method
+    const isPasswordValid = await user.comparePassword(cleanPassword);
+    console.log("Password comparison result: ", isPasswordValid);
+
+    if(isPasswordValid) {
+      return res.status(400).json({
+        message: "New password cannot be same as old password",
+      });
     }
 
     // Set the new password. The pre-save middleware in your schema will hash it.

@@ -11,11 +11,15 @@ import {
 
 const router = express.Router();
 
+//GET requests
 router.get('/get-group/:id', getGroupDetails);
 router.get('/user-groups/:id', getAllGroupsOfAUser);
-router.post('/add-members/:id', addMembers)
-router.post('/add-expense', addExpenseController)
 router.get('/user/:userId/trips', getUserTrips);
 router.get('/user/:userId/recent-expenses', getRecentExpenses);
+
+//POST requests
+router.post('/add-members/:id', addMembers);
+router.post('/add-expense', addExpenseController);
+router.post('/create-group', createGroup);
 
 export default router;

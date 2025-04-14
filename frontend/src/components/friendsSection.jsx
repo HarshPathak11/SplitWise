@@ -13,7 +13,7 @@ const FriendsSection = ({ user }) => {
       setFriends(user.friends); // friends is an array
     }
   }, [user]);
-  console.log(friends, "friends");
+  // console.log(friends, "friends");
 
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
@@ -58,7 +58,6 @@ const FriendsSection = ({ user }) => {
     );
   };
 
-
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1 p-2 mb-auto">
       <div className="flex justify-between items-center mb-2 sm:mb-1">
@@ -87,7 +86,11 @@ const FriendsSection = ({ user }) => {
                 stroke="currentColor"
                 strokeWidth={2}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
             </button>
           </Link>
@@ -103,9 +106,9 @@ const FriendsSection = ({ user }) => {
         }`}
       >
         {filteredFriends.length === 0 ? (
-            <p className="text-red-500 text-center font-semibold">
-              No friends found.
-            </p>
+          <p className="text-red-500 text-center font-semibold">
+            No friends found.
+          </p>
         ) : (
           filteredFriends.map((f, index) => (
             <FriendCard

@@ -21,7 +21,9 @@ const AddExpense = () => {
 console.log("Members ",members);
 
   // Determine groupId: either from prop or from localStorage ("currentGroup")
-  const currentGroup = JSON.parse(localStorage.getItem("currentGroup") || "null");
+  const currentGroup = JSON.parse(
+    localStorage.getItem("currentGroup") || "null"
+  );
   const groupId = propGroupId || (currentGroup ? currentGroup._id : null);
 
   // Retrieve user info from localStorage and build a combined members list.
@@ -83,9 +85,14 @@ console.log("Members ",members);
     const customTotal = calculateCustomTotal();
 
     // For uneven split, total of custom amounts must equal the main entered amount.
-    if (splitMode === "unequally" && totalEntered.toFixed(2) !== customTotal.toFixed(2)) {
+    if (
+      splitMode === "unequally" &&
+      totalEntered.toFixed(2) !== customTotal.toFixed(2)
+    ) {
       const diff = (customTotal - totalEntered).toFixed(2);
-      alert(`Calculation mismatch of ₹${Math.abs(diff)}. Please correct the values.`);
+      alert(
+        `Calculation mismatch of ₹${Math.abs(diff)}. Please correct the values.`
+      );
       return;
     }
 
@@ -95,16 +102,19 @@ console.log("Members ",members);
     const payload = {
       title: title,
       amount: totalEntered,
-      paidBy: paidBy,            // _id of the payer
-      groupId: groupId,          // may be null if not applicable
+      paidBy: paidBy, // _id of the payer
+      groupId: groupId, // may be null if not applicable
       splitMode: splitMode,
       involvedMembers: selected, // array of _ids (which may include the payer as well)
-      customAmounts: splitMode === "unequally" ? amounts : {}
+      customAmounts: splitMode === "unequally" ? amounts : {},
     };
 
     try {
       // Replace with your backend endpoint
-      const response = await axios.post("http://192.168.1.5:8000/group/add-expense", payload);
+      const response = await axios.post(
+        "http://192.168.1.5:8000/group/add-expense",
+        payload
+      );
       console.log("Expense created successfully", response.data);
       alert("Expense added successfully!");
       // Reset form fields
@@ -123,7 +133,9 @@ console.log("Members ",members);
     } catch (error) {
       console.error("Error creating expense:", error);
       const errorMsg =
-        (error.response && error.response.data && error.response.data.message) ||
+        (error.response &&
+          error.response.data &&
+          error.response.data.message) ||
         "Error creating expense. Please try again.";
       alert(errorMsg);
     }
@@ -167,7 +179,9 @@ console.log("Members ",members);
 
         {/* Paid By dropdown (includes the logged-in user and friends) */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-          <label className="text-lg font-medium whitespace-nowrap">Paid By:</label>
+          <label className="text-lg font-medium whitespace-nowrap">
+            Paid By:
+          </label>
           <select
             className="bg-[#121212] border border-gray-600 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-white"
             value={paidBy}
@@ -255,12 +269,15 @@ console.log("Members ",members);
             Total Difference:{" "}
             <span
               className={
-                (parseFloat(mainAmount) - calculateCustomTotal()).toFixed(2) !== "0.00"
+                (parseFloat(mainAmount) - calculateCustomTotal()).toFixed(2) !==
+                "0.00"
                   ? "text-red-500"
                   : "text-green-500"
               }
             >
-              {(-1 * (parseFloat(mainAmount) - calculateCustomTotal())).toFixed(2)}
+              {(-1 * (parseFloat(mainAmount) - calculateCustomTotal())).toFixed(
+                2
+              )}
             </span>
           </div>
         )}

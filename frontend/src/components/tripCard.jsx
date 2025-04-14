@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 
-export default function TripCard({ trip, onClick }) {
+export default function TripCard({ trip, onClick, amount }) {
   return (
     <div
       key={trip.id}
@@ -16,6 +16,7 @@ export default function TripCard({ trip, onClick }) {
           Participants: {trip.members?.length || 0}
         </p>
       </div>
+      <div className="text-lg font-semibold">₹{amount}</div>
     </div>
   );
 }
@@ -30,4 +31,5 @@ TripCard.propTypes = {
     members: PropTypes.arrayOf(PropTypes.object),
   }).isRequired,
   onClick: PropTypes.func.isRequired,
+  amount: PropTypes.number.isRequired,
 };

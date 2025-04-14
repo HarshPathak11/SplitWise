@@ -18,7 +18,6 @@ const TripDetails = () => {
     const fetchTripDetails = async () => {
       if (!tripId) return;
       const getCurrentGroup = localStorage.getItem("currentGroup");
-      console.log("Current Group:", getCurrentGroup);
 
       if (getCurrentGroup) {
         const parsedGroup = JSON.parse(getCurrentGroup); // Parse the string into an object
@@ -41,15 +40,16 @@ const TripDetails = () => {
         );
         if (response.status === 200) {
           const group = response.data;
+          
           setTripDetails(group);
           setLoading(false);
-          console.log(group,"group")
           setExpenses(group.expenses);
 
           // Extract only the usernames from group members
-          const groupMembers = group.members.map((m) =>
-            typeof m === "string" ? m : m.username
-          );
+          const groupMembers = group.members.map((m) => {
+              return { _id: m._id, username: m.username}
+          });
+          
 
           // Set directly to localStorage (no merge)
           localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
@@ -80,7 +80,6 @@ const TripDetails = () => {
     navigate("/add-expense", { state: { members, propGroupId: tripId } });
   };
 
-
   const handleBackClick = () => {
     // Remove trip members and current group from localStorage
     localStorage.removeItem("tripMembers");
@@ -89,7 +88,6 @@ const TripDetails = () => {
     // Navigate back to the dashboard
     navigate("/dash");
   };
-  console.log(expenses,"asfa")
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
       <div className="absolute inset-0 overflow-hidden">
@@ -174,7 +172,6 @@ const TripDetails = () => {
               </div>
             ) : (
               expenses.map((expense, idx) => {
-                console.log(expense)
                 return(
                 <ExpenseCard
                   key={idx}

@@ -80,7 +80,7 @@ const addMembers = async (req, res) => {
   
       await group.save(); // ✅ save group after pushing members
   
-      const updatedGroup = await Group.findById(groupId).populate("members", "username email");
+      const updatedGroup = await Group.findById(groupId).populate("members");
       res.status(200).json(updatedGroup);
     } catch (err) {
       console.error("Add Members Error:", err);
@@ -203,7 +203,9 @@ const addExpenseController = async (req, res) => {
     if (groupId) {
       await Group.findByIdAndUpdate(
         groupId,
-        { $push: { expenses: newExpense.toObject() } },
+        { $push: { expenses: newExpense.toObject() },
+          $inc: { tripTotal: newExpense.amount }, // 👈 increment tripTotal
+         },
         { session }
       );
     }

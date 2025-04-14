@@ -16,30 +16,26 @@ const Dashboard = () => {
       // console.log("userId is ", userId);
 
       // if (!user) {
-        try {
-          const response = await axios.get(
-            `http://192.168.1.5:8000/user/${userId}`
-          );
-          // console.log("response is ", response);
-        
+      try {
+        const response = await axios.get(
+          `http://192.168.1.5:8000/user/${userId}`
+        );
+        console.log("response is ", response);
 
         if (response.status === 200) {
           setUser(response.data.user); // Update state with fetched user data
 
-            localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
-
-          }
-        } catch (err) {
-          console.error("Error fetching user:", err);
+          localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
         }
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      }
       // }
     }
 
-    
     getDetails();
   }, []);
-  // console.log("User", user);
-
+  console.log("User", user);
 
   return (
     <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
@@ -62,7 +58,7 @@ const Dashboard = () => {
           <FairFareCard user={user} />
 
           {/* Today's expenses */}
-          <RecentExpenses />
+          <RecentExpenses user={user} />
         </div>
 
         <div className="space-y-4 h-full flex flex-col">
