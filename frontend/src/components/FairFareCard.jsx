@@ -29,7 +29,7 @@ const FairFareCard = () => {
     }, 1000); // Check every second, or adjust if needed
   
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   // Calculate net balance
   useEffect(() => {

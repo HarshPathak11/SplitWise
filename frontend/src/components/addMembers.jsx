@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 
 const AddMembers = () => {
   const navigate = useNavigate();
@@ -11,12 +11,15 @@ const AddMembers = () => {
   const [search, setSearch] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
   const { groupId } = useParams();
+  
 
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem("user");
       const existingTripMembers =
         JSON.parse(localStorage.getItem("tripMembers")) || [];
+      // console.log("existingTripMembers", existingTripMembers);
+      // console.log( JSON.parse(localStorage.getItem("user")));
 
       if (storedUser) {
         const user = JSON.parse(storedUser);
@@ -57,20 +60,22 @@ const AddMembers = () => {
       const selectedUsernames = selectedFriends.map((f) => f._id);
 
       const res = await axios.post(
-        `http://192.168.1.5:8000/group/add-members/${groupId}`,
+        `http://localhost:8000/group/add-members/${groupId}`,
         {
           members: selectedUsernames,
         }
       );
 
       if (res.status !== 200) {
-        throw new Error(res.data.message || "Failed to add members");
+        toast.error("Failed to add members. Try again.");
+        throw new Error(res.data.message || "Failed to add members");   
       }
 
       // Update local storage
       const updatedGroup = res.data;
 
       localStorage.setItem("currentGroup", JSON.stringify(updatedGroup));
+      toast.success("Member(s) added successfully!");
 
       // Go back or redirect
       navigate(-1);

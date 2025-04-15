@@ -34,7 +34,7 @@ const LogIn = () => {
       }
 
       const response = await axios.post(
-        `http://192.168.1.5:8000/user/login`,
+        `http://localhost:8000/user/login`,
         {
           email,
           password,

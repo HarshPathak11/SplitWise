@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema({
   groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
   recentExpense: [expenseSchema],
   upiId: { type: String },
+  aiChatUsage: {
+  count: { type: Number, default: 0 },
+  lastUsed: { type: Date, default: null }
+},
 }, { timestamps: true });
 
 // Password hashing middleware

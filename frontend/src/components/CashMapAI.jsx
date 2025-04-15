@@ -137,12 +137,12 @@ function CashMapAI() {
     setMessages((prev) => [...prev, tempBotMessage]);
 
     try {
-      const response = await axios.post("http://192.168.1.5:5000/assist", {
+      const response = await axios.post("http://localhost:5000/assist", {
         userId,
         query: input,
       });
       const answer = response.data?.answer || "Sorry, something went wrong!";
-
+      console.log(answer);
       setMessages((prev) => {
         const updated = [...prev];
         updated.pop();
@@ -208,12 +208,12 @@ function CashMapAI() {
       </div>
 
       {dailyCount >= 10 ? (
-        <div className="text-center text-red-500 bg-gray-800 p-2 rounded mb-2 z-10 relative">
+        <div className="text-center text-red-500 bg-glass p-2 rounded mb-2 z-10 relative">
           You&apos;ve reached your 10 query limit for today! Please come back
           tomorrow.
         </div>
       ) : (
-        <div className="text-center text-emerald-400 bg-gray-800 p-2 rounded mb-2 z-10 relative">
+        <div className="text-center text-emerald-400 bg-transparent p-2 rounded mb-2 z-10 relative">
           You’ve used {dailyCount} of 10 queries today.
         </div>
       )}

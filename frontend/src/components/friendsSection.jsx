@@ -20,7 +20,7 @@ const FriendsSection = ({ user }) => {
     const fetchUpdatedBalances = async () => {
       try {
         const res = await axios.post(
-          "http://192.168.1.5:8000/user/get-updated-friend-balances",
+          "http://localhost:8000/user/get-updated-friend-balances",
           { userId: user?._id }
         );
 
@@ -44,7 +44,7 @@ const FriendsSection = ({ user }) => {
 
     const interval = setInterval(() => {
       fetchUpdatedBalances();
-      
+
     }, 2000); // Every 2 seconds
 
     return () => clearInterval(interval); // Cleanup
@@ -53,7 +53,7 @@ const FriendsSection = ({ user }) => {
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
       const res = await axios.delete(
-        `http://192.168.1.5:8000/user/remove-friend`,
+        `http://localhost:8000/user/remove-friend`,
         {
           data: {
             userId: user?._id,
@@ -84,6 +84,14 @@ const FriendsSection = ({ user }) => {
         f.friend.email === email ? { ...f, balance: newBalance } : f
       )
     );
+    const updatedUser = { ...user };
+    const friendIndex = updatedUser.friends.findIndex(
+      (f) => f.friend.email === email
+    );
+    if (friendIndex !== -1) {
+      updatedUser.friends[friendIndex].balance = newBalance;
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
   };
 
   return (
@@ -127,11 +135,10 @@ const FriendsSection = ({ user }) => {
 
       {/* Scrollable Friends List */}
       <div
-        className={`space-y-2 ${
-          filteredFriends.length > 4
+        className={`space-y-2 ${filteredFriends.length > 4
             ? "overflow-y-auto max-h-[275px] pr-1 custom-scrollbar"
             : ""
-        }`}
+          }`}
       >
         {filteredFriends.length === 0 ? (
           <p className="text-red-500 text-center font-semibold">

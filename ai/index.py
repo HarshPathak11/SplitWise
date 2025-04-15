@@ -1,5 +1,6 @@
 import os
 import hashlib
+from datetime import datetime
 from bson import ObjectId
 from flask import Flask, request, jsonify
 from flask_cors import CORS  # Import Flask-CORS
@@ -134,9 +135,9 @@ def aggregate_user_data(user):
 def construct_prompt(context, query):
     # Provide detailed instructions and definitions for CashMap AI.
     improved_context = (
-        "You are CashMap AI, a personal finance assistant designed to help users manage their expenses and financial relationships. "
+        "You are FairFare AI, a personal finance assistant designed to help users manage their expenses and financial relationships. "
         "Your role is to analyze the user's financial history and provide personalized insights. Here are key definitions:\n\n"
-        "User: The person using CashMap AI. Their name and details are provided so you know whom you are assisting.\n\n"
+        "User: The person using FairFare AI. Their name and details are provided so you know whom you are assisting.\n\n"
         "Friends: Individuals with whom the user shares expenses. Their names and contact details (like email) are provided along with current balances.\n\n"
         "Trips: Shared events or journeys where expenses are recorded and later split among the participants. Each trip lists its members by name.\n\n"
         "Expenses: Transactions recorded by the user. Each expense has a title, amount, the person who paid, and how the amount is split among participants (shown by usernames rather than database IDs).\n\n"
@@ -153,6 +154,7 @@ def generate_answer(prompt):
     return chat.choices[0].message.content
 
 # Flask endpoint
+
 @app.route("/assist", methods=["POST"])
 def assist():
     data = request.get_json()
@@ -165,9 +167,40 @@ def assist():
     if not user:
         return jsonify({"message": "User not found"}), 404
 
-    # Aggregate data with human-friendly details.
+    # --- Daily chat limit check ---
+    usage = user.get("aiChatUsage", {})
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    last_used = usage.get("lastUsed")
+    count = usage.get("count", 0)
+
+    if last_used:
+        last_used_dt = datetime.fromisoformat(last_used)
+        if last_used_dt >= today:
+            if count >= 10:
+                return jsonify({"answer": "Daily AI chat limit reached (10 per day)"}), 200
+            else:
+                count += 1
+        else:
+            # New day, reset counter
+            count = 1
+    else:
+        # First time using AI
+        count = 1
+
+    # Save updated usage
+    db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {
+            "$set": {
+                "aiChatUsage.count": count,
+                "aiChatUsage.lastUsed": datetime.now().isoformat()
+            }
+        }
+    )
+
+    # --- Continue as normal ---
     docs = aggregate_user_data(user)
-    # Update vector embeddings if necessary.
     upsert_user_documents(user_id, docs)
     vector_docs = search_vectors(query, limit=5)
     context = "\n".join(doc.get("content", "") for doc in vector_docs)

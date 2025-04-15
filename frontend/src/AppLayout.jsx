@@ -5,7 +5,7 @@ import { Toaster } from 'react-hot-toast';
 const AppLayout = () => {
   return (
     <div>
-      <ErrorBoundary>
+      {/* <ErrorBoundary> */}
      <Toaster
         position="top-right"
         reverseOrder={false}
@@ -19,7 +19,7 @@ const AppLayout = () => {
         }}
       />
       <Outlet />
-      </ErrorBoundary>
+      {/* </ErrorBoundary> */}
     </div>
   );
 };
