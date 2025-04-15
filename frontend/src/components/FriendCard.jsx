@@ -29,7 +29,7 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
 
     try {
-      await axios.post("http://192.168.1.5:8000/user/update-friend-balance", {
+      await axios.post("http://172.80.8.139:8000/user/update-friend-balance", {
         userEmail: currentUser.email,
         friendEmail: friend.email,
         amount,
@@ -52,15 +52,12 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
 
     try {
-      await axios.post(
-        "http://192.168.1.5:8000/user/update-friend-balance",
-        {
-          userEmail: currentUser.email,
-          friendEmail: friend.email,
-          amount,
-          action: "received",
-        }
-      );
+      await axios.post("http://172.80.8.139:8000/user/update-friend-balance", {
+        userEmail: currentUser.email,
+        friendEmail: friend.email,
+        amount,
+        action: "received",
+      });
       // Locally update: when you receive money, your friend's balance decreases.
       balance = parseFloat((Number(balance) - amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
@@ -81,7 +78,7 @@ const FriendCard = ({
       if (currentBalance > 0) {
         // If friend owes you money, then receiving money will reduce the balance.
         await axios.post(
-          "http://192.168.1.5:8000/user/update-friend-balance",
+          "http://172.80.8.139:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
@@ -92,7 +89,7 @@ const FriendCard = ({
       } else {
         // If you owe friend money, paying them will reduce the negative balance.
         await axios.post(
-          "http://192.168.1.5:8000/user/update-friend-balance",
+          "http://172.80.8.139:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
@@ -233,8 +230,9 @@ const FriendCard = ({
                   "FairFare - Friend Settlement"
                 )}`}
                 target="_blank"
-                onClick={(e) => {console.log("UPI link clicked")}}
-                
+                onClick={(e) => {
+                  console.log("UPI link clicked");
+                }}
                 disabled={Math.abs(settleAmount) < 1}
                 rel="noopener noreferrer"
                 className={`block mt-2 text-center w-full py-2 px-4 rounded transition-colors ${

@@ -64,7 +64,7 @@ const AddFriend = () => {
       setLoading(true);
 
       const response = await axios.post(
-        "http://192.168.1.5:8000/user/add-friends",
+        "http://172.80.8.139:8000/user/add-friends",
         {
           email: user?.email,
           friendsArray: friends.map((friend) => friend.email),
@@ -72,18 +72,15 @@ const AddFriend = () => {
       );
 
       if (response.status === 200) {
-        if(response.data.addedFriends?.length === 0){
+        if (response.data.addedFriends?.length === 0) {
+          alert(`Invite sent to your friend(s)`);
+        } else {
           alert(
-            `Invite sent to your friend(s)`
+            `Successfully added ${
+              response.data.addedFriends?.length || 0
+            } friend(s)`
           );
         }
-        else{
-        alert(
-          `Successfully added ${
-            response.data.addedFriends?.length || 0
-          } friend(s)`
-        );
-      }
         // Optionally redirect or reset the form
         navigate("/dash");
       } else {

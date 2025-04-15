@@ -11,7 +11,7 @@ const AddTrip = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [selectAll, setSelectAll] = useState(false); // State to track "Select All" toggle
-  
+
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (user && user.friends) {
@@ -60,7 +60,7 @@ const AddTrip = () => {
       }
 
       const res = await axios.post(
-        "http://192.168.1.5:8000/group/create-group",
+        "http://172.80.8.139:8000/group/create-group",
         tripData
       );
       console.log("Response:", res.data); // Log the response for debugging
@@ -135,7 +135,7 @@ const AddTrip = () => {
                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3]"
               />
             </div>
-            
+
             <div className="flex-1">
               <label className="block text-white mb-2" htmlFor="toDate">
                 To Date

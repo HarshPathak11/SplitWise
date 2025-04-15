@@ -21,7 +21,7 @@ const LandingPage = () => {
         <div className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
           FairFare
         </div>
-        <div className="flex space-x-8">
+        <div className="flex space-x-6">
           <Link to="/features">
             <button className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 hover:scale-105 border border-blue-400/30">
               Features

@@ -27,7 +27,7 @@ const TripDetails = () => {
           typeof m === "string" ? m : m.username
         );
 
-        setExpenses(parsedGroup.expenses)
+        setExpenses(parsedGroup.expenses);
         // Set directly to localStorage (no merge)
         localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
         setMembers(groupMembers);
@@ -36,20 +36,19 @@ const TripDetails = () => {
       }
       try {
         const response = await axios.get(
-          `http://192.168.1.5:8000/group/get-group/${tripId}`
+          `http://172.80.8.139:8000/group/get-group/${tripId}`
         );
         if (response.status === 200) {
           const group = response.data;
-          
+
           setTripDetails(group);
           setLoading(false);
           setExpenses(group.expenses);
 
           // Extract only the usernames from group members
           const groupMembers = group.members.map((m) => {
-              return { _id: m._id, username: m.username}
+            return { _id: m._id, username: m.username };
           });
-          
 
           // Set directly to localStorage (no merge)
           localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
@@ -172,18 +171,19 @@ const TripDetails = () => {
               </div>
             ) : (
               expenses.map((expense, idx) => {
-                return(
-                <ExpenseCard
-                  key={idx}
-                  category={expense.title}
-                  time={expense.createdAt}
-                  description={""}
-                  amount={expense.amount}
-                  iconColor={"bg-blue-500"}
-                  paidBy={expense.paidBy}
-                  beneficiaries={expense.owedBy}
-                />
-              )})
+                return (
+                  <ExpenseCard
+                    key={idx}
+                    category={expense.title}
+                    time={expense.createdAt}
+                    description={""}
+                    amount={expense.amount}
+                    iconColor={"bg-blue-500"}
+                    paidBy={expense.paidBy}
+                    beneficiaries={expense.owedBy}
+                  />
+                );
+              })
             )}
           </div>
         </div>

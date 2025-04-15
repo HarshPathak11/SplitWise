@@ -30,7 +30,7 @@
 //       console.log("inside try");
 //       console.log(user.user._id, newPassword);
 //       const response = await axios.post(
-//         "http://192.168.1.5:8000/user/change-password",
+//         "http://172.80.8.139:8000/user/change-password",
 //         { userId: user.user._id, newPassword: newPassword }
 //       );
 //       setMessage(response.data.message);
@@ -109,7 +109,6 @@
 
 // export default ChangePassword;
 
-
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -128,19 +127,22 @@ const ChangePassword = () => {
   const [otpGenerated, setOtpGenerated] = useState(""); // To store the generated OTP
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const userId=user.user._id;
+  const userId = user.user._id;
 
   const handleSendOtp = async () => {
     setLoading(true);
     setMessage("");
-    if(email !== user.user.email) {
+    if (email !== user.user.email) {
       setMessage("Email does not match with the logged-in user.");
       setLoading(false);
       return;
     }
     try {
       // Send OTP request to the backend
-      const response = await axios.post("http://192.168.1.5:8000/user/forgot-password", { email });      
+      const response = await axios.post(
+        "http://172.80.8.139:8000/user/forgot-password",
+        { email }
+      );
       if (response.status === 200) {
         setOtpGenerated(response.data.otp); // Store the generated OTP for later use
         setOtpSent(true); // OTP sent successfully
@@ -161,7 +163,10 @@ const ChangePassword = () => {
     setMessage("");
     try {
       // Verify OTP entered by the user
-      const response = await axios.post("http://192.168.1.5:8000/user/verify-forgot-password", { email, otp, otpGenerated });
+      const response = await axios.post(
+        "http://172.80.8.139:8000/user/verify-forgot-password",
+        { email, otp, otpGenerated }
+      );
       if (response.status === 200) {
         setIsOtpVerified(true); // OTP verified successfully
         setMessage("OTP verified. You can now change your password.");
@@ -190,15 +195,19 @@ const ChangePassword = () => {
 
     try {
       const response = await axios.post(
-        "http://192.168.1.5:8000/user/change-password",
+        "http://172.80.8.139:8000/user/change-password",
         { userId, newPassword }
       );
-      setMessage(response.status === 200 ? "Password changed successfully." : "Error changing password. Please try again.");
+      setMessage(
+        response.status === 200
+          ? "Password changed successfully."
+          : "Error changing password. Please try again."
+      );
       if (response.status === 200) {
-      Cookies.remove("id");
-      Cookies.remove("last4");
-      localStorage.clear();
-      navigate("/login"); // Redirect to login page after successful password change
+        Cookies.remove("id");
+        Cookies.remove("last4");
+        localStorage.clear();
+        navigate("/login"); // Redirect to login page after successful password change
       }
     } catch (error) {
       setMessage("Error changing password. Please try again.");

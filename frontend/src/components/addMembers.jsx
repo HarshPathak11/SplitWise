@@ -27,7 +27,9 @@ const AddMembers = () => {
             username: f.friend.username,
             balance: f.balance || 0,
           }))
-          .filter((f) => !existingTripMembers.some((member) => member._id === f._id)); // Exclude already added
+          .filter(
+            (f) => !existingTripMembers.some((member) => member._id === f._id)
+          ); // Exclude already added
 
         setFriends(friendsList);
       }
@@ -56,7 +58,7 @@ const AddMembers = () => {
       const selectedUsernames = selectedFriends.map((f) => f._id);
 
       const res = await axios.post(
-        `http://192.168.1.5:8000/group/add-members/${groupId}`,
+        `http://172.80.8.139:8000/group/add-members/${groupId}`,
         {
           members: selectedUsernames,
         }
@@ -121,7 +123,7 @@ const AddMembers = () => {
 
         {/* Friend List Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-          {filteredFriends.map((friend) => {            
+          {filteredFriends.map((friend) => {
             const isSelected = selectedFriends.some(
               (f) => f._id === friend._id
             );

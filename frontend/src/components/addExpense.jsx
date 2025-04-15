@@ -18,7 +18,7 @@ const AddExpense = () => {
   const [members, setMembers] = useState([]); // Combined list: logged-in user + friends
   const [title, setTitle] = useState("");
   const [mainAmount, setMainAmount] = useState("");
-console.log("Members ",members);
+  console.log("Members ", members);
 
   // Determine groupId: either from prop or from localStorage ("currentGroup")
   const currentGroup = JSON.parse(
@@ -112,7 +112,7 @@ console.log("Members ",members);
     try {
       // Replace with your backend endpoint
       const response = await axios.post(
-        "http://192.168.1.5:8000/group/add-expense",
+        "http://172.80.8.139:8000/group/add-expense",
         payload
       );
       console.log("Expense created successfully", response.data);

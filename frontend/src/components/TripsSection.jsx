@@ -21,9 +21,9 @@ const TripsSection = () => {
         }
 
         const response = await axios.get(
-          `http://192.168.1.5:8000/group/user-groups/${userId}`
+          `http://172.80.8.139:8000/group/user-groups/${userId}`
         );
-        
+
         if (Array.isArray(response.data)) {
           // Sort expenses by createdAt in descending order (most recent first)
           const sortedTrips = [...response.data].sort(

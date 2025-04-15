@@ -23,7 +23,7 @@ const AllTripsPage = () => {
         }
 
         const response = await axios.get(
-          `http://192.168.1.5:8000/group/user-groups/${userId}`
+          `http://172.80.8.139:8000/group/user-groups/${userId}`
         );
 
         if (Array.isArray(response.data)) {
