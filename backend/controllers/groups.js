@@ -309,13 +309,9 @@ const addExpenseController = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    const updatedGroup = await Group.findById(groupId).populate(
-      "members",
-      "username email"
-    );
     return res
       .status(200)
-      .json({ success: true, expense: newExpense, updatedGroup: updatedGroup });
+      .json({ success: true, expense: newExpense });
   } catch (error) {
     // Abort transaction on error
     await session.abortTransaction();

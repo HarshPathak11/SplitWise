@@ -125,10 +125,8 @@ const AddExpense = () => {
       setSelected([]);
       setAmounts({});
 
-      // Update local storage
-      const updatedGroup = response.data.updatedGroup;
-      console.log("Updated Group:", updatedGroup);
-      localStorage.setItem("currentGroup", JSON.stringify(updatedGroup));
+      //Force refresh needed to update the expenses card details
+      localStorage.removeItem("currentGroup");
 
       navigate(-1);
     } catch (error) {

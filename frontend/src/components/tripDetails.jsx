@@ -86,7 +86,7 @@ const TripDetails = () => {
     localStorage.removeItem("currentGroup");
 
     // Navigate back to the dashboard
-    navigate("/dash");
+    navigate(-1);
   };
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">

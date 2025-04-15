@@ -16,6 +16,8 @@ const AllTripsPage = () => {
     const fetchTrips = async () => {
       try {
         const userId = Cookies.get("id"); // user ID stored in cookies as "id"
+        const currentGroup = localStorage.getItem("currentGroup");
+        if(currentGroup) localStorage.removeItem("currentGroup"); // Clear current group from local storage
 
         if (!userId) {
           console.error("User ID not found in cookies.");
