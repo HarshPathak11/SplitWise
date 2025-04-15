@@ -129,7 +129,7 @@ const FriendsSection = ({ user }) => {
       <div
         className={`space-y-2 ${
           filteredFriends.length > 4
-            ? "overflow-y-auto max-h-[260px] pr-1 custom-scrollbar"
+            ? "overflow-y-auto max-h-[275px] pr-1 custom-scrollbar"
             : ""
         }`}
       >
