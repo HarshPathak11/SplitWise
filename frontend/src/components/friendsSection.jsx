@@ -21,7 +21,7 @@
 //       const userId = currentUser?._id;
 
 //       const res = await axios.delete(
-//         `http://192.168.1.5:8000/user/remove-friend`,
+//         `http://localhost:8000/user/remove-friend`,
 //         {
 //           data: {
 //             userId,
@@ -165,7 +165,7 @@ const FriendsSection = ({ user }) => {
     const fetchUpdatedBalances = async () => {
       try {
         const res = await axios.post(
-          "http://192.168.1.5:8000/user/get-updated-friend-balances",
+          "http://localhost:8000/user/get-updated-friend-balances",
           { userId: user?._id }
         );
 
@@ -198,7 +198,7 @@ const FriendsSection = ({ user }) => {
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
       const res = await axios.delete(
-        `http://192.168.1.5:8000/user/remove-friend`,
+        `http://localhost:8000/user/remove-friend`,
         {
           data: {
             userId: user?._id,

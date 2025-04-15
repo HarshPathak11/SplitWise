@@ -58,7 +58,7 @@ function CashMapAI() {
 
     try {
       // Call the /assist endpoint with the userId and query.
-      const response = await axios.post('http://192.168.1.5:5000/assist', { userId, query: input });
+      const response = await axios.post('http://localhost:5000/assist', { userId, query: input });
       // Assume the API returns an object with an 'answer' property.
       const answer = response.data?.answer || "Sorry, something went wrong!";
       
