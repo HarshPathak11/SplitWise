@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const AddMembers = () => {
   const navigate = useNavigate();
@@ -75,7 +76,9 @@ const AddMembers = () => {
       navigate(-1);
     } catch (err) {
       console.error("Failed to add members:", err.message);
-      alert("Could not add members. Try again.");
+      toast.error(
+        err.response?.data?.message || "Could not add members. Try again."
+      );
     }
   };
 

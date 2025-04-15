@@ -50,7 +50,7 @@ const FairFareCard = () => {
         setBalanceMessage("All Settled");
       }
     } else {
-      setBalanceMessage("No Friends Found");
+      setBalanceMessage("No one to split with");
     }
   }, [user]);
 

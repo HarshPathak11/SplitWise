@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 // Accepts an optional groupId prop so that it can be passed directly if available
 const AddExpense = () => {
@@ -90,7 +91,7 @@ const AddExpense = () => {
       totalEntered.toFixed(2) !== customTotal.toFixed(2)
     ) {
       const diff = (customTotal - totalEntered).toFixed(2);
-      alert(
+      toast.error(
         `Calculation mismatch of ₹${Math.abs(diff)}. Please correct the values.`
       );
       return;
@@ -116,8 +117,9 @@ const AddExpense = () => {
         "http://192.168.1.5:8000/group/add-expense",
         payload
       );
+      if(response.status === 200)
+      toast.success("Expense added successfully!");
       console.log("Expense created successfully", response.data);
-      alert("Expense added successfully!");
       // Reset form fields
       setTitle("");
       setMainAmount("");
@@ -128,7 +130,9 @@ const AddExpense = () => {
       //Force refresh needed to update the expenses card details
       localStorage.removeItem("currentGroup");
 
-      navigate(-1);
+      setTimeout(() => {
+        navigate(-1);
+      }, 5000); // 0.5 seconds is usually enough
     } catch (error) {
       console.error("Error creating expense:", error);
       const errorMsg =
@@ -136,7 +140,7 @@ const AddExpense = () => {
           error.response.data &&
           error.response.data.message) ||
         "Error creating expense. Please try again.";
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false); // ✅ Stop loading
     }

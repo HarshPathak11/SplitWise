@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaTrash } from "react-icons/fa"; // Import the trash icon
+import toast from 'react-hot-toast';
 
 const AddFriend = () => {
   const navigate = useNavigate();
@@ -51,12 +52,12 @@ const AddFriend = () => {
 
   const handleDone = async () => {
     if (!user?.email) {
-      alert("User not loaded. Please wait a moment.");
+      toast.error("User not loaded. Please wait a moment.");
       return;
     }
 
     if (friends.length === 0) {
-      alert("Please add at least one friend before proceeding.");
+      toast.error("Please add at least one friend before proceeding.");
       return;
     }
 
@@ -73,25 +74,20 @@ const AddFriend = () => {
 
       if (response.status === 200) {
         if(response.data.addedFriends?.length === 0){
-          alert(
-            `Invite sent to your friend(s)`
-          );
+          toast.success("Invite sent to your friend(s)!");          
         }
         else{
-        alert(
-          `Successfully added ${
+        toast.success(`Successfully added ${
             response.data.addedFriends?.length || 0
-          } friend(s)`
-        );
+          } friend(s)`);
       }
         // Optionally redirect or reset the form
-        navigate("/dash");
       } else {
-        alert(`Failed to add friends: ${response.data.message}`);
+        toast.error(`Failed to add friends: ${response.data.message}`)
       }
     } catch (err) {
       console.error("Error adding friends:", err);
-      alert("An error occurred while adding friends.");
+      toast.error("Something went wrong!");
     } finally {
       setLoading(false);
     }
