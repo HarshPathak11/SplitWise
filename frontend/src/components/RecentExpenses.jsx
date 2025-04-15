@@ -57,7 +57,7 @@ const RecentExpenses = (user) => {
             />
           ))
         ) : (
-          <div className="text-center text-gray-300">No recent expenses</div>
+          <div className="text-center text-gray-300">No Expenses Yet</div>
         )}
       </div>
     </div>

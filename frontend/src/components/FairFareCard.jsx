@@ -29,7 +29,7 @@ const FairFareCard = () => {
     }, 1000); // Check every second, or adjust if needed
   
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   // Calculate net balance
   useEffect(() => {
@@ -50,7 +50,7 @@ const FairFareCard = () => {
         setBalanceMessage("All Settled");
       }
     } else {
-      setBalanceMessage("No Friends Found");
+      setBalanceMessage("No one to split with");
     }
   }, [user]);
 

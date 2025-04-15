@@ -226,7 +226,7 @@ const addFriends = async (req, res) => {
           
         }
         // Similarly, ensure the friendship is mutual.
-        if (!friend.friends.some((f) => f.friend.equals(user._id))) {
+        if (!friend.friends.some((f) => f.friend?.equals(user._id))) {
           await User.updateOne(
             { _id: friend._id },
             { $addToSet: { friends: { friend: user._id, balance: 0 } } }

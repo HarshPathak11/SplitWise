@@ -135,9 +135,9 @@ def aggregate_user_data(user):
 def construct_prompt(context, query):
     # Provide detailed instructions and definitions for CashMap AI.
     improved_context = (
-        "You are CashMap AI, a personal finance assistant designed to help users manage their expenses and financial relationships. "
+        "You are FairFare AI, a personal finance assistant designed to help users manage their expenses and financial relationships. "
         "Your role is to analyze the user's financial history and provide personalized insights. Here are key definitions:\n\n"
-        "User: The person using CashMap AI. Their name and details are provided so you know whom you are assisting.\n\n"
+        "User: The person using FairFare AI. Their name and details are provided so you know whom you are assisting.\n\n"
         "Friends: Individuals with whom the user shares expenses. Their names and contact details (like email) are provided along with current balances.\n\n"
         "Trips: Shared events or journeys where expenses are recorded and later split among the participants. Each trip lists its members by name.\n\n"
         "Expenses: Transactions recorded by the user. Each expense has a title, amount, the person who paid, and how the amount is split among participants (shown by usernames rather than database IDs).\n\n"
@@ -178,7 +178,7 @@ def assist():
         last_used_dt = datetime.fromisoformat(last_used)
         if last_used_dt >= today:
             if count >= 10:
-                return jsonify({"message": "Daily AI chat limit reached (10 per day)"}), 403
+                return jsonify({"answer": "Daily AI chat limit reached (10 per day)"}), 200
             else:
                 count += 1
         else:
