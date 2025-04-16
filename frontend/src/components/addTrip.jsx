@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom"; // Import useNavigate and Link for navigation
 import axios from "axios"; // Import axios for HTTP requests
+import { toast } from "react-toastify";
 
 const AddTrip = () => {
   const navigate = useNavigate(); // Initialize the navigation hook
@@ -55,12 +56,12 @@ const AddTrip = () => {
     try {
       console.log(" sending Trip Data as:", tripData); // Log the trip data for debugging
       if (!tripData.name) {
-        alert("Title is required!");
+        toast.error("Title is required!");
         return;
       }
 
       const res = await axios.post(
-        "http://192.168.156.226:8000/group/create-group",
+        "http://localhost:8000/group/create-group",
         tripData
       );
       console.log("Response:", res.data); // Log the response for debugging

@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { QRCodeCanvas } from "qrcode.react";
-import PropTypes from "prop-types";
 
-const FairFareCard = ({ user }) => {
+const FairFareCard = () => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [last4, setLast4] = useState(""); // State for last4
   const [netBalance, setNetBalance] = useState(0); // State for net balance
   const [balanceMessage, setBalanceMessage] = useState(""); // State for balance message
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || {});
 
   // Generate or retrieve last4 using cookies
   useEffect(() => {
@@ -21,9 +21,20 @@ const FairFareCard = ({ user }) => {
     setLast4(storedLast4);
   }, []);
 
+  //To sync with local storage
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const updatedUser = JSON.parse(localStorage.getItem("user")) || {};
+      setUser(updatedUser);
+    }, 1000); // Check every second, or adjust if needed
+  
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Calculate net balance
   useEffect(() => {
-    const userFriends = user?.friends || [];
+    const userFriends=user?.friends || [];
+    
     if (userFriends && userFriends.length > 0) {
       const totalBalance = userFriends.reduce(
         (sum, friend) => sum + Number(friend.balance || 0),
@@ -39,9 +50,9 @@ const FairFareCard = ({ user }) => {
         setBalanceMessage("All Settled");
       }
     } else {
-      setBalanceMessage("No Friends Found");
+      setBalanceMessage("No one to split with");
     }
-  }, []);
+  }, [user]);
 
   const getInitials = (name) =>
     name
@@ -191,18 +202,6 @@ const FairFareCard = ({ user }) => {
       `}</style>
     </div>
   );
-};
-FairFareCard.propTypes = {
-  user: PropTypes.shape({
-    username: PropTypes.string,
-    upiId: PropTypes.string,
-    createdAt: PropTypes.string,
-    friends: PropTypes.arrayOf(
-      PropTypes.shape({
-        balance: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-      })
-    ),
-  }).isRequired,
 };
 
 export default FairFareCard;

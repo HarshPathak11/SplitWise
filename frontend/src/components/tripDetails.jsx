@@ -23,9 +23,9 @@ const TripDetails = () => {
         const parsedGroup = JSON.parse(getCurrentGroup); // Parse the string into an object
         setTripDetails(parsedGroup);
         // Extract only the usernames from group members
-        const groupMembers = parsedGroup.members.map((m) =>
-          typeof m === "string" ? m : m.username
-        );
+        const groupMembers = parsedGroup.members.map((m) => {
+          return { _id: m._id, username: m.username}
+        });
 
         setExpenses(parsedGroup.expenses);
         // Set directly to localStorage (no merge)
@@ -36,7 +36,7 @@ const TripDetails = () => {
       }
       try {
         const response = await axios.get(
-          `http://192.168.156.226:8000/group/get-group/${tripId}`
+          `http://localhost:8000/group/get-group/${tripId}`
         );
         if (response.status === 200) {
           const group = response.data;
@@ -85,7 +85,7 @@ const TripDetails = () => {
     localStorage.removeItem("currentGroup");
 
     // Navigate back to the dashboard
-    navigate("/dash");
+    navigate(-1);
   };
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
@@ -98,7 +98,7 @@ const TripDetails = () => {
       </div>
       {/* Back Button */}
       <button
-        className="flex items-center text-white hover:text-gray-300 backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5  sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300"
+        className="flex items-center text-white hover:text-gray-300 backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5  p-2 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300"
         onClick={handleBackClick}
       >
         <ArrowLeft className="w-5 h-5 mr-2" />

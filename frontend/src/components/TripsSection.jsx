@@ -21,7 +21,7 @@ const TripsSection = () => {
         }
 
         const response = await axios.get(
-          `http://192.168.156.226:8000/group/user-groups/${userId}`
+          `http://localhost:8000/group/user-groups/${userId}`
         );
 
         if (Array.isArray(response.data)) {
@@ -94,7 +94,7 @@ const TripsSection = () => {
           <p className="text-blue-400 text-center">Loading trips...</p>
         ) : trips.length === 0 ? (
           <p className="text-red-500 text-center font-semibold">
-            No trips found.
+            Get a life add some trips.
           </p>
         ) : (
           trips.map((trip) => (

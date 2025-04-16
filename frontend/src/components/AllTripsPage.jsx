@@ -16,6 +16,8 @@ const AllTripsPage = () => {
     const fetchTrips = async () => {
       try {
         const userId = Cookies.get("id"); // user ID stored in cookies as "id"
+        const currentGroup = localStorage.getItem("currentGroup");
+        if(currentGroup) localStorage.removeItem("currentGroup"); // Clear current group from local storage
 
         if (!userId) {
           console.error("User ID not found in cookies.");
@@ -23,7 +25,7 @@ const AllTripsPage = () => {
         }
 
         const response = await axios.get(
-          `http://192.168.156.226:8000/group/user-groups/${userId}`
+          `http://localhost:8000/group/user-groups/${userId}`
         );
 
         if (Array.isArray(response.data)) {

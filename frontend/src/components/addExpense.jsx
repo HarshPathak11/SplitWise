@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
+import { toast } from "react-hot-toast";
 
 // Accepts an optional groupId prop so that it can be passed directly if available
 const AddExpense = () => {
@@ -18,7 +19,7 @@ const AddExpense = () => {
   const [members, setMembers] = useState([]); // Combined list: logged-in user + friends
   const [title, setTitle] = useState("");
   const [mainAmount, setMainAmount] = useState("");
-  console.log("Members ", members);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Determine groupId: either from prop or from localStorage ("currentGroup")
   const currentGroup = JSON.parse(
@@ -90,7 +91,7 @@ const AddExpense = () => {
       totalEntered.toFixed(2) !== customTotal.toFixed(2)
     ) {
       const diff = (customTotal - totalEntered).toFixed(2);
-      alert(
+      toast.error(
         `Calculation mismatch of ₹${Math.abs(diff)}. Please correct the values.`
       );
       return;
@@ -110,13 +111,15 @@ const AddExpense = () => {
     };
 
     try {
+      setIsLoading(true); // ✅ Start loading
       // Replace with your backend endpoint
       const response = await axios.post(
-        "http://192.168.156.226:8000/group/add-expense",
+        "http://localhost:8000/group/add-expense",
         payload
       );
+      if(response.status === 200)
+      toast.success("Expense added successfully!");
       console.log("Expense created successfully", response.data);
-      alert("Expense added successfully!");
       // Reset form fields
       setTitle("");
       setMainAmount("");
@@ -124,12 +127,12 @@ const AddExpense = () => {
       setSelected([]);
       setAmounts({});
 
-      // Update local storage
-      const updatedGroup = response.data.updatedGroup;
-      console.log("Updated Group:", updatedGroup);
-      localStorage.setItem("currentGroup", JSON.stringify(updatedGroup));
+      //Force refresh needed to update the expenses card details
+      localStorage.removeItem("currentGroup");
 
-      navigate(-1);
+      setTimeout(() => {
+        navigate(-1);
+      }, 100); // 0.5 seconds is usually enough
     } catch (error) {
       console.error("Error creating expense:", error);
       const errorMsg =
@@ -137,7 +140,9 @@ const AddExpense = () => {
           error.response.data &&
           error.response.data.message) ||
         "Error creating expense. Please try again.";
-      alert(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setIsLoading(false); // ✅ Stop loading
     }
   };
 
@@ -286,14 +291,14 @@ const AddExpense = () => {
         <div className="text-center pt-6">
           <button
             onClick={handleAddExpense}
-            disabled={!mainAmount || !title || !paidBy}
+            disabled={!mainAmount || !title || !paidBy || isLoading}
             className={`font-semibold px-10 py-3 rounded-xl transition text-lg ${
-              !mainAmount || !title || !paidBy
+              !mainAmount || !title || !paidBy || isLoading
                 ? "bg-gray-400 text-gray-700 cursor-not-allowed"
                 : "bg-white text-black hover:bg-gray-200"
             }`}
           >
-            Add
+            {isLoading ? "Adding..." : "Add"}
           </button>
         </div>
       </div>

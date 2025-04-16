@@ -52,7 +52,7 @@ const sendOtp = async (req, res) => {
 
 // Verify OTP and create user
 const verifyOtp = async (req, res) => {
-  const { otp, username, email, password, otpGenerated } = req.body;
+  const { otp, username, email, password, otpGenerated, referId } = req.body;
 
   if (!otp || !email || !otpGenerated || !username || !password) {
     return res.status(400).json({ message: "Incomplete data received" });
@@ -73,6 +73,23 @@ const verifyOtp = async (req, res) => {
       email,
       password: cleanPassword, // schema middleware handles hashing
     });
+    
+    if (referId) {
+      const referUser = await User.findById(referId);
+      if (!referUser) {
+        return res.status(400).json({ message: "Invalid referral ID" });
+      }
+      // Add new user to referer's friends list
+      await User.updateOne(
+        { _id: referId },
+        { $push: { friends: { friend: newUser._id, balance: 0 } } }
+      );
+      
+      await User.updateOne(
+        { _id: newUser._id },
+        { $push: { friends: { friend: referId, balance: 0 } } }
+      );
+    }    
 
     return res.status(200).json(newUser);
   } catch (error) {
@@ -226,7 +243,7 @@ const addFriends = async (req, res) => {
           
         }
         // Similarly, ensure the friendship is mutual.
-        if (!friend.friends.some((f) => f.friend.equals(user._id))) {
+        if (!friend.friends.some((f) => f.friend?.equals(user._id))) {
           await User.updateOne(
             { _id: friend._id },
             { $addToSet: { friends: { friend: user._id, balance: 0 } } }
@@ -247,7 +264,7 @@ const addFriends = async (req, res) => {
           html: `<h1>Hi,</h1>
                  <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
                  <p>Please click on the link below to join: 
-                 <a href="http://192.168.56.1:5173/${user._id}">Join Fair Fare</a></p>
+                 <a href="http://192.168.1.5:5173/${user._id}">Join Fair Fare</a></p>
                  <p>Thanks,<br/>Fair Fare Team</p>`,
         };
         await transporter.sendMail(mailOptions)
@@ -466,6 +483,34 @@ const changePassword = async (req, res) => {
   }
 };
 
+const getUpdatedFriendBalances = async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
+  try {
+    // Fetch the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Create an array of friend balances in the desired format
+    const updatedData = user.friends.map((f) => ({
+      friendId: f.friend._id,  // friend ID
+      balance: f.balance,      // balance
+    }));
+
+    // Send the updated data as response
+    return res.status(200).json(updatedData);
+  } catch (error) {
+    console.error("Error fetching updated friend balances:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 export {
   sendOtp,
   userLogin,
@@ -478,4 +523,5 @@ export {
   userDetails,
   updateFriendBalance,
   changePassword,
+  getUpdatedFriendBalances,
 };

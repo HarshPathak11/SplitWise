@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 const AddMembers = () => {
   const navigate = useNavigate();
   const [friends, setFriends] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
+  const [isAdding, setIsAdding] = useState(false);
   const { groupId } = useParams();
 
   useEffect(() => {
@@ -16,6 +18,8 @@ const AddMembers = () => {
       const storedUser = localStorage.getItem("user");
       const existingTripMembers =
         JSON.parse(localStorage.getItem("tripMembers")) || [];
+      // console.log("existingTripMembers", existingTripMembers);
+      // console.log( JSON.parse(localStorage.getItem("user")));
 
       if (storedUser) {
         const user = JSON.parse(storedUser);
@@ -52,19 +56,21 @@ const AddMembers = () => {
   );
 
   const handleAdd = async () => {
+    setIsAdding(true);
     try {
       if (!groupId || selectedFriends.length === 0) return;
 
       const selectedUsernames = selectedFriends.map((f) => f._id);
 
       const res = await axios.post(
-        `http://192.168.156.226:8000/group/add-members/${groupId}`,
+        `http://localhost:8000/group/add-members/${groupId}`,
         {
           members: selectedUsernames,
         }
       );
 
       if (res.status !== 200) {
+        toast.error("Failed to add members. Try again.");
         throw new Error(res.data.message || "Failed to add members");
       }
 
@@ -72,12 +78,17 @@ const AddMembers = () => {
       const updatedGroup = res.data;
 
       localStorage.setItem("currentGroup", JSON.stringify(updatedGroup));
+      toast.success("Member(s) added successfully!");
 
       // Go back or redirect
       navigate(-1);
     } catch (err) {
       console.error("Failed to add members:", err.message);
-      alert("Could not add members. Try again.");
+      toast.error(
+        err.response?.data?.message || "Could not add members. Try again."
+      );
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -146,16 +157,15 @@ const AddMembers = () => {
         {/* Add Members Button */}
         <div className="text-center pt-6">
           <button
-            disabled={selectedFriends.length === 0}
+            disabled={selectedFriends.length === 0 || isAdding}
             className={`${
-              selectedFriends.length === 0
-                ? "bg-black cursor-not-allowed"
-                : "bg-white"
-            } text-black font-semibold px-8 py-3 rounded-xl hover:bg-gray-200 transition text-lg`}
-            // className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-gray-200 transition text-lg"
+              selectedFriends.length === 0 || isAdding
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-white hover:bg-gray-200"
+            } text-black font-semibold px-8 py-3 rounded-xl transition text-lg`}
             onClick={handleAdd}
           >
-            Add Selected Members
+            {isAdding ? "Adding..." : "Add Selected Members"}
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import FriendCard from "./FriendCard";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const FriendsSection = ({ user }) => {
   const [friends, setFriends] = useState([]);
@@ -10,39 +11,66 @@ const FriendsSection = ({ user }) => {
 
   useEffect(() => {
     if (user?.friends) {
-      setFriends(user.friends); // friends is an array
+      setFriends(user.friends); // Initial load
     }
   }, [user]);
-  // console.log(friends, "friends");
+
+  // 🔁 POLLING: Update balances every 2 seconds
+  useEffect(() => {
+    const fetchUpdatedBalances = async () => {
+      try {
+        const res = await axios.post(
+          "http://localhost:8000/user/get-updated-friend-balances",
+          { userId: user?._id }
+        );
+
+        const updatedData = res.data; // [{ friendId, balance }]
+        // Assuming `setFriends` updates the friends list with the new balances
+        setFriends((prevFriends) => {
+          return prevFriends.map((friend) => {
+            const updatedBalance = updatedData.find(
+              (balance) =>
+                balance.friendId.toString() === friend.friend?._id.toString()
+            );
+            return updatedBalance
+              ? { ...friend, balance: updatedBalance.balance }
+              : friend;
+          });
+        });
+      } catch (err) {
+        console.error("Error fetching updated friend balances:", err);
+      }
+    };
+
+    const interval = setInterval(() => {
+      fetchUpdatedBalances();
+
+    }, 2000); // Every 2 seconds
+
+    return () => clearInterval(interval); // Cleanup
+  }, [user?._id]);
 
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
-      const currentUser = JSON.parse(localStorage.getItem("user"));
-      const userId = currentUser._id;
-
       const res = await axios.delete(
-        `http://192.168.156.226:8000/user/remove-friend`,
+        `http://localhost:8000/user/remove-friend`,
         {
           data: {
-            userId,
+            userId: user?._id,
             friendId: friendIdToDelete,
           },
         }
       );
 
       if (res.status === 200) {
-        // Remove from frontend state
         setFriends((prev) =>
-          prev.filter((f) => f.friend._id !== friendIdToDelete)
+          prev.filter((f) => f.friend?._id !== friendIdToDelete)
         );
-        setFriends((prev) =>
-          prev.filter((f) => f.friend._id !== friendIdToDelete)
-        );
-        alert("Friend removed successfully");
+        toast.success("Friend removed successfully!");
       }
     } catch (error) {
       console.error("Failed to delete friend:", error);
-      alert("Could not delete friend. Try again.");
+      toast.error("Could not delete friend. Try again.");
     }
   };
 
@@ -56,6 +84,14 @@ const FriendsSection = ({ user }) => {
         f.friend.email === email ? { ...f, balance: newBalance } : f
       )
     );
+    const updatedUser = { ...user };
+    const friendIndex = updatedUser.friends.findIndex(
+      (f) => f.friend.email === email
+    );
+    if (friendIndex !== -1) {
+      updatedUser.friends[friendIndex].balance = newBalance;
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
   };
 
   return (
@@ -99,24 +135,23 @@ const FriendsSection = ({ user }) => {
 
       {/* Scrollable Friends List */}
       <div
-        className={`space-y-2 ${
-          filteredFriends.length > 4
+        className={`space-y-2 ${filteredFriends.length > 4
             ? "overflow-y-auto max-h-[275px] pr-1 custom-scrollbar"
             : ""
-        }`}
+          }`}
       >
         {filteredFriends.length === 0 ? (
           <p className="text-red-500 text-center font-semibold">
-            No friends found.
+            You have no friends as always.
           </p>
         ) : (
           filteredFriends.map((f, index) => (
             <FriendCard
-              key={f.friend._id}
+              key={f.friend?._id}
               friend={f.friend}
               balance={f.balance}
               index={index}
-              handleDeleteFriend={() => handleDeleteFriend(f.friend._id)}
+              handleDeleteFriend={() => handleDeleteFriend(f.friend?._id)}
               updateFriendBalance={handleUpdateFriendBalance}
             />
           ))

@@ -29,15 +29,12 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
 
     try {
-      await axios.post(
-        "http://192.168.156.226:8000/user/update-friend-balance",
-        {
-          userEmail: currentUser.email,
-          friendEmail: friend.email,
-          amount,
-          action: "paid",
-        }
-      );
+      await axios.post("http://localhost:8000/user/update-friend-balance", {
+        userEmail: currentUser.email,
+        friendEmail: friend.email,
+        amount,
+        action: "paid",
+      });
       // Locally update: when you pay them, your friend's balance increases (they owe you more).
       balance = parseFloat((Number(balance) + amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
@@ -56,7 +53,7 @@ const FriendCard = ({
 
     try {
       await axios.post(
-        "http://192.168.156.226:8000/user/update-friend-balance",
+        "http://localhost:8000/user/update-friend-balance",
         {
           userEmail: currentUser.email,
           friendEmail: friend.email,
@@ -84,7 +81,7 @@ const FriendCard = ({
       if (currentBalance > 0) {
         // If friend owes you money, then receiving money will reduce the balance.
         await axios.post(
-          "http://192.168.156.226:8000/user/update-friend-balance",
+          "http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
@@ -95,7 +92,7 @@ const FriendCard = ({
       } else {
         // If you owe friend money, paying them will reduce the negative balance.
         await axios.post(
-          "http://192.168.156.226:8000/user/update-friend-balance",
+          "http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
@@ -177,7 +174,7 @@ const FriendCard = ({
             type="number"
             step="0.01"
             min="0"
-            value={Math.abs(settleAmount)}
+            value={settleAmount === "" ? "" : Math.abs(settleAmount)}
             onChange={(e) => {
               let value = e.target.value;
               if (value === "") return setSettleAmount("");
@@ -232,13 +229,10 @@ const FriendCard = ({
               <a
                 href={`upi://pay?pa=${friend.upiId}&pn=${encodeURIComponent(
                   friend.username
-                )}&am=${Math.abs(settleAmount)}&cu=INR&tn=${encodeURIComponent(
+                )}&am=${Math.abs(settleAmount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(
                   "FairFare - Friend Settlement"
                 )}`}
-                target="_blank"
-                onClick={(e) => {
-                  console.log("UPI link clicked");
-                }}
+                target="_blank"                
                 disabled={Math.abs(settleAmount) < 1}
                 rel="noopener noreferrer"
                 className={`block mt-2 text-center w-full py-2 px-4 rounded transition-colors ${

@@ -18,7 +18,7 @@ const Dashboard = () => {
       // if (!user) {
       try {
         const response = await axios.get(
-          `http://192.168.156.226:8000/user/${userId}`
+          `http://localhost:8000/user/${userId}`
         );
         console.log("response is ", response);
 
@@ -55,7 +55,7 @@ const Dashboard = () => {
           <TopNavbar />
 
           {/* Flippable Card */}
-          <FairFareCard user={user} />
+          <FairFareCard />
 
           {/* Today's expenses */}
           <RecentExpenses user={user} />

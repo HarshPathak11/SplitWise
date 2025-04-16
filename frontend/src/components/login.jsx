@@ -3,10 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const LogIn = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
   const navigate = useNavigate();
 
   //UseEffect to Check if user logged in before or not if yes then directly take them to dashboard
@@ -33,13 +35,10 @@ const LogIn = () => {
         return;
       }
 
-      const response = await axios.post(
-        `http://192.168.156.226:8000/user/login`,
-        {
-          email,
-          password,
-        }
-      );
+      const response = await axios.post(`http://localhost:8000/user/login`, {
+        email,
+        password,
+      });
       if (response.data.user) {
         Cookies.set("id", response.data.user._id, { expires: 7 });
         navigate("/dash");
@@ -102,20 +101,22 @@ const LogIn = () => {
                 className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300"
               />
             </div>
-            <div className="mb-4">
-              <label
-                className="block text-white text-sm font-bold mb-2"
-                htmlFor="password"
-              ></label>
+            <div className="mb-4 relative">
               <input
-                id="password"
-                type="password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
+                type={showPassword ? "text" : "password"}
                 placeholder="Password"
-                className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300"
+                className="w-full px-3 py-2 border rounded-lg pr-10"
               />
+              <span
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
             </div>
+
             <div className="text-right mb-4">
               <Link
                 to="/forgot-password"

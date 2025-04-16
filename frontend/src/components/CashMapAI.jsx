@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { FaArrowLeft, FaArrowRight, FaRobot } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { FaArrowLeft, FaArrowRight, FaRobot, FaArrowDown } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 function CashMapAI() {
-  // Lazy initialization: check localStorage and load the chat history if it exists.
+  const chatContainerRef = React.useRef(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+
   const [messages, setMessages] = useState(() => {
     const storedChat = localStorage.getItem("chatMessages");
     if (storedChat) {
@@ -16,27 +19,105 @@ function CashMapAI() {
     }
     return [
       {
-        type: 'bot',
-        content: "Hello! I'm CashMap AI, your personal finance assistant. How can I help you today?"
-      }
+        type: "bot",
+        content:
+          "Hello! I'm Fair AI, your personal finance assistant. How can I help you today?",
+      },
     ];
   });
-  const [input, setInput] = useState('');
 
-  // Persist messages to localStorage on every change.
+  const [input, setInput] = useState("");
+  const [dailyCount, setDailyCount] = useState(() => {
+    const stored = localStorage.getItem("dailyAIQueryCount");
+    return stored ? parseInt(stored) : 0;
+  });
+
+  useEffect(() => {
+    const chatEl = chatContainerRef.current;
+    if (!chatEl) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = chatEl;
+      const buffer = 100; // Allow a little wiggle room
+      if (scrollTop + clientHeight >= scrollHeight - buffer) {
+        setIsAtBottom(true);
+      } else {
+        setIsAtBottom(false);
+      }
+    };
+
+    chatEl.addEventListener("scroll", handleScroll);
+    return () => chatEl.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, []);  
+
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const lastDate = localStorage.getItem("lastQueryDate");
+
+    if (lastDate !== today) {
+      localStorage.setItem("lastQueryDate", today);
+      localStorage.setItem("dailyAIQueryCount", "0");
+      setDailyCount(0);
+    }
+  }, []);
+
   useEffect(() => {
     localStorage.setItem("chatMessages", JSON.stringify(messages));
   }, [messages]);
 
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  useEffect(() => {
+    const chatEl = chatContainerRef.current;
+    if (!chatEl) return;
+  
+    let scrollTimeout;
+  
+    const handleScroll = () => {
+      chatEl.classList.add("show-scrollbar");
+  
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        chatEl.classList.remove("show-scrollbar");
+      }, 1200); // adjust as needed
+    };
+  
+    chatEl.addEventListener("scroll", handleScroll);
+  
+    return () => {
+      chatEl.removeEventListener("scroll", handleScroll);
+      clearTimeout(scrollTimeout);
+    };
+  }, []);  
+  
+
   const handleSend = async (e) => {
     e.preventDefault();
+    setTimeout(() => scrollToBottom(), 100);
+    if (dailyCount >= 10) {
+      toast.error(
+        "You've reached the 10 queries limit for today! Try again tomorrow."
+      );
+      return;
+    }
+
     if (!input.trim()) return;
 
-    // Append user's message.
-    const userMessage = { type: 'user', content: input };
-    setMessages(prev => [...prev, userMessage]);
+    const userMessage = { type: "user", content: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
 
-    // Get the user id from localStorage.
     let userId = "";
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -48,40 +129,62 @@ function CashMapAI() {
       }
     }
 
-    // Append a temporary bot message.
     const tempBotMessage = {
-      type: 'bot',
-      content: "I'm analyzing your spending patterns and will provide insights shortly..."
+      type: "bot",
+      content:
+        "I'm analyzing your spending patterns and will provide insights shortly...",
     };
-    setMessages(prev => [...prev, tempBotMessage]);
+    setMessages((prev) => [...prev, tempBotMessage]);
 
     try {
-      // Call the /assist endpoint with the userId and query.
-      const response = await axios.post('http://192.168.1.5:5000/assist', { userId, query: input });
-      // Assume the API returns an object with an 'answer' property.
+      const response = await axios.post("http://localhost:5000/assist", {
+        userId,
+        query: input,
+      });
       const answer = response.data?.answer || "Sorry, something went wrong!";
-      
-      // Replace the temporary bot message with the API response.
-      setMessages(prev => {
+      console.log(answer);
+      setMessages((prev) => {
         const updated = [...prev];
-        updated.pop(); // Remove the temporary message.
-        return [...updated, { type: 'bot', content: answer }];
+        updated.pop();
+        return [...updated, { type: "bot", content: answer }];
+      });
+
+      setDailyCount((prev) => {
+        const newCount = prev + 1;
+        localStorage.setItem("dailyAIQueryCount", newCount);
+        return newCount;
       });
     } catch (error) {
       console.error("Error calling /assist API:", error);
-      // Remove the temporary message and add an error message.
-      setMessages(prev => {
+      setMessages((prev) => {
         const updated = [...prev];
         updated.pop();
-        return [...updated, { type: 'bot', content: "Error retrieving response. Please try again." }];
+        const final = [
+          ...updated,
+          {
+            type: "bot",
+            content: "Error retrieving response. Please try again.",
+          },
+        ];
+        setTimeout(() => nudgeForAIReply(), 100);
+        return final;
       });
     }
-    
-    setInput('');
+
+    setInput("");
+  };
+
+  const nudgeForAIReply = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight - 100, // approx 2-3 lines
+        behavior: "smooth",
+      });
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white overflow-hidden relative">
+    <div className="flex flex-col h-[100dvh] bg-[#000000] text-white overflow-hidden relative">
       {/* Animated Background */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
@@ -96,28 +199,43 @@ function CashMapAI() {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link to="/dash" className="flex items-center text-white-400">
             <FaArrowLeft className="h-5 mr-2 w-5" cursor-pointer />
-            Back to Dashboard
           </Link>
           <div className="flex items-center">
             <FaRobot className="h-6 w-6 text-emerald-500 mr-2" />
-            <span className="font-semibold">CashMap AI Assistant</span>
+            <span className="font-semibold">Fair AI</span>
           </div>
         </div>
       </div>
 
+      {dailyCount >= 10 ? (
+        <div className="text-center text-red-500 bg-glass p-2 rounded mb-2 z-10 relative">
+          You&apos;ve reached your 10 query limit for today! Please come back
+          tomorrow.
+        </div>
+      ) : (
+        <div className="text-center text-emerald-400 bg-transparent p-2 rounded mb-2 z-10 relative">
+          You’ve used {dailyCount} of 10 queries today.
+        </div>
+      )}
+
       {/* Chat Messages */}
-      <div className="flex-1 max-w-4xl mx-auto w-full p-4 overflow-y-auto z-10 relative">
+      <div
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto p-4 z-10 relative max-w-4xl mx-auto w-full custom-scrollbar"
+      >
         <div className="space-y-4">
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${
+                message.type === "user" ? "justify-end" : "justify-start"
+              }`}
             >
               <div
                 className={`max-w-[80%] rounded-lg p-4 ${
-                  message.type === 'user'
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-gray-800 text-gray-100'
+                  message.type === "user"
+                    ? "bg-emerald-500 text-white"
+                    : "bg-gray-800 text-gray-100"
                 }`}
               >
                 {message.content}
@@ -127,19 +245,42 @@ function CashMapAI() {
         </div>
       </div>
 
+      {/*Scroll to bottom arrow*/}
+      {!isAtBottom && (
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20">
+          <button
+            onClick={scrollToBottom}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white p-2 rounded-full shadow-lg transition-all"
+          >
+            <FaArrowDown className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
       {/* Input Field */}
-      <div className="bottom-0 bg-glass-800 border-t border-gray-700 p-4 z-10 relative">
+      <div className="p-4 border-t border-gray-700 bg-glass-800 z-10 relative">
         <form onSubmit={handleSend} className="max-w-4xl mx-auto flex gap-4">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about your expenses, balances, or get financial insights..."
+            placeholder={
+              dailyCount >= 10
+                ? "Query limit reached for today!"
+                : "Ask about your expenses, balances, or get financial insights..."
+            }
             className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500"
+            disabled={dailyCount >= 10}
           />
+
           <button
             type="submit"
-            className="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-colors"
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              dailyCount >= 10
+                ? "bg-gray-500 text-gray-300 cursor-not-allowed"
+                : "bg-emerald-500 text-white hover:bg-emerald-600"
+            }`}
+            disabled={dailyCount >= 10}
           >
             <FaArrowRight className="h-5 w-5" />
           </button>

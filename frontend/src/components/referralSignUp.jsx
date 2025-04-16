@@ -1,21 +1,22 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
-const SignUp = () => {
+const ReferralSignUp = () => {
   const [username, setUserName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpGenerated, setOtpGenerated] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { referId } = useParams(); // Get referId from
 
   const handleOtpSend = async () => {
     if (!email || !username || !password) {
@@ -55,6 +56,7 @@ const SignUp = () => {
           otpGenerated,
           password,
           username,
+          referId,
         }
       );
 
@@ -90,7 +92,7 @@ const SignUp = () => {
         <div className="absolute top-10 right-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce-opposite"></div>
         <div className="absolute bottom-10 left-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce-opposite delay-3000"></div>
       </div>
-      {/* SignUp Card */}
+      {/* ReferralSignUp Card */}
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
           <div className="flex items-center ">
@@ -174,4 +176,4 @@ const SignUp = () => {
   );
 };
 
-export default SignUp;
+export default ReferralSignUp;
