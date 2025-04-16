@@ -36,7 +36,7 @@ const TripDetails = () => {
       }
       try {
         const response = await axios.get(
-          `http://172.80.8.139:8000/group/get-group/${tripId}`
+          `http://192.168.156.226:8000/group/get-group/${tripId}`
         );
         if (response.status === 200) {
           const group = response.data;

@@ -112,7 +112,7 @@ const AddExpense = () => {
     try {
       // Replace with your backend endpoint
       const response = await axios.post(
-        "http://172.80.8.139:8000/group/add-expense",
+        "http://192.168.156.226:8000/group/add-expense",
         payload
       );
       console.log("Expense created successfully", response.data);

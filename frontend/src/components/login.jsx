@@ -33,10 +33,13 @@ const LogIn = () => {
         return;
       }
 
-      const response = await axios.post(`http://172.80.8.139:8000/user/login`, {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        `http://192.168.156.226:8000/user/login`,
+        {
+          email,
+          password,
+        }
+      );
       if (response.data.user) {
         Cookies.set("id", response.data.user._id, { expires: 7 });
         navigate("/dash");

@@ -30,7 +30,7 @@
 //       console.log("inside try");
 //       console.log(user.user._id, newPassword);
 //       const response = await axios.post(
-//         "http://172.80.8.139:8000/user/change-password",
+//         "http://192.168.156.226:8000/user/change-password",
 //         { userId: user.user._id, newPassword: newPassword }
 //       );
 //       setMessage(response.data.message);
@@ -140,7 +140,7 @@ const ChangePassword = () => {
     try {
       // Send OTP request to the backend
       const response = await axios.post(
-        "http://172.80.8.139:8000/user/forgot-password",
+        "http://192.168.156.226:8000/user/forgot-password",
         { email }
       );
       if (response.status === 200) {
@@ -164,7 +164,7 @@ const ChangePassword = () => {
     try {
       // Verify OTP entered by the user
       const response = await axios.post(
-        "http://172.80.8.139:8000/user/verify-forgot-password",
+        "http://192.168.156.226:8000/user/verify-forgot-password",
         { email, otp, otpGenerated }
       );
       if (response.status === 200) {
@@ -195,7 +195,7 @@ const ChangePassword = () => {
 
     try {
       const response = await axios.post(
-        "http://172.80.8.139:8000/user/change-password",
+        "http://192.168.156.226:8000/user/change-password",
         { userId, newPassword }
       );
       setMessage(

@@ -21,7 +21,7 @@ const FriendsSection = ({ user }) => {
       const userId = currentUser._id;
 
       const res = await axios.delete(
-        `http://172.80.8.139:8000/user/remove-friend`,
+        `http://192.168.156.226:8000/user/remove-friend`,
         {
           data: {
             userId,
@@ -101,7 +101,7 @@ const FriendsSection = ({ user }) => {
       <div
         className={`space-y-2 ${
           filteredFriends.length > 4
-            ? "overflow-y-auto max-h-[260px] pr-1 custom-scrollbar"
+            ? "overflow-y-auto max-h-[275px] pr-1 custom-scrollbar"
             : ""
         }`}
       >
