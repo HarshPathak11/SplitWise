@@ -19,6 +19,7 @@ import AllTripsPage from "./components/AllTripsPage";
 import AllExpenses from "./components/AllExpenses";
 import CashMapAI from "./components/CashMapAI";
 import AppLayout from "./AppLayout";
+import Documentation from "./components/documentation";
 
 const router = createBrowserRouter([
   {
@@ -91,9 +92,9 @@ const router = createBrowserRouter([
       },
       {
         path: "change-password",
-        element:(
+        element: (
           <ProtectedRoute>
-          <ChangePassword />
+            <ChangePassword />
           </ProtectedRoute>
         ),
       },
@@ -137,10 +138,15 @@ const router = createBrowserRouter([
         path: "forgot-password",
         element: <ForgotPassword />,
       },
-      
+
       {
         path: "*",
         element: <NotFound />,
+      },
+
+      {
+        path: "/documentation",
+        element: <Documentation />,
       },
     ],
   },
