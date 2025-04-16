@@ -2,6 +2,7 @@ import ComparisonTable from "./check";
 import Footer from "./footer";
 import oye from "../../save.svg";
 import { Link } from "react-router-dom";
+import Documentation from "./documentation";
 const LandingPage = () => {
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col items-center relative overflow-hidden">
