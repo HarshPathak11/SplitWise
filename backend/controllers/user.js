@@ -52,7 +52,7 @@ const sendOtp = async (req, res) => {
 
 // Verify OTP and create user
 const verifyOtp = async (req, res) => {
-  const { otp, username, email, password, otpGenerated } = req.body;
+  const { otp, username, email, password, otpGenerated, referId } = req.body;
 
   if (!otp || !email || !otpGenerated || !username || !password) {
     return res.status(400).json({ message: "Incomplete data received" });
@@ -73,6 +73,23 @@ const verifyOtp = async (req, res) => {
       email,
       password: cleanPassword, // schema middleware handles hashing
     });
+    
+    if (referId) {
+      const referUser = await User.findById(referId);
+      if (!referUser) {
+        return res.status(400).json({ message: "Invalid referral ID" });
+      }
+      // Add new user to referer's friends list
+      await User.updateOne(
+        { _id: referId },
+        { $push: { friends: { friend: newUser._id, balance: 0 } } }
+      );
+      
+      await User.updateOne(
+        { _id: newUser._id },
+        { $push: { friends: { friend: referId, balance: 0 } } }
+      );
+    }    
 
     return res.status(200).json(newUser);
   } catch (error) {

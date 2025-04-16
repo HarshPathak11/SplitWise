@@ -132,7 +132,7 @@ const AddExpense = () => {
 
       setTimeout(() => {
         navigate(-1);
-      }, 5000); // 0.5 seconds is usually enough
+      }, 100); // 0.5 seconds is usually enough
     } catch (error) {
       console.error("Error creating expense:", error);
       const errorMsg =

@@ -3,6 +3,7 @@ import Dashboard from "./components/DashBoard";
 import LandingPage from "./components/home";
 import LogIn from "./components/login";
 import SignUp from "./components/signup";
+import ReferralSignUp from "./components/referralSignUp";
 import Features from "./components/features";
 import Profile from "./components/profile";
 import ProtectedRoute from "./components/ProtectedRoutes";
@@ -89,6 +90,14 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "change-password",
+        element:(
+          <ProtectedRoute>
+          <ChangePassword />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "addTrip",
         element: (
           <ProtectedRoute>
@@ -109,6 +118,10 @@ const router = createBrowserRouter([
         element: <SignUp />,
       },
       {
+        path: "signup/:referId",
+        element: <ReferralSignUp />,
+      },
+      {
         path: "login",
         element: <LogIn />,
       },
@@ -124,10 +137,7 @@ const router = createBrowserRouter([
         path: "forgot-password",
         element: <ForgotPassword />,
       },
-      {
-        path: "change-password",
-        element: <ChangePassword />,
-      },
+      
       {
         path: "*",
         element: <NotFound />,

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaTrash } from "react-icons/fa"; // Import the trash icon
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
 
 const AddFriend = () => {
   const navigate = useNavigate();
@@ -73,17 +73,19 @@ const AddFriend = () => {
       );
 
       if (response.status === 200) {
-        if(response.data.addedFriends?.length === 0){
-          toast.success("Invite sent to your friend(s)!");          
+        if (response.data.addedFriends?.length === 0) {
+          toast.success("Invite sent to your friend(s)!");
+        } else {
+          toast.success(
+            `Successfully added ${
+              response.data.addedFriends?.length || 0
+            } friend(s)`
+          );
         }
-        else{
-        toast.success(`Successfully added ${
-            response.data.addedFriends?.length || 0
-          } friend(s)`);
-      }
-        // Optionally redirect or reset the form
+        // ✅ Clear the list after successful addition
+        setFriends([]);
       } else {
-        toast.error(`Failed to add friends: ${response.data.message}`)
+        toast.error(`Failed to add friends: ${response.data.message}`);
       }
     } catch (err) {
       console.error("Error adding friends:", err);
