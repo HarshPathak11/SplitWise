@@ -242,13 +242,13 @@ const AddExpense = () => {
           {members.map((member) => (
             <div
               key={member._id}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-[#121212] p-3 rounded-lg"
+              className="flex flex-col sm:flex-row sm:items-center cursor-pointer gap-2 sm:gap-4 bg-[#121212] p-3 rounded-lg"
+              onClick={() => handleCheckboxChange(member._id)}
             >
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
                   checked={selected.includes(member._id)}
-                  onChange={() => handleCheckboxChange(member._id)}
                   className="w-4 h-4"
                 />
                 <span className="max-w-3xl">{member.username}</span>
