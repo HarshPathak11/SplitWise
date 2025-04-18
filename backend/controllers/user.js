@@ -264,7 +264,7 @@ const addFriends = async (req, res) => {
           html: `<h1>Hi,</h1>
                  <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
                  <p>Please click on the link below to join: 
-                 <a href="https://fair-fare-phi.vercel.app/${user._id}">Join Fair Fare</a></p>
+                 <a href="https://fair-fare-phi.vercel.app/signup/${user._id}">Join Fair Fare</a></p>
                  <p>Thanks,<br/>Fair Fare Team</p>`,
         };
         await transporter.sendMail(mailOptions)
