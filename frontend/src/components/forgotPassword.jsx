@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:8000/forgot-password",
+        "https://fairfare-0hyl.onrender.com/forgot-password",
         {
           email,
         }
@@ -37,7 +37,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:8000/verify-forgot-password",
+        "https://fairfare-0hyl.onrender.com/verify-forgot-password",
         {
           otpGenerated,
           otp,

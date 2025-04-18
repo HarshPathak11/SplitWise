@@ -30,7 +30,7 @@
 //       console.log("inside try");
 //       console.log(user.user._id, newPassword);
 //       const response = await axios.post(
-//         "http://localhost:8000/user/change-password",
+//         "https://fairfare-0hyl.onrender.com/user/change-password",
 //         { userId: user.user._id, newPassword: newPassword }
 //       );
 //       setMessage(response.data.message);
@@ -139,7 +139,7 @@ const ChangePassword = () => {
     }
     try {
       // Send OTP request to the backend
-      const response = await axios.post("http://localhost:8000/user/forgot-password", { email });      
+      const response = await axios.post("https://fairfare-0hyl.onrender.com/user/forgot-password", { email });      
       if (response.status === 200) {
         setOtpGenerated(response.data.otp); // Store the generated OTP for later use
         setOtpSent(true); // OTP sent successfully
@@ -160,7 +160,7 @@ const ChangePassword = () => {
     setMessage("");
     try {
       // Verify OTP entered by the user
-      const response = await axios.post("http://localhost:8000/user/verify-forgot-password", { email, otp, otpGenerated });
+      const response = await axios.post("https://fairfare-0hyl.onrender.com/user/verify-forgot-password", { email, otp, otpGenerated });
       if (response.status === 200) {
         setIsOtpVerified(true); // OTP verified successfully
         setMessage("OTP verified. You can now change your password.");
@@ -189,7 +189,7 @@ const ChangePassword = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/user/change-password",
+        "https://fairfare-0hyl.onrender.com/user/change-password",
         { userId, newPassword }
       );
       setMessage(

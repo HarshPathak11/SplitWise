@@ -18,7 +18,7 @@ const Dashboard = () => {
       // if (!user) {
       try {
         const response = await axios.get(
-          `http://localhost:8000/user/${userId}`
+          `https://fairfare-0hyl.onrender.com/user/${userId}`
         );
         console.log("response is ", response);
 

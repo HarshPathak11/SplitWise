@@ -20,7 +20,7 @@ const FriendsSection = ({ user }) => {
     const fetchUpdatedBalances = async () => {
       try {
         const res = await axios.post(
-          "http://localhost:8000/user/get-updated-friend-balances",
+          "https://fairfare-0hyl.onrender.com/user/get-updated-friend-balances",
           { userId: user?._id }
         );
 
@@ -53,7 +53,7 @@ const FriendsSection = ({ user }) => {
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
       const res = await axios.delete(
-        `http://localhost:8000/user/remove-friend`,
+        `https://fairfare-0hyl.onrender.com/user/remove-friend`,
         {
           data: {
             userId: user?._id,

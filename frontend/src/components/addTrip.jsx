@@ -61,7 +61,7 @@ const AddTrip = () => {
       }
 
       const res = await axios.post(
-        "http://localhost:8000/group/create-group",
+        "https://fairfare-0hyl.onrender.com/group/create-group",
         tripData
       );
       console.log("Response:", res.data); // Log the response for debugging

@@ -114,7 +114,7 @@ const AddExpense = () => {
       setIsLoading(true); // ✅ Start loading
       // Replace with your backend endpoint
       const response = await axios.post(
-        "http://localhost:8000/group/add-expense",
+        "https://fairfare-0hyl.onrender.com/group/add-expense",
         payload
       );
       if (response.status === 200) toast.success("Expense added successfully!");

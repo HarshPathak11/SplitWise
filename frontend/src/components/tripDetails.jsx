@@ -36,7 +36,7 @@ const TripDetails = () => {
       }
       try {
         const response = await axios.get(
-          `http://localhost:8000/group/get-group/${tripId}`
+          `https://fairfare-0hyl.onrender.com/group/get-group/${tripId}`
         );
         if (response.status === 200) {
           const group = response.data;
