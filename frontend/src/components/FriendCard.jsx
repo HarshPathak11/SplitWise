@@ -174,7 +174,7 @@ const FriendCard = ({
             type="number"
             step="0.01"
             min="0"
-            value={Math.abs(settleAmount)}
+            value={settleAmount === "" ? "" : Math.abs(settleAmount)}
             onChange={(e) => {
               let value = e.target.value;
               if (value === "") return setSettleAmount("");

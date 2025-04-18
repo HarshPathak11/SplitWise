@@ -4,8 +4,8 @@ const ComparisonTable = () => {
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-[10px] opacity-30">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+          {/* <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl"></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl"></div> */}
         </div>
       </div>
 
@@ -23,7 +23,7 @@ const ComparisonTable = () => {
         <div className="space-y-4 backdrop-blur-md bg-white/5 rounded-xl p-6 border border-white/20 hover:border-white/30 transition-all duration-300">
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
             <div className="text-white/80">
-              No monthly fees or minimum balance
+            Expense Tracking
             </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
@@ -34,7 +34,7 @@ const ComparisonTable = () => {
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
             <div className="text-white/80">
-              Make unlimited events with no limits
+            Unlimited Events
             </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
@@ -44,7 +44,7 @@ const ComparisonTable = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">Secure & Private </div>
+            <div className="text-white/80">Interactive Event Cards </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
@@ -53,7 +53,7 @@ const ComparisonTable = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">Smart Settlement System</div>
+            <div className="text-white/80">Personal AI Assisstant</div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
@@ -62,18 +62,7 @@ const ComparisonTable = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">Smart Reminders</div>
-            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
-              ✔️
-            </div>
-            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
-              ❌
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">
-              No credit check required for sign-up
-            </div>
+            <div className="text-white/80">User-Centric Features</div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
@@ -83,13 +72,24 @@ const ComparisonTable = () => {
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
             <div className="text-white/80">
-              Privacy-Focused Expense Management
+            Enhanced Aesthetics
             </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ❌
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
+            <div className="text-white/80">
+            Trip Management
+            </div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+              ✔️
+            </div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+            ✔️
             </div>
           </div>
         </div>
@@ -98,7 +98,7 @@ const ComparisonTable = () => {
         <div className="grid grid-cols-3 mt-10 font-bold text-center backdrop-blur-md bg-white/5 rounded-xl p-6 border border-white/20 hover:border-white/30 transition-all duration-300">
           <div className="text-white/90 text-2xl">Cost per year</div>
           <div>
-            <div className="text-centre text-3xl">
+            <div className="text-center text-3xl">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-red-400 via-cyan-400 to-purple-600">
                 $0
               </span>
@@ -106,7 +106,7 @@ const ComparisonTable = () => {
             </div>
           </div>
           <div>
-            <div className="text-centre text-2xl">
+            <div className="text-center text-2xl">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-200 via-zinc-400 to-gray-600">
                 $40
               </span>
@@ -117,7 +117,7 @@ const ComparisonTable = () => {
       </div>
 
       {/* Animation Keyframes */}
-      <style>{`
+      {/* <style>{`
         @keyframes blob {
           0% {
             transform: translate(0px, 0px) scale(1);
@@ -140,7 +140,7 @@ const ComparisonTable = () => {
         .animation-delay-2000 {
           animation-delay: 2s;
         }
-      `}</style>
+      `}</style> */}
     </div>
   );
 };

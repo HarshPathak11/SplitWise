@@ -10,8 +10,8 @@ const AddMembers = () => {
   const [friends, setFriends] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedFriends, setSelectedFriends] = useState([]);
+  const [isAdding, setIsAdding] = useState(false);
   const { groupId } = useParams();
-  
 
   useEffect(() => {
     try {
@@ -31,7 +31,9 @@ const AddMembers = () => {
             username: f.friend.username,
             balance: f.balance || 0,
           }))
-          .filter((f) => !existingTripMembers.some((member) => member._id === f._id)); // Exclude already added
+          .filter(
+            (f) => !existingTripMembers.some((member) => member._id === f._id)
+          ); // Exclude already added
 
         setFriends(friendsList);
       }
@@ -54,6 +56,7 @@ const AddMembers = () => {
   );
 
   const handleAdd = async () => {
+    setIsAdding(true);
     try {
       if (!groupId || selectedFriends.length === 0) return;
 
@@ -68,7 +71,7 @@ const AddMembers = () => {
 
       if (res.status !== 200) {
         toast.error("Failed to add members. Try again.");
-        throw new Error(res.data.message || "Failed to add members");   
+        throw new Error(res.data.message || "Failed to add members");
       }
 
       // Update local storage
@@ -84,6 +87,8 @@ const AddMembers = () => {
       toast.error(
         err.response?.data?.message || "Could not add members. Try again."
       );
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -129,7 +134,7 @@ const AddMembers = () => {
 
         {/* Friend List Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-          {filteredFriends.map((friend) => {            
+          {filteredFriends.map((friend) => {
             const isSelected = selectedFriends.some(
               (f) => f._id === friend._id
             );
@@ -152,16 +157,15 @@ const AddMembers = () => {
         {/* Add Members Button */}
         <div className="text-center pt-6">
           <button
-            disabled={selectedFriends.length === 0}
+            disabled={selectedFriends.length === 0 || isAdding}
             className={`${
-              selectedFriends.length === 0
-                ? "bg-black cursor-not-allowed"
-                : "bg-white"
-            } text-black font-semibold px-8 py-3 rounded-xl hover:bg-gray-200 transition text-lg`}
-            // className="bg-white text-black font-semibold px-8 py-3 rounded-xl hover:bg-gray-200 transition text-lg"
+              selectedFriends.length === 0 || isAdding
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-white hover:bg-gray-200"
+            } text-black font-semibold px-8 py-3 rounded-xl transition text-lg`}
             onClick={handleAdd}
           >
-            Add Selected Members
+            {isAdding ? "Adding..." : "Add Selected Members"}
           </button>
         </div>
       </div>

@@ -27,7 +27,7 @@ const TripDetails = () => {
           return { _id: m._id, username: m.username}
         });
 
-        setExpenses(parsedGroup.expenses)
+        setExpenses(parsedGroup.expenses);
         // Set directly to localStorage (no merge)
         localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
         setMembers(groupMembers);
@@ -40,16 +40,15 @@ const TripDetails = () => {
         );
         if (response.status === 200) {
           const group = response.data;
-          
+
           setTripDetails(group);
           setLoading(false);
           setExpenses(group.expenses);
 
           // Extract only the usernames from group members
           const groupMembers = group.members.map((m) => {
-              return { _id: m._id, username: m.username}
+            return { _id: m._id, username: m.username };
           });
-          
 
           // Set directly to localStorage (no merge)
           localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
@@ -172,18 +171,19 @@ const TripDetails = () => {
               </div>
             ) : (
               expenses.map((expense, idx) => {
-                return(
-                <ExpenseCard
-                  key={idx}
-                  category={expense.title}
-                  time={expense.createdAt}
-                  description={""}
-                  amount={expense.amount}
-                  iconColor={"bg-blue-500"}
-                  paidBy={expense.paidBy}
-                  beneficiaries={expense.owedBy}
-                />
-              )})
+                return (
+                  <ExpenseCard
+                    key={idx}
+                    category={expense.title}
+                    time={expense.createdAt}
+                    description={""}
+                    amount={expense.amount}
+                    iconColor={"bg-blue-500"}
+                    paidBy={expense.paidBy}
+                    beneficiaries={expense.owedBy}
+                  />
+                );
+              })
             )}
           </div>
         </div>

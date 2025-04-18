@@ -117,8 +117,7 @@ const AddExpense = () => {
         "http://localhost:8000/group/add-expense",
         payload
       );
-      if(response.status === 200)
-      toast.success("Expense added successfully!");
+      if (response.status === 200) toast.success("Expense added successfully!");
       console.log("Expense created successfully", response.data);
       // Reset form fields
       setTitle("");
@@ -132,7 +131,7 @@ const AddExpense = () => {
 
       setTimeout(() => {
         navigate(-1);
-      }, 5000); // 0.5 seconds is usually enough
+      }, 100); // 0.5 seconds is usually enough
     } catch (error) {
       console.error("Error creating expense:", error);
       const errorMsg =
@@ -242,13 +241,15 @@ const AddExpense = () => {
           {members.map((member) => (
             <div
               key={member._id}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 bg-[#121212] p-3 rounded-lg"
+              className="flex flex-col sm:flex-row sm:items-center cursor-pointer gap-2 sm:gap-4 bg-[#121212] p-3 rounded-lg"
             >
-              <div className="flex items-center gap-3">
+              <div
+                className="flex items-center gap-3"
+                onClick={() => handleCheckboxChange(member._id)}
+              >
                 <input
                   type="checkbox"
                   checked={selected.includes(member._id)}
-                  onChange={() => handleCheckboxChange(member._id)}
                   className="w-4 h-4"
                 />
                 <span className="max-w-3xl">{member.username}</span>

@@ -3,11 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const SignUp = () => {
   const [username, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpGenerated, setOtpGenerated] = useState("");
@@ -23,13 +25,10 @@ const SignUp = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:8000/user/send-otp",
-        {
-          email,
-          username,
-        }
-      );
+      const response = await axios.post("http://localhost:8000/user/send-otp", {
+        email,
+        username,
+      });
 
       if (response.status === 200) {
         setOtpSent(response.data.otp);
@@ -130,14 +129,20 @@ const SignUp = () => {
             />
           </div>
 
-          <div className="mb-4">
+          <div className="mb-4 relative">
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg pr-10"
             />
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
           </div>
 
           {/* OTP input only shows after send OTP */}

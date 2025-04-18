@@ -109,7 +109,6 @@
 
 // export default ChangePassword;
 
-
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -128,12 +127,12 @@ const ChangePassword = () => {
   const [otpGenerated, setOtpGenerated] = useState(""); // To store the generated OTP
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const userId=user.user._id;
+  const userId = user.user._id;
 
   const handleSendOtp = async () => {
     setLoading(true);
     setMessage("");
-    if(email !== user.user.email) {
+    if (email !== user.user.email) {
       setMessage("Email does not match with the logged-in user.");
       setLoading(false);
       return;
@@ -193,12 +192,16 @@ const ChangePassword = () => {
         "http://localhost:8000/user/change-password",
         { userId, newPassword }
       );
-      setMessage(response.status === 200 ? "Password changed successfully." : "Error changing password. Please try again.");
+      setMessage(
+        response.status === 200
+          ? "Password changed successfully."
+          : "Error changing password. Please try again."
+      );
       if (response.status === 200) {
-      Cookies.remove("id");
-      Cookies.remove("last4");
-      localStorage.clear();
-      navigate("/login"); // Redirect to login page after successful password change
+        Cookies.remove("id");
+        Cookies.remove("last4");
+        localStorage.clear();
+        navigate("/login"); // Redirect to login page after successful password change
       }
     } catch (error) {
       setMessage("Error changing password. Please try again.");
