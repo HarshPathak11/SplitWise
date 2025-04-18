@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import ComparisonTable from "./check";
 import Footer from "./footer";
-import oye from "../../homeSVG.svg";
+
 import { Link } from "react-router-dom";
 import Documentation from "./documentation";
 import FAQ from "./FaqSection";
@@ -66,7 +66,7 @@ const LandingPage = () => {
       {/* Main Content */}
       <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-11 lg:px-10 py-20 relative z-10">
         <div className="transform hover:scale-105 transition-transform duration-300">
-          <img src={oye} className="drop-shadow-2xl" alt="Illustration" />
+          <img src="/save.svg" className="drop-shadow-2xl" alt="Illustration" />
         </div>
 
         <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
