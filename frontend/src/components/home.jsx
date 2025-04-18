@@ -4,6 +4,7 @@ import Footer from "./footer";
 import oye from "../../homeSVG.svg";
 import { Link } from "react-router-dom";
 import Documentation from "./documentation";
+import FAQ from "./FaqSection";
 
 // FAQItem Component
 const FAQItem = ({ question, answer, isOpen, onClick }) => {
@@ -212,6 +213,9 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      <section className="w-full bg-[#000000]  relative z-10">
+      <FAQ/>
+      </section>
 
       {/* Add the animation keyframes */}
       <style>{`
@@ -272,7 +276,7 @@ const LandingPage = () => {
           }
         }
       `}</style>
-
+     
       <Footer />
     </div>
   );
