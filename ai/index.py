@@ -141,7 +141,7 @@ def construct_prompt(context, query):
         "Friends: Individuals with whom the user shares expenses. Their names and contact details (like email) are provided along with current balances.\n\n"
         "Trips: Shared events or journeys where expenses are recorded and later split among the participants. Each trip lists its members by name.\n\n"
         "Expenses: Transactions recorded by the user. Each expense has a title, amount, the person who paid, and how the amount is split among participants (shown by usernames rather than database IDs).\n\n"
-        "Your task is to use this context to answer queries in a detailed and personalized manner.\n\n"
+        "Your task is to use this context to answer queries in a detailed and personalized manner. Please ensure to never reveal Technical Databse details, never reveal mongodb ids , always refer to a user or friend by username, Answer precisely and concisely, in normal human manner.\n\n"
         "Context Details:\n"
     )
     return improved_context + context + f"\n\nQuery: {query}\n"
