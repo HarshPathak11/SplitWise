@@ -1,9 +1,35 @@
+import React, { useState } from "react";
 import ComparisonTable from "./check";
 import Footer from "./footer";
 import oye from "../../homeSVG.svg";
 import { Link } from "react-router-dom";
 import Documentation from "./documentation";
+
+// FAQItem Component
+const FAQItem = ({ question, answer, isOpen, onClick }) => {
+  return (
+    <div
+      className="bg-white/5 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer"
+      onClick={onClick}
+    >
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-semibold text-white">{question}</h3>
+        <span
+          className={`text-white transform transition-transform ${
+            isOpen ? "rotate-180" : "rotate-0"
+          }`}
+        >
+          ▼
+        </span>
+      </div>
+      {isOpen && <p className="text-gray-400 mt-4">{answer}</p>}
+    </div>
+  );
+};
+
 const LandingPage = () => {
+  const [openIndex, setOpenIndex] = useState(null);
+
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col items-center relative overflow-hidden">
       {/* Animated background elements */}
@@ -39,11 +65,7 @@ const LandingPage = () => {
       {/* Main Content */}
       <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-11 lg:px-10 py-20 relative z-10">
         <div className="transform hover:scale-105 transition-transform duration-300">
-          <img
-            src={oye}
-            className="drop-shadow-2xl"
-            alt="Illustration"
-          />
+          <img src={oye} className="drop-shadow-2xl" alt="Illustration" />
         </div>
 
         <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
@@ -142,6 +164,51 @@ const LandingPage = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="w-full bg-[#000000] py-20 relative z-10">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-wrap justify-center text-center mb-12">
+            <div className="w-full lg:w-6/12 px-4">
+              <h2 className="text-4xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
+                Frequently Asked Questions
+              </h2>
+              <p className="text-lg leading-relaxed m-4 text-gray-400">
+                Find answers to the most common questions about FairFare.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-6">
+            {/* FAQ Items */}
+            {[
+              {
+                question: "What is FairFare?",
+                answer: "FairFare is a platform designed to simplify group expense management by providing tools for tracking, splitting, and settling expenses seamlessly.",
+              },
+              {
+                question: "Is FairFare free to use?",
+                answer: "Yes, FairFare is completely free to use. Enjoy all its features without any hidden charges.",
+              },
+              {
+                question: "How do I add friends to FairFare?",
+                answer: "You can add friends by navigating to the Add Friends section in the app and sending them an invite. If friends are already on the app, they will directly get added to your friend list without any invites.",
+              },
+              {
+                question: "Can I use FairFare for trips and events?",
+                answer: "Absolutely! FairFare has a dedicated 'Trips and Events' section to help you manage group expenses for outings and events.",
+              },
+            ].map((faq, index) => (
+              <FAQItem
+                key={index}
+                question={faq.question}
+                answer={faq.answer}
+                isOpen={openIndex === index}
+                onClick={() => setOpenIndex(openIndex === index ? null : index)}
+              />
+            ))}
           </div>
         </div>
       </section>
