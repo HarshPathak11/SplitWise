@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaCopy } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
 import axios from "axios";
 
@@ -29,12 +29,15 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
 
     try {
-      await axios.post("https://fairfare-0hyl.onrender.com/user/update-friend-balance", {
-        userEmail: currentUser.email,
-        friendEmail: friend.email,
-        amount,
-        action: "paid",
-      });
+      await axios.post(
+        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+        {
+          userEmail: currentUser.email,
+          friendEmail: friend.email,
+          amount,
+          action: "paid",
+        }
+      );
       // Locally update: when you pay them, your friend's balance increases (they owe you more).
       balance = parseFloat((Number(balance) + amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
@@ -165,9 +168,18 @@ const FriendCard = ({
 
       {showDropdown && (
         <div className="mt-3 bg-gray-800 rounded-lg p-3 border border-gray-600">
-          <p className="text-sm text-white mb-2">
+          <p className="text-sm text-white mb-2 flex items-center justify-between">
             <span className="font-medium">UPI ID:</span>{" "}
-            {friend.upiId || "Not Available"}
+            <span className="flex-grow">{friend.upiId || "Not Available"}</span>
+            {friend.upiId && (
+              <button
+                onClick={() => navigator.clipboard.writeText(friend.upiId)}
+                className="ml-2 p-2 bg-gray-600 rounded flex items-center"
+                title="Copy UPI ID"
+              >
+                <FaCopy className="h-3 w-4 text-white" />
+              </button>
+            )}
           </p>
 
           <input
@@ -230,7 +242,7 @@ const FriendCard = ({
                 href={`upi://pay?pa=${friend.upiId}&pn=${encodeURIComponent(
                   friend.username.replace(/\s/g, "")
                 )}&am=${Math.abs(settleAmount).toFixed(2)}&cu=INR`}
-                target="_blank"                
+                target="_blank"
                 disabled={Math.abs(settleAmount) < 1}
                 rel="noopener noreferrer"
                 className={`block mt-2 text-center w-full py-2 px-4 rounded transition-colors ${

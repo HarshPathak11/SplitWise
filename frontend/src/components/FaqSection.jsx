@@ -13,15 +13,15 @@ import {
 const notes = [
   {
     q: "Is FairFare really free?",
-    a: "Yes! We don't charge any fees for basic bill splitting. Premium features available for power users.",
+    a: "Yes! We don't charge any fees for bill splitting and there is no limit on adding expenses. ",
     color: "bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a]",
     icon: CreditCard,
     amount: "$0",
     cardNumber: "**** **** **** 0000",
   },
   {
-    q: "How do I settle with friends?",
-    a: "Choose your preferred payment method - bank transfer, UPI, or cash. We'll track everything automatically.",
+    q: "Can I add my friends?",
+    a: "Yes! you can add your friends and track your balance with them. ",
     color: "bg-gradient-to-br from-[#1f1f1f] to-[#2d2d2d]",
     icon: Wallet2,
     amount: "₹500",
@@ -29,7 +29,7 @@ const notes = [
   },
   {
     q: "Can I split uneven bills?",
-    a: "Absolutely! Split by exact amounts, percentages, or shares. Perfect for group dinners and trips.",
+    a: "Absolutely! Split by exact amounts or shares. Perfect for group trips.",
     color: "bg-gradient-to-br from-[#242424] to-[#303030]",
     icon: PiggyBank,
     amount: "30%",
@@ -37,15 +37,15 @@ const notes = [
   },
   {
     q: "What payment methods work?",
-    a: "We support all major payment methods including credit cards, bank transfers, and digital wallets.",
+    a: "You can copy UPI ID of your friend and pay them via UPI app directly.",
     color: "bg-gradient-to-br from-[#292929] to-[#333333]",
     icon: DollarSign,
     amount: "24h",
     cardNumber: "**** **** **** 9012",
   },
   {
-    q: "How are disputes handled?",
-    a: "Our support team resolves disputes within 24 hours with full transaction history and receipts.",
+    q: "How do I invite my Friends?",
+    a: "You can invite them through add friends option and an invite link with your referral code will be sent to their E-mail.",
     color: "bg-gradient-to-br from-[#2e2e2e] to-[#363636]",
     icon: Receipt,
     amount: "100%",
@@ -151,15 +151,15 @@ export default function FAQ() {
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="inline-block p-3 rounded-full bg-gradient-to-r from-emerald-500/20 to-green-500/20 mb-8"
+            className="inline-block p-3 justify-center text-center rounded-full bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent mb-8"
           >
-            <Wallet2 className="w-16 h-16 text-emerald-400" />
+            <Wallet2 className="w-16 h-16 text-blue-400 justify-center" />
           </motion.div>
           <motion.h1
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-5xl font-bold mb-4 bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400 bg-clip-text text-transparent"
+            className="text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent leading-tight"
           >
             Smart Money, Simple Answers
           </motion.h1>
@@ -167,7 +167,7 @@ export default function FAQ() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-gray-400 max-w-2xl mx-auto text-lg"
+            className="bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent max-w-2xl mx-auto text-lg leading-relaxed"
           >
             Everything you need to know about managing your money with friends
           </motion.p>
@@ -196,7 +196,7 @@ export default function FAQ() {
                   className="absolute w-[360px] cursor-pointer preserve-3d"
                   style={{
                     ...position,
-                    transition: isDragging ? "none" : "all 0.5s ease-out",
+                    transition: isDragging ? "none" : "all 1s ease-out",
                   }}
                   initial={{
                     opacity: 0,
@@ -223,20 +223,20 @@ export default function FAQ() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="space-y-4">
-                        <Icon className="w-8 h-8 text-emerald-400" />
-                        <div className="font-mono text-sm text-gray-400">
+                        <Icon className="w-8 h-8 text-blue-400" />
+                        <div className="font-mono text-sm text-blue-400">
                           {note.cardNumber}
                         </div>
                       </div>
                       <div className="flex flex-col items-end">
-                        <span className="text-2xl font-bold text-emerald-400">
+                        <span className="text-2xl font-bold text-blue-400">
                           {note.amount}
                         </span>
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 opacity-50 mt-2" />
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-white to-blue-400 opacity-50 mt-2" />
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold text-emerald-400 mb-1">
+                      <h3 className="text-xl font-semibold text-blue-400 mb-1">
                         {note.q}
                       </h3>
                       <p className="text-sm text-gray-400">Tap to flip</p>

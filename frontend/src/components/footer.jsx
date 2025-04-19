@@ -9,17 +9,19 @@ const Footer = () => {
           {/* Column 1 */}
           <div className="flex flex-col items-center text-center space-y-4">
             <img
-              src="./pfp.jpg"
+              src="./pfp.jpeg"
               alt="Person 1"
-              className="w-24 h-25  object-cover"
+              className="w-24 object-cover"
             />
-            <h3 className="text-white font-bold text-lg">Person 1</h3>
+            <h3 className="text-white font-bold text-lg">Shikhar Singh</h3>
             <p className="text-white/70 text-sm">
-              Description about Person 1. A brief bio or role in the project.
+              I am an Engineering student currently pursuing B.Tech in CSE
+              branch from G.L.Bajaj in Greater Noida .
             </p>
             <div className="flex space-x-4">
               {/* Instagram */}
               <a
+                target="_blank"
                 href="#"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
@@ -42,7 +44,8 @@ const Footer = () => {
               </a>
               {/* GitHub */}
               <a
-                href="#"
+                target="_blank"
+                href="https://github.com/Shkhr278"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
                 <svg
@@ -63,7 +66,8 @@ const Footer = () => {
               </a>
               {/* LinkedIn */}
               <a
-                href="#"
+                target="_blank"
+                href="https://www.linkedin.com/in/shikhar-singh-59610425a/"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
                 <svg
@@ -89,18 +93,20 @@ const Footer = () => {
           {/* Column 2 */}
           <div className="flex flex-col items-center text-center space-y-4">
             <img
-              src="./pfp.jpg"
+              src="./pfp2.jpeg"
               alt="Person 2"
               className="w-24 h-25  object-cover"
             />
-            <h3 className="text-white font-bold text-lg">Person 2</h3>
+            <h3 className="text-white font-bold text-lg">Shubhankar Tiwari</h3>
             <p className="text-white/70 text-sm">
-              Description about Person 2. A brief bio or role in the project.
+              I am an Engineering student currently pursuing B.Tech in IT branch
+              from G.L.Bajaj in Greater Noida .
             </p>
             <div className="flex space-x-4">
-               {/* Instagram */}
-               <a
-                href="#"
+              {/* Instagram */}
+              <a
+                target="_blank"
+                href="https://www.instagram.com/shubhankar_tiwari007?igsh=b3BpbXBuY3hjY2cx"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
                 <svg
@@ -122,7 +128,8 @@ const Footer = () => {
               </a>
               {/* GitHub */}
               <a
-                href="#"
+                target="_blank"
+                href="https://github.com/ShubhKr7"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
                 <svg
@@ -143,7 +150,8 @@ const Footer = () => {
               </a>
               {/* LinkedIn */}
               <a
-                href="#"
+                target="_blank"
+                href="https://www.linkedin.com/in/shubhankar-tiwari-a15266214?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
                 <svg
@@ -169,17 +177,19 @@ const Footer = () => {
           {/* Column 3 */}
           <div className="flex flex-col items-center text-center space-y-4">
             <img
-             src="./pfp.jpg"
+              src="./pfp3.jpeg"
               alt="Person 3"
-              className="w-24 h-25 object-cover"
+              className="w-24 object-cover"
             />
-            <h3 className="text-white font-bold text-lg">Person 3</h3>
+            <h3 className="text-white font-bold text-lg">Harsh Pathak</h3>
             <p className="text-white/70 text-sm">
-              Description about Person 3. A brief bio or role in the project.
+              I am an Engineering student currently pursuing B.Tech in CSE
+              branch from HBTU Kanpur .
             </p>
             <div className="flex space-x-4">
               {/* Instagram */}
               <a
+                target="_blank"
                 href="#"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
@@ -202,7 +212,8 @@ const Footer = () => {
               </a>
               {/* GitHub */}
               <a
-                href="#"
+                target="_blank"
+                href="http://github.com/HarshPathak11"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
                 <svg
@@ -223,7 +234,8 @@ const Footer = () => {
               </a>
               {/* LinkedIn */}
               <a
-                href="#"
+                target="_blank"
+                href="http://linkedin.com/in/harsh-pathak-818163298/"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
                 <svg

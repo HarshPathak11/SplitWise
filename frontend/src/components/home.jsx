@@ -70,7 +70,7 @@ const LandingPage = () => {
         </div>
 
         <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
-          <h1 className="text-4xl lg:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
+          <h1 className="text-4xl lg:text-5xl font-bold  p-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
             Split it <br /> Its easy this way.
           </h1>
           <p className="text-gray-400 mb-8">
@@ -154,7 +154,7 @@ const LandingPage = () => {
             <div className="w-full md:w-4/12 px-4 text-center">
               <div className="relative flex flex-col min-w-0 break-words backdrop-blur-lg bg-white/5 w-full mb-8 shadow-lg rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:transform hover:scale-105 hover:animate-float">
                 <div className="px-4 py-5 flex-auto">
-                  <p className="mt-2 mb-4 text-white-400">
+                  <p className="mt-2 mb-4 text-white">
                     &quot;FairFare is a lifesaver for group trips! Tracking
                     expenses and settling up is super simple. Highly recommend
                     it!&quot;
