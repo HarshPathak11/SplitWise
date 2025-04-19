@@ -21,7 +21,7 @@ const Profile = () => {
       if (!user && userId) {
         try {
           const response = await axios.get(
-            `http://192.168.169.198:8000/user/${userId}`
+            `https://fairfare-0hyl.onrender.com/user/${userId}`
           );
           if (response.status === 200) {
             const fetchedUser = response.data.user;
@@ -49,7 +49,7 @@ const Profile = () => {
     try {
       const userId = Cookies.get("id");
       const response = await axios.put(
-        `http://192.168.169.198:8000/user/${userId}`,
+        `https://fairfare-0hyl.onrender.com/user/${userId}`,
         profile
       );
 

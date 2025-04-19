@@ -10,7 +10,7 @@ function LandingSignup() {
       const token = await signUp.getToken();
 
       const response = await axios.post(
-        "http://192.168.169.198:8000/demo",
+        "https://fairfare-0hyl.onrender.com/demo",
         {},
         {
           headers: {

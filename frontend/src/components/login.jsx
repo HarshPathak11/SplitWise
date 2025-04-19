@@ -35,7 +35,7 @@ const LogIn = () => {
         return;
       }
 
-      const response = await axios.post(`http://192.168.169.198:8000/user/login`, {
+      const response = await axios.post(`https://fairfare-0hyl.onrender.com/user/login`, {
         email,
         password,
       });
