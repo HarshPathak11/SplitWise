@@ -65,7 +65,7 @@ const LandingPage = () => {
 
       {/* Main Content */}
       <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-11 lg:px-10 py-20 relative z-10">
-        <div className="transform hover:scale-105 transition-transform duration-300">
+        <div>
           <img src="/save.svg" className="drop-shadow-2xl" alt="Illustration" />
         </div>
 
@@ -154,7 +154,7 @@ const LandingPage = () => {
             <div className="w-full md:w-4/12 px-4 text-center">
               <div className="relative flex flex-col min-w-0 break-words backdrop-blur-lg bg-white/5 w-full mb-8 shadow-lg rounded-lg p-6 border border-white/10 hover:border-white/20 transition-all duration-300 hover:transform hover:scale-105 hover:animate-float">
                 <div className="px-4 py-5 flex-auto">
-                  <p className="mt-2 mb-4 text-white-400">
+                  <p className="mt-2 mb-4 text-white">
                     &quot;FairFare is a lifesaver for group trips! Tracking
                     expenses and settling up is super simple. Highly recommend
                     it!&quot;
@@ -169,50 +169,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="w-full bg-[#000000] py-20 relative z-10">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-wrap justify-center text-center mb-12">
-            <div className="w-full lg:w-6/12 px-4">
-              <h2 className="text-4xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
-                Frequently Asked Questions
-              </h2>
-              <p className="text-lg leading-relaxed m-4 text-gray-400">
-                Find answers to the most common questions about FairFare.
-              </p>
-            </div>
-          </div>
-          <div className="space-y-6">
-            {/* FAQ Items */}
-            {[
-              {
-                question: "What is FairFare?",
-                answer: "FairFare is a platform designed to simplify group expense management by providing tools for tracking, splitting, and settling expenses seamlessly.",
-              },
-              {
-                question: "Is FairFare free to use?",
-                answer: "Yes, FairFare is completely free to use. Enjoy all its features without any hidden charges.",
-              },
-              {
-                question: "How do I add friends to FairFare?",
-                answer: "You can add friends by navigating to the Add Friends section in the app and sending them an invite. If friends are already on the app, they will directly get added to your friend list without any invites.",
-              },
-              {
-                question: "Can I use FairFare for trips and events?",
-                answer: "Absolutely! FairFare has a dedicated 'Trips and Events' section to help you manage group expenses for outings and events.",
-              },
-            ].map((faq, index) => (
-              <FAQItem
-                key={index}
-                question={faq.question}
-                answer={faq.answer}
-                isOpen={openIndex === index}
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
       <section className="w-full bg-[#000000]  relative z-10">
       <FAQ/>
       </section>
