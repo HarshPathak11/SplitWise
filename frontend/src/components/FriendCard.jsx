@@ -230,20 +230,12 @@ const FriendCard = ({
 
             {friend.upiId && (
               <a
-                href={`intent://pay?pa=${friend.upiId}&pn=${encodeURIComponent(
-                  friend.username.replace(/\s/g, "")
-                )}&am=${Math.abs(settleAmount).toFixed(
-                  2
-                )}&cu=INR#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`}
+                href="intent://pay?phone=8218797960#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`block mt-2 text-center w-full py-2 px-4 rounded transition-colors ${
-                  Math.abs(settleAmount) < 1
-                    ? "bg-gray-500 cursor-not-allowed pointer-events-none"
-                    : "bg-green-600 hover:bg-green-700 text-white"
-                }`}
+                className="block mt-2 text-center w-full py-2 px-4 rounded bg-green-600 hover:bg-green-700 text-white transition-colors"
               >
-                Pay via GPay
+                Open in GPay
               </a>
             )}
           </div>
