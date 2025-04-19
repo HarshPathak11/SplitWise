@@ -1,8 +1,9 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaCopy } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
 import axios from "axios";
+import { QRCodeCanvas } from "qrcode.react";
 
 const FriendCard = ({
   friend,
@@ -14,43 +15,47 @@ const FriendCard = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [settleAmount, setSettleAmount] = useState(balance);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
 
-  // Get current user info (assumed stored in localStorage)
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
   const toggleDropdown = () => {
-    setShowDropdown((prev) => !prev);
+    setShowDropdown((prev) => {
+      const newState = !prev;
+      if (!newState) {
+        setShowQRCode(false); // Hide QR on closing dropdown
+      }
+      return newState;
+    });
     setSettleAmount(Number(balance));
   };
 
-  // This function calls the API to update balances in both documents when the user pays their friend.
   const handlePaid = async () => {
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
-
     try {
-      await axios.post("https://fairfare-0hyl.onrender.com/user/update-friend-balance", {
-        userEmail: currentUser.email,
-        friendEmail: friend.email,
-        amount,
-        action: "paid",
-      });
-      // Locally update: when you pay them, your friend's balance increases (they owe you more).
+      await axios.post(
+        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+        {
+          userEmail: currentUser.email,
+          friendEmail: friend.email,
+          amount,
+          action: "paid",
+        }
+      );
       balance = parseFloat((Number(balance) + amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
-
       setSettleAmount(balance);
       setShowDropdown(false);
+      setShowQRCode(false);
     } catch (error) {
       console.error("Error updating friend balance (paid):", error);
     }
   };
 
-  // This function calls the API to update balances when you receive money from your friend.
   const handleReceived = async () => {
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
-
     try {
       await axios.post(
         "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
@@ -61,25 +66,22 @@ const FriendCard = ({
           action: "received",
         }
       );
-      // Locally update: when you receive money, your friend's balance decreases.
       balance = parseFloat((Number(balance) - amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
       setSettleAmount(balance);
       setShowDropdown(false);
+      setShowQRCode(false);
     } catch (error) {
       console.error("Error updating friend balance (received):", error);
     }
   };
 
-  // Settle balance means zeroing out the current debt. Here we simulate it by calling the API
-  // with the proper action based on whether Number(balance) is positive or negative.
   const handleSettleBalance = async () => {
     const currentBalance = balance;
     if (currentBalance === 0) return;
 
     try {
       if (currentBalance > 0) {
-        // If friend owes you money, then receiving money will reduce the balance.
         await axios.post(
           "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
           {
@@ -90,7 +92,6 @@ const FriendCard = ({
           }
         );
       } else {
-        // If you owe friend money, paying them will reduce the negative balance.
         await axios.post(
           "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
           {
@@ -105,6 +106,7 @@ const FriendCard = ({
       updateFriendBalance(friend.email, balance);
       setSettleAmount(0);
       setShowDropdown(false);
+      setShowQRCode(false);
     } catch (error) {
       console.error("Error settling friend balance:", error);
     }
@@ -115,10 +117,7 @@ const FriendCard = ({
       key={index}
       className="bg-gray-700/50 backdrop-blur-sm cursor-pointer rounded-lg border border-gray-600/30 p-2 sm:p-3 mb-2"
     >
-      <div
-        onClick={toggleDropdown}
-        className="flex justify-between items-center"
-      >
+      <div onClick={toggleDropdown} className="flex justify-between items-center">
         <div>
           <p className="text-sm text-white">{friend.username}</p>
           <p
@@ -141,7 +140,6 @@ const FriendCard = ({
           className="flex items-center gap-5 z-10"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 🟢 Settle Icon */}
           <button
             title="Settle Up"
             onClick={handleSettleBalance}
@@ -149,7 +147,6 @@ const FriendCard = ({
           >
             <MdOutlineCurrencyExchange className="w-5 h-5" />
           </button>
-          {/* 🗑️ Delete Icon */}
           <button
             onClick={() => {
               setShowDropdown(true);
@@ -165,9 +162,18 @@ const FriendCard = ({
 
       {showDropdown && (
         <div className="mt-3 bg-gray-800 rounded-lg p-3 border border-gray-600">
-          <p className="text-sm text-white mb-2">
+          <p className="text-sm text-white mb-2 flex items-center justify-between">
             <span className="font-medium">UPI ID:</span>{" "}
-            {friend.upiId || "Not Available"}
+            <span className="flex-grow">{friend.upiId || "Not Available"}</span>
+            {friend.upiId && (
+              <button
+                onClick={() => navigator.clipboard.writeText(friend.upiId)}
+                className="ml-2 p-2 bg-gray-600 rounded flex items-center"
+                title="Copy UPI ID"
+              >
+                <FaCopy className="h-3 w-4 text-white" />
+              </button>
+            )}
           </p>
 
           <input
@@ -178,18 +184,9 @@ const FriendCard = ({
             onChange={(e) => {
               let value = e.target.value;
               if (value === "") return setSettleAmount("");
-              if (
-                !value.startsWith("0.") &&
-                !value.startsWith("-0.") &&
-                value.length > 1 &&
-                !value.startsWith("-")
-              ) {
+              if (!value.startsWith("0.") && !value.startsWith("-0.") && value.length > 1 && !value.startsWith("-")) {
                 value = value.replace(/^0+/, "");
-              } else if (
-                value.startsWith("-") &&
-                value.length > 2 &&
-                !value.startsWith("-0.")
-              ) {
+              } else if (value.startsWith("-") && value.length > 2 && !value.startsWith("-0.")) {
                 value = "-" + value.replace(/^-0+/, "");
               }
               const parsed = parseFloat(value);
@@ -211,7 +208,6 @@ const FriendCard = ({
               >
                 Received
               </button>
-
               <button
                 onClick={handlePaid}
                 disabled={!settleAmount}
@@ -226,21 +222,35 @@ const FriendCard = ({
             </div>
 
             {friend.upiId && (
-              <a
-                href={`upi://pay?pa=${friend.upiId}&pn=${encodeURIComponent(
-                  friend.username
-                )}&am=${Math.abs(settleAmount).toFixed(2)}&cu=INR`}
-                target="_blank"                
-                disabled={Math.abs(settleAmount) < 1}
-                rel="noopener noreferrer"
-                className={`block mt-2 text-center w-full py-2 px-4 rounded transition-colors ${
-                  Math.abs(settleAmount) < 1
-                    ? "bg-gray-500 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700 text-white"
-                }`}
-              >
-                Settle via UPI
-              </a>
+              <>
+                <button
+                  onClick={() => setShowQRCode(true)}
+                  disabled={Math.abs(settleAmount) < 1}
+                  className={`block text-center w-full py-2 px-4 rounded transition-colors ${
+                    Math.abs(settleAmount) < 1
+                      ? "bg-gray-500 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  }`}
+                >
+                  Settle via UPI
+                </button>
+
+                {showQRCode && (
+                  <div className="mt-3 flex flex-col items-center">
+                    <QRCodeCanvas
+                      value={`upi://pay?pa=${friend.upiId}&pn=${
+                        friend.upiId
+                      }&am=${Math.abs(settleAmount).toFixed(
+                        2
+                      )}&cu=INR&tn=Settling via FairFare`}
+                      size={150}
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                      level="H"
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -250,8 +260,7 @@ const FriendCard = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-600 text-center w-[90%] max-w-md">
             <p className="text-white text-lg mb-4">
-              Are you sure you want to delete <strong>{friend.username}</strong>
-              ?
+              Are you sure you want to delete <strong>{friend.username}</strong>?
             </p>
             <div className="flex justify-center gap-4">
               <button

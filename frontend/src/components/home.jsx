@@ -29,7 +29,7 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => {
 };
 
 const LandingPage = () => {
-  const [openIndex, setOpenIndex] = useState(null);
+  // const [openIndex, setOpenIndex] = useState(null);
 
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col items-center relative overflow-hidden">
@@ -70,7 +70,7 @@ const LandingPage = () => {
         </div>
 
         <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
-          <h1 className="text-4xl lg:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
+          <h1 className="text-4xl lg:text-5xl font-bold  p-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
             Split it <br /> Its easy this way.
           </h1>
           <p className="text-gray-400 mb-8">
