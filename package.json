@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@radix-ui/react-toast": "^1.2.7",
+    "qrcode.react": "^4.2.0",
     "react-hot-toast": "^2.5.2"
   }
 }
