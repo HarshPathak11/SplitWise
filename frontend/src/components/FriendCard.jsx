@@ -229,9 +229,7 @@ const FriendCard = ({
               <a
                 href={`upi://pay?pa=${friend.upiId}&pn=${encodeURIComponent(
                   friend.username
-                )}&am=${Math.abs(settleAmount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(
-                  "FairFare - Friend Settlement"
-                )}`}
+                )}&am=${Math.abs(settleAmount).toFixed(2)}&cu=INR`}
                 target="_blank"                
                 disabled={Math.abs(settleAmount) < 1}
                 rel="noopener noreferrer"
