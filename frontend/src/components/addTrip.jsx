@@ -61,7 +61,7 @@ const AddTrip = () => {
       }
 
       const res = await axios.post(
-        "http://localhost:8000/group/create-group",
+        "http://192.168.169.198:8000/group/create-group",
         tripData
       );
       console.log("Response:", res.data); // Log the response for debugging

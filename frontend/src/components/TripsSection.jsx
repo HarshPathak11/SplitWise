@@ -21,7 +21,7 @@ const TripsSection = () => {
         }
 
         const response = await axios.get(
-          `http://localhost:8000/group/user-groups/${userId}`
+          `http://192.168.169.198:8000/group/user-groups/${userId}`
         );
 
         if (Array.isArray(response.data)) {

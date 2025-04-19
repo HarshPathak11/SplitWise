@@ -26,7 +26,7 @@ const ReferralSignUp = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:8000/user/send-otp", {
+      const response = await axios.post("http://192.168.169.198:8000/user/send-otp", {
         email,
         username,
       });
@@ -49,7 +49,7 @@ const ReferralSignUp = () => {
   const handleOtpVerify = async () => {
     try {
       const response = await axios.post(
-        "http://localhost:8000/user/verify-otp",
+        "http://192.168.169.198:8000/user/verify-otp",
         {
           email,
           otp,

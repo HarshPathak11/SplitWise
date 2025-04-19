@@ -29,7 +29,7 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
 
     try {
-      await axios.post("http://localhost:8000/user/update-friend-balance", {
+      await axios.post("http://192.168.169.198:8000/user/update-friend-balance", {
         userEmail: currentUser.email,
         friendEmail: friend.email,
         amount,
@@ -53,7 +53,7 @@ const FriendCard = ({
 
     try {
       await axios.post(
-        "http://localhost:8000/user/update-friend-balance",
+        "http://192.168.169.198:8000/user/update-friend-balance",
         {
           userEmail: currentUser.email,
           friendEmail: friend.email,
@@ -81,7 +81,7 @@ const FriendCard = ({
       if (currentBalance > 0) {
         // If friend owes you money, then receiving money will reduce the balance.
         await axios.post(
-          "http://localhost:8000/user/update-friend-balance",
+          "http://192.168.169.198:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
@@ -92,7 +92,7 @@ const FriendCard = ({
       } else {
         // If you owe friend money, paying them will reduce the negative balance.
         await axios.post(
-          "http://localhost:8000/user/update-friend-balance",
+          "http://192.168.169.198:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,

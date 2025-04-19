@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:8000/forgot-password",
+        "http://192.168.169.198:8000/forgot-password",
         {
           email,
         }
@@ -37,7 +37,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:8000/verify-forgot-password",
+        "http://192.168.169.198:8000/verify-forgot-password",
         {
           otpGenerated,
           otp,
