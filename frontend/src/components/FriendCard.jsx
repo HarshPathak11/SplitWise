@@ -228,7 +228,7 @@ const FriendCard = ({
             {friend.upiId && (
               <a
                 href={`upi://pay?pa=${friend.upiId}&pn=${encodeURIComponent(
-                  friend.username
+                  friend.username.replace(/\s/g, "")
                 )}&am=${Math.abs(settleAmount).toFixed(2)}&cu=INR`}
                 target="_blank"                
                 disabled={Math.abs(settleAmount) < 1}
