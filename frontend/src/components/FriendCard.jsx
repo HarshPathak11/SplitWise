@@ -29,15 +29,12 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
 
     try {
-      await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-        {
-          userEmail: currentUser.email,
-          friendEmail: friend.email,
-          amount,
-          action: "paid",
-        }
-      );
+      await axios.post("https://fairfare-0hyl.onrender.com/user/update-friend-balance", {
+        userEmail: currentUser.email,
+        friendEmail: friend.email,
+        amount,
+        action: "paid",
+      });
       // Locally update: when you pay them, your friend's balance increases (they owe you more).
       balance = parseFloat((Number(balance) + amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
@@ -230,12 +227,19 @@ const FriendCard = ({
 
             {friend.upiId && (
               <a
-                href="intent://pay?phone=8218797960#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end"
-                target="_blank"
+                href={`upi://pay?pa=${friend.upiId}&pn=${encodeURIComponent(
+                  friend.username.replace(/\s/g, "")
+                )}&am=${Math.abs(settleAmount).toFixed(2)}&cu=INR`}
+                target="_blank"                
+                disabled={Math.abs(settleAmount) < 1}
                 rel="noopener noreferrer"
-                className="block mt-2 text-center w-full py-2 px-4 rounded bg-green-600 hover:bg-green-700 text-white transition-colors"
+                className={`block mt-2 text-center w-full py-2 px-4 rounded transition-colors ${
+                  Math.abs(settleAmount) < 1
+                    ? "bg-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
               >
-                Open in GPay
+                Settle via UPI
               </a>
             )}
           </div>
