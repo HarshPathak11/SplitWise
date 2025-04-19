@@ -29,7 +29,7 @@ const FAQItem = ({ question, answer, isOpen, onClick }) => {
 };
 
 const LandingPage = () => {
-  const [openIndex, setOpenIndex] = useState(null);
+  // const [openIndex, setOpenIndex] = useState(null);
 
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col items-center relative overflow-hidden">
@@ -169,50 +169,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="w-full bg-[#000000] py-20 relative z-10">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-wrap justify-center text-center mb-12">
-            <div className="w-full lg:w-6/12 px-4">
-              <h2 className="text-4xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
-                Frequently Asked Questions
-              </h2>
-              <p className="text-lg leading-relaxed m-4 text-gray-400">
-                Find answers to the most common questions about FairFare.
-              </p>
-            </div>
-          </div>
-          <div className="space-y-6">
-            {/* FAQ Items */}
-            {[
-              {
-                question: "What is FairFare?",
-                answer: "FairFare is a platform designed to simplify group expense management by providing tools for tracking, splitting, and settling expenses seamlessly.",
-              },
-              {
-                question: "Is FairFare free to use?",
-                answer: "Yes, FairFare is completely free to use. Enjoy all its features without any hidden charges.",
-              },
-              {
-                question: "How do I add friends to FairFare?",
-                answer: "You can add friends by navigating to the Add Friends section in the app and sending them an invite. If friends are already on the app, they will directly get added to your friend list without any invites.",
-              },
-              {
-                question: "Can I use FairFare for trips and events?",
-                answer: "Absolutely! FairFare has a dedicated 'Trips and Events' section to help you manage group expenses for outings and events.",
-              },
-            ].map((faq, index) => (
-              <FAQItem
-                key={index}
-                question={faq.question}
-                answer={faq.answer}
-                isOpen={openIndex === index}
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
       <section className="w-full bg-[#000000]  relative z-10">
       <FAQ/>
       </section>
