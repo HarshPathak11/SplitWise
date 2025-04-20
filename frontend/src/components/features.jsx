@@ -7,7 +7,6 @@ const Features = () => {
   const navigate = useNavigate();
 
   return (
-
     <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
     {/* Back to Landing Page Icon */}
     <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
@@ -35,7 +34,8 @@ const Features = () => {
       Explore Our Features
     </h1>
 
-    <div className="parent">
+    <div className="w-full max-w-7xl mx-auto">
+  <div className="features-grid">
       {/* Feature 1 */}
       <div className="div1 feature-item">
         <h2>Interactive Event Cards</h2>
@@ -55,8 +55,7 @@ const Features = () => {
       <div className="div3 feature-item">
         <h2>Expense Tracking</h2>
         <p>
-          Detailed expense tracking with categories, descriptions, and
-          beneficiaries.
+        Our app offers a comprehensive expense tracking system that allows users to add detailed descriptions for better context, and specify beneficiaries to clarify who owes what. Whether splitting bills, tracking shared group expenses, or managing personal finances.
         </p>
       </div>
 
@@ -80,15 +79,8 @@ const Features = () => {
         <p>
         A modern, visually appealing UI with intuitive navigation, vibrant aesthetics, and seamless functionality could attract users who value design, usability, and an exceptional user experience.
         </p>
-      </div>
-
-      {/* Feature 7 */}
-      <div className="div7 feature-item">
-        <h2>Trip Management</h2>
-        <p>
-        Features for managing trips, including detailed expense breakdowns, friend selection, flexible payment types (equal or unequal), and other tools to ensure a seamless and organized experience.
-        </p>
-      </div>
+    </div>
+    </div>
     </div>
     </div>
   );
