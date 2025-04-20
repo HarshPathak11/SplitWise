@@ -137,7 +137,7 @@ function CashMapAI() {
     setMessages((prev) => [...prev, tempBotMessage]);
 
     try {
-      const response = await axios.post("http://localhost:5000/assist", {
+      const response = await axios.post("https://fair-ai.onrender.com/assist", {
         userId,
         query: input,
       });
