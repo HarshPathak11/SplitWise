@@ -90,7 +90,7 @@ const ForgotPassword = () => {
           placeholder="Email Address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg mb-4 text-black bg-gray-700"
+          className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-transparent placeholder-gray-400"
         />
         {!otpSent && (
           <button
