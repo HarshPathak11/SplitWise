@@ -177,7 +177,7 @@ def assist():
     if last_used:
         last_used_dt = datetime.fromisoformat(last_used)
         if last_used_dt >= today:
-            if count >= 10:
+            if count >= 11:
                 return jsonify({"answer": "Daily AI chat limit reached (10 per day)"}), 200
             else:
                 count += 1
@@ -207,7 +207,7 @@ def assist():
     prompt = construct_prompt(context, query)
     answer = generate_answer(prompt)
     print(answer)
-    return jsonify({"answer": answer})
+    return jsonify({"answer": answer, "updatedCount" : count})
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
