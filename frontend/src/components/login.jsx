@@ -9,6 +9,7 @@ const LogIn = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
+  const [loading, setLoading] = React.useState(false); // NEW state
   const navigate = useNavigate();
 
   //UseEffect to Check if user logged in before or not if yes then directly take them to dashboard
@@ -35,18 +36,24 @@ const LogIn = () => {
         return;
       }
 
-      const response = await axios.post(`https://fairfare-0hyl.onrender.com/user/login`, {
-        email,
-        password,
-      });
+      setLoading(true); // Start loading
+      const response = await axios.post(
+        `https://fairfare-0hyl.onrender.com/user/login`,
+        {
+          email,
+          password,
+        }
+      );
+
       if (response.data.user) {
         Cookies.set("id", response.data.user._id, { expires: 7 });
         navigate("/dash");
       }
     } catch (error) {
       console.error("Error logging in:", error);
-      console.log("error ", error.response.data);
       alert("Login failed");
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -127,9 +134,15 @@ const LogIn = () => {
             </div>
             <button
               type="submit"
-              className="w-full py-2 px-4 bg-[#00f5ff] text-black rounded-lg hover:bg-green-700 focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105"
+              disabled={loading}
+              className={`w-full py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-transform transform 
+    ${
+      loading
+        ? "bg-gray-400 text-white cursor-not-allowed"
+        : "bg-[#00f5ff] text-black hover:bg-green-700 hover:scale-105"
+    }`}
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
         </div>
