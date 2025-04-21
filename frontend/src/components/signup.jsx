@@ -125,7 +125,7 @@ const SignUp = () => {
               onChange={(e) => setEmail(e.target.value)}
               type="email"
               placeholder="Email Address"
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
             />
           </div>
 
@@ -135,7 +135,7 @@ const SignUp = () => {
               onChange={(e) => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full px-3 py-2 border rounded-lg pr-10"
+              className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400"
             />
             <span
               onClick={() => setShowPassword(!showPassword)}
@@ -153,7 +153,7 @@ const SignUp = () => {
                 onChange={(e) => setOtp(e.target.value)}
                 type="text"
                 placeholder="Enter OTP"
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
               />
             </div>
           )}
