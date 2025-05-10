@@ -149,14 +149,14 @@ function CashMapAI() {
           },
         ];
       });
-    }, 5000); // 5 seconds fallback timeout
+    }, 10000); // 10 seconds fallback timeout
 
     try {
       const storedUser = localStorage.getItem("user");
       const user = storedUser ? JSON.parse(storedUser) : {};
       const userId = user?._id || "";
 
-      const response = await axios.post("http://localhost:5000/assist", {
+      const response = await axios.post("http://192.168.1.8:5000/assist", {
         userId,
         query: input,
       });
