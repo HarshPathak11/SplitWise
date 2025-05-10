@@ -239,7 +239,7 @@ function CashMapAI() {
       {/* Chat Messages */}
       <div
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 z-10 relative max-w-4xl mx-auto w-full custom-scrollbar"
+        className="flex-1 overflow-y-auto p-4 z-10 relative max-w mx-auto w-full custom-scrollbar"
       >
         <div className="space-y-4">
           {messages.map((message, index) => (

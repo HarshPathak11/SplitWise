@@ -22,7 +22,7 @@ const Footer = () => {
               {/* Instagram */}
               <a
                 target="_blank"
-                href="#"
+                href="https://www.instagram.com/shkhr__sngh"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
                 <svg
