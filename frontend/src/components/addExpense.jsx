@@ -118,7 +118,7 @@ const AddExpense = () => {
         payload
       );
       if (response.status === 200) toast.success("Expense added successfully!");
-      console.log("Expense created successfully", response.data);
+      // console.log("Expense created successfully", response.data);
       // Reset form fields
       setTitle("");
       setMainAmount("");

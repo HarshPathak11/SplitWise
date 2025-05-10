@@ -19,7 +19,7 @@ const sendOtp = async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-  console.log("otp sent ", otp);
+  // console.log("otp sent ", otp);
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -102,7 +102,7 @@ const verifyOtp = async (req, res) => {
 const userLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("email and password ", email, password);
+    // console.log("email and password ", email, password);
     
 
     if (!email || !password) {
@@ -119,7 +119,7 @@ const userLogin = async (req, res) => {
 
     // Use the schema's comparePassword method
     const isPasswordValid = await user.comparePassword(cleanPassword);
-    console.log("Password comparison result: ", isPasswordValid);    
+    // console.log("Password comparison result: ", isPasswordValid);    
 
     if (!isPasswordValid) {
       return res.status(400).json({
@@ -389,7 +389,7 @@ const forgotPassword = async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-  console.log("otp sent ", otp);
+  // console.log("otp sent ", otp);
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -443,7 +443,7 @@ const verifyForgotPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
   const { userId, newPassword } = req.body;
-  console.log(userId,newPassword)
+  // console.log(userId,newPassword)
 
   // Validate required fields
   if (!userId || !newPassword) {
@@ -462,7 +462,7 @@ const changePassword = async (req, res) => {
 
     // Use the schema's comparePassword method
     const isPasswordValid = await user.comparePassword(cleanPassword);
-    console.log("Password comparison result: ", isPasswordValid);
+    // console.log("Password comparison result: ", isPasswordValid);
 
     if(isPasswordValid) {
       return res.status(400).json({

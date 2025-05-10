@@ -27,7 +27,7 @@ const ForgotPassword = () => {
       }
     } catch (error) {
       alert("Failed to send OTP.");
-      console.log("error is ", error);
+      // console.log("error is ", error);
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ const ForgotPassword = () => {
       }
     } catch (error) {
       alert("OTP verification failed.");
-      console.log("error is ", error);
+      // console.log("error is ", error);
     } finally {
       setLoading(false);
     }
