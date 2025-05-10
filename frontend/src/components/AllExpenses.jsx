@@ -28,9 +28,6 @@ const AllExpensesPage = () => {
     }
   }, []);
 
-  const handleExpenseClick = (expense) => {
-    navigate("/expenseDetails", { state: { expense } });
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white overflow-hidden relative">

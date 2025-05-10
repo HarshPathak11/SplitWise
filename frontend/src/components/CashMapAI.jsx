@@ -149,7 +149,7 @@ function CashMapAI() {
           },
         ];
       });
-    }, 5000); // 5 seconds fallback timeout
+    }, 10000); // 5 seconds fallback timeout
 
     try {
       const storedUser = localStorage.getItem("user");
