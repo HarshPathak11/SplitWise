@@ -250,6 +250,7 @@ function CashMapAI() {
               }`}
             >
               <div
+               style={{whiteSpace:"pre-line"}}
                 className={`max-w-[80%] rounded-lg p-4 ${
                   message.type === "user"
                     ? "bg-emerald-500 text-white"
