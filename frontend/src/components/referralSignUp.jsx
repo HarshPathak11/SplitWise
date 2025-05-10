@@ -117,7 +117,7 @@ const ReferralSignUp = () => {
               onChange={(e) => setUserName(e.target.value)}
               type="text"
               placeholder="Name"
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
             />
           </div>
 
@@ -127,7 +127,7 @@ const ReferralSignUp = () => {
               onChange={(e) => setEmail(e.target.value)}
               type="email"
               placeholder="Email Address"
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
             />
           </div>
 
@@ -137,7 +137,7 @@ const ReferralSignUp = () => {
               onChange={(e) => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full px-3 py-2 border rounded-lg pr-10"
+              className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400"
             />
             <span
               onClick={() => setShowPassword(!showPassword)}

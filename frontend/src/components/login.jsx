@@ -105,7 +105,7 @@ const LogIn = () => {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="Email Address"
-                className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300"
+                className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300 text-white bg-transparent placeholder-gray-400"
               />
             </div>
             <div className="mb-4 relative">
@@ -114,7 +114,7 @@ const LogIn = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
-                className="w-full px-3 py-2 border rounded-lg pr-10"
+                className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400"
               />
               <span
                 onClick={() => setShowPassword(!showPassword)}

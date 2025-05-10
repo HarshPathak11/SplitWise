@@ -26,8 +26,11 @@ const TripDetails = () => {
         const groupMembers = parsedGroup.members.map((m) => {
           return { _id: m._id, username: m.username}
         });
-
-        setExpenses(parsedGroup.expenses);
+        const sortedExpenses = parsedGroup.expenses.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        
+        setExpenses(sortedExpenses);
         // Set directly to localStorage (no merge)
         localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
         setMembers(groupMembers);
@@ -43,7 +46,11 @@ const TripDetails = () => {
 
           setTripDetails(group);
           setLoading(false);
-          setExpenses(group.expenses);
+          const sortedExpenses = group.expenses.sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          setExpenses(sortedExpenses);
+          
 
           // Extract only the usernames from group members
           const groupMembers = group.members.map((m) => {

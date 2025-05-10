@@ -27,6 +27,12 @@ app.use(session({
 //Connecting to mongo DB
 connectDB();
 
+//Ping Route
+app.get('/api/ping', (req, res) => {
+  res.send('pong');
+});
+
+
 // Use user routes
 app.use('/user', userRoutes);
 
