@@ -107,7 +107,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "CashMapAI",
+        path: "FairAI",
         element: (
           <ProtectedRoute>
             <CashMapAI />

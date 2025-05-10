@@ -28,7 +28,7 @@ const TopNavbar = () => {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex space-x-8">
-            <Link to="/CashMapAI">
+            <Link to="/FairAI">
               <button
                 className="p-2 shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 rounded-lg flex  hover:scale-105 transition-transform duration-300 ease-in-out "
                 title="AI ChatBot"
