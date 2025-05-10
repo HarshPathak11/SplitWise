@@ -156,7 +156,7 @@ function CashMapAI() {
       const user = storedUser ? JSON.parse(storedUser) : {};
       const userId = user?._id || "";
 
-      const response = await axios.post("http://localhost:5000/assist", {
+      const response = await axios.post("https://fair-ai.onrender.com/assist", {
         userId,
         query: input,
       });
