@@ -94,7 +94,7 @@ const ChangePassword = () => {
       }
     } catch (error) {
       setMessage("Error changing password. Please try again.");
-      console.log("Error changing password:", error);
+      // console.log("Error changing password:", error);
     } finally {
       setLoading(false);
     }

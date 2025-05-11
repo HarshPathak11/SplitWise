@@ -54,7 +54,7 @@ const AddTrip = () => {
     };
 
     try {
-      console.log(" sending Trip Data as:", tripData); // Log the trip data for debugging
+      // console.log(" sending Trip Data as:", tripData); // Log the trip data for debugging
       if (!tripData.name) {
         toast.error("Title is required!");
         return;
@@ -64,13 +64,13 @@ const AddTrip = () => {
         "https://fairfare-0hyl.onrender.com/group/create-group",
         tripData
       );
-      console.log("Response:", res.data); // Log the response for debugging
+      // console.log("Response:", res.data); // Log the response for debugging
 
       if (res.status !== 200 && res.status !== 201) {
         throw new Error("Failed to create trip");
       }
 
-      console.log("Trip created:", res.data);
+      // console.log("Trip created:", res.data);
       navigate("/dash");
     } catch (error) {
       console.error("Error creating trip:", error);
