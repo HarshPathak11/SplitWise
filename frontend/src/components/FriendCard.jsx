@@ -4,6 +4,7 @@ import { FaTrash, FaCopy } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
 import axios from "axios";
 import { QRCodeCanvas } from "qrcode.react";
+import { toast } from "react-hot-toast";
 
 const FriendCard = ({
   friend,
@@ -171,7 +172,9 @@ const FriendCard = ({
                 className="ml-2 p-2 bg-gray-600 rounded flex items-center"
                 title="Copy UPI ID"
               >
-                <FaCopy className="h-3 w-4 text-white" />
+                <FaCopy 
+                onClick={() => toast.success('UPI ID copied to clipboard!')}
+                className="h-3 w-4 text-white" />
               </button>
             )}
           </p>
