@@ -21,11 +21,28 @@ const AddTrip = () => {
   }, []);
 
   // Handle friend selection
+  // const handleFriendSelection = (friendId) => {
+  //   if (selectedFriends.includes(friendId)) {
+  //     setSelectedFriends(selectedFriends.filter((id) => id !== friendId));
+  //   } else {
+  //     setSelectedFriends([...selectedFriends, friendId]);
+  //   }
+  // };
   const handleFriendSelection = (friendId) => {
+    let updatedSelected;
     if (selectedFriends.includes(friendId)) {
-      setSelectedFriends(selectedFriends.filter((id) => id !== friendId));
+      updatedSelected = selectedFriends.filter((id) => id !== friendId);
     } else {
-      setSelectedFriends([...selectedFriends, friendId]);
+      updatedSelected = [...selectedFriends, friendId];
+    }
+
+    setSelectedFriends(updatedSelected);
+
+    // Sync "Select All" checkbox
+    if (updatedSelected.length === friends.length) {
+      setSelectAll(true);
+    } else {
+      setSelectAll(false);
     }
   };
 
@@ -53,13 +70,23 @@ const AddTrip = () => {
       members: [user._id, ...selectedFriends],
     };
 
+    
     try {
       // console.log(" sending Trip Data as:", tripData); // Log the trip data for debugging
       if (!tripData.name) {
         toast.error("Title is required!");
         return;
       }
-
+      
+      if (
+        tripData.from &&
+        tripData.to &&
+        new Date(tripData.to) < new Date(tripData.from)
+      ) {
+        toast.error("End date cannot be before start date!");
+        return;
+      }
+      
       const res = await axios.post(
         "https://fairfare-0hyl.onrender.com/group/create-group",
         tripData
@@ -144,6 +171,7 @@ const AddTrip = () => {
               <input
                 type="date"
                 value={toDate}
+                min={fromDate} // 👈 Ensures To Date can't be before From Date
                 onChange={(e) => setToDate(e.target.value)}
                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3]"
               />
