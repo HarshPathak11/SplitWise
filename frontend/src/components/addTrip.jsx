@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom"; // Import useNavigate and Link for navigation
 import axios from "axios"; // Import axios for HTTP requests
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 
 const AddTrip = () => {
   const navigate = useNavigate(); // Initialize the navigation hook
@@ -73,7 +73,7 @@ const AddTrip = () => {
     
     try {
       // console.log(" sending Trip Data as:", tripData); // Log the trip data for debugging
-      if (!tripData.name) {
+      if (!tripData.name.trim()) {
         toast.error("Title is required!");
         return;
       }
@@ -86,7 +86,7 @@ const AddTrip = () => {
         toast.error("End date cannot be before start date!");
         return;
       }
-      
+
       const res = await axios.post(
         "https://fairfare-0hyl.onrender.com/group/create-group",
         tripData
