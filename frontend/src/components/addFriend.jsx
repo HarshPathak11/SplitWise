@@ -25,7 +25,7 @@ const AddFriend = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (newFriendEmail.trim() === "") {
-      setError("All fields are required. Please fill in both name and email.");
+      setError("All fields are required. Please add friend's email.");
       return;
     }
 
@@ -194,7 +194,6 @@ const AddFriend = () => {
         </ul>
 
         {/* DONE Button */}
-
         <button
           onClick={handleDone}
           disabled={friends.length === 0 || loading}
