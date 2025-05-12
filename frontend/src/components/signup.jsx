@@ -4,6 +4,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import toast from "react-hot-toast";
 
 const SignUp = () => {
   const [username, setUserName] = useState("");
@@ -25,10 +26,13 @@ const SignUp = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post("https://fairfare-0hyl.onrender.com/user/send-otp", {
-        email,
-        username,
-      });
+      const response = await axios.post(
+        "https://fairfare-0hyl.onrender.com/user/send-otp",
+        {
+          email,
+          username,
+        }
+      );
 
       if (response.status === 200) {
         setOtpSent(response.data.otp);
@@ -36,9 +40,12 @@ const SignUp = () => {
       }
     } catch (error) {
       if (error.response && error.response.status === 410) {
-        alert("Email already Taken!");
+        toast.error("Email already Taken!");
+      }
+      else if (error.response && error.response.status === 400) {
+        toast.error("Username already Taken!");
       } else {
-        alert("Failed to send OTP.");
+        toast.error("Failed to send OTP.");
       }
     } finally {
       setLoading(false);
@@ -114,7 +121,7 @@ const SignUp = () => {
               value={username}
               onChange={(e) => setUserName(e.target.value)}
               type="text"
-              placeholder="Name"
+              placeholder="Full Name"
               className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
             />
           </div>

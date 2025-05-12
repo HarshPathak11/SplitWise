@@ -4,6 +4,7 @@ import {
   FaArrowRight,
   FaRobot,
   FaArrowDown,
+  FaInfoCircle,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import axios from "axios";
@@ -135,21 +136,21 @@ function CashMapAI() {
 
     scrollToBottom();
 
-    // Timeout in case no response in 5 seconds
-    timeoutRef.current = setTimeout(() => {
-      setIsWaitingForResponse(false); // Re-enable input
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated.pop(); // Remove the "analyzing..." message
-        return [
-          ...updated,
-          {
-            type: "bot",
-            content: "⚠️ Sorry, something went wrong. Please try again.",
-          },
-        ];
-      });
-    }, 10000); // 5 seconds fallback timeout
+    // // Timeout in case no response in 5 seconds
+    // timeoutRef.current = setTimeout(() => {
+    //   setIsWaitingForResponse(false); // Re-enable input
+    //   setMessages((prev) => {
+    //     const updated = [...prev];
+    //     updated.pop(); // Remove the "analyzing..." message
+    //     return [
+    //       ...updated,
+    //       {
+    //         type: "bot",
+    //         content: "⚠️ Sorry, something went wrong. Please try again.",
+    //       },
+    //     ];
+    //   });
+    // }, 10000); // 5 seconds fallback timeout
 
     try {
       const storedUser = localStorage.getItem("user");
@@ -250,6 +251,7 @@ function CashMapAI() {
               }`}
             >
               <div
+               style={{whiteSpace:"pre-line"}}
                 className={`max-w-[80%] rounded-lg p-4 ${
                   message.type === "user"
                     ? "bg-emerald-500 text-white"

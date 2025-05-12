@@ -10,7 +10,7 @@ const AppLayout = () => {
         position="top-right"
         reverseOrder={false}
         toastOptions={{
-          duration: 8000,  // default duration 8 seconds for all toasts
+          duration: 4000,  // default duration 4 seconds for all toasts
           style: {
             background: "#1e1e1e",
             color: "#fff",

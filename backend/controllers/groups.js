@@ -77,8 +77,7 @@ const addMembers = async (req, res) => {
   const groupId = req.params.id;
   const { members } = req.body; // members = array of user._id
 
-  console.log("Group ID:", groupId);
-  console.log("Member IDs to add:", members);
+
 
   if (!groupId || !Array.isArray(members)) {
     return res.status(400).json({ message: "Invalid input" });

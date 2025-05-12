@@ -20,7 +20,7 @@ const Dashboard = () => {
         const response = await axios.get(
           `https://fairfare-0hyl.onrender.com/user/${userId}`
         );
-        console.log("response is ", response);
+        // console.log("response is ", response);
 
         if (response.status === 200) {
           setUser(response.data.user); // Update state with fetched user data
@@ -35,7 +35,7 @@ const Dashboard = () => {
 
     getDetails();
   }, []);
-  console.log("User", user);
+  // console.log("User", user);
 
   return (
     <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
