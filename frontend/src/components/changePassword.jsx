@@ -151,7 +151,7 @@ const ChangePassword = () => {
               placeholder="Enter OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-gray-700"
+              className="w-full px-3 py-2 border rounded-lg mb-4 bg-transparent text-white bg-gray-700"
               required
             />
             <button
