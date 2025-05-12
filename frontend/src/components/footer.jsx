@@ -9,7 +9,7 @@ const Footer = () => {
           {/* Column 1 */}
           <div className="flex flex-col items-center text-center space-y-4">
             <img
-              src="./pfp.jpg"
+              src="./pfp1.jpeg"
               alt="Person 1"
               className="w-24 object-cover"
             />
