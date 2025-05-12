@@ -77,9 +77,7 @@ const SignUp = () => {
 
   return (
     <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
-      {" "}
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
-        <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
           <button
             onClick={() => navigate("/")} // Navigate to the landing page route
             className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
@@ -87,7 +85,6 @@ const SignUp = () => {
           >
             <FaHome className="text-white text-xl" />
           </button>
-        </div>
       </div>
       {/* Animated Background */}
       <div className="absolute inset-0 z-0">

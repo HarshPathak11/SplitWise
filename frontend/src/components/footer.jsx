@@ -268,7 +268,7 @@ const Footer = () => {
           </p>
 
           <p className="text-center text-sm bg-clip-text text-transparent bg-gradient-to-r from-white/60 to-white">
-            &copy; 2024 FairFare
+            &copy; 2025 FairFare
           </p>
         </div>
       </div>
