@@ -310,7 +310,7 @@ CORS(app)
 mongo_client = MongoClient(MONGO_URI)
 db = mongo_client["Splitwise"]
 
-# Groq client for Llama3
+# Groq client for Llama-30B
 groq_client = Groq(api_key=GROQ_API_KEY)
 
 # AstraPy connection
@@ -478,7 +478,7 @@ def construct_prompt(context, query):
 def generate_answer(prompt):
     chat = groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
-        model="llama-3-70b-8192"
+        model="llama-3.3-70b-versatile"
     )
     return chat.choices[0].message.content
 
@@ -494,8 +494,10 @@ def assist():
     if not user:
         return jsonify({"message": "User not found"}), 404
 
+    # --- Daily chat limit check ---
     usage = user.get("aiChatUsage", {})
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
     last_used = usage.get("lastUsed")
     count = usage.get("count", 0)
 
