@@ -121,7 +121,7 @@ const SignUp = () => {
               value={username}
               onChange={(e) => setUserName(e.target.value)}
               type="text"
-              placeholder="Name"
+              placeholder="Full Name"
               className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
             />
           </div>
