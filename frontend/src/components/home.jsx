@@ -65,7 +65,7 @@ const LandingPage = () => {
 
       {/* Main Content */}
       <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-11 lg:px-10 py-20 relative z-10">
-        <div className="transform hover:scale-105 transition-transform duration-300">
+        <div>
           <img src="/save.svg" className="drop-shadow-2xl" alt="Illustration" />
         </div>
 

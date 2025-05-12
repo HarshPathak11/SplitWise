@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/forgot-password",
+        "https://fairfare-0hyl.onrender.com/user/forgot-password",
         {
           email,
         }
@@ -37,7 +37,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/verify-forgot-password",
+        "https://fairfare-0hyl.onrender.com/user/verify-forgot-password",
         {
           otpGenerated,
           otp,
@@ -90,7 +90,7 @@ const ForgotPassword = () => {
           placeholder="Email Address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg mb-4 text-black bg-gray-700"
+          className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-transparent placeholder-gray-400"
         />
         {!otpSent && (
           <button
@@ -109,7 +109,7 @@ const ForgotPassword = () => {
               placeholder="Enter OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg mb-4 text-black"
+              className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-transparent placeholder-gray-400"
             />
             <button
               onClick={handleVerifyOtp}
