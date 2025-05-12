@@ -13,6 +13,11 @@ const sendOtp = async (req, res) => {
     return res.status(400).json({ message: "Incomplete data received" });
 
   const existingUser = await User.findOne({ email });
+  const existingUsername = await User.findOne({ username });
+  
+  if (existingUsername) {
+    return res.status(400).json({ message: "Username already taken" });
+  }
 
   if (existingUser) {
     return res.status(410).json({ message: "Email already taken" });

@@ -4,6 +4,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import toast from "react-hot-toast";
 
 const ReferralSignUp = () => {
   const [username, setUserName] = useState("");
@@ -37,9 +38,12 @@ const ReferralSignUp = () => {
       }
     } catch (error) {
       if (error.response && error.response.status === 410) {
-        alert("Email already Taken!");
+        toast.error("Email already Taken!");
+      }
+      else if (error.response && error.response.status === 400) {
+        toast.error("Username already Taken!");
       } else {
-        alert("Failed to send OTP.");
+        toast.error("Failed to send OTP.");
       }
     } finally {
       setLoading(false);
