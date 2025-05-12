@@ -155,7 +155,7 @@ const ReferralSignUp = () => {
                 onChange={(e) => setOtp(e.target.value)}
                 type="text"
                 placeholder="Enter OTP"
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
               />
             </div>
           )}
