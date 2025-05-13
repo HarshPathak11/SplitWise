@@ -298,7 +298,7 @@ function CashMapAI() {
                 : "Ask about your expenses, balances, or get financial insights..."
             }
             className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500"
-            // disabled={dailyCount >= 10 || isWaitingForResponse}
+            disabled={ isWaitingForResponse}
           />
 
           <button
@@ -306,7 +306,7 @@ function CashMapAI() {
             className={`px-4 py-2 rounded-lg transition-colors ${
                "bg-emerald-500 text-white hover:bg-emerald-600"
             }`}
-            // disabled={dailyCount >= 10 || isWaitingForResponse}
+            disabled={ isWaitingForResponse}
           >
             <FaArrowRight className="h-5 w-5" />
           </button>
