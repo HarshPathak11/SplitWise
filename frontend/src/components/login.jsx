@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
@@ -11,6 +11,10 @@ const LogIn = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [loading, setLoading] = React.useState(false); // NEW state
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const redirectPath = queryParams.get("redirect") || "/dash"; // fallback to dashboard or home
 
   //UseEffect to Check if user logged in before or not if yes then directly take them to dashboard
   useEffect(() => {
@@ -47,7 +51,7 @@ const LogIn = () => {
 
       if (response.data.user) {
         Cookies.set("id", response.data.user._id, { expires: 7 });
-        navigate("/dash");
+        navigate(redirectPath);
       }
     } catch (error) {
       console.error("Error logging in:", error);

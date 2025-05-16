@@ -20,6 +20,7 @@ import AllExpenses from "./components/AllExpenses";
 import CashMapAI from "./components/CashMapAI";
 import AppLayout from "./AppLayout";
 import Documentation from "./components/documentation";
+import PublicProfile from "./components/publicProfile";
 
 const router = createBrowserRouter([
   {
@@ -143,7 +144,10 @@ const router = createBrowserRouter([
         path: "*",
         element: <NotFound />,
       },
-
+      {
+        path: "/public-profile/:userId",
+        element: <PublicProfile />,
+      },
       {
         path: "/documentation",
         element: <Documentation />,

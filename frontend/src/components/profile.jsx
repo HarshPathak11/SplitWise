@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { toast } from "react-hot-toast";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -93,6 +94,71 @@ const Profile = () => {
               d="M15 19l-7-7 7-7"
             />
           </svg>
+        </button>
+      </div>
+
+      {/* Share Profile Button */}
+      <div className="absolute cursor-pointer mt-3.5 z-50 top-4 right-4">
+        <button
+          onClick={async () => {
+            const userId = Cookies.get("id");
+            const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
+            // const profileLink = `https://a286-2405-201-603c-3806-54f2-bca2-fbc8-598e.ngrok-free.app/public-profile/${userId}`;
+            const message = `Hey! 👋
+
+Check out my FairFare profile:
+
+🔗 Add me as a friend using this link:
+${profileLink}
+
+📧 Or use my email to add me manually:
+https://fair-fare-phi.vercel.app/addFriend
+
+Email:
+${user.email}
+
+Let’s split and share smarter with FairFare! 💸`;
+
+            if (navigator.share) {
+              try {
+                await navigator.clipboard.writeText(user.email);
+                  await navigator.share({
+                    title: "Check out my FairFare profile!",
+                    text: message,
+                  });
+              } catch (error) {
+                console.error("Sharing failed:", error);
+              }
+            } else {
+              // Fallback to copy to clipboard
+              try {
+                await navigator.clipboard.writeText(profileLink);
+                alert("Link copied to clipboard!");
+              } catch (err) {
+                const textarea = document.createElement("textarea");
+                textarea.value = profileLink;
+                textarea.setAttribute("readonly", "");
+                textarea.style.position = "absolute";
+                textarea.style.left = "-9999px";
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+                toast.success("Link copied to clipboard!");
+              }
+            }
+          }}
+          className="p-3 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-110 transition-transform duration-300 ease-in-out"
+          title="Share Profile"
+        >
+          <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-5 w-5"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path d="M18 8a3 3 0 1 0-2.83-2h-.34l-7.9 4.58a3 3 0 1 0 0 2.84l7.9 4.58h.34A3 3 0 1 0 18 16a2.98 2.98 0 0 0-1.85-.68L9.25 12.5a3.02 3.02 0 0 0 0-.99l6.9-4.02A3 3 0 0 0 18 8z"/>
+    </svg>
         </button>
       </div>
 
