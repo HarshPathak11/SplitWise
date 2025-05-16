@@ -68,6 +68,7 @@ const AddFriend = () => {
         "https://fairfare-0hyl.onrender.com/user/add-friends",
         {
           email: user?.email,
+          autoAdd: false,
           friendsArray: friends.map((friend) => friend.email),
         }
       );
