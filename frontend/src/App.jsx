@@ -20,7 +20,7 @@ import AllExpenses from "./components/AllExpenses";
 import CashMapAI from "./components/CashMapAI";
 import AppLayout from "./AppLayout";
 import Documentation from "./components/documentation";
-import PublicProfile from "./components/publicProfile";
+import PublicProfile from "./components/PublicProfile";
 
 const router = createBrowserRouter([
   {
