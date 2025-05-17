@@ -4,6 +4,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import toast from "react-hot-toast";
 
 const ReferralSignUp = () => {
   const [username, setUserName] = useState("");
@@ -37,9 +38,12 @@ const ReferralSignUp = () => {
       }
     } catch (error) {
       if (error.response && error.response.status === 410) {
-        alert("Email already Taken!");
+        toast.error("Email already Taken!");
+      }
+      else if (error.response && error.response.status === 400) {
+        toast.error("Username already Taken!");
       } else {
-        alert("Failed to send OTP.");
+        toast.error("Failed to send OTP.");
       }
     } finally {
       setLoading(false);
@@ -116,8 +120,8 @@ const ReferralSignUp = () => {
               value={username}
               onChange={(e) => setUserName(e.target.value)}
               type="text"
-              placeholder="Name"
-              className="w-full px-3 py-2 border rounded-lg"
+              placeholder="Full Name"
+              className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
             />
           </div>
 
@@ -127,7 +131,7 @@ const ReferralSignUp = () => {
               onChange={(e) => setEmail(e.target.value)}
               type="email"
               placeholder="Email Address"
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
             />
           </div>
 
@@ -137,7 +141,7 @@ const ReferralSignUp = () => {
               onChange={(e) => setPassword(e.target.value)}
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="w-full px-3 py-2 border rounded-lg pr-10"
+              className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400"
             />
             <span
               onClick={() => setShowPassword(!showPassword)}
@@ -155,7 +159,7 @@ const ReferralSignUp = () => {
                 onChange={(e) => setOtp(e.target.value)}
                 type="text"
                 placeholder="Enter OTP"
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
               />
             </div>
           )}

@@ -9,7 +9,7 @@ const Footer = () => {
           {/* Column 1 */}
           <div className="flex flex-col items-center text-center space-y-4">
             <img
-              src="./pfp.jpeg"
+              src="./pfp1.jpeg"
               alt="Person 1"
               className="w-24 object-cover"
             />
@@ -22,7 +22,7 @@ const Footer = () => {
               {/* Instagram */}
               <a
                 target="_blank"
-                href="#"
+                href="https://www.instagram.com/shkhr__sngh?igsh=cnkzdWt6cGc1ZXg0"
                 className="text-white/70 hover:text-white transform hover:scale-110 transition-all duration-300 p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40"
               >
                 <svg
@@ -268,7 +268,7 @@ const Footer = () => {
           </p>
 
           <p className="text-center text-sm bg-clip-text text-transparent bg-gradient-to-r from-white/60 to-white">
-            &copy; 2024 FairFare
+            &copy; 2025 FairFare
           </p>
         </div>
       </div>

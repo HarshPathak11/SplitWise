@@ -13,13 +13,18 @@ const sendOtp = async (req, res) => {
     return res.status(400).json({ message: "Incomplete data received" });
 
   const existingUser = await User.findOne({ email });
+  const existingUsername = await User.findOne({ username });
+
+  if (existingUsername) {
+    return res.status(400).json({ message: "Username already taken" });
+  }
 
   if (existingUser) {
     return res.status(410).json({ message: "Email already taken" });
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-  console.log("otp sent ", otp);
+  // console.log("otp sent ", otp);
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -73,7 +78,7 @@ const verifyOtp = async (req, res) => {
       email,
       password: cleanPassword, // schema middleware handles hashing
     });
-    
+
     if (referId) {
       const referUser = await User.findById(referId);
       if (!referUser) {
@@ -84,17 +89,19 @@ const verifyOtp = async (req, res) => {
         { _id: referId },
         { $push: { friends: { friend: newUser._id, balance: 0 } } }
       );
-      
+
       await User.updateOne(
         { _id: newUser._id },
         { $push: { friends: { friend: referId, balance: 0 } } }
       );
-    }    
+    }
 
     return res.status(200).json(newUser);
   } catch (error) {
     console.error("Error during user creation:", error);
-    return res.status(500).json({ message: "Server error while creating user" });
+    return res
+      .status(500)
+      .json({ message: "Server error while creating user" });
   }
 };
 
@@ -102,8 +109,7 @@ const verifyOtp = async (req, res) => {
 const userLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("email and password ", email, password);
-    
+    // console.log("email and password ", email, password);
 
     if (!email || !password) {
       return res.status(400).json({ message: "Incomplete data received" });
@@ -119,7 +125,7 @@ const userLogin = async (req, res) => {
 
     // Use the schema's comparePassword method
     const isPasswordValid = await user.comparePassword(cleanPassword);
-    console.log("Password comparison result: ", isPasswordValid);    
+    // console.log("Password comparison result: ", isPasswordValid);
 
     if (!isPasswordValid) {
       return res.status(400).json({
@@ -148,19 +154,20 @@ const userLogin = async (req, res) => {
 const userDetails = async (req, res) => {
   try {
     const userId = req.params.id;
-    
 
-    const user = await User.findById(userId).populate({
-      path: "friends.friend",
-      select: "username email upiId", // optional: select only needed fields
-    }).populate({
-      path: "recentExpense",
-      populate: [
-        { path: "paidBy", select: "username email" },
-        { path: "owedBy.user", select: "username email" },
-        { path: "group", select: "name description" }
-      ]
-    });
+    const user = await User.findById(userId)
+      .populate({
+        path: "friends.friend",
+        select: "username email upiId", // optional: select only needed fields
+      })
+      .populate({
+        path: "recentExpense",
+        populate: [
+          { path: "paidBy", select: "username email" },
+          { path: "owedBy.user", select: "username email" },
+          { path: "group", select: "name description" },
+        ],
+      });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -205,10 +212,35 @@ const updateUserProfile = async (req, res) => {
 
 //Adding the friends
 const addFriends = async (req, res) => {
-  const { email, friendsArray } = req.body;
+  const { email, friendsArray, autoAdd } = req.body;  
 
   if (!email || !Array.isArray(friendsArray) || friendsArray.length === 0) {
     return res.status(400).json({ message: "Incomplete data received" });
+  }
+
+  if (autoAdd) {
+    const user = await User.findOne({ email });
+
+    const friend = await User.findOne({ _id: friendsArray[0] });
+
+    if (!user || !friend) {
+      return res.status(404).json({ message: "User or Friend not found" });
+    }
+
+    await User.updateOne(
+      { _id: friend._id },
+      { $addToSet: { friends: { friend: user._id, balance: 0 } } }
+    );
+
+    await User.updateOne(
+      { _id: user._id, "friends.friend": { $ne: friend._id } }, // prevent duplicates
+      { $push: { friends: { friend: friend._id, balance: 0 } } }
+    );
+
+    return res.status(200).json({
+      message: "Friend added successfully",
+      friend,
+    });
   }
 
   try {
@@ -240,7 +272,6 @@ const addFriends = async (req, res) => {
             { _id: user._id, "friends.friend": { $ne: friend._id } }, // prevent duplicates
             { $push: { friends: { friend: friend._id, balance: 0 } } }
           );
-          
         }
         // Similarly, ensure the friendship is mutual.
         if (!friend.friends.some((f) => f.friend?.equals(user._id))) {
@@ -267,7 +298,8 @@ const addFriends = async (req, res) => {
                  <a href="https://fair-fare-phi.vercel.app/signup/${user._id}">Join Fair Fare</a></p>
                  <p>Thanks,<br/>Fair Fare Team</p>`,
         };
-        await transporter.sendMail(mailOptions)
+        await transporter
+          .sendMail(mailOptions)
           .then(() => {
             console.log("Email sent to new friend ", friendEmail);
           })
@@ -290,34 +322,36 @@ const addFriends = async (req, res) => {
 const updateFriendBalance = async (req, res) => {
   const { userEmail, friendEmail, amount, action } = req.body;
   // console.log("userEmail", userEmail, "friendEmail", friendEmail, "amount", amount, "action", action);
-  
+
   if (!userEmail || !friendEmail || !amount || !action) {
     return res.status(400).json({ message: "Incomplete data received" });
   }
 
   const value = parseFloat(amount);
   if (isNaN(value) || value <= 0) {
-    return res.status(400).json({ message: "Amount must be a positive number" });
+    return res
+      .status(400)
+      .json({ message: "Amount must be a positive number" });
   }
 
   try {
     // Fetch both users
     const user = await User.findOne({ email: userEmail });
     const friend = await User.findOne({ email: friendEmail });
-    
+
     if (!user || !friend) {
       return res.status(404).json({ message: "User or friend not found" });
     }
-    
+
     let userIncrement, friendIncrement;
-    
+
     // When user pays friend, update as follows:
     // - In user's friends array (for the friend): balance increases (+amount)
     // - In friend's friends array (for the user): balance decreases (-amount)
-    if (action === "paid") {      
+    if (action === "paid") {
       userIncrement = value;
       friendIncrement = -value;
-    } 
+    }
     // When user receives from friend, the reverse logic applies:
     // - In user's friends array (for the friend): balance decreases (-amount)
     // - In friend's friends array (for the user): balance increases (+amount)
@@ -327,26 +361,26 @@ const updateFriendBalance = async (req, res) => {
     } else {
       return res.status(400).json({ message: "Invalid action type" });
     }
-    
+
     // Update the user's friend record (user -> friend)
     const userUpdateResult = await User.updateOne(
       { email: userEmail, "friends.friend": friend._id },
       { $inc: { "friends.$.balance": userIncrement } }
     );
-    
+
     // Update the friend's record (friend -> user)
     const friendUpdateResult = await User.updateOne(
       { email: friendEmail, "friends.friend": user._id },
       { $inc: { "friends.$.balance": friendIncrement } }
     );
-    
+
     // If one of the update operations did not match a document, you might consider
     // creating the missing subdocument. Here we assume that friendship already exists.
-    
-    return res.status(200).json({ 
+
+    return res.status(200).json({
       message: "Friend balance updated",
       userUpdate: userUpdateResult,
-      friendUpdate: friendUpdateResult
+      friendUpdate: friendUpdateResult,
     });
   } catch (error) {
     console.error("Error updating friend balance:", error);
@@ -355,7 +389,6 @@ const updateFriendBalance = async (req, res) => {
 };
 
 const removeFriend = async (req, res) => {
-  
   const { friendId, userId } = req.body;
 
   if (!friendId) {
@@ -378,7 +411,7 @@ const removeFriend = async (req, res) => {
     console.error("Error removing friend:", error);
     return res.status(500).json({ message: "Server error" });
   }
-}
+};
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -389,7 +422,7 @@ const forgotPassword = async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-  console.log("otp sent ", otp);
+  // console.log("otp sent ", otp);
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -443,11 +476,13 @@ const verifyForgotPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
   const { userId, newPassword } = req.body;
-  console.log(userId,newPassword)
+  // console.log(userId,newPassword)
 
   // Validate required fields
   if (!userId || !newPassword) {
-    return res.status(400).json({ message: "Please provide userId and newPassword." });
+    return res
+      .status(400)
+      .json({ message: "Please provide userId and newPassword." });
   }
 
   try {
@@ -462,9 +497,9 @@ const changePassword = async (req, res) => {
 
     // Use the schema's comparePassword method
     const isPasswordValid = await user.comparePassword(cleanPassword);
-    console.log("Password comparison result: ", isPasswordValid);
+    // console.log("Password comparison result: ", isPasswordValid);
 
-    if(isPasswordValid) {
+    if (isPasswordValid) {
       return res.status(400).json({
         message: "New password cannot be same as old password",
       });
@@ -479,7 +514,9 @@ const changePassword = async (req, res) => {
     res.status(200).json({ message: "Password changed successfully." });
   } catch (error) {
     console.error("Error changing password:", error);
-    res.status(500).json({ message: "Internal server error.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error.", error: error.message });
   }
 };
 
@@ -499,8 +536,8 @@ const getUpdatedFriendBalances = async (req, res) => {
 
     // Create an array of friend balances in the desired format
     const updatedData = user.friends.map((f) => ({
-      friendId: f.friend._id,  // friend ID
-      balance: f.balance,      // balance
+      friendId: f.friend._id, // friend ID
+      balance: f.balance, // balance
     }));
 
     // Send the updated data as response

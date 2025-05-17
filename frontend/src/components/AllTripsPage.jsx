@@ -79,7 +79,7 @@ const AllTripsPage = () => {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 max-w-4xl mx-auto mt-10">
+      <div className="relative z-10 max-w-4xl mx-auto mt-20">
         <h1 className="text-3xl font-bold text-center text-[#00F5FF] mb-6">
           Your Trips and Events
         </h1>

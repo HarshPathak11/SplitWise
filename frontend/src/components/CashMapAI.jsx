@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FaArrowLeft, FaArrowRight, FaRobot, FaArrowDown } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaRobot,
+  FaArrowDown,
+  FaInfoCircle,
+} from "react-icons/fa";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -7,6 +13,8 @@ import toast from "react-hot-toast";
 function CashMapAI() {
   const chatContainerRef = React.useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const timeoutRef = React.useRef(null);
 
   const [messages, setMessages] = useState(() => {
     const storedChat = localStorage.getItem("chatMessages");
@@ -28,9 +36,21 @@ function CashMapAI() {
 
   const [input, setInput] = useState("");
   const [dailyCount, setDailyCount] = useState(() => {
-    const stored = localStorage.getItem("dailyAIQueryCount");
-    return stored ? parseInt(stored) : 0;
+    const stored = localStorage.getItem("user");
+    const parsedStored = stored ? JSON.parse(stored) : null;
+  
+    let count = 0;
+  
+    if (parsedStored?.aiChatUsage?.count) {
+      count = parseInt(parsedStored.aiChatUsage.count);
+    }
+  
+      localStorage.setItem("dailyAIQueryCounter", count.toString());
+    
+  
+    return parseInt(localStorage.getItem("dailyAIQueryCounter")) || 0;
   });
+  
 
   useEffect(() => {
     const chatEl = chatContainerRef.current;
@@ -49,20 +69,11 @@ function CashMapAI() {
     chatEl.addEventListener("scroll", handleScroll);
     return () => chatEl.removeEventListener("scroll", handleScroll);
   }, []);
-
+  
   useEffect(() => {
     scrollToBottom();
-  }, []);  
-
-  useEffect(() => {
-    const today = new Date().toDateString();
-    const lastDate = localStorage.getItem("lastQueryDate");
-
-    if (lastDate !== today) {
-      localStorage.setItem("lastQueryDate", today);
-      localStorage.setItem("dailyAIQueryCount", "0");
-      setDailyCount(0);
-    }
+    const dailyAIQueryCount = localStorage.getItem("dailyAIQueryCounter");    
+      setDailyCount(parseInt(dailyAIQueryCount) || 0);
   }, []);
 
   useEffect(() => {
@@ -81,53 +92,39 @@ function CashMapAI() {
   useEffect(() => {
     const chatEl = chatContainerRef.current;
     if (!chatEl) return;
-  
+
     let scrollTimeout;
-  
+
     const handleScroll = () => {
       chatEl.classList.add("show-scrollbar");
-  
+
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
         chatEl.classList.remove("show-scrollbar");
       }, 1200); // adjust as needed
     };
-  
+
     chatEl.addEventListener("scroll", handleScroll);
-  
+
     return () => {
       chatEl.removeEventListener("scroll", handleScroll);
       clearTimeout(scrollTimeout);
     };
-  }, []);  
-  
+  }, []);
 
   const handleSend = async (e) => {
     e.preventDefault();
-    setTimeout(() => scrollToBottom(), 100);
-    if (dailyCount >= 10) {
-      toast.error(
-        "You've reached the 10 queries limit for today! Try again tomorrow."
-      );
-      return;
-    }
-
     if (!input.trim()) return;
+
+    // if (dailyCount >= 10) {
+    //   toast.error("You've reached the 10 queries limit for today!");
+    //   return;
+    // }
 
     const userMessage = { type: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
-
-    let userId = "";
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        userId = user?._id || "";
-      } catch (error) {
-        console.error("Error parsing user from localStorage:", error);
-      }
-    }
+    setIsWaitingForResponse(true); // Disable input
 
     const tempBotMessage = {
       type: "bot",
@@ -135,43 +132,65 @@ function CashMapAI() {
         "I'm analyzing your spending patterns and will provide insights shortly...",
     };
     setMessages((prev) => [...prev, tempBotMessage]);
+    setTimeout(() => nudgeForAIReply(), 200); // add a slight delay to let DOM update
+
+    scrollToBottom();
+
+    // // Timeout in case no response in 5 seconds
+    // timeoutRef.current = setTimeout(() => {
+    //   setIsWaitingForResponse(false); // Re-enable input
+    //   setMessages((prev) => {
+    //     const updated = [...prev];
+    //     updated.pop(); // Remove the "analyzing..." message
+    //     return [
+    //       ...updated,
+    //       {
+    //         type: "bot",
+    //         content: "⚠ Sorry, something went wrong. Please try again.",
+    //       },
+    //     ];
+    //   });
+    // }, 10000); // 5 seconds fallback timeout
 
     try {
+      const storedUser = localStorage.getItem("user");
+      const user = storedUser ? JSON.parse(storedUser) : {};
+      const userId = user?._id || "";
+
       const response = await axios.post("https://fair-ai.onrender.com/assist", {
         userId,
         query: input,
       });
-      const answer = response.data?.answer || "Sorry, something went wrong!";
-      console.log(answer);
+      clearTimeout(timeoutRef.current); // Clear timeout if response arrives
+      setIsWaitingForResponse(false);
+
+      const data = response?.data;
+      const answer = data?.answer || "Sorry, something went wrong!";
+
       setMessages((prev) => {
         const updated = [...prev];
-        updated.pop();
+        updated.pop(); // Remove analyzing message
         return [...updated, { type: "bot", content: answer }];
       });
 
-      setDailyCount((prev) => {
-        const newCount = prev + 1;
-        localStorage.setItem("dailyAIQueryCount", newCount);
-        return newCount;
-      });
+      setDailyCount(response?.data?.updatedCount);
     } catch (error) {
-      console.error("Error calling /assist API:", error);
+      console.error("Error:", error);
+      clearTimeout(timeoutRef.current);
+      setIsWaitingForResponse(false);
+
       setMessages((prev) => {
         const updated = [...prev];
-        updated.pop();
-        const final = [
+        updated.pop(); // Remove analyzing message
+        return [
           ...updated,
           {
             type: "bot",
-            content: "Error retrieving response. Please try again.",
+            content: "⚠ Error retrieving response. Please try again.",
           },
         ];
-        setTimeout(() => nudgeForAIReply(), 100);
-        return final;
       });
     }
-
-    setInput("");
   };
 
   const nudgeForAIReply = () => {
@@ -232,6 +251,7 @@ function CashMapAI() {
               }`}
             >
               <div
+               style={{whiteSpace:"pre-line"}}
                 className={`max-w-[80%] rounded-lg p-4 ${
                   message.type === "user"
                     ? "bg-emerald-500 text-white"
@@ -245,7 +265,7 @@ function CashMapAI() {
         </div>
       </div>
 
-      {/*Scroll to bottom arrow*/}
+      {/* Scroll to bottom arrow */}
       {!isAtBottom && (
         <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20">
           <button
@@ -264,23 +284,29 @@ function CashMapAI() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend(e);
+              }
+            }}            
             placeholder={
               dailyCount >= 10
                 ? "Query limit reached for today!"
+                : isWaitingForResponse
+                ? "Waiting for AI response..."
                 : "Ask about your expenses, balances, or get financial insights..."
             }
             className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500"
-            disabled={dailyCount >= 10}
+            disabled={ isWaitingForResponse}
           />
 
           <button
             type="submit"
             className={`px-4 py-2 rounded-lg transition-colors ${
-              dailyCount >= 10
-                ? "bg-gray-500 text-gray-300 cursor-not-allowed"
-                : "bg-emerald-500 text-white hover:bg-emerald-600"
+               "bg-emerald-500 text-white hover:bg-emerald-600"
             }`}
-            disabled={dailyCount >= 10}
+            disabled={ isWaitingForResponse}
           >
             <FaArrowRight className="h-5 w-5" />
           </button>
