@@ -27,7 +27,11 @@ const PublicProfile = () => {
           setEmail(res.data.user.email);
           setUsername(res.data.user.username);
           setHasError(false); // reset if previously true
-          if (currentUserId !== userId) {
+          
+          if(currentUserId === userId) {
+            setIsFriend(true);
+          }
+          else if (currentUserId !== userId) {
             res.data.user.friends.forEach((friend) => {
               if (friend.friend._id === currentUserId) {
                 setIsFriend(true);
