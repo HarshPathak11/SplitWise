@@ -2,21 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+
+    <!-- Point to manifest correctly -->
+    <link rel="manifest" href="./manifest.json" />
+
+    <!-- Favicon from public folder -->
+    <link rel="icon" type="image/svg+xml" href="./public/icon.svg" />
+
+    <meta name="theme-color" content="#184551" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fair Fare</title>
-    <!-- Google tag (gtag.js) -->
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id=G-Z1QKE3M5CQ"
-    ></script>
+
+    <!-- Optional: Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z1QKE3M5CQ"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
         dataLayer.push(arguments);
       }
       gtag("js", new Date());
-
       gtag("config", "G-Z1QKE3M5CQ");
     </script>
   </head>
