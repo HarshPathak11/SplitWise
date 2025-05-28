@@ -113,8 +113,8 @@ const TripDetails = () => {
       const user = JSON.parse(storedUser);
       const currentUserId = user._id;
       const res = await axios.post(
-        // `https://fairfare-0hyl.onrender.com/group/remove-members/${tripId}`,
-        `http://localhost:8000/group/remove-members/${tripId}`,
+        `https://fairfare-0hyl.onrender.com/group/remove-members/${tripId}`,
+        // `http://localhost:8000/group/remove-members/${tripId}`,
         {
           members: [currentUserId], // Send only the current user ID to remove
         }

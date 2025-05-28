@@ -59,8 +59,8 @@ useEffect(() => {
       const memberIds = selectedMembers.map((m) => m._id);
 
       const res = await axios.post(
-        // `https://fairfare-0hyl.onrender.com/group/remove-members/${groupId}`,
-        `http://localhost:8000/group/remove-members/${groupId}`,
+        `https://fairfare-0hyl.onrender.com/group/remove-members/${groupId}`,
+        // `http://localhost:8000/group/remove-members/${groupId}`,
         {
           members: memberIds,
         }
