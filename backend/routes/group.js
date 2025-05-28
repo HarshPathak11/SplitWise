@@ -6,7 +6,8 @@ import {
     addMembers,
     addExpenseController,
     getUserTrips,
-    getRecentExpenses
+    getRecentExpenses,
+    removeMembers,
 } from '../controllers/groups.js';
 
 const router = express.Router();
@@ -19,6 +20,7 @@ router.get('/user/:userId/recent-expenses', getRecentExpenses);
 
 //POST requests
 router.post('/add-members/:id', addMembers);
+router.post('/remove-members/:id', removeMembers);
 router.post('/add-expense', addExpenseController);
 router.post('/create-group', createGroup);
 

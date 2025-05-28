@@ -77,8 +77,6 @@ const addMembers = async (req, res) => {
   const groupId = req.params.id;
   const { members } = req.body; // members = array of user._id
 
-
-
   if (!groupId || !Array.isArray(members)) {
     return res.status(400).json({ message: "Invalid input" });
   }
@@ -104,7 +102,7 @@ const addMembers = async (req, res) => {
         await User.updateOne(
           { _id: userId },
           { $addToSet: { groups: group._id } }
-        );        
+        );
       }
     }
 
@@ -133,6 +131,48 @@ const addMembers = async (req, res) => {
   } catch (err) {
     console.error("Add Members Error:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+const removeMembers = async (req, res) => {
+  const groupId = req.params.id;
+  const { members } = req.body; // members = array of user._id
+  // console.log("Removing members from group:", groupId, "Members:", members);
+  
+
+  if (!groupId || !Array.isArray(members)) {
+    return res.status(400).json({ message: "Invalid input" });
+  }
+
+  try {
+    const group = await Group.findById(groupId).populate(
+      "members",
+      "username email groups"
+    );
+
+    if (!group) return res.status(404).json({ message: "Group not found" });
+
+    // Step 1: Remove members from the group
+    group.members = group.members.filter(
+      (member) => !members.includes(member._id.toString())
+    );
+    await group.save();
+
+    // Step 2: Remove group reference from each removed user
+    await User.updateMany(
+      { _id: { $in: members } },
+      { $pull: { groups: groupId } }
+    );
+
+    // ✅ Return updated group
+    const updatedGroup = await Group.findById(groupId).populate(
+      "members",
+      "username"
+    );
+    return res.status(200).json(updatedGroup);
+  } catch (err) {
+    console.error("Remove Members Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -308,9 +348,7 @@ const addExpenseController = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    return res
-      .status(200)
-      .json({ success: true, expense: newExpense });
+    return res.status(200).json({ success: true, expense: newExpense });
   } catch (error) {
     // Abort transaction on error
     await session.abortTransaction();
@@ -393,4 +431,5 @@ export {
   addExpenseController,
   getUserTrips,
   getRecentExpenses,
+  removeMembers,
 };

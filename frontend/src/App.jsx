@@ -21,6 +21,7 @@ import CashMapAI from "./components/CashMapAI";
 import AppLayout from "./AppLayout";
 import Documentation from "./components/documentation";
 import PublicProfile from "./components/PublicProfile";
+import RemoveMembers from "./components/RemoveMembers";
 
 const router = createBrowserRouter([
   {
@@ -56,6 +57,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <AddMembers />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "remove-members/:groupId",
+        element: (
+          <ProtectedRoute>
+            <RemoveMembers />
           </ProtectedRoute>
         ),
       },
