@@ -43,7 +43,42 @@ const userSchema = new mongoose.Schema({
   count: { type: Number, default: 0 },
   lastUsed: { type: Date, default: null }
 },
+ chats: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Chat' }],
 }, { timestamps: true });
+
+const messageSchema = new mongoose.Schema({
+  chat: { type: mongoose.Schema.Types.ObjectId, ref: 'Chat', required: true, index: true },
+  sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  content: { type: String, required: true },
+  attachments: [
+    {
+      url: String,
+      filename: String,
+    }
+  ],
+  readBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+}, { timestamps: true });
+
+const Message = mongoose.model('Message', messageSchema);
+
+const chatSchema = new mongoose.Schema({
+  participants: [
+    { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+  ],
+  lastMessage: {
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    content: String,
+    createdAt: Date
+  },
+  unreadCounts: {
+    type: Map,
+    of: Number,
+    default: {}
+  }
+}, { timestamps: true });
+
+const Chat = mongoose.model('Chat', chatSchema);
+
 
 // Password hashing middleware
 userSchema.pre("save", async function(next) {
@@ -70,4 +105,4 @@ const Expense = mongoose.model("Expense", expenseSchema);
 const User = mongoose.model("User", userSchema);
 const Group = mongoose.model("Group", groupSchema);
 
-export { User, Group, Expense };
+export { User, Group, Expense, Message, Chat };

@@ -21,6 +21,7 @@ import CashMapAI from "./components/CashMapAI";
 import AppLayout from "./AppLayout";
 import Documentation from "./components/documentation";
 import PublicProfile from "./components/PublicProfile";
+import ChatsPage from "./components/ChatSection";
 
 const router = createBrowserRouter([
   {
@@ -152,6 +153,10 @@ const router = createBrowserRouter([
         path: "/documentation",
         element: <Documentation />,
       },
+      {
+        path: "/dmsection",
+        element: <ChatsPage/>,
+      }
     ],
   },
 ]);
