@@ -21,7 +21,7 @@ const FriendCard = ({
 
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
-  console.log(friend);
+  // console.log(friend);
   
 
   const toggleDropdown = () => {

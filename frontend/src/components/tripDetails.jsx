@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import axios from "axios";
 import { useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const TripDetails = () => {
   const navigate = useNavigate();
@@ -24,12 +25,12 @@ const TripDetails = () => {
         setTripDetails(parsedGroup);
         // Extract only the usernames from group members
         const groupMembers = parsedGroup.members.map((m) => {
-          return { _id: m._id, username: m.username}
+          return { _id: m._id, username: m.username };
         });
         const sortedExpenses = parsedGroup.expenses.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
-        
+
         setExpenses(sortedExpenses);
         // Set directly to localStorage (no merge)
         localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
@@ -50,7 +51,6 @@ const TripDetails = () => {
             (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
           );
           setExpenses(sortedExpenses);
-          
 
           // Extract only the usernames from group members
           const groupMembers = group.members.map((m) => {
@@ -76,9 +76,17 @@ const TripDetails = () => {
     navigate(`/add-members/${tripId}`);
   };
 
+  const handleRemoveMember = () => {
+    if (members.length <= 1) {
+      toast.error("You must have at least one member in the group.");
+      return;
+    }
+    navigate(`/remove-members/${tripId}`);
+  };
+
   const handleAddExpenseClick = () => {
     if (members.length <= 1) {
-      alert(
+      toast.error(
         "Please add at least one more member to the group before adding an expense."
       );
       return;
@@ -94,6 +102,43 @@ const TripDetails = () => {
     // Navigate back to the dashboard
     navigate(-1);
   };
+
+  const HandleLeaveGroup = async () => {
+    if (members.length <= 1) {
+      toast.error("You cannot leave the group as you are the only member.");
+      return;
+    }
+    try {
+      const storedUser = localStorage.getItem("user");
+      const user = JSON.parse(storedUser);
+      const currentUserId = user._id;
+      const res = await axios.post(
+        // `https://fairfare-0hyl.onrender.com/group/remove-members/${tripId}`,
+        `http://localhost:8000/group/remove-members/${tripId}`,
+        {
+          members: [currentUserId], // Send only the current user ID to remove
+        }
+      );
+
+      if (res.status !== 200) {
+        toast.error("Failed to leave group. Try again.");
+        return;
+      }
+
+      toast.success("You left the group successfully!");
+
+      // Clear local storage
+      localStorage.removeItem("tripMembers");
+      localStorage.removeItem("currentGroup");
+
+      // Redirect to dashboard
+      navigate("/dash");
+    } catch (error) {
+      console.error("Leave Group Error:", error);
+      toast.error("An error occurred while leaving the group.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
       <div className="absolute inset-0 overflow-hidden">
@@ -103,14 +148,24 @@ const TripDetails = () => {
           <div className="absolute -bottom-8 left-20 w-48 md:w-72 h-48 md:h-72 bg-gray-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
       </div>
-      {/* Back Button */}
-      <button
-        className="flex items-center text-white hover:text-gray-300 backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5  p-2 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300"
-        onClick={handleBackClick}
-      >
-        <ArrowLeft className="w-5 h-5 mr-2" />
-        Back
-      </button>
+      <div className="justify-between items-center flex flex-wrap gap-4 mb-5">
+        {/* Back Button */}
+        <button
+          className="flex items-center text-white hover:text-gray-300 backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5  p-2 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300"
+          onClick={handleBackClick}
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back
+        </button>
+
+        {/* Leave Button */}
+        <button
+          className="flex items-center text-white hover:text-gray-300 backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5  p-2 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300"
+          onClick={HandleLeaveGroup}
+        >
+          Leave Group
+        </button>
+      </div>
 
       {/* Card Container */}
       <div className="backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
@@ -135,12 +190,21 @@ const TripDetails = () => {
         <div>
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-xl sm:text-2xl font-semibold">Members</h2>
-            <button
-              onClick={handleAddMember}
-              className="text-sm border border-white px-3 py-1 rounded hover:bg-white hover:text-black transition"
-            >
-              + Add Member
-            </button>
+            <div>
+              <button
+                onClick={handleAddMember}
+                className="text-sm border border-white text-black px-3 py-1 rounded bg-white hover:bg-black hover:text-white transition"
+              >
+                + Add Member
+              </button>
+
+              <button
+                onClick={handleRemoveMember}
+                className="text-sm border border-white px-3 py-1 ml-4 rounded hover:bg-white hover:text-black transition"
+              >
+                - Remove Member
+              </button>
+            </div>
           </div>
           {members.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
