@@ -4,19 +4,26 @@
     <meta charset="UTF-8" />
 
     <!-- Point to manifest correctly -->
-    <link rel="manifest" href="./manifest.json" />
+    <link rel="manifest" href="/manifest.json" />
 
     <!-- Favicon from public folder -->
-    <link rel="icon" type="image/svg+xml" href="./public/icon.svg" />
-    <!-- ensure the "hidden" class works immediately -->
-  <style>.hidden { display: none !important; }</style>
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+
+    <style>
+      .hidden {
+        display: none !important;
+      }
+    </style>
 
     <meta name="theme-color" content="#184551" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fair Fare</title>
 
     <!-- Optional: Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z1QKE3M5CQ"></script>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-Z1QKE3M5CQ"
+    ></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag() {
@@ -31,5 +38,22 @@
 
     <!-- Your app entry -->
     <script type="module" src="/src/main.jsx"></script>
-</body>
+
+    <!-- Start of Tawk.to Script -->
+    <!-- <script type="text/javascript">
+      
+      var Tawk_API = Tawk_API || {},
+        Tawk_LoadStart = new Date();
+      (function () {
+        var s1 = document.createElement("script"),
+          s0 = document.getElementsByTagName("script")[0];
+        s1.async = true;
+        s1.src = "https://embed.tawk.to/6838119dc36f13190a60c400/1isdg9k7s";
+        s1.charset = "UTF-8";
+        s1.setAttribute("crossorigin", "*");
+        s0.parentNode.insertBefore(s1, s0);
+      })();
+    </script> -->
+    <!--End of Tawk.to Script-->
+  </body>
 </html>
