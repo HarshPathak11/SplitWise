@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import ComparisonTable from "./check";
 import Footer from "./footer";
 
@@ -7,32 +7,114 @@ import Documentation from "./documentation";
 import FAQ from "./FaqSection";
 
 // FAQItem Component
-const FAQItem = ({ question, answer, isOpen, onClick }) => {
-  return (
-    <div
-      className="bg-white/5 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer"
-      onClick={onClick}
-    >
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-white">{question}</h3>
-        <span
-          className={`text-white transform transition-transform ${
-            isOpen ? "rotate-180" : "rotate-0"
-          }`}
-        >
-          ▼
-        </span>
-      </div>
-      {isOpen && <p className="text-gray-400 mt-4">{answer}</p>}
-    </div>
-  );
-};
+// const FAQItem = ({ question, answer, isOpen, onClick }) => {
+//   return (
+//     <div
+//       className="bg-white/5 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer"
+//       onClick={onClick}
+//     >
+//       <div className="flex justify-between items-center">
+//         <h3 className="text-xl font-semibold text-white">{question}</h3>
+//         <span
+//           className={`text-white transform transition-transform ${
+//             isOpen ? "rotate-180" : "rotate-0"
+//           }`}
+//         >
+//           ▼
+//         </span>
+//       </div>
+//       {isOpen && <p className="text-gray-400 mt-4">{answer}</p>}
+//     </div>
+//   );
+// };
 
 const LandingPage = () => {
-  // const [openIndex, setOpenIndex] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showPrompt, setShowPrompt] = useState(false);
+  // const [showInstallButton, setShowInstallButton] = useState(false);
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowPrompt(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handler);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        console.log("User accepted the install prompt");
+      } else {
+        console.log("User dismissed the install prompt");
+      }
+      setShowPrompt(false);
+      setDeferredPrompt(null);
+    }
+  };
+
+  const handleNoThanks = () => {
+    setShowPrompt(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col items-center relative overflow-hidden">
+      {/* PWA Install Modal */}
+      {showPrompt && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 w-11/12 max-w-sm text-center">
+            <h2 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 mb-4">
+              Install FairFare?
+            </h2>
+            <p className="text-gray-400 mb-6">
+              Add FairFare to your home screen for quick access.
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleNoThanks}
+                className="bg-transparent border text-white border-white/30 py-2 px-4 rounded-lg hover:bg-white/10 transition-all duration-300"
+              >
+                No Thanks
+              </button>
+              <button
+                onClick={handleInstallClick}
+                className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 border border-blue-400/30"
+              >
+                Install
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom-right Install Button */}
+      {(
+        <button
+          onClick={handleInstallClick}
+          className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 border border-blue-400/30"
+  
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "12px 16px",
+            border: "none",
+            borderRadius: "8px",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+            zIndex: 1000,
+          }}
+        >
+          Install App
+        </button>
+      )}
+
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-[10px] opacity-30">
@@ -170,7 +252,7 @@ const LandingPage = () => {
       </section>
 
       <section className="w-full bg-[#000000]  relative z-10">
-      <FAQ/>
+        <FAQ />
       </section>
 
       {/* Add the animation keyframes */}
@@ -232,7 +314,7 @@ const LandingPage = () => {
           }
         }
       `}</style>
-     
+
       <Footer />
     </div>
   );
