@@ -5,7 +5,6 @@ import Cookies from "js-cookie";
 import { Link, useNavigate } from "react-router-dom";
 import Documentation from "./documentation";
 import FAQ from "./FaqSection";
-import { Cookie } from "lucide-react";
 
 // FAQItem Component
 // const FAQItem = ({ question, answer, isOpen, onClick }) => {
