@@ -125,6 +125,7 @@ const LandingPage = () => {
             zIndex: 1000,
           }}
         >
+          isPWA: {isPWA ? "Yes" : "No"} -
           Install App
         </button>
       }
