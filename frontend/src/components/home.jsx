@@ -30,12 +30,10 @@ import FAQ from "./FaqSection";
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const isPWA =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.navigator.standalone === true;
-
+  
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [isPWA, setIsPWA] = useState(false);
   // const [showInstallButton, setShowInstallButton] = useState(false);
   useEffect(() => {
     const handler = (e) => {
@@ -43,8 +41,13 @@ const LandingPage = () => {
       setDeferredPrompt(e);
       setShowPrompt(true);
     };
-
+    
     window.addEventListener("beforeinstallprompt", handler);
+    const isPWA =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+
+      setIsPWA(isPWA);    
 
     if (isPWA) {
       const userId = Cookies.get("id");
