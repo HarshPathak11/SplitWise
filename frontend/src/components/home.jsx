@@ -43,14 +43,17 @@ const LandingPage = () => {
     };
     
     window.addEventListener("beforeinstallprompt", handler);
-    const isPWA = () => {
+    const checkPWA = () => {
+      return (
       window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true;
+      window.navigator.standalone === true
+    );
     }
 
-      setIsPWA(isPWA);    
+    const res=checkPWA();
+      setIsPWA(res);
 
-    if (isPWA) {
+    if (res) {
       const userId = Cookies.get("id");
       if (userId) {
         navigate("/dash");
