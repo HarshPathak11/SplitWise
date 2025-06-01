@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import ComparisonTable from "./check";
 import Footer from "./footer";
-
-import { Link } from "react-router-dom";
+import Cookies from "js-cookie";
+import { Link, useNavigate } from "react-router-dom";
 import Documentation from "./documentation";
 import FAQ from "./FaqSection";
+import { Cookie } from "lucide-react";
 
 // FAQItem Component
 // const FAQItem = ({ question, answer, isOpen, onClick }) => {
@@ -29,6 +30,8 @@ import FAQ from "./FaqSection";
 // };
 
 const LandingPage = () => {
+  const navigate = useNavigate();
+
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
   // const [showInstallButton, setShowInstallButton] = useState(false);
@@ -40,6 +43,16 @@ const LandingPage = () => {
     };
 
     window.addEventListener("beforeinstallprompt", handler);
+    const isPWA =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+
+    if (isPWA) {
+      const userId = Cookies.get("id");
+      if (userId) {
+        navigate("/dash");
+      }
+    }
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
@@ -95,11 +108,10 @@ const LandingPage = () => {
       )}
 
       {/* Bottom-right Install Button */}
-      {(
+      {
         <button
           onClick={handleInstallClick}
           className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 border border-blue-400/30"
-  
           style={{
             position: "fixed",
             bottom: "20px",
@@ -113,7 +125,7 @@ const LandingPage = () => {
         >
           Install App
         </button>
-      )}
+      }
 
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
