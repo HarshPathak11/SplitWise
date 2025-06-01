@@ -50,8 +50,10 @@ const LandingPage = () => {
     );
     }
 
-    const res=checkPWA();
-      setIsPWA(res);
+  // Delay the check by a frame
+  requestAnimationFrame(() => {
+    const res = checkPWA();
+    setIsPWA(res);
 
     if (res) {
       const userId = Cookies.get("id");
@@ -59,6 +61,7 @@ const LandingPage = () => {
         navigate("/dash");
       }
     }
+  });
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
@@ -129,7 +132,7 @@ const LandingPage = () => {
             zIndex: 1000,
           }}
         >
-          isPWA: {isPWA ? "Yes" : "No"} -
+          isPWA: {isPWA} -
           Install App
         </button>
       }
