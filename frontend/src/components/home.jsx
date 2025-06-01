@@ -30,6 +30,9 @@ import FAQ from "./FaqSection";
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const isPWA =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -42,9 +45,6 @@ const LandingPage = () => {
     };
 
     window.addEventListener("beforeinstallprompt", handler);
-    const isPWA =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true;
 
     if (isPWA) {
       const userId = Cookies.get("id");
@@ -107,7 +107,7 @@ const LandingPage = () => {
       )}
 
       {/* Bottom-right Install Button */}
-      {
+      {!isPWA &&
         <button
           onClick={handleInstallClick}
           className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 border border-blue-400/30"
