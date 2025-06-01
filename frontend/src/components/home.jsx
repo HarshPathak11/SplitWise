@@ -50,8 +50,8 @@ const LandingPage = () => {
     );
     }
 
-  // Delay the check by a frame
-  requestAnimationFrame(() => {
+  // Delay the PWA check slightly (important for mobile PWAs)
+  const timeoutId = setTimeout(() => {
     const res = checkPWA();
     setIsPWA(res);
 
@@ -61,22 +61,17 @@ const LandingPage = () => {
         navigate("/dash");
       }
     }
-  });
+  }, 500); // Try 300–500ms
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
+      clearTimeout(timeoutId);
     };
   }, []);
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        console.log("User accepted the install prompt");
-      } else {
-        console.log("User dismissed the install prompt");
-      }
       setShowPrompt(false);
       setDeferredPrompt(null);
     }
