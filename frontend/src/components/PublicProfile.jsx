@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
+import logo from "../../public/newIcon-192x192.png"; 
 import { FaCopy } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 
@@ -172,7 +173,7 @@ const PublicProfile = () => {
             <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
               <div className="relative z-10">
                 <div className="flex items-center mb-6">
-                  <img src="../icon.svg" alt="Icon" className="w-8 h-8 mr-2" />
+                  <img src={logo} alt="Icon" className="w-8 h-8 mr-2" />
                   <span className="text-4xl text-center font-bold text-white">
                     FairFare
                   </span>
