@@ -1,6 +1,7 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
 import { FaTrash, FaCopy } from "react-icons/fa";
+import { FiLink } from "react-icons/fi";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
 import axios from "axios";
 import { QRCodeCanvas } from "qrcode.react";
@@ -19,6 +20,9 @@ const FriendCard = ({
   const [showQRCode, setShowQRCode] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem("user"));
+
+  // console.log(friend);
+  
 
   const toggleDropdown = () => {
     setShowDropdown((prev) => {
@@ -118,9 +122,22 @@ const FriendCard = ({
       key={index}
       className="bg-gray-700/50 backdrop-blur-sm cursor-pointer rounded-lg border border-gray-600/30 p-2 sm:p-3 mb-2"
     >
-      <div onClick={toggleDropdown} className="flex justify-between items-center">
+      <div
+        onClick={toggleDropdown}
+        className="flex justify-between items-center"
+      >
         <div>
-          <p className="text-sm text-white">{friend.username}</p>
+          <div className="flex items-center gap-1">
+            <p className="text-sm text-white">{friend.username}</p>
+            <a
+              href={`https://fair-fare-phi.vercel.app/public-profile/${friend._id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View Public Profile"
+            >
+              <FiLink className="text-white hover:text-blue-400 transition w-4 h-4" />
+            </a>
+          </div>
           <p
             className={`text-xs ${
               Number(balance) > 0
@@ -137,6 +154,7 @@ const FriendCard = ({
               : "Settled"}
           </p>
         </div>
+
         <div
           className="flex items-center gap-5 z-10"
           onClick={(e) => e.stopPropagation()}
@@ -172,9 +190,10 @@ const FriendCard = ({
                 className="ml-2 p-2 bg-gray-600 rounded flex items-center"
                 title="Copy UPI ID"
               >
-                <FaCopy 
-                onClick={() => toast.success('UPI ID copied to clipboard!')}
-                className="h-3 w-4 text-white" />
+                <FaCopy
+                  onClick={() => toast.success("UPI ID copied to clipboard!")}
+                  className="h-3 w-4 text-white"
+                />
               </button>
             )}
           </p>
@@ -187,9 +206,18 @@ const FriendCard = ({
             onChange={(e) => {
               let value = e.target.value;
               if (value === "") return setSettleAmount("");
-              if (!value.startsWith("0.") && !value.startsWith("-0.") && value.length > 1 && !value.startsWith("-")) {
+              if (
+                !value.startsWith("0.") &&
+                !value.startsWith("-0.") &&
+                value.length > 1 &&
+                !value.startsWith("-")
+              ) {
                 value = value.replace(/^0+/, "");
-              } else if (value.startsWith("-") && value.length > 2 && !value.startsWith("-0.")) {
+              } else if (
+                value.startsWith("-") &&
+                value.length > 2 &&
+                !value.startsWith("-0.")
+              ) {
                 value = "-" + value.replace(/^-0+/, "");
               }
               const parsed = parseFloat(value);
@@ -263,7 +291,8 @@ const FriendCard = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-600 text-center w-[90%] max-w-md">
             <p className="text-white text-lg mb-4">
-              Are you sure you want to delete <strong>{friend.username}</strong>?
+              Are you sure you want to delete <strong>{friend.username}</strong>
+              ?
             </p>
             <div className="flex justify-center gap-4">
               <button

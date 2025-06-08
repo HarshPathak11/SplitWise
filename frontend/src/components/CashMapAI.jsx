@@ -116,10 +116,10 @@ function CashMapAI() {
     e.preventDefault();
     if (!input.trim()) return;
 
-    if (dailyCount >= 10) {
-      toast.error("You've reached the 10 queries limit for today!");
-      return;
-    }
+    // if (dailyCount >= 10) {
+    //   toast.error("You've reached the 10 queries limit for today!");
+    //   return;
+    // }
 
     const userMessage = { type: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -298,17 +298,15 @@ function CashMapAI() {
                 : "Ask about your expenses, balances, or get financial insights..."
             }
             className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:border-emerald-500"
-            disabled={dailyCount >= 10 || isWaitingForResponse}
+            disabled={ isWaitingForResponse}
           />
 
           <button
             type="submit"
             className={`px-4 py-2 rounded-lg transition-colors ${
-              dailyCount >= 10 || isWaitingForResponse
-                ? "bg-gray-500 text-gray-300 cursor-not-allowed"
-                : "bg-emerald-500 text-white hover:bg-emerald-600"
+               "bg-emerald-500 text-white hover:bg-emerald-600"
             }`}
-            disabled={dailyCount >= 10 || isWaitingForResponse}
+            disabled={ isWaitingForResponse}
           >
             <FaArrowRight className="h-5 w-5" />
           </button>

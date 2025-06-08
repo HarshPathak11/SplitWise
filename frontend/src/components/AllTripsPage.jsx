@@ -33,9 +33,7 @@ const AllTripsPage = () => {
           const sortedTrips = [...response.data].sort(
             (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
           );
-          // Take the top 4 expenses after sorting.
-          const topTrips = sortedTrips.slice(0, 4);
-          setTrips(topTrips);
+          setTrips(sortedTrips);
         }
       } catch (error) {
         console.error("Error fetching trips:", error);

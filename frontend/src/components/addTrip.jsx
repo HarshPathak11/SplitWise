@@ -70,14 +70,13 @@ const AddTrip = () => {
       members: [user._id, ...selectedFriends],
     };
 
-    
     try {
       // console.log(" sending Trip Data as:", tripData); // Log the trip data for debugging
       if (!tripData.name.trim()) {
         toast.error("Title is required!");
         return;
       }
-      
+
       if (
         tripData.from &&
         tripData.to &&
@@ -203,20 +202,24 @@ const AddTrip = () => {
             </label>
 
             <div className="flex flex-col gap-2">
-              {friends.map((friend, index) => (
-                <label key={index} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    value={friend.friend._id}
-                    checked={selectedFriends.includes(friend.friend._id)}
-                    onChange={() => handleFriendSelection(friend.friend._id)}
-                    className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
-                  />
-                  <span className="text-sm text-gray-300">
-                    {friend.friend.username}
-                  </span>
-                </label>
-              ))}
+              {[...friends]
+                .sort((a, b) =>
+                  a.friend.username.localeCompare(b.friend.username)
+                )
+                .map((friend, index) => (
+                  <label key={index} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      value={friend.friend._id}
+                      checked={selectedFriends.includes(friend.friend._id)}
+                      onChange={() => handleFriendSelection(friend.friend._id)}
+                      className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
+                    />
+                    <span className="text-sm text-gray-300">
+                      {friend.friend.username}
+                    </span>
+                  </label>
+                ))}
             </div>
           </div>
 

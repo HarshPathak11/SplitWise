@@ -20,6 +20,9 @@ import AllExpenses from "./components/AllExpenses";
 import CashMapAI from "./components/CashMapAI";
 import AppLayout from "./AppLayout";
 import Documentation from "./components/documentation";
+import PublicProfile from "./components/PublicProfile";
+import RemoveMembers from "./components/RemoveMembers";
+import EditExpense from "./components/editExpense";
 
 const router = createBrowserRouter([
   {
@@ -51,10 +54,26 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "expense/edit",
+        element: (
+          <ProtectedRoute>
+            <EditExpense/>
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "add-members/:groupId",
         element: (
           <ProtectedRoute>
             <AddMembers />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "remove-members/:groupId",
+        element: (
+          <ProtectedRoute>
+            <RemoveMembers />
           </ProtectedRoute>
         ),
       },
@@ -143,7 +162,10 @@ const router = createBrowserRouter([
         path: "*",
         element: <NotFound />,
       },
-
+      {
+        path: "/public-profile/:userId",
+        element: <PublicProfile />,
+      },
       {
         path: "/documentation",
         element: <Documentation />,

@@ -25,7 +25,7 @@ const AddFriend = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (newFriendEmail.trim() === "") {
-      setError("All fields are required. Please add friend's email.");
+      setError("Please fill email.");
       return;
     }
 
@@ -68,6 +68,7 @@ const AddFriend = () => {
         "https://fairfare-0hyl.onrender.com/user/add-friends",
         {
           email: user?.email,
+          autoAdd: false,
           friendsArray: friends.map((friend) => friend.email),
         }
       );

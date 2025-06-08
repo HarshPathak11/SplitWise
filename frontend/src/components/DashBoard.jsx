@@ -14,6 +14,8 @@ const Dashboard = () => {
     async function getDetails() {
       const userId = Cookies.get("id");
       // console.log("userId is ", userId);
+      localStorage.removeItem("tripMembers");
+      localStorage.removeItem("currentGroup");
 
       // if (!user) {
       try {
