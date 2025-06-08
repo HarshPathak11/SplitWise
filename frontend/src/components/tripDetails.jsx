@@ -261,14 +261,14 @@ const TripDetails = () => {
                 onClick={handleAddMember}
                 className="text-sm border border-white text-black px-3 py-1 rounded bg-white hover:bg-black hover:text-white transition"
               >
-                + Add Member
+                + Add
               </button>
 
               <button
                 onClick={handleRemoveMember}
                 className="text-sm border border-white px-3 py-1 ml-4 rounded hover:bg-white hover:text-black transition"
               >
-                - Remove Member
+                - Remove
               </button>
             </div>
           </div>

@@ -39,7 +39,7 @@ const ExpenseCard = ({
 
   const confirmDelete = async () => {
     try {
-      await axios.delete(`http://localhost:8000/group/del-expense/${_id}`);
+      await axios.delete(`https://fairfare-0hyl.onrender.com/group/del-expense/${_id}`);
       toast.success("Expense deleted");
       setShowDeleteModal(false);
       // Option A: reload the page or refetch the expense list

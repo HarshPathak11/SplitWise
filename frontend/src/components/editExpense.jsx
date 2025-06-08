@@ -44,7 +44,7 @@ const EditExpense = () => {
     // console.log("hii")
     const fetchExpense = async () => {
       try {
-        const { data } = await axios.get(`http://localhost:8000/group/expense/${expenseId}`);
+        const { data } = await axios.get(`https://fairfare-0hyl.onrender.com/group/expense/${expenseId}`);
         console.log(data)
         if (data.success) {
           const exp = data.expense;
@@ -151,11 +151,11 @@ const EditExpense = () => {
       setIsLoading(true);
 
       // 1) DELETE the old expense
-      await axios.delete(`http://localhost:8000/group/del-expense/${expenseId}`);
+      await axios.delete(`https://fairfare-0hyl.onrender.com/group/del-expense/${expenseId}`);
 
       // 2) POST the new one
       const response = await axios.post(
-        `http://localhost:8000/group/del-add-expense`,
+        `https://fairfare-0hyl.onrender.com/group/del-add-expense`,
         payload
       );
       if (response.status === 200) {
