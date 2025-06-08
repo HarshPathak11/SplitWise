@@ -22,6 +22,7 @@ import AppLayout from "./AppLayout";
 import Documentation from "./components/documentation";
 import PublicProfile from "./components/PublicProfile";
 import RemoveMembers from "./components/RemoveMembers";
+import EditExpense from "./components/editExpense";
 
 const router = createBrowserRouter([
   {
@@ -49,6 +50,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <AddExpense />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "expense/edit",
+        element: (
+          <ProtectedRoute>
+            <EditExpense/>
           </ProtectedRoute>
         ),
       },

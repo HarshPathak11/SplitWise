@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import axios from "axios";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const TripDetails = () => {
   const navigate = useNavigate();
+  const location = useLocation(); 
+  // console.log(location.state+"state")
 
   const { tripId } = useParams(); // Now you get tripId directly from URL
   const [members, setMembers] = useState([]);
@@ -70,11 +72,54 @@ const TripDetails = () => {
 
     fetchTripDetails();
   }, [tripId]);
+ // 2) Re-fetch only the expenses if `expenseEdited` is true
+ useEffect(() => {
+  console.log(location.state?.expenseEdited)
+   if (location.state?.expenseEdited) {
+     // Clear the flag so we don't loop
+     navigate(location.pathname, { replace: true, state: {} });
+
+     // Re-fetch just the group (or just the expenses part)
+     const reloadExpenses = async () => {
+       try {
+         const response = await axios.get(
+           `https://fairfare-0hyl.onrender.com/group/get-group/${tripId}`
+         );
+         if (response.status === 200) {
+           const group = response.data;
+           // Only update the `expenses` list (you could also update members/tripDetails if needed)
+           const sortedExpenses = group.expenses
+             .slice()
+             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+           setExpenses(sortedExpenses);
+
+           // Keep localStorage in sync
+           const rawCurrentGroup = localStorage.getItem("currentGroup");
+           if (rawCurrentGroup) {
+             try {
+               const cg = JSON.parse(rawCurrentGroup);
+               cg.expenses = group.expenses;
+               localStorage.setItem("currentGroup", JSON.stringify(cg));
+             } catch (e) {
+               console.error("Failed to patch localStorage after edit:", e);
+             }
+           }
+         }
+       } catch (err) {
+         console.error("Error reloading expenses:", err);
+         toast.error("Could not refresh expenses after edit");
+       }
+     };
+
+     reloadExpenses();
+   }
+ }, [location.state?.expenseEdited, tripId, navigate]);
 
   // Handle adding new members (avoid adding existing ones)
   const handleAddMember = () => {
     navigate(`/add-members/${tripId}`);
   };
+  console.log(expenses)
 
   const handleRemoveMember = () => {
     if (members.length <= 1) {
@@ -100,7 +145,7 @@ const TripDetails = () => {
     localStorage.removeItem("currentGroup");
 
     // Navigate back to the dashboard
-    navigate(-1);
+    navigate('/dash');
   };
 
   const HandleLeaveGroup = async () => {
@@ -138,6 +183,27 @@ const TripDetails = () => {
       toast.error("An error occurred while leaving the group.");
     }
   };
+  const handleDeleteExpense = (deletedExpenseId) => {
+    // 2a) Filter it out of local `expenses`
+    setExpenses((prev) =>
+      prev.filter((exp) => exp._id !== deletedExpenseId)
+    );
+
+    // 2b) Also remove it from the `currentGroup` in localStorage
+    const rawCurrentGroup = localStorage.getItem("currentGroup");
+    if (rawCurrentGroup) {
+      try {
+        const cg = JSON.parse(rawCurrentGroup);
+        cg.expenses = cg.expenses.filter(
+          (exp) => exp._id !== deletedExpenseId
+        );
+        localStorage.setItem("currentGroup", JSON.stringify(cg));
+      } catch (e) {
+        console.error("Failed to remove expense from localStorage:", e);
+      }
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
@@ -245,6 +311,7 @@ const TripDetails = () => {
                 return (
                   <ExpenseCard
                     key={idx}
+                    _id={expense._id}
                     category={expense.title}
                     time={expense.createdAt}
                     description={""}
@@ -252,6 +319,7 @@ const TripDetails = () => {
                     iconColor={"bg-blue-500"}
                     paidBy={expense.paidBy}
                     beneficiaries={expense.owedBy}
+                    onDelete={handleDeleteExpense}
                   />
                 );
               })
