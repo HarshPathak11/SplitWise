@@ -21,6 +21,8 @@ const ExpenseCard = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const navigate = useNavigate();
+  const allowEdit = window.location.pathname !== "/dash" && window.location.pathname !== "/allExpenses";
+  
 
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
@@ -79,20 +81,20 @@ const ExpenseCard = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          {allowEdit && <button
             onClick={handleEdit}
             className="text-gray-400 hover:text-white transition-colors"
             title="Edit Expense"
           >
             <Edit3 size={18} />
-          </button>
-          <button
+          </button>}
+          {allowEdit && <button
             onClick={handleDeleteClick}
             className="text-gray-400 hover:text-white transition-colors"
             title="Delete Expense"
           >
             <Trash2 size={18} />
-          </button>
+          </button>}
           <div className="text-lg font-semibold">₹{amount}</div>
         </div>
       </div>
