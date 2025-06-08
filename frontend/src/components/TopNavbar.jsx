@@ -1,6 +1,6 @@
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
-import { FaMandalorian } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import { FaRobot } from "react-icons/fa";
@@ -44,7 +44,7 @@ const TopNavbar = () => {
                 className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
                 title="Edit Profile"
               >
-                <FaMandalorian className="text-white text-xl" />
+                <FaUser className="text-white text-xl" />
               </button>
             </Link>
           </div>
