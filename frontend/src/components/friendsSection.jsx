@@ -44,7 +44,6 @@ const FriendsSection = ({ user }) => {
 
     const interval = setInterval(() => {
       fetchUpdatedBalances();
-
     }, 2000); // Every 2 seconds
 
     return () => clearInterval(interval); // Cleanup
@@ -135,26 +134,34 @@ const FriendsSection = ({ user }) => {
 
       {/* Scrollable Friends List */}
       <div
-        className={`space-y-2 ${filteredFriends.length > 4
+        className={`space-y-2 ${
+          filteredFriends.length > 4
             ? "overflow-y-auto max-h-[275px] pr-1 custom-scrollbar"
             : ""
-          }`}
+        }`}
       >
         {filteredFriends.length === 0 ? (
           <p className="text-red-500 text-center font-semibold">
             You have no friends as always.
           </p>
         ) : (
-          filteredFriends.map((f, index) => (
-            <FriendCard
-              key={f.friend?._id}
-              friend={f.friend}
-              balance={f.balance}
-              index={index}
-              handleDeleteFriend={() => handleDeleteFriend(f.friend?._id)}
-              updateFriendBalance={handleUpdateFriendBalance}
-            />
-          ))
+          [...filteredFriends]
+            .sort((a, b) => {
+              // Sort by absolute balance (non-zero balances come first, sorted by magnitude)
+              const absA = Math.abs(a.balance);
+              const absB = Math.abs(b.balance);
+              return absB - absA;
+            })
+            .map((f, index) => (
+              <FriendCard
+                key={f.friend?._id}
+                friend={f.friend}
+                balance={f.balance}
+                index={index}
+                handleDeleteFriend={() => handleDeleteFriend(f.friend?._id)}
+                updateFriendBalance={handleUpdateFriendBalance}
+              />
+            ))
         )}
       </div>
     </div>
