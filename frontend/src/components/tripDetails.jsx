@@ -74,7 +74,7 @@ const TripDetails = () => {
   }, [tripId]);
  // 2) Re-fetch only the expenses if `expenseEdited` is true
  useEffect(() => {
-  console.log(location.state?.expenseEdited)
+  // console.log(location.state?.expenseEdited)
    if (location.state?.expenseEdited) {
      // Clear the flag so we don't loop
      navigate(location.pathname, { replace: true, state: {} });
@@ -119,7 +119,7 @@ const TripDetails = () => {
   const handleAddMember = () => {
     navigate(`/add-members/${tripId}`);
   };
-  console.log(expenses)
+  // console.log(expenses)
 
   const handleRemoveMember = () => {
     if (members.length <= 1) {
