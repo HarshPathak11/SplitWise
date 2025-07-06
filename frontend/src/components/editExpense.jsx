@@ -10,7 +10,7 @@ const EditExpense = () => {
   const { state } = useLocation();
   const expenseId=state.originalExpense._id
   const [tripId,setTripId]=useState();
-  console.log(expenseId)
+  // console.log(expenseId)
 
   // State variables
   const [splitMode, setSplitMode] = useState("equally");
@@ -45,7 +45,7 @@ const EditExpense = () => {
     const fetchExpense = async () => {
       try {
         const { data } = await axios.get(`https://fairfare-0hyl.onrender.com/group/expense/${expenseId}`);
-        console.log(data)
+        // console.log(data)
         if (data.success) {
           const exp = data.expense;
           setTitle(exp.title);
