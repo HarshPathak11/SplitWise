@@ -5,6 +5,7 @@ import cors from 'cors'
 import connectDB from './db/mongoDb.js';
 import userRoutes from './routes/user.js';
 import groupRoutes from './routes/group.js';
+import pushRoutes from './push.js';
 
 import session from "express-session";
 
@@ -32,6 +33,8 @@ app.get('/api/ping', (req, res) => {
   res.send('pong');
 });
 
+// Use push notification routes
+app.use('/api/push', pushRoutes);
 
 // Use user routes
 app.use('/user', userRoutes);
