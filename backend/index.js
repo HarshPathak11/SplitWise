@@ -12,7 +12,7 @@ const app = express();
 
 app.use(express.json({extended:true}));
 app.use(cors({
-    origin: true,
+    origin: "https://fair-fare-phi.vercel.app",
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true // Allow credentials (cookies, authorization headers, etc.)
 }));
