@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import ComparisonTable from "./check";
 import Footer from "./footer";
+import Aurora from './Aurora';
+import RotatingText from "../ui/RotatingText";
+import SpotlightCard from "../ui/SpotLight";
 
 import { Link } from "react-router-dom";
 import Documentation from "./documentation";
 import FAQ from "./FaqSection";
+import Navbar from "./Navbar";
 
 // FAQItem Component
 const FAQItem = ({ question, answer, isOpen, onClick }) => {
@@ -44,7 +48,7 @@ const LandingPage = () => {
       </div>
 
       {/* Navbar */}
-      <nav className="w-full flex justify-between items-center px-10 py-5 backdrop-blur-lg bg-black/20 border-b border-white/10 z-50">
+      {/* <nav className="w-full flex justify-between items-center px-10 py-5 backdrop-blur-lg bg-black/20 border-b border-white/10 z-50">
         <div className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
           FairFare
         </div>
@@ -61,18 +65,33 @@ const LandingPage = () => {
             </button>
           </Link>
         </div>
-      </nav>
+      </nav> */}
+      <Navbar/>
 
       {/* Main Content */}
+    
       <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-11 lg:px-10 py-20 relative z-10">
         <div>
           <img src="/save.svg" className="drop-shadow-2xl" alt="Illustration" />
         </div>
 
-        <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
-          <h1 className="text-4xl lg:text-5xl font-bold  p-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
-            Split it <br /> Its easy this way.
-          </h1>
+      <SpotlightCard className="custom-spotlight-card p-10 sm:p-16" spotlightColor="rgba(0, 229, 255, 0.3)">
+        {/* <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300"> */}
+          <h1 className="text-6xl text-white font-bold mb-2">FairFare</h1>
+          <span className="text-5xl text-white font-bold flex flex-col md:flex-row items-center mb-2"><span className="mr-3 mb-2 sm:mb-0"> Easy</span><RotatingText
+  texts={['Splitting','Tracking','Money']}
+  mainClassName="px-4 bg-blue-700 text-5xl text-white font-bold overflow-hidden py-2 justify-center rounded-lg max-w-fit inline"
+  staggerFrom={"last"}
+  initial={{ y: "100%" }}
+  animate={{ y: 0 }}
+  exit={{ y: "-120%" }}
+  staggerDuration={0.025}
+  splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+  transition={{ type: "spring", damping: 30, stiffness: 400 }}
+  rotationInterval={2000}
+/></span>
+         
+       
           <p className="text-gray-400 mb-8">
             Why use Splitwise if we can do the same job but for free.
           </p>
@@ -95,14 +114,21 @@ const LandingPage = () => {
               Learn More
             </button>
           </div>
-        </div>
+        {/* </div> */}
+        </SpotlightCard>
       </div>
-
+      
+       <Aurora
+  colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
+  blend={0.5}
+  amplitude={1.0}
+  speed={0.8}
+/>
       <div id="comparison-table">
         <ComparisonTable />
       </div>
 
-      <div id="documentation-section">
+      <div id="doc">
         <Documentation />
       </div>
 
