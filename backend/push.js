@@ -17,6 +17,8 @@ let subscriptions = [];
 
 // Route to receive subscription from frontend
 router.post('/subscribe', (req, res) => {
+    console.log('Received subscription:', req.body);
+    
   const subscription = req.body;
   subscriptions.push(subscription); // Store per user ideally
   res.status(201).json({});
