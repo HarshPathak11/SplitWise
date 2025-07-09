@@ -19,13 +19,11 @@ app.use(
       "https://fairfare-0hyl.onrender.com",
     ],
     // origin: '*',
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
-  })
-);
-app.use(
-  session({
-    secret: "erfghluhafs",
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    // credentials: true // Allow credentials (cookies, authorization headers, etc.)
+}));
+app.use(session({
+    secret: 'erfghluhafs',
     resave: false,
     saveUninitialized: true,
     cookie: { maxAge: 10 * 60 * 1000 },
