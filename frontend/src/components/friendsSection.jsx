@@ -20,8 +20,8 @@ const FriendsSection = ({ user }) => {
     const fetchUpdatedBalances = async () => {
       try {
         const res = await axios.post(
-          // "https://fairfare-0hyl.onrender.com/user/get-updated-friend-balances",
-          "http://localhost:8000/user/get-updated-friend-balances",
+          "https://fairfare-0hyl.onrender.com/user/get-updated-friend-balances",
+          // "http://localhost:8000/user/get-updated-friend-balances",
           { userId: user?._id }
         );
 

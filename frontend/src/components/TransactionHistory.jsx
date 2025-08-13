@@ -67,7 +67,10 @@ const TransactionHistory = () => {
         navigate("/login");
         return;
       }
-      const res = await axios.get(`http://localhost:8000/user/${userId}`);
+      const res = await axios.get(
+        // `http://localhost:8000/user/${userId}`
+        `https://fairfare-0hyl.onrender.com/user/${userId}`
+      );
 
       fetchData(res.data.user);
     } catch (error) {
@@ -97,10 +100,9 @@ const TransactionHistory = () => {
       setFriendName(friend?.friend || "Unknown");
 
       const txRes = await axios.get(
-        `http://localhost:8000/expenses/${user?._id}/${friendId}`
+        // `http://localhost:8000/expenses/${user?._id}/${friendId}`
+        `https://fairfare-0hyl.onrender.com/expenses/${user?._id}/${friendId}`
       );
-
-      console.log("Transaction history:", txRes.data.expenses);
 
       setTransactions(txRes.data.expenses || []);
       setNetBalance(friend.balance || 0);
@@ -128,7 +130,10 @@ const TransactionHistory = () => {
     const paidAmount = Math.abs(amount);
     try {
       setLoading(true);
-      await axios.post("http://localhost:8000/user/update-friend-balance", {
+      await axios.post(
+        // "http://localhost:8000/user/update-friend-balance",
+        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+        {
         userEmail: storedUser.email,
         friendEmail: friendName.email,
         amount: paidAmount,
@@ -161,7 +166,10 @@ const TransactionHistory = () => {
     const receivedAmount = Math.abs(amount);
     try {
       setLoading(true);
-      await axios.post("http://localhost:8000/user/update-friend-balance", {
+      await axios.post(
+        // "http://localhost:8000/user/update-friend-balance",
+        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+        {
         userEmail: storedUser.email,
         friendEmail: friendName.email,
         amount: receivedAmount,
@@ -191,8 +199,8 @@ const TransactionHistory = () => {
     try {
       if (currentBalance > 0) {
         await axios.post(
-          // "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-          "http://localhost:8000/user/update-friend-balance",
+          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          // "http://localhost:8000/user/update-friend-balance",
           {
             userEmail: storedUser.email,
             friendEmail: friendName.email,
@@ -203,8 +211,8 @@ const TransactionHistory = () => {
         );
       } else {
         await axios.post(
-          // "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-          "http://localhost:8000/user/update-friend-balance",
+          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          // "http://localhost:8000/user/update-friend-balance",
           {
             userEmail: storedUser.email,
             friendEmail: friendName.email,

@@ -15,13 +15,13 @@ const app = express();
 app.use(express.json({ extended: true }));
 app.use(
   cors({
-    // origin: [
-    //   "https://fair-fare-phi.vercel.app",
-    //   "https://fairfare-0hyl.onrender.com",
-    // ],
-    origin: "http://localhost:5173", // Update to your frontend URL
+    origin: [
+      "https://fair-fare-phi.vercel.app",
+      "https://fairfare-0hyl.onrender.com",
+    ],
+    // origin: "http://localhost:5173", // Update to your frontend URL
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true // Allow credentials (cookies, authorization headers, etc.)
+    // credentials: true // Allow credentials (cookies, authorization headers, etc.)
 }));
 app.use(session({
     secret: 'erfghluhafs',

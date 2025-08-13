@@ -68,7 +68,7 @@ useEffect(() => {
 
       if (res.status !== 200) {
         toast.error("Failed to remove members. Try again.");
-        console.log("Failed to remove members:", res.data.message);
+        // console.log("Failed to remove members:", res.data.message);
         throw new Error(res.data.message || "Failed to remove members");
         
       }

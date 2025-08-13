@@ -301,7 +301,7 @@ const addFriends = async (req, res) => {
         await transporter
           .sendMail(mailOptions)
           .then(() => {
-            console.log("Email sent to new friend ", friendEmail);
+            // console.log("Email sent to new friend ", friendEmail);
           })
           .catch((err) => {
             console.error("Failed to send email to ", friendEmail, err);
