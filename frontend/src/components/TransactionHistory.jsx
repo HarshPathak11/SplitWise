@@ -32,13 +32,12 @@ const TransactionHistory = () => {
     if (!el) return;
     const { scrollTop, scrollHeight, clientHeight } = el;
     const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 100;
-    
+
     setIsAtBottom(atBottom);
   };
 
   const scrollToBottom = () => {
     if (bottomRef.current) {
-      console.log("Scrolling to bottom");
       bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
       setIsAtBottom(true);
     }
@@ -100,6 +99,8 @@ const TransactionHistory = () => {
       const txRes = await axios.get(
         `http://localhost:8000/expenses/${user?._id}/${friendId}`
       );
+
+      console.log("Transaction history:", txRes.data.expenses);
 
       setTransactions(txRes.data.expenses || []);
       setNetBalance(friend.balance || 0);
@@ -180,37 +181,45 @@ const TransactionHistory = () => {
     }
   };
 
-  // const handleSettleBalance = async () => {
-  //   const currentBalance = netBalance;
-  //   if (currentBalance === 0) return;
+  const handleSettleBalance = async () => {
+    const currentBalance = netBalance;
+    if (currentBalance === 0) {
+      toast.error("No balance to settle.");
+      return;
+    }
 
-  //   try {
-  //     if (currentBalance > 0) {
-  //       await axios.post(
-  //         "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-  //         {
-  //           userEmail: storedUser.email,
-  //           friendEmail: friendName.email,
-  //           amount: currentBalance,
-  //           action: "received",
-  //         }
-  //       );
-  //     } else {
-  //       await axios.post(
-  //         "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-  //         {
-  //           userEmail: storedUser.email,
-  //           friendEmail: friendName.email,
-  //           amount: Math.abs(currentBalance),
-  //           action: "paid",
-  //         }
-  //       );
-  //     }
-  //     setNetBalance(0);
-  //   } catch (error) {
-  //     toast.error("Error settling friend balance:", error);
-  //   }
-  // };
+    try {
+      if (currentBalance > 0) {
+        await axios.post(
+          // "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          "http://localhost:8000/user/update-friend-balance",
+          {
+            userEmail: storedUser.email,
+            friendEmail: friendName.email,
+            amount: currentBalance,
+            action: "received",
+            note: "Cleared Everything",
+          }
+        );
+      } else {
+        await axios.post(
+          // "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          "http://localhost:8000/user/update-friend-balance",
+          {
+            userEmail: storedUser.email,
+            friendEmail: friendName.email,
+            amount: Math.abs(currentBalance),
+            action: "paid",
+            note: "Cleared Everything",
+          }
+        );
+      }
+      fetchUser();
+      setNetBalance(0);
+    } catch (error) {
+      toast.error("Please refresh the page first!");
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-gray-900">
@@ -278,7 +287,7 @@ const TransactionHistory = () => {
 
           <button
             title="Settle Up"
-            // onClick={handleSettleBalance}
+            onClick={handleSettleBalance}
             className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
           >
             <MdOutlineCurrencyExchange className="w-8 h-8" />
@@ -294,7 +303,7 @@ const TransactionHistory = () => {
             netBalance >= 0 ? "text-green-400" : "text-red-400"
           }`}
         >
-          {netBalance >= 0 ? "₹" : "-₹"}
+          {netBalance >= 0 ? "₹" : "₹"}
           {Math.abs(netBalance).toFixed(2)}
         </p>
         <p className="text-xs text-gray-500 mt-2">
@@ -336,68 +345,64 @@ const TransactionHistory = () => {
             </p>
           </div>
         ) : (
-            <div className="flex-1 overflow-y-auto auto p-3">
-              {transactions.map((tx) => {
-                const isUser = tx.paidBy._id === currentUserId;
-                const owedEntry = tx.owedBy.find(
-                  (o) => o.user._id === friendId
-                );
-                const amount = owedEntry ? owedEntry.amount : tx.amount;
-                return (
+          <div className="flex-1 overflow-y-auto auto p-3">
+            {transactions.map((tx) => {
+              const isUser = tx.paidBy._id === currentUserId;
+              const owedEntry = tx.owedBy.find((o) => o.user._id === friendId);
+              const amount = owedEntry ? owedEntry.amount : tx.amount;
+              return (
+                <div
+                  key={tx._id}
+                  className={`mt-5 flex ${
+                    isUser ? "justify-end" : "justify-start"
+                  }`}
+                >
                   <div
-                    key={tx._id}
-                    className={`mt-5 flex ${
-                      isUser ? "justify-end" : "justify-start"
+                    className={`max-w-xs px-4 py-3 rounded-2xl ${
+                      isUser
+                        ? "bg-red-900 rounded-br-none"
+                        : "bg-green-800 rounded-bl-none"
                     }`}
                   >
-                    <div
-                      className={`max-w-xs px-4 py-3 rounded-2xl ${
-                        isUser
-                          ? "bg-red-900 rounded-br-none"
-                          : "bg-green-800 rounded-bl-none"
-                      }`}
-                    >
-                      <div className="flex flex-col items-start">
-                        <span
-                          className={`text-lg font-medium ${
-                            isUser ? "text-red-300" : "text-green-300"
-                          }`}
-                        >
-                          ₹{amount.toFixed(2)}
-                        </span>
-                        {tx.title && (
-                          <h2 className=" font-bold text-gray-200 mt-1">
-                            {tx.title}
-                          </h2>
-                        )}
-                        <span className="text-xs text-gray-400 mt-1">
-                          {new Date(tx.updatedAt).toLocaleString([], {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
+                    <div className="flex flex-col items-start">
+                      <span
+                        className={`text-2xl font-bold ${
+                          isUser ? "text-red-300" : "text-green-300"
+                        }`}
+                      >
+                        ₹{amount.toFixed(2)}
+                      </span>
+                      {tx.title && (
+                        <h2 className=" font-bold text-gray-200 mt-1">
+                          {tx.title}
+                        </h2>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <div className="text-left mr-2">
+                        <span className="text-xs text-white-500 mt-1">
+                          {tx.groupName}
                         </span>
                       </div>
-                      {tx.label && (
-                        <div
-                          className={`mt-1 text-sm ${
-                            isUser ? "text-green-100" : "text-gray-300"
-                          }`}
-                        >
-                          {tx.label}
-                        </div>
-                      )}
                       <div className="text-right">
-                        <span className="text-xs text-gray-500 mt-1">
+                        <span className="text-xs text-gray-300">
                           {isUser ? "You paid" : `${friendName.username} paid`}
                         </span>
                       </div>
                     </div>
+                    <span className="text-xs text-gray-400 mt-1">
+                      {new Date(tx.updatedAt).toLocaleString([], {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </span>
                   </div>
-                );
-              })}
-              {/* Bottom sentinel for scrollIntoView */}
-              <div ref={bottomRef} />
-            </div>
+                </div>
+              );
+            })}
+            {/* Bottom sentinel for scrollIntoView */}
+            <div ref={bottomRef} />
+          </div>
         )}
       </div>
 

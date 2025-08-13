@@ -85,37 +85,42 @@ const FriendCard = ({
 
   const handleSettleBalance = async () => {
     const currentBalance = balance;
-    if (currentBalance === 0) return;
+    if (currentBalance === 0) {
+      toast.error("No balance to settle.");
+      return;
+    }
 
     try {
       if (currentBalance > 0) {
         await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          // "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          "http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
             amount: currentBalance,
             action: "received",
+            note: "Cleared Everything",
           }
         );
       } else {
         await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          // "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          "http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
             amount: Math.abs(currentBalance),
             action: "paid",
+            note: "Cleared Everything",
           }
         );
       }
       balance = 0;
       updateFriendBalance(friend.email, balance);
       setSettleAmount(0);
-      setShowDropdown(false);
-      setShowQRCode(false);
     } catch (error) {
-      console.error("Error settling friend balance:", error);
+      toast.error("Please refresh the page first!");
     }
   };
 
