@@ -6,6 +6,7 @@ import fetch from "node-fetch";
 import connectDB from "./db/mongoDb.js";
 import userRoutes from "./routes/user.js";
 import groupRoutes from "./routes/group.js";
+import expenseRoutes from "./routes/expense.js";
 
 import session from "express-session";
 
@@ -14,13 +15,13 @@ const app = express();
 app.use(express.json({ extended: true }));
 app.use(
   cors({
-    origin: [
-      "https://fair-fare-phi.vercel.app",
-      "https://fairfare-0hyl.onrender.com",
-    ],
-    // origin: '*',
+    // origin: [
+    //   "https://fair-fare-phi.vercel.app",
+    //   "https://fairfare-0hyl.onrender.com",
+    // ],
+    origin: "http://localhost:5173", // Update to your frontend URL
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    // credentials: true // Allow credentials (cookies, authorization headers, etc.)
+    credentials: true // Allow credentials (cookies, authorization headers, etc.)
 }));
 app.use(session({
     secret: 'erfghluhafs',
@@ -43,6 +44,9 @@ app.use("/user", userRoutes);
 
 //group routes
 app.use("/group", groupRoutes);
+
+//Expenses routes
+app.use("/expenses", expenseRoutes);
 
 // ✅ Self-ping function to prevent Render sleeping
 function keepServerAwake() {

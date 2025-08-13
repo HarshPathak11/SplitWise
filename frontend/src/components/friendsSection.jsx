@@ -20,7 +20,8 @@ const FriendsSection = ({ user }) => {
     const fetchUpdatedBalances = async () => {
       try {
         const res = await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/get-updated-friend-balances",
+          // "https://fairfare-0hyl.onrender.com/user/get-updated-friend-balances",
+          "http://localhost:8000/user/get-updated-friend-balances",
           { userId: user?._id }
         );
 
@@ -156,7 +157,7 @@ const FriendsSection = ({ user }) => {
       <div
         className={`space-y-2 ${
           filteredFriends.length > 4
-            ? "overflow-y-auto max-h-[275px] pr-1 custom-scrollbar"
+            ? "overflow-y-auto max-h-[331px] pr-1 custom-scrollbar"
             : ""
         }`}
       >

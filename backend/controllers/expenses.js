@@ -1,19 +1,49 @@
-import {User} from '../models/schema.js';
+import { Expense } from '../models/schema.js';
 
-const addData=async(req,res)=>{
-    const {username, email, groups}=req.body;
-    if(!username||!email||!groups) return res.status(400).json({
-        status: "Did not get required data!"
-    });
-    const user=await User.create({
-        username,
-        email,
-        groups
-    });
+const getUserFriendExpenses = async (req, res) => {
+  try {
+    const { currentUserId, friendId } = req.params;
+
+    if (!currentUserId || !friendId) {
+      return res.status(400).json({
+        status: "Missing currentUserId or friendId"
+      });
+    }
+
+      if (currentUserId === friendId) {
+      return res.status(400).json({
+        status: "Invalid request: friendId and currentUserId cannot be the same"
+      });
+    }
+
+const expenses = await Expense.find({
+  $or: [
+    {
+      paidBy: currentUserId,
+      "owedBy.user": friendId
+    },
+    {
+      paidBy: friendId,
+      "owedBy.user": currentUserId
+    }
+  ]
+})
+  .populate("paidBy", "username email")
+  .populate("owedBy.user", "username email");
+
     return res.status(200).json({
-        status:"User created Successfully",
-        details:user
-    })
-}
+      status: "Success",
+      count: expenses.length,
+      expenses
+    });
 
-export {addData};
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: "Error",
+      message: error.message
+    });
+  }
+};
+
+export { getUserFriendExpenses };

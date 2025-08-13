@@ -1,4 +1,4 @@
-import { User } from "../models/schema.js";
+import { User, Expense } from "../models/schema.js";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
@@ -151,7 +151,7 @@ const userLogin = async (req, res) => {
 };
 
 //Function to fetch user details
-const userDetails = async (req, res) => {
+const userDetails = async (req, res) => {  
   try {
     const userId = req.params.id;
 
@@ -319,11 +319,79 @@ const addFriends = async (req, res) => {
   }
 };
 
-const updateFriendBalance = async (req, res) => {
-  const { userEmail, friendEmail, amount, action } = req.body;
-  // console.log("userEmail", userEmail, "friendEmail", friendEmail, "amount", amount, "action", action);
+// const updateFriendBalance = async (req, res) => {
+//   const { userEmail, friendEmail, amount, action } = req.body;
+//   // console.log("userEmail", userEmail, "friendEmail", friendEmail, "amount", amount, "action", action);
 
-  if (!userEmail || !friendEmail || !amount || !action) {
+//   if (!userEmail || !friendEmail || !amount || !action) {
+//     return res.status(400).json({ message: "Incomplete data received" });
+//   }
+
+//   const value = parseFloat(amount);
+//   if (isNaN(value) || value <= 0) {
+//     return res
+//       .status(400)
+//       .json({ message: "Amount must be a positive number" });
+//   }
+
+//   try {
+//     // Fetch both users
+//     const user = await User.findOne({ email: userEmail });
+//     const friend = await User.findOne({ email: friendEmail });
+
+//     if (!user || !friend) {
+//       return res.status(404).json({ message: "User or friend not found" });
+//     }
+
+//     let userIncrement, friendIncrement;
+
+//     // When user pays friend, update as follows:
+//     // - In user's friends array (for the friend): balance increases (+amount)
+//     // - In friend's friends array (for the user): balance decreases (-amount)
+//     if (action === "paid") {
+//       userIncrement = value;
+//       friendIncrement = -value;
+//     }
+//     // When user receives from friend, the reverse logic applies:
+//     // - In user's friends array (for the friend): balance decreases (-amount)
+//     // - In friend's friends array (for the user): balance increases (+amount)
+//     else if (action === "received") {
+//       userIncrement = -value;
+//       friendIncrement = value;
+//     } else {
+//       return res.status(400).json({ message: "Invalid action type" });
+//     }
+
+//     // Update the user's friend record (user -> friend)
+//     const userUpdateResult = await User.updateOne(
+//       { email: userEmail, "friends.friend": friend._id },
+//       { $inc: { "friends.$.balance": userIncrement } }
+//     );
+
+//     // Update the friend's record (friend -> user)
+//     const friendUpdateResult = await User.updateOne(
+//       { email: friendEmail, "friends.friend": user._id },
+//       { $inc: { "friends.$.balance": friendIncrement } }
+//     );
+
+//     // If one of the update operations did not match a document, you might consider
+//     // creating the missing subdocument. Here we assume that friendship already exists.
+
+//     return res.status(200).json({
+//       message: "Friend balance updated",
+//       userUpdate: userUpdateResult,
+//       friendUpdate: friendUpdateResult,
+//     });
+//   } catch (error) {
+//     console.error("Error updating friend balance:", error);
+//     return res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
+const updateFriendBalance = async (req, res) => {
+  const { userEmail, friendEmail, amount, action, note } = req.body;
+
+  if (!userEmail || !friendEmail || !amount || !action || !note) {
     return res.status(400).json({ message: "Incomplete data received" });
   }
 
@@ -344,20 +412,18 @@ const updateFriendBalance = async (req, res) => {
     }
 
     let userIncrement, friendIncrement;
+    let payer, owedUser;
 
-    // When user pays friend, update as follows:
-    // - In user's friends array (for the friend): balance increases (+amount)
-    // - In friend's friends array (for the user): balance decreases (-amount)
     if (action === "paid") {
       userIncrement = value;
       friendIncrement = -value;
-    }
-    // When user receives from friend, the reverse logic applies:
-    // - In user's friends array (for the friend): balance decreases (-amount)
-    // - In friend's friends array (for the user): balance increases (+amount)
-    else if (action === "received") {
+      payer = user;
+      owedUser = friend;
+    } else if (action === "received") {
       userIncrement = -value;
       friendIncrement = value;
+      payer = friend;
+      owedUser = user;
     } else {
       return res.status(400).json({ message: "Invalid action type" });
     }
@@ -374,13 +440,30 @@ const updateFriendBalance = async (req, res) => {
       { $inc: { "friends.$.balance": friendIncrement } }
     );
 
-    // If one of the update operations did not match a document, you might consider
-    // creating the missing subdocument. Here we assume that friendship already exists.
+    // Create expense document
+    const expense = await Expense.create({
+      title: note,
+      amount: value,
+      paidBy: payer._id,
+      owedBy: [
+        {
+          user: owedUser._id,
+          amount: value,
+        },
+      ],
+    });
+
+    // Push expense to payer's recentExpense
+    await User.updateOne(
+      { _id: payer._id },
+      { $push: { recentExpense: expense } }
+    );
 
     return res.status(200).json({
-      message: "Friend balance updated",
+      message: "Friend balance updated & expense added",
       userUpdate: userUpdateResult,
       friendUpdate: friendUpdateResult,
+      expense,
     });
   } catch (error) {
     console.error("Error updating friend balance:", error);
