@@ -53,7 +53,7 @@ function keepServerAwake() {
   setInterval(() => {
     fetch("https://fairfare-0hyl.onrender.com/api/ping")
       .then((res) => res.text())
-      .then((data) => console.log("Self-ping success:", data))
+      .then((data) => console.log("Self-ping successfully:", data))
       .catch((err) => console.log("Self-ping failed:", err.message));
   }, 5 * 60 * 1000); // every 5 minutes
 }
