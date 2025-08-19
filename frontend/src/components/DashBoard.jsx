@@ -24,7 +24,7 @@ const Dashboard = () => {
       try {
         const response = await axios.get(
           `https://fairfare-0hyl.onrender.com/user/${userId}`
-          // `//http://localhost:8000/user/${userId}`
+          // `http://localhost:8000/user/${userId}`
         );
         // console.log("response is ", response);
 
@@ -36,10 +36,10 @@ const Dashboard = () => {
 
         const fcmToken = await requestNotificationPermission();
 
-        if(response.data.user.fcmToken !== fcmToken) {
+        if(response.data.user.fcmToken !== fcmToken && fcmToken) {
           
         await axios.post(
-          // `//http://localhost:8000/user/set-fcm-token`,
+          // `http://localhost:8000/user/set-fcm-token`,
           `https://fairfare-0hyl.onrender.com/user/set-fcm-token`,
            {
           fcmToken,
@@ -54,7 +54,7 @@ const Dashboard = () => {
 
     getDetails();
   }, []);
-  // console.log("User", user);
+  console.log("User", user);
 
   return (
     <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
