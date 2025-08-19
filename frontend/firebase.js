@@ -19,4 +19,16 @@ const app = initializeApp(firebaseConfig);
 // 🔔 Add Messaging (for notifications)
 const messaging = getMessaging(app);
 
+onMessage(messaging, (payload) => {
+  console.log("📩 Foreground message received:", payload);
+
+  // Only show if the browser has permission
+  if (Notification.permission === "granted") {
+    new Notification(payload.notification?.title || payload.data?.title, {
+      body: payload.notification?.body || payload.data?.body,
+      icon: payload.notification?.icon || payload.data?.icon || "/default-icon.png",
+    });
+  }
+});
+
 export { app, messaging };
