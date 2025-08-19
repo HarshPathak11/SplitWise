@@ -94,7 +94,7 @@ const FriendCard = ({
       if (currentBalance > 0) {
         await axios.post(
           "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-          // "http://localhost:8000/user/update-friend-balance",
+          // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
@@ -106,7 +106,7 @@ const FriendCard = ({
       } else {
         await axios.post(
           "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-          // "http://localhost:8000/user/update-friend-balance",
+          // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,

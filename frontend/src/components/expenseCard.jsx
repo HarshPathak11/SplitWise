@@ -53,6 +53,7 @@ const ExpenseCard = ({
     try {
       await axios.delete(
         `https://fairfare-0hyl.onrender.com/group/del-expense/${_id}`
+        // `//http://localhost:8000/group/del-expense/${_id}`
       );
       toast.success("Expense deleted");
       setShowDeleteModal(false);

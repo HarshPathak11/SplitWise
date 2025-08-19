@@ -68,7 +68,7 @@ const TransactionHistory = () => {
         return;
       }
       const res = await axios.get(
-        // `http://localhost:8000/user/${userId}`
+        // `//http://localhost:8000/user/${userId}`
         `https://fairfare-0hyl.onrender.com/user/${userId}`
       );
 
@@ -100,7 +100,7 @@ const TransactionHistory = () => {
       setFriendName(friend?.friend || "Unknown");
 
       const txRes = await axios.get(
-        // `http://localhost:8000/expenses/${user?._id}/${friendId}`
+        // `//http://localhost:8000/expenses/${user?._id}/${friendId}`
         `https://fairfare-0hyl.onrender.com/expenses/${user?._id}/${friendId}`
       );
 
@@ -131,7 +131,7 @@ const TransactionHistory = () => {
     try {
       setLoading(true);
       await axios.post(
-        // "http://localhost:8000/user/update-friend-balance",
+        // "//http://localhost:8000/user/update-friend-balance",
         "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
         {
         userEmail: storedUser.email,
@@ -139,6 +139,7 @@ const TransactionHistory = () => {
         amount: paidAmount,
         action: "paid",
         note: text,
+        friendFcmToken: friendName.fcmToken,
       });
       toast.success("Paid transaction added!");
       setAmount(0);
@@ -167,7 +168,7 @@ const TransactionHistory = () => {
     try {
       setLoading(true);
       await axios.post(
-        // "http://localhost:8000/user/update-friend-balance",
+        // "//http://localhost:8000/user/update-friend-balance",
         "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
         {
         userEmail: storedUser.email,
@@ -175,6 +176,7 @@ const TransactionHistory = () => {
         amount: receivedAmount,
         action: "received",
         note: text,
+        friendFcmToken: friendName.fcmToken,
       });
       toast.success("Received transaction added!");
       setAmount(0);
@@ -200,25 +202,27 @@ const TransactionHistory = () => {
       if (currentBalance > 0) {
         await axios.post(
           "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-          // "http://localhost:8000/user/update-friend-balance",
+          // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: storedUser.email,
             friendEmail: friendName.email,
             amount: currentBalance,
             action: "received",
             note: "Cleared Everything",
+            friendFcmToken: friendName.fcmToken,
           }
         );
       } else {
         await axios.post(
           "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-          // "http://localhost:8000/user/update-friend-balance",
+          // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: storedUser.email,
             friendEmail: friendName.email,
             amount: Math.abs(currentBalance),
             action: "paid",
             note: "Cleared Everything",
+            friendFcmToken: friendName.fcmToken,
           }
         );
       }

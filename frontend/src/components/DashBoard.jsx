@@ -6,13 +6,14 @@ import FairFareCard from "./FairFareCard";
 import FriendsSection from "./friendsSection";
 import RecentExpenses from "./RecentExpenses";
 import TopNavbar from "./TopNavbar";
+import { requestNotificationPermission } from "../../notifications";
 
 const Dashboard = () => {
   const [user, setUser] = useState();
 
   useEffect(() => {
     // console.log("Fetching user details on dashboard load");
-    
+
     async function getDetails() {
       const userId = Cookies.get("id");
       // console.log("userId is ", userId);
@@ -23,7 +24,7 @@ const Dashboard = () => {
       try {
         const response = await axios.get(
           `https://fairfare-0hyl.onrender.com/user/${userId}`
-          // `http://localhost:8000/user/${userId}`
+          // `//http://localhost:8000/user/${userId}`
         );
         // console.log("response is ", response);
 
@@ -32,6 +33,19 @@ const Dashboard = () => {
 
           localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
         }
+
+        const fcmToken = await requestNotificationPermission();
+
+        if(response.data.user.fcmToken !== fcmToken) {
+          
+        await axios.post(
+          // `//http://localhost:8000/user/set-fcm-token`,
+          `https://fairfare-0hyl.onrender.com/user/set-fcm-token`,
+           {
+          fcmToken,
+          userId
+        }); 
+      }
       } catch (err) {
         console.error("Error fetching user:", err);
       }
@@ -63,10 +77,10 @@ const Dashboard = () => {
           <FairFareCard />
 
           {/* Trips Section */}
-          <TripsSection />          
+          <TripsSection />
         </div>
 
-        <div className="space-y-4 h-full flex flex-col">  
+        <div className="space-y-4 h-full flex flex-col">
           {/* Today's expenses */}
           <RecentExpenses user={user} />
 

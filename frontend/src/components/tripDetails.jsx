@@ -43,6 +43,7 @@ const TripDetails = () => {
       try {
         const response = await axios.get(
           `https://fairfare-0hyl.onrender.com/group/get-group/${tripId}`
+          // `//http://localhost:8000/group/get-group/${tripId}` // Use your local or production URL
         );
         if (response.status === 200) {
           const group = response.data;
@@ -84,6 +85,7 @@ const TripDetails = () => {
        try {
          const response = await axios.get(
            `https://fairfare-0hyl.onrender.com/group/get-group/${tripId}`
+          // `//http://localhost:8000/group/get-group/${tripId}`
          );
          if (response.status === 200) {
            const group = response.data;
@@ -159,7 +161,7 @@ const TripDetails = () => {
       const currentUserId = user._id;
       const res = await axios.post(
         `https://fairfare-0hyl.onrender.com/group/remove-members/${tripId}`,
-        // `http://localhost:8000/group/remove-members/${tripId}`,
+        // `//http://localhost:8000/group/remove-members/${tripId}`,
         {
           members: [currentUserId], // Send only the current user ID to remove
         }

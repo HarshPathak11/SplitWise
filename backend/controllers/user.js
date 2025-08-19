@@ -2,6 +2,10 @@ import { User, Expense } from "../models/schema.js";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
+import {
+  sendOneNotification,
+  sendMultipleNotifications,
+} from "../controllers/Notifications.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -180,6 +184,31 @@ const userDetails = async (req, res) => {
   }
 };
 
+const setFcmToken = async (req, res) => {
+  try {
+    const { fcmToken, userId } = req.body;
+
+    if (!fcmToken) {
+      return res.status(400).json({ message: "FCM token is required" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { fcmToken },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "FCM token set successfully", user });
+  } catch (error) {
+    console.error("Error setting FCM token:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 // Function to update user profile
 const updateUserProfile = async (req, res) => {
   try {
@@ -237,6 +266,15 @@ const addFriends = async (req, res) => {
       { $push: { friends: { friend: friend._id, balance: 0 } } }
     );
 
+    // ✅ Send notifications
+    if (friend.fcmToken) {
+      const tokens = [friend.fcmToken];
+      const title = "New Friend Added";
+      const body = `${user.username} has added you as a friend!`;
+
+    await sendMultipleNotifications(tokens, title, body);
+    }
+
     return res.status(200).json({
       message: "Friend added successfully",
       friend,
@@ -286,6 +324,15 @@ const addFriends = async (req, res) => {
           email: friend.email,
           username: friend.username,
         });
+
+        //Send Notification
+        if (friend.fcmToken) {
+          const tokens = [friend.fcmToken];
+          const title = "New Friend Added";
+          const body = `${user.username} has added you as a friend!`;
+
+          await sendMultipleNotifications(tokens, title, body);
+        }
       } else {
         // Friend does not exist — send invitation email.
         const mailOptions = {
@@ -403,6 +450,16 @@ const updateFriendBalance = async (req, res) => {
       { _id: payer._id },
       { $push: { recentExpense: expense } }
     );
+
+    // ✅ Send notifications    
+    if (friend.fcmToken) {
+      
+      sendOneNotification(
+        friend.fcmToken,
+        "Balance Updated",
+        `Your transaction with ${user.username} has been updated.`
+      );
+    }
 
     return res.status(200).json({
       message: "Friend balance updated & expense added",
@@ -589,4 +646,5 @@ export {
   updateFriendBalance,
   changePassword,
   getUpdatedFriendBalances,
+  setFcmToken,
 };

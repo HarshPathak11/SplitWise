@@ -21,7 +21,7 @@ app.use(
     ],
     // origin: "http://localhost:5173", // Update to your frontend URL
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    // credentials: true // Allow credentials (cookies, authorization headers, etc.)
+    credentials: true // Allow credentials (cookies, authorization headers, etc.)
 }));
 app.use(session({
     secret: 'erfghluhafs',

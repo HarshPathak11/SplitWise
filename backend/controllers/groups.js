@@ -1,6 +1,10 @@
 import { Group } from "../models/schema.js";
 import { User } from "../models/schema.js";
 import { Expense } from "../models/schema.js";
+import {
+  sendOneNotification,
+  sendMultipleNotifications,
+} from "../controllers/Notifications.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
@@ -86,6 +90,7 @@ const addMembers = async (req, res) => {
     if (!group) return res.status(404).json({ message: "Group not found" });
 
     const existingMemberIds = group.members.map((id) => id.toString());
+    const newMembers = members.filter((id) => !existingMemberIds.includes(id)); // ✅ only new users
     const allMembers = [
       ...new Set([...existingMemberIds, ...members.map((id) => id.toString())]),
     ];
@@ -126,6 +131,23 @@ const addMembers = async (req, res) => {
 
     await group.save();
 
+    // Step 3: 🔔 Notify newly added members
+    if (newMembers.length > 0) {
+      const users = await User.find(
+        { _id: { $in: newMembers } },
+        "fcmToken username"
+      );
+
+      // Collect all valid tokens
+      const tokens = users.map((u) => u.fcmToken).filter(Boolean);
+
+      if (tokens.length > 0) {
+        const title = "Added to a Group";
+        const body = `You have been added to the group "${group.name}".`;
+        await sendMultipleNotifications(tokens, title, body); // ✅ send in one request
+      }
+    }
+
     const updatedGroup = await Group.findById(groupId).populate("members");
     res.status(200).json(updatedGroup);
   } catch (err) {
@@ -138,7 +160,6 @@ const removeMembers = async (req, res) => {
   const groupId = req.params.id;
   const { members } = req.body; // members = array of user._id
   // console.log("Removing members from group:", groupId, "Members:", members);
-  
 
   if (!groupId || !Array.isArray(members)) {
     return res.status(400).json({ message: "Invalid input" });
@@ -163,6 +184,20 @@ const removeMembers = async (req, res) => {
       { _id: { $in: members } },
       { $pull: { groups: groupId } }
     );
+
+    // Step 3: 🔔 Notify removed members
+    const removedUsers = await User.find(
+      { _id: { $in: members } },
+      "fcmToken username"
+    );
+    // Collect all valid tokens
+    const tokens = removedUsers.map((u) => u.fcmToken).filter(Boolean);
+
+    if (tokens.length > 0) {
+      const title = "Removed from Group";
+      const body = `You have been removed from the group "${group.name}".`;
+      await sendMultipleNotifications(tokens, title, body); // ✅ one request to FCM
+    }
 
     // ✅ Return updated group
     const updatedGroup = await Group.findById(groupId).populate(
@@ -342,6 +377,33 @@ const addExpenseController = async (req, res) => {
         { $inc: { "friends.$.balance": -owed.amount } },
         { session }
       );
+    }
+
+    // Send Notification to all owedBy users (including payer)
+    const userIds = owedByArray.map((owed) => owed.user);
+    // include payer as well if not already in owedByArray
+    if (!userIds.includes(paidBy)) {
+      userIds.push(paidBy);
+    }
+
+    // Fetch their FCM tokens from User collection
+    const users = await User.find(
+      { _id: { $in: userIds } },
+      "fcmToken username"
+    );
+
+    // Extract tokens
+    const tokens = users.map((u) => u.fcmToken).filter(Boolean);
+
+    // Prepare notification
+    if (tokens.length > 0) {
+      const payer = users.find((u) => u._id.toString() === paidBy.toString());
+      const title = "Tap to see";
+      const body = `${newExpense.title} expense has been added by ${
+        payer?.username || "Someone"
+      }. \nAmount: ${newExpense.amount}`;
+
+      await sendMultipleNotifications(tokens, title, body);
     }
 
     // Commit transaction if all operations succeed
@@ -539,6 +601,36 @@ const addafterDeleteExpenseController = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
+    // ✅ Send notifications after successful edit
+    try {
+      let notifyUsers = [];
+
+      if (groupId) {
+        // If it's a group expense → notify all group members
+        const group = await Group.findById(groupId).populate(
+          "members",
+          "fcmToken username"
+        );
+        notifyUsers = group.members;
+      } else {
+        // If it's a non-group expense → notify only involved members
+        notifyUsers = await User.find(
+          { _id: { $in: involvedMembers } },
+          "fcmToken username"
+        );
+      }
+
+      // Collect tokens
+      const tokens = notifyUsers.map((u) => u.fcmToken).filter(Boolean); // remove null/undefined
+
+      if (tokens.length > 0) {
+        const body = `Expense "${title}" has been updated for ₹${amount}.`;
+        await sendMultipleNotifications(tokens, title, body);
+      }
+    } catch (notifyErr) {
+      console.error("Error sending expense edited notification:", notifyErr);
+    }
+
     return res.status(200).json({ success: true, expense: newExpense });
   } catch (error) {
     await session.abortTransaction();
@@ -553,6 +645,8 @@ const addafterDeleteExpenseController = async (req, res) => {
 // -----------------------------------------
 const deleteExpenseController = async (req, res) => {
   const { expenseId } = req.params;
+  const { action } = req.body;
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -562,7 +656,9 @@ const deleteExpenseController = async (req, res) => {
     if (!expense) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(404).json({ success: false, message: "Expense not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Expense not found" });
     }
 
     const { paidBy, owedBy, amount, group: groupId } = expense;
@@ -611,6 +707,22 @@ const deleteExpenseController = async (req, res) => {
     // 5) Delete the Expense document itself
     await Expense.deleteOne({ _id: expenseId }, { session });
 
+    // 6) 🔔 Notify group members about the deleted expense
+    if (groupId && action !== "edit") {
+      const group = await Group.findById(groupId).populate(
+        "members",
+        "fcmToken username"
+      );
+      if (group && group.members.length > 0) {
+        const tokens = group.members.map((m) => m.fcmToken).filter(Boolean);
+        if (tokens.length > 0) {
+          const title = "Expense Deleted";
+          const body = `An expense "${expense.title}" of amount ₹${expense.amount} has been deleted from group "${group.name}".`;
+          await sendMultipleNotifications(tokens, title, body);
+        }
+      }
+    }
+
     await session.commitTransaction();
     session.endSession();
     return res.status(200).json({ success: true, message: "Expense deleted" });
@@ -635,7 +747,9 @@ const getExpenseController = async (req, res) => {
       .lean();
 
     if (!expense) {
-      return res.status(404).json({ success: false, message: "Expense not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Expense not found" });
     }
 
     return res.status(200).json({ success: true, expense });
@@ -656,5 +770,5 @@ export {
   removeMembers,
   addafterDeleteExpenseController,
   deleteExpenseController,
-  getExpenseController
+  getExpenseController,
 };
