@@ -15,9 +15,11 @@ const sendService = async (token, title, body) => {
 
   try {
     const res = await admin.messaging().send(payload);
-    // console.log("Notification sent successfully");
+    console.log("Notification sent successfully");
+    console.log(res)
     return res;
   } catch (error) {
+    console.log(error);
     console.error("Error sending notification:", error);
     throw error;
   }
@@ -39,15 +41,16 @@ const sendToMultiple = async (tokens, title, body) => {
     data : {url: 'https://fair-fare-phi.vercel.app'},
     tokens, // ✅ multiple tokens go here
   };
-
+ console.log("inside sendtomulitple");
   try {
     const res = await admin.messaging().sendEachForMulticast(payload);
-    // console.log(`Notifications sent: ${res.successCount} success, ${res.failureCount} failed`);
+    console.log(`Notifications sent: ${res.successCount} success, ${res.failureCount} failed`);
     if (res.responses.some(r => !r.success)) {
-      console.error("Failed tokens:", res.responses.filter(r => !r.success));
+      console.log("Failed tokens:", res.responses.filter(r => !r.success));
     }
     return res;
   } catch (error) {
+    console.log(error);
     console.error("Error sending notifications to multiple users:", error);
     throw error;
   }
