@@ -40,7 +40,7 @@ const Dashboard = () => {
           
         await axios.post(
           // `http://localhost:8000/user/set-fcm-token`,
-          `https://fairfare-0hyl.onrender.com/user/set-fcm-token`,
+          `https://fairfare-0hyl.onrender.com/user/set-fcm-token` ,
            {
           fcmToken,
           userId
