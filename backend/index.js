@@ -36,7 +36,7 @@ connectDB();
 
 //Ping Route
 app.get("/api/ping", (req, res) => {
-  res.send("pong");
+  res.send("ponging");
 });
 
 // Use user routes
