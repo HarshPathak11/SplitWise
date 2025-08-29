@@ -146,7 +146,7 @@ const LandingPage = () => {
         </div>
 
         <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
-          <p>Some content on this page might be from previous versions and not upto date!</p>
+          <p>Some content on this page might be from previous versions and not upto date</p>
           <h1 className="text-4xl lg:text-5xl font-bold  p-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
             Split it <br /> Its easy this way.
           </h1>
