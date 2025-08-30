@@ -36,7 +36,7 @@ const Dashboard = () => {
 
         const fcmToken = await requestNotificationPermission();
 
-        if(response.data.user.fcmToken !== fcmToken || !fcmToken) {
+        if(response.data.user.fcmToken !== fcmToken || reponse.data.user.fcmToken === null || !reponse.data.user.fcmToken) {
           
         await axios.post(
           // `http://localhost:8000/user/set-fcm-token`,
