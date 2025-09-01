@@ -6,28 +6,6 @@ import { Link, useNavigate } from "react-router-dom";
 import Documentation from "./documentation";
 import FAQ from "./FaqSection";
 
-// FAQItem Component
-// const FAQItem = ({ question, answer, isOpen, onClick }) => {
-//   return (
-//     <div
-//       className="bg-white/5 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer"
-//       onClick={onClick}
-//     >
-//       <div className="flex justify-between items-center">
-//         <h3 className="text-xl font-semibold text-white">{question}</h3>
-//         <span
-//           className={`text-white transform transition-transform ${
-//             isOpen ? "rotate-180" : "rotate-0"
-//           }`}
-//         >
-//           ▼
-//         </span>
-//       </div>
-//       {isOpen && <p className="text-gray-400 mt-4">{answer}</p>}
-//     </div>
-//   );
-// };
-
 const LandingPage = () => {
   const navigate = useNavigate();
   
@@ -88,7 +66,7 @@ const LandingPage = () => {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 w-11/12 max-w-sm text-center">
             <h2 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 mb-4">
-              Install FairFare?
+              Install FairFare App
             </h2>
             <p className="text-gray-400 mb-6">
               Add FairFare to your home screen for quick access.
@@ -168,6 +146,7 @@ const LandingPage = () => {
         </div>
 
         <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
+          <p>Some content on this page might be from previous versions and not upto date</p>
           <h1 className="text-4xl lg:text-5xl font-bold  p-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
             Split it <br /> Its easy this way.
           </h1>

@@ -53,6 +53,7 @@ const ExpenseCard = ({
     try {
       await axios.delete(
         `https://fairfare-0hyl.onrender.com/group/del-expense/${_id}`
+        // `//http://localhost:8000/group/del-expense/${_id}`
       );
       toast.success("Expense deleted");
       setShowDeleteModal(false);
@@ -81,10 +82,10 @@ const ExpenseCard = ({
   const date = new Date(time).toLocaleString("en-US", options);
 
   return (
-    <div className="flex flex-col bg-gray-800 p-4 rounded-lg mb-4 cursor-pointer transition-all duration-300 ease-in-out">
+    <div className="flex flex-col bg-gray-800 p-4 rounded-lg mb-4 cursor-pointer transition-all duration-300 ease-in-out" onClick={handleToggle}>
       {/* Main card content */}
       <div className="flex justify-between items-center">
-        <div className="flex items-center" onClick={handleToggle}>
+        <div className="flex items-center">
           <div className={`${iconColor} p-3 rounded-full`}></div>
           <div className="ml-4">
             <h3 className="font-semibold">{category}</h3>

@@ -1,7 +1,11 @@
-import { User } from "../models/schema.js";
+import { User, Expense } from "../models/schema.js";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
+import {
+  sendOneNotification,
+  sendMultipleNotifications,
+} from "../controllers/Notifications.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -180,6 +184,31 @@ const userDetails = async (req, res) => {
   }
 };
 
+const setFcmToken = async (req, res) => {
+  try {
+    const { fcmToken, userId } = req.body;
+
+    if (!fcmToken) {
+      return res.status(400).json({ message: "FCM token is required" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { fcmToken },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "FCM token set successfully", user });
+  } catch (error) {
+    console.error("Error setting FCM token:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 // Function to update user profile
 const updateUserProfile = async (req, res) => {
   try {
@@ -212,7 +241,7 @@ const updateUserProfile = async (req, res) => {
 
 //Adding the friends
 const addFriends = async (req, res) => {
-  const { email, friendsArray, autoAdd } = req.body;  
+  const { email, friendsArray, autoAdd } = req.body;
 
   if (!email || !Array.isArray(friendsArray) || friendsArray.length === 0) {
     return res.status(400).json({ message: "Incomplete data received" });
@@ -236,6 +265,15 @@ const addFriends = async (req, res) => {
       { _id: user._id, "friends.friend": { $ne: friend._id } }, // prevent duplicates
       { $push: { friends: { friend: friend._id, balance: 0 } } }
     );
+
+    // ✅ Send notifications
+    if (friend.fcmToken) {
+      const tokens = [friend.fcmToken];
+      const title = "New Friend Added";
+      const body = `${user.username} has added you as a friend!`;
+
+    await sendMultipleNotifications(tokens, title, body);
+    }
 
     return res.status(200).json({
       message: "Friend added successfully",
@@ -286,6 +324,15 @@ const addFriends = async (req, res) => {
           email: friend.email,
           username: friend.username,
         });
+
+        //Send Notification
+        if (friend.fcmToken) {
+          const tokens = [friend.fcmToken];
+          const title = "New Friend Added";
+          const body = `${user.username} has added you as a friend!`;
+
+          await sendMultipleNotifications(tokens, title, body);
+        }
       } else {
         // Friend does not exist — send invitation email.
         const mailOptions = {
@@ -301,7 +348,7 @@ const addFriends = async (req, res) => {
         await transporter
           .sendMail(mailOptions)
           .then(() => {
-            console.log("Email sent to new friend ", friendEmail);
+            // console.log("Email sent to new friend ", friendEmail);
           })
           .catch((err) => {
             console.error("Failed to send email to ", friendEmail, err);
@@ -320,10 +367,9 @@ const addFriends = async (req, res) => {
 };
 
 const updateFriendBalance = async (req, res) => {
-  const { userEmail, friendEmail, amount, action } = req.body;
-  // console.log("userEmail", userEmail, "friendEmail", friendEmail, "amount", amount, "action", action);
+  const { userEmail, friendEmail, amount, action, note } = req.body;
 
-  if (!userEmail || !friendEmail || !amount || !action) {
+  if (!userEmail || !friendEmail || !amount || !action || !note) {
     return res.status(400).json({ message: "Incomplete data received" });
   }
 
@@ -343,21 +389,33 @@ const updateFriendBalance = async (req, res) => {
       return res.status(404).json({ message: "User or friend not found" });
     }
 
-    let userIncrement, friendIncrement;
+    // ✅ Check if balance is already 0 and note says "Cleared Everything"
+    const friendRecord = user.friends.find(
+      (f) => f.friend.toString() === friend._id.toString()
+    );
+    // console.log(friendRecord);
 
-    // When user pays friend, update as follows:
-    // - In user's friends array (for the friend): balance increases (+amount)
-    // - In friend's friends array (for the user): balance decreases (-amount)
+    if (
+      friendRecord &&
+      friendRecord.balance === 0 &&
+      note === "Cleared Everything"
+    ) {
+      return res.status(400).json({ message: "Balance already settled" });
+    }
+
+    let userIncrement, friendIncrement;
+    let payer, owedUser;
+
     if (action === "paid") {
       userIncrement = value;
       friendIncrement = -value;
-    }
-    // When user receives from friend, the reverse logic applies:
-    // - In user's friends array (for the friend): balance decreases (-amount)
-    // - In friend's friends array (for the user): balance increases (+amount)
-    else if (action === "received") {
+      payer = user;
+      owedUser = friend;
+    } else if (action === "received") {
       userIncrement = -value;
       friendIncrement = value;
+      payer = friend;
+      owedUser = user;
     } else {
       return res.status(400).json({ message: "Invalid action type" });
     }
@@ -374,13 +432,40 @@ const updateFriendBalance = async (req, res) => {
       { $inc: { "friends.$.balance": friendIncrement } }
     );
 
-    // If one of the update operations did not match a document, you might consider
-    // creating the missing subdocument. Here we assume that friendship already exists.
+    // Create expense document
+    const expense = await Expense.create({
+      title: note,
+      amount: value,
+      paidBy: payer._id,
+      owedBy: [
+        {
+          user: owedUser._id,
+          amount: value,
+        },
+      ],
+    });
+
+    // Push expense to payer's recentExpense
+    await User.updateOne(
+      { _id: payer._id },
+      { $push: { recentExpense: expense } }
+    );
+
+    // ✅ Send notifications    
+    if (friend.fcmToken) {
+      
+      sendOneNotification(
+        friend.fcmToken,
+        "Balance Updated",
+        `Your transaction with ${user.username} has been updated.`
+      );
+    }
 
     return res.status(200).json({
-      message: "Friend balance updated",
+      message: "Friend balance updated & expense added",
       userUpdate: userUpdateResult,
       friendUpdate: friendUpdateResult,
+      expense,
     });
   } catch (error) {
     console.error("Error updating friend balance:", error);
@@ -561,4 +646,5 @@ export {
   updateFriendBalance,
   changePassword,
   getUpdatedFriendBalances,
+  setFcmToken,
 };

@@ -23,6 +23,7 @@ import Documentation from "./components/documentation";
 import PublicProfile from "./components/PublicProfile";
 import RemoveMembers from "./components/RemoveMembers";
 import EditExpense from "./components/editExpense";
+import TransactionHistory from "./components/TransactionHistory";
 
 const router = createBrowserRouter([
   {
@@ -122,6 +123,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <AddTrip />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "transaction-history/:friendId",
+        element: (
+          <ProtectedRoute>
+            <TransactionHistory />
           </ProtectedRoute>
         ),
       },
