@@ -5,7 +5,10 @@ import { FiLink } from "react-icons/fi";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
 import axios from "axios";
 import { QRCodeCanvas } from "qrcode.react";
+import { FaHistory } from "react-icons/fa"; // history icon
 import { toast } from "react-hot-toast";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const FriendCard = ({
   friend,
@@ -18,11 +21,10 @@ const FriendCard = ({
   const [settleAmount, setSettleAmount] = useState(balance);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
-
+  const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
   // console.log(friend);
-  
 
   const toggleDropdown = () => {
     setShowDropdown((prev) => {
@@ -83,39 +85,48 @@ const FriendCard = ({
 
   const handleSettleBalance = async () => {
     const currentBalance = balance;
-    if (currentBalance === 0) return;
+    if (currentBalance === 0) {
+      toast.error("No balance to settle.");
+      return;
+    }
 
     try {
       if (currentBalance > 0) {
         await axios.post(
           "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
             amount: currentBalance,
             action: "received",
+            note: "Cleared Everything",
           }
         );
       } else {
         await axios.post(
           "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
             amount: Math.abs(currentBalance),
             action: "paid",
+            note: "Cleared Everything",
           }
         );
       }
       balance = 0;
       updateFriendBalance(friend.email, balance);
       setSettleAmount(0);
-      setShowDropdown(false);
-      setShowQRCode(false);
     } catch (error) {
-      console.error("Error settling friend balance:", error);
+      toast.error("Please refresh the page first!");
     }
   };
+
+  const TransactionHistoryPage = async () => {
+    navigate(`/transaction-history/${friend._id}`);
+  }
 
   return (
     <div
@@ -123,7 +134,8 @@ const FriendCard = ({
       className="bg-gray-700/50 backdrop-blur-sm cursor-pointer rounded-lg border border-gray-600/30 p-2 sm:p-3 mb-2"
     >
       <div
-        onClick={toggleDropdown}
+        // onClick={toggleDropdown}
+        onClick={TransactionHistoryPage}
         className="flex justify-between items-center"
       >
         <div>
@@ -159,6 +171,12 @@ const FriendCard = ({
           className="flex items-center gap-5 z-10"
           onClick={(e) => e.stopPropagation()}
         >
+          <Link
+            to={`/transaction-history/${friend._id}`}
+            className="text-blue-400 hover:text-blue-300 transition"
+          >
+            <FaHistory className="w-5 h-5" />
+          </Link>
           <button
             title="Settle Up"
             onClick={handleSettleBalance}
@@ -180,7 +198,7 @@ const FriendCard = ({
       </div>
 
       {showDropdown && (
-        <div className="mt-3 bg-gray-800 rounded-lg p-3 border border-gray-600">
+       <div className="mt-3 opacity-0 bg-gray-800 rounded-lg p-3 border border-gray-600">
           <p className="text-sm text-white mb-2 flex items-center justify-between">
             <span className="font-medium">UPI ID:</span>{" "}
             <span className="flex-grow">{friend.upiId || "Not Available"}</span>
@@ -305,7 +323,7 @@ const FriendCard = ({
                 Yes
               </button>
               <button
-                onClick={() => setShowConfirmDelete(false)}
+                onClick={() => {setShowConfirmDelete(false); setShowDropdown(false);}}
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
               >
                 No

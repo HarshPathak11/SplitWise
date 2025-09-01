@@ -22,6 +22,7 @@ const TripsSection = () => {
 
         const response = await axios.get(
           `https://fairfare-0hyl.onrender.com/group/user-groups/${userId}`
+          // `//http://localhost:8000/group/user-groups/${userId}`
         );
 
         if (Array.isArray(response.data)) {

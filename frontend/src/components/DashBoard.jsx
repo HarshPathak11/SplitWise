@@ -6,11 +6,14 @@ import FairFareCard from "./FairFareCard";
 import FriendsSection from "./friendsSection";
 import RecentExpenses from "./RecentExpenses";
 import TopNavbar from "./TopNavbar";
+import { requestNotificationPermission } from "../../notifications";
 
 const Dashboard = () => {
   const [user, setUser] = useState();
 
   useEffect(() => {
+    // console.log("Fetching user details on dashboard load");
+
     async function getDetails() {
       const userId = Cookies.get("id");
       // console.log("userId is ", userId);
@@ -21,6 +24,7 @@ const Dashboard = () => {
       try {
         const response = await axios.get(
           `https://fairfare-0hyl.onrender.com/user/${userId}`
+          // `http://localhost:8000/user/${userId}`
         );
         // console.log("response is ", response);
 
@@ -29,6 +33,19 @@ const Dashboard = () => {
 
           localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
         }
+
+        const fcmToken = await requestNotificationPermission();
+
+        if(response.data.user.fcmToken !== fcmToken || reponse.data.user.fcmToken === null || !reponse.data.user.fcmToken) {
+          
+        await axios.post(
+          // `http://localhost:8000/user/set-fcm-token`,
+          `https://fairfare-0hyl.onrender.com/user/set-fcm-token` ,
+           {
+          fcmToken,
+          userId
+        }); 
+      }
       } catch (err) {
         console.error("Error fetching user:", err);
       }
@@ -37,7 +54,7 @@ const Dashboard = () => {
 
     getDetails();
   }, []);
-  // console.log("User", user);
+  console.log("User", user);
 
   return (
     <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
@@ -59,13 +76,13 @@ const Dashboard = () => {
           {/* Flippable Card */}
           <FairFareCard />
 
-          {/* Today's expenses */}
-          <RecentExpenses user={user} />
+          {/* Trips Section */}
+          <TripsSection />
         </div>
 
         <div className="space-y-4 h-full flex flex-col">
-          {/* Trips Section */}
-          <TripsSection />
+          {/* Today's expenses */}
+          <RecentExpenses user={user} />
 
           {/* Friends Section */}
           <FriendsSection user={user} />

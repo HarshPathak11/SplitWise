@@ -11,7 +11,8 @@ import {
   verifyForgotPassword,
   updateFriendBalance,
   getUpdatedFriendBalances,
-  changePassword
+  changePassword,
+  setFcmToken
 } from '../controllers/user.js';
 
 const router = express.Router();
@@ -29,6 +30,7 @@ router.post('/remove-friend', removeFriend);
 router.post('/update-friend-balance', updateFriendBalance);
 router.post('/change-password',changePassword);
 router.post('/get-updated-friend-balances', getUpdatedFriendBalances);
+router.post('/set-fcm-token', setFcmToken);
 
 //PUT routes
 router.put('/:id', updateUserProfile);

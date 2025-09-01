@@ -1,6 +1,6 @@
 // src/pages/EditExpense.jsx
 import { useState, useEffect } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -44,7 +44,10 @@ const EditExpense = () => {
     // console.log("hii")
     const fetchExpense = async () => {
       try {
-        const { data } = await axios.get(`https://fairfare-0hyl.onrender.com/group/expense/${expenseId}`);
+        const { data } = await axios.get(
+          `https://fairfare-0hyl.onrender.com/group/expense/${expenseId}`
+        // `//http://localhost:8000/group/expense/${expenseId}`
+        );
         // console.log(data)
         if (data.success) {
           const exp = data.expense;
@@ -151,11 +154,16 @@ const EditExpense = () => {
       setIsLoading(true);
 
       // 1) DELETE the old expense
-      await axios.delete(`https://fairfare-0hyl.onrender.com/group/del-expense/${expenseId}`);
+      await axios.delete(
+        `https://fairfare-0hyl.onrender.com/group/del-expense/${expenseId}`,
+        // `//http://localhost:8000/group/del-expense/${expenseId}`,
+        {data :{action:"edit"}}
+      );
 
       // 2) POST the new one
       const response = await axios.post(
         `https://fairfare-0hyl.onrender.com/group/del-add-expense`,
+        // `//http://localhost:8000/group/del-add-expense`,
         payload
       );
       if (response.status === 200) {
