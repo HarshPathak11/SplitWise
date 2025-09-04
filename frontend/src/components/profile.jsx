@@ -103,7 +103,6 @@ const Profile = () => {
           onClick={async () => {
             const userId = Cookies.get("id");
             const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
-            // const profileLink = `https://a286-2405-201-603c-3806-54f2-bca2-fbc8-598e.ngrok-free.app/public-profile/${userId}`;
             const message = `Hey! 👋
 
 Check out my FairFare profile:

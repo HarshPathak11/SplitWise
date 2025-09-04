@@ -1,4 +1,4 @@
-import express from 'express';
+import express from "express";
 import {
   sendOtp,
   verifyOtp,
@@ -12,31 +12,40 @@ import {
   updateFriendBalance,
   getUpdatedFriendBalances,
   changePassword,
-  setFcmToken
-} from '../controllers/user.js';
+  setFcmToken,
+  // friend requests
+  sendFriendRequest,
+  listFriendRequests,
+  respondToFriendRequest,
+} from "../controllers/user.js";
 
 const router = express.Router();
 
 // Define routes
 
 //POST routes
-router.post('/send-otp', sendOtp);
-router.post('/verify-otp', verifyOtp);
-router.post('/login', userLogin);
-router.post('/forgot-password', forgotPassword);
-router.post('/verify-forgot-password', verifyForgotPassword);
-router.post('/add-friends', addFriends);
-router.post('/remove-friend', removeFriend);
-router.post('/update-friend-balance', updateFriendBalance);
-router.post('/change-password',changePassword);
-router.post('/get-updated-friend-balances', getUpdatedFriendBalances);
-router.post('/set-fcm-token', setFcmToken);
+router.post("/send-otp", sendOtp);
+router.post("/verify-otp", verifyOtp);
+router.post("/login", userLogin);
+router.post("/forgot-password", forgotPassword);
+router.post("/verify-forgot-password", verifyForgotPassword);
+router.post("/add-friends", addFriends);
+router.post("/remove-friend", removeFriend);
+
+// Friend request routes (added below after importing)
+router.post("/friend-requests/send", sendFriendRequest);
+router.get("/friend-requests/:userId", listFriendRequests);
+router.post("/friend-requests/respond", respondToFriendRequest);
+router.post("/update-friend-balance", updateFriendBalance);
+router.post("/change-password", changePassword);
+router.post("/get-updated-friend-balances", getUpdatedFriendBalances);
+router.post("/set-fcm-token", setFcmToken);
 
 //PUT routes
-router.put('/:id', updateUserProfile);
+router.put("/:id", updateUserProfile);
 
 //GET routes
-router.get('/:id', userDetails);
+router.get("/:id", userDetails);
 
 //DELETE routes
 router.delete("/remove-friend", removeFriend);

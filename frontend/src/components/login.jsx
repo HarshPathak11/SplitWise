@@ -43,8 +43,8 @@ const LogIn = () => {
 
       setLoading(true); // Start loading
       const response = await axios.post(
-        `https://fairfare-0hyl.onrender.com/user/login`,
-        // `//http://localhost:8000/user/login`,
+        // `https://fairfare-0hyl.onrender.com/user/login`,
+        `http://localhost:8000/user/login`,
         {
           email,
           password,
