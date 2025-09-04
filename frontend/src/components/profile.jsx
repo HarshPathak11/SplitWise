@@ -21,8 +21,11 @@ const Profile = () => {
     async function getDetails() {
       if (!user && userId) {
         try {
+          // const response = await axios.get(
+          //   `https://fairfare-0hyl.onrender.com/user/${userId}`
+          // );
           const response = await axios.get(
-            `https://fairfare-0hyl.onrender.com/user/${userId}`
+            `http://localhost:8000/user/${userId}`
           );
           if (response.status === 200) {
             const fetchedUser = response.data.user;
