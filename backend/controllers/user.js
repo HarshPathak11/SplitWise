@@ -272,7 +272,7 @@ const addFriends = async (req, res) => {
       const title = "New Friend Added";
       const body = `${user.username} has added you as a friend!`;
 
-    await sendMultipleNotifications(tokens, title, body);
+      await sendMultipleNotifications(tokens, title, body);
     }
 
     return res.status(200).json({
@@ -366,6 +366,121 @@ const addFriends = async (req, res) => {
   }
 };
 
+// Friend Requests: send, list, approve, deny
+const sendFriendRequest = async (req, res) => {
+  try {
+    const { fromUserId, toEmail } = req.body;
+    if (!fromUserId || !toEmail) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const fromUser = await User.findById(fromUserId);
+    const toUser = await User.findOne({ email: toEmail });
+
+    if (!fromUser || !toUser) {
+      return res.status(404).json({ message: "Users not found" });
+    }
+
+    // If already friends, skip
+    const alreadyFriends = toUser.friends?.some(
+      (f) => String(f.friend) === String(fromUser._id)
+    );
+    if (alreadyFriends) {
+      return res.status(400).json({ message: "Already friends" });
+    }
+
+    // Prevent duplicate requests
+    const alreadyRequested = toUser.pendingFriendRequests?.some(
+      (r) => String(r.from) === String(fromUser._id)
+    );
+    if (alreadyRequested) {
+      return res.status(400).json({ message: "Request already sent" });
+    }
+
+    await User.updateOne(
+      { _id: toUser._id },
+      { $push: { pendingFriendRequests: { from: fromUser._id } } }
+    );
+
+    // Notify
+    if (toUser.fcmToken) {
+      await sendOneNotification(
+        toUser.fcmToken,
+        "New Friend Request",
+        `${fromUser.username} sent you a friend request`
+      );
+    }
+
+    return res.status(200).json({ message: "Request sent" });
+  } catch (error) {
+    console.error("Error sending friend request:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const listFriendRequests = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).populate({
+      path: "pendingFriendRequests.from",
+      select: "username email",
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    return res.status(200).json(user.pendingFriendRequests || []);
+  } catch (error) {
+    console.error("Error listing friend requests:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const respondToFriendRequest = async (req, res) => {
+  try {
+    const { userId, fromUserId, action } = req.body; // action: 'approve' | 'deny'
+    if (!userId || !fromUserId || !action) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const user = await User.findById(userId);
+    const fromUser = await User.findById(fromUserId);
+    if (!user || !fromUser) {
+      return res.status(404).json({ message: "Users not found" });
+    }
+
+    // Remove request
+    await User.updateOne(
+      { _id: userId },
+      { $pull: { pendingFriendRequests: { from: fromUserId } } }
+    );
+
+    if (action === "approve") {
+      // Add to both friends lists if not already present
+      await User.updateOne(
+        { _id: user._id, "friends.friend": { $ne: fromUser._id } },
+        { $push: { friends: { friend: fromUser._id, balance: 0 } } }
+      );
+      await User.updateOne(
+        { _id: fromUser._id, "friends.friend": { $ne: user._id } },
+        { $push: { friends: { friend: user._id, balance: 0 } } }
+      );
+
+      if (fromUser.fcmToken) {
+        await sendOneNotification(
+          fromUser.fcmToken,
+          "Friend Request Accepted",
+          `${user.username} accepted your friend request`
+        );
+      }
+
+      return res.status(200).json({ message: "Friend request approved" });
+    }
+
+    return res.status(200).json({ message: "Friend request denied" });
+  } catch (error) {
+    console.error("Error responding to friend request:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 const updateFriendBalance = async (req, res) => {
   const { userEmail, friendEmail, amount, action, note } = req.body;
 
@@ -451,9 +566,8 @@ const updateFriendBalance = async (req, res) => {
       { $push: { recentExpense: expense } }
     );
 
-    // ✅ Send notifications    
+    // ✅ Send notifications
     if (friend.fcmToken) {
-      
       sendOneNotification(
         friend.fcmToken,
         "Balance Updated",
@@ -647,4 +761,8 @@ export {
   changePassword,
   getUpdatedFriendBalances,
   setFcmToken,
+  // Friend request handlers
+  sendFriendRequest,
+  listFriendRequests,
+  respondToFriendRequest,
 };
