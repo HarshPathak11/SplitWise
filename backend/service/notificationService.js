@@ -4,13 +4,13 @@ import admin from "../firebaseAdmin.js";
 const sendService = async (token, title, body) => {
   const payload = {
     token,
-    notification: {
+    data: {
       title,
       body,
-      image: 'https://fair-fare-phi.vercel.app/newIcon-192x192.png',
+      // image: 'https://fair-fare-phi.vercel.app/newIcon-192x192.png',
+      url: 'https://fair-fare-phi.vercel.app'
       // badge: 'http://localhost:5173/newIconV2-512x512.png',
     },
-    data : {url: 'https://fair-fare-phi.vercel.app'},
   };
 
   try {
@@ -32,13 +32,13 @@ const sendToMultiple = async (tokens, title, body) => {
   }
 
   const payload = {
-    notification: {
+    data: {
       title,
       body,
-      image: 'https://fair-fare-phi.vercel.app/newIcon-192x192.png',
+      // image: 'https://fair-fare-phi.vercel.app/newIcon-192x192.png',
+      url: 'https://fair-fare-phi.vercel.app'
       // badge: 'http://localhost:5173/newIconV2-512x512.png',
     },
-    data : {url: 'https://fair-fare-phi.vercel.app'},
     tokens, // ✅ multiple tokens go here
   };
  console.log("inside sendtomulitple");
