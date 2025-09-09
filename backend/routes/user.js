@@ -17,6 +17,7 @@ import {
   sendFriendRequest,
   listFriendRequests,
   respondToFriendRequest,
+  getFriendRequestsCount,
 } from "../controllers/user.js";
 
 const router = express.Router();
@@ -36,6 +37,7 @@ router.post("/remove-friend", removeFriend);
 router.post("/friend-requests/send", sendFriendRequest);
 router.get("/friend-requests/:userId", listFriendRequests);
 router.post("/friend-requests/respond", respondToFriendRequest);
+router.get("/friend-requests-count/:userId", getFriendRequestsCount);
 router.post("/update-friend-balance", updateFriendBalance);
 router.post("/change-password", changePassword);
 router.post("/get-updated-friend-balances", getUpdatedFriendBalances);
