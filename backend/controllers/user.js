@@ -471,18 +471,21 @@ const respondToFriendRequest = async (req, res) => {
       return res.status(404).json({ message: "Users not found" });
     }
 
-    // Find and update the friend request
-    const friendRequest = await FriendRequest.findOne({
-      _id: requestId || { from: fromUserId, to: userId, status: "pending" },
-    });
+    // Find the friend request. If requestId provided use it, otherwise find by from/to/status
+    let friendRequest = null;
+    if (requestId) {
+      friendRequest = await FriendRequest.findById(requestId);
+    } else {
+      friendRequest = await FriendRequest.findOne({
+        from: fromUserId,
+        to: userId,
+        status: "pending",
+      });
+    }
 
     if (!friendRequest) {
       return res.status(404).json({ message: "Friend request not found" });
     }
-
-    // Update request status
-    friendRequest.status = action === "approve" ? "accepted" : "rejected";
-    await friendRequest.save();
 
     // Decrease requests count
     await User.updateOne({ _id: userId }, { $inc: { requests: -1 } });
@@ -511,7 +514,12 @@ const respondToFriendRequest = async (req, res) => {
           `${user.username} accepted your friend request`
         );
       }
+    }
 
+    // Finally, delete the friend request document to free storage
+    await FriendRequest.deleteOne({ _id: friendRequest._id });
+
+    if (action === "approve") {
       return res.status(200).json({ message: "Friend request approved" });
     }
 
