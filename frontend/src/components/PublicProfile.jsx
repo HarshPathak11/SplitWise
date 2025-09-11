@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
-import logo from "../../public/newIcon-192x192.png"; 
+import logo from "../../public/newIcon-192x192.png";
 import { FaCopy } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -29,11 +29,10 @@ const PublicProfile = () => {
           setEmail(res.data.user.email);
           setUsername(res.data.user.username);
           setHasError(false); // reset if previously true
-          
-          if(currentUserId === userId) {
+
+          if (currentUserId === userId) {
             setIsFriend(true);
-          }
-          else if (currentUserId !== userId) {
+          } else if (currentUserId !== userId) {
             res.data.user.friends.forEach((friend) => {
               if (friend.friend._id === currentUserId) {
                 setIsFriend(true);
@@ -70,12 +69,11 @@ const PublicProfile = () => {
   const handleTopRightClick = async () => {
     if (!currentUserId) {
       // Save current location path
-    const currentPath = window.location.pathname;
-    navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      const currentPath = window.location.pathname;
+      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
     } else {
       // frontend-only placeholder for adding friend
       if (!isFriend) {
-        
         const response = await axios.post(
           `${API_BASE}/user/add-friends`,
           {
@@ -84,17 +82,17 @@ const PublicProfile = () => {
             friendsArray: [currentUserId],
           }
         );
-        if(response.status === 200) {
-        setIsFriend(true);
-        toast.success("Friend Added!", {
-          duration: 2000,
-          position: "top-center",
-          style: {
-            background: "#333",
-            color: "#fff",
-          },
-        });
-    }
+        if (response.status === 200) {
+          setIsFriend(true);
+          toast.success("Friend Added!", {
+            duration: 2000,
+            position: "top-center",
+            style: {
+              background: "#333",
+              color: "#fff",
+            },
+          });
+        }
       } else {
         toast.success("Already a friend!", {
           duration: 2000,
@@ -110,12 +108,11 @@ const PublicProfile = () => {
 
   return (
     <>
-    {loading ? (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white text-2xl font-semibold">
-        Loading...
-      </div>
-    ) : 
-      hasError ? (
+      {loading ? (
+        <div className="min-h-screen flex items-center justify-center bg-black text-white text-2xl font-semibold">
+          Loading...
+        </div>
+      ) : hasError ? (
         <div className="text-center">
           <h1 className="text-white text-3xl font-bold mb-4">
             Cannot find any such user
@@ -131,7 +128,7 @@ const PublicProfile = () => {
         <>
           <div className="relative bg-black flex items-center justify-center min-h-screen overflow-hidden">
             {/* Back Button */}
-            <div className="absolute mt-10 top-4 left-4 z-50">
+            <div className="absolute top-4 left-4 z-50">
               <button
                 onClick={() => navigate("/")}
                 className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
@@ -141,25 +138,69 @@ const PublicProfile = () => {
               </button>
             </div>
 
-            {/* Top Right Button */}
-            <div className="absolute mt-10 top-4 right-4 z-50">
-              <button
-                onClick={handleTopRightClick}
-                className={`px-4 py-2 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/30 backdrop-blur rounded-lg shadow-md transition-all duration-200${
-                  !currentUserId
-                    ? "bg-blue-500"
-                    : isFriend
-                    ? "bg-green-500 cursor-not-allowed"
-                    : "bg-yellow-500 hover:bg-yellow-600"
-                }`}
-              >
-                {!currentUserId
-                  ? "Login"
-                  : isFriend
-                  ? "Friend Added"
-                  : "Add Friend"}
-              </button>
-            </div>
+            {/* Share Profile Button */}
+                  <div className="absolute cursor-pointer mt-3.5 z-50 top-4 right-4">
+                    <button
+                      onClick={async () => {
+                        const userId = Cookies.get("id");
+                        // const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
+                        const profileLink = `http://localhost:8000/public-profile/${userId}`;
+                        const message = `Hey! 👋
+            
+Check out my FairFare profile:
+            
+🔗 Add me as a friend using this link:
+${profileLink}
+            
+📧 Or use my email to add me manually:
+https://fair-fare-phi.vercel.app/addFriend
+            
+Email: ${email}
+            
+            Let’s split and share smarter with FairFare! 💸`;
+            
+                        if (navigator.share) {
+                          try {
+                            await navigator.clipboard.writeText(email);
+                              await navigator.share({
+                                title: "Check out my FairFare profile!",
+                                text: message,
+                              });
+                          } catch (error) {
+                            console.error("Sharing failed:", error);
+                          }
+                        } else {
+                          // Fallback to copy to clipboard
+                          try {
+                            await navigator.clipboard.writeText(profileLink);
+                            alert("Link copied to clipboard!");
+                          } catch (err) {
+                            const textarea = document.createElement("textarea");
+                            textarea.value = profileLink;
+                            textarea.setAttribute("readonly", "");
+                            textarea.style.position = "absolute";
+                            textarea.style.left = "-9999px";
+                            document.body.appendChild(textarea);
+                            textarea.select();
+                            document.execCommand("copy");
+                            document.body.removeChild(textarea);
+                            toast.success("Link copied to clipboard!");
+                          }
+                        }
+                      }}
+                      className="p-3 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-110 transition-transform duration-300 ease-in-out"
+                      title="Share Profile"
+                    >
+                      <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M18 8a3 3 0 1 0-2.83-2h-.34l-7.9 4.58a3 3 0 1 0 0 2.84l7.9 4.58h.34A3 3 0 1 0 18 16a2.98 2.98 0 0 0-1.85-.68L9.25 12.5a3.02 3.02 0 0 0 0-.99l6.9-4.02A3 3 0 0 0 18 8z"/>
+                </svg>
+                    </button>
+                  </div>
 
             {/* Background Effects */}
             <div className="absolute inset-0 z-0">
@@ -213,6 +254,24 @@ const PublicProfile = () => {
                     </button>
                   </div>
                 </div>
+              </div>
+              <div className="relative z-10 flex items-center justify-center mt-6">
+                <button
+                  onClick={handleTopRightClick}
+                  className={`px-4 py-2 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/30 backdrop-blur rounded-lg shadow-md transition-all duration-200${
+                    !currentUserId
+                      ? "bg-blue-500"
+                      : isFriend
+                      ? "bg-green-500 cursor-not-allowed"
+                      : "bg-yellow-500 hover:bg-yellow-600"
+                  }`}
+                >
+                  {!currentUserId
+                    ? "Login"
+                    : isFriend
+                    ? "Friend Added"
+                    : "Add Friend"}
+                </button>
               </div>
             </div>
           </div>

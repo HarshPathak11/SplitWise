@@ -4,6 +4,8 @@ import axios from "axios";
 import { FaTrash } from "react-icons/fa"; // Import the trash icon
 import toast from "react-hot-toast";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+import { FaBell } from "react-icons/fa";
+import Cookies from "js-cookie";
 
 const AddFriend = () => {
   const navigate = useNavigate();
@@ -12,14 +14,17 @@ const AddFriend = () => {
   const [search, setSearch] = useState("");
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [requests, setRequests] = useState([]);
+  const [open, setOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
-  // Debounce + suggestions
+    // Debounce + suggestions
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]); // [{ _id, username, email }]
   const [isSearching, setIsSearching] = useState(false);
   const controllerRef = useRef(null);
 
-  // Load user from localStorage
+  // Load friends from localStorage when the component mounts
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
@@ -27,7 +32,52 @@ const AddFriend = () => {
     }
   }, []);
 
-  // Debounce the search value
+  const userId = Cookies.get("id");
+
+  const fetchRequests = async () => {
+    try {
+      if (!userId) return;
+      const res = await axios.get(
+        `${API_BASE}/user/friend-requests/${userId}`
+      );
+      setRequests(res.data || []);
+    } catch (e) {
+      // console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+  }, [userId]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const respond = async (fromUserId, action) => {
+    try {
+      await axios.post(
+        `${API_BASE}/user/friend-requests/respond`,
+        { userId, fromUserId, action }
+      );
+      await fetchRequests();
+      toast.success(
+        action === "approve"
+          ? "Friend request accepted"
+          : "Friend request denied"
+      );
+    } catch (e) {
+      // console.error(e);
+    }
+  };
+
+        // Debounce the search value
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedQuery(search.trim());
@@ -131,7 +181,7 @@ const AddFriend = () => {
   };
 
   const handleDone = async () => {
-    if (!user?.email) {
+    if (!user?.email || !user?._id) {
       toast.error("User not loaded. Please wait a moment.");
       return;
     }
@@ -166,7 +216,7 @@ const AddFriend = () => {
         toast.error(`Failed to add friends: ${response.data.message}`);
       }
     } catch (err) {
-      console.error("Error adding friends:", err);
+      console.error("Error sending friend requests:", err);
       toast.error("Something went wrong!");
     } finally {
       setLoading(false);
@@ -182,7 +232,7 @@ const AddFriend = () => {
         <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
         <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
       </div>
-      {/* Back to Dashboard Button */}
+      {/* Back to Dashboard Button + Friend Requests Icon */}
       <div className="absolute top-4 left-4">
         <button
           onClick={() => navigate("/dash")}
@@ -204,6 +254,60 @@ const AddFriend = () => {
             />
           </svg>
         </button>
+      </div>
+
+      <div className="absolute top-4 right-4" ref={dropdownRef}>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out relative"
+          title="Friend Requests"
+        >
+          <FaBell className="text-white text-xl" />
+          {requests.length > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+              {requests.length}
+            </span>
+          )}
+        </button>
+        {open && (
+          <div className="absolute right-0 mt-2 w-72 bg-gray-800/90 border border-gray-700/60 rounded-lg shadow-lg z-50 p-2 max-h-80 overflow-auto">
+            {requests.length === 0 ? (
+              <div className="text-gray-300 text-sm p-3">
+                No pending requests
+              </div>
+            ) : (
+              requests.map((req) => (
+                <div
+                  key={req._id || req.from?._id}
+                  className="flex items-center justify-between p-2 rounded hover:bg-white/10"
+                >
+                  <div>
+                    <div className="text-white text-sm font-semibold">
+                      {req.from?.username || "Unknown"}
+                    </div>
+                    <div className="text-gray-400 text-xs">
+                      {req.from?.email}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => respond(req.from?._id, "approve")}
+                      className="px-2 py-1 text-xs rounded bg-green-500 hover:bg-green-600 text-white"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => respond(req.from?._id, "deny")}
+                      className="px-2 py-1 text-xs rounded bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      Deny
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Add Friend Form */}

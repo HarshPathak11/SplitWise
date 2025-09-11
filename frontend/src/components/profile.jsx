@@ -23,7 +23,6 @@ const Profile = () => {
       if (!user && userId) {
         try {
           const response = await axios.get(
-            // `https://fairfare-0hyl.onrender.com/user/${userId}`
             `${API_BASE}/user/${userId}`
           );
           if (response.status === 200) {
@@ -105,7 +104,6 @@ const Profile = () => {
           onClick={async () => {
             const userId = Cookies.get("id");
             const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
-            // const profileLink = `https://a286-2405-201-603c-3806-54f2-bca2-fbc8-598e.ngrok-free.app/public-profile/${userId}`;
             const message = `Hey! 👋
 
 Check out my FairFare profile:

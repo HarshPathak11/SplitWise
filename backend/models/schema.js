@@ -1,56 +1,105 @@
-import mongoose from 'mongoose'
-import bcrypt from 'bcrypt'
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 //Expense Schema
-const expenseSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  amount: { type: Number, required: true },
-  paidBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  owedBy: [
-    {
-      user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-      amount: { type: Number, required: true },
-    }
-  ],
-  group: { type: mongoose.Schema.Types.ObjectId, ref: "Group" }, // optional, if expense is part of a group
-}, { timestamps: true });
+const expenseSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    amount: { type: Number, required: true },
+    paidBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    owedBy: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        amount: { type: Number, required: true },
+      },
+    ],
+    group: { type: mongoose.Schema.Types.ObjectId, ref: "Group" }, // optional, if expense is part of a group
+  },
+  { timestamps: true }
+);
 
 // Group schema
-const groupSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: { type: String },
-  from: {type:Date},
-  to: {type:Date},
-  members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-  tripTotal: { type: Number, default: 0 },
-  expenses: [expenseSchema],
-}, { timestamps: true });
+const groupSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    description: { type: String },
+    from: { type: Date },
+    to: { type: Date },
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    tripTotal: { type: Number, default: 0 },
+    expenses: [expenseSchema],
+  },
+  { timestamps: true }
+);
+
+// Friend Request Schema
+const friendRequestSchema = new mongoose.Schema(
+  {
+    from: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    to: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "rejected"],
+      default: "pending",
+    },
+    message: { type: String, default: "" },
+  },
+  { timestamps: true }
+);
 
 // User schema
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true, select: false },
-  fcmToken: { type: String, default: null, required:true },
-  friends: [
-    {
-      friend: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      balance: { type: Number, default: 0 },
+const userSchema = new mongoose.Schema(
+  {
+    username: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true, select: false },
+    fcmToken: { type: String, default: null, required: true },
+    friends: [
+      {
+        friend: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        balance: { type: Number, default: 0 },
+      },
+    ],
+    // pendingFriendRequests will store incoming requests
+    pendingFriendRequests: [
+      {
+        from: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    // requests field to store count of friend requests
+    requests: { type: Number, default: 0 },
+    groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
+    recentExpense: [expenseSchema],
+    upiId: { type: String },
+    aiChatUsage: {
+      count: { type: Number, default: 0 },
+      lastUsed: { type: Date, default: null },
     },
-  ],
-  groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
-  recentExpense: [expenseSchema],
-  upiId: { type: String },
-  aiChatUsage: {
-  count: { type: Number, default: 0 },
-  lastUsed: { type: Date, default: null }
-},
-}, { timestamps: true });
+  },
+  { timestamps: true }
+);
 
 // Password hashing middleware
-userSchema.pre("save", async function(next) {
+userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -60,7 +109,7 @@ userSchema.pre("save", async function(next) {
   }
 });
 
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
@@ -71,5 +120,6 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 const Expense = mongoose.model("Expense", expenseSchema);
 const User = mongoose.model("User", userSchema);
 const Group = mongoose.model("Group", groupSchema);
+const FriendRequest = mongoose.model("FriendRequest", friendRequestSchema);
 
-export { User, Group, Expense };
+export { User, Group, Expense, FriendRequest };
