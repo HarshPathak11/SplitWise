@@ -1,4 +1,4 @@
-import { User, Expense } from "../models/schema.js";
+import { User, Expense, FriendRequest } from "../models/schema.js";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
@@ -369,7 +369,7 @@ const addFriends = async (req, res) => {
 // Friend Requests: send, list, approve, deny
 const sendFriendRequest = async (req, res) => {
   try {
-    const { fromUserId, toEmail } = req.body;
+    const { fromUserId, toEmail, message = "" } = req.body;
     if (!fromUserId || !toEmail) {
       return res.status(400).json({ message: "Incomplete data received" });
     }
@@ -389,14 +389,29 @@ const sendFriendRequest = async (req, res) => {
       return res.status(400).json({ message: "Already friends" });
     }
 
-    // Prevent duplicate requests
-    const alreadyRequested = toUser.pendingFriendRequests?.some(
-      (r) => String(r.from) === String(fromUser._id)
-    );
-    if (alreadyRequested) {
+    // Check if request already exists
+    const existingRequest = await FriendRequest.findOne({
+      from: fromUser._id,
+      to: toUser._id,
+      status: "pending",
+    });
+
+    if (existingRequest) {
       return res.status(400).json({ message: "Request already sent" });
     }
 
+    // Create friend request in separate collection
+    const friendRequest = await FriendRequest.create({
+      from: fromUser._id,
+      to: toUser._id,
+      message: message,
+      status: "pending",
+    });
+
+    // Update user's requests count
+    await User.updateOne({ _id: toUser._id }, { $inc: { requests: 1 } });
+
+    // Also add to pendingFriendRequests for backward compatibility
     await User.updateOne(
       { _id: toUser._id },
       { $push: { pendingFriendRequests: { from: fromUser._id } } }
@@ -411,7 +426,10 @@ const sendFriendRequest = async (req, res) => {
       );
     }
 
-    return res.status(200).json({ message: "Request sent" });
+    return res.status(200).json({
+      message: "Request sent",
+      requestId: friendRequest._id,
+    });
   } catch (error) {
     console.error("Error sending friend request:", error);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -421,12 +439,19 @@ const sendFriendRequest = async (req, res) => {
 const listFriendRequests = async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findById(userId).populate({
-      path: "pendingFriendRequests.from",
-      select: "username email",
-    });
-    if (!user) return res.status(404).json({ message: "User not found" });
-    return res.status(200).json(user.pendingFriendRequests || []);
+
+    // Get friend requests from the separate collection
+    const friendRequests = await FriendRequest.find({
+      to: userId,
+      status: "pending",
+    })
+      .populate({
+        path: "from",
+        select: "username email",
+      })
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json(friendRequests);
   } catch (error) {
     console.error("Error listing friend requests:", error);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -435,7 +460,7 @@ const listFriendRequests = async (req, res) => {
 
 const respondToFriendRequest = async (req, res) => {
   try {
-    const { userId, fromUserId, action } = req.body; // action: 'approve' | 'deny'
+    const { userId, fromUserId, action, requestId } = req.body; // action: 'approve' | 'deny'
     if (!userId || !fromUserId || !action) {
       return res.status(400).json({ message: "Incomplete data received" });
     }
@@ -446,7 +471,26 @@ const respondToFriendRequest = async (req, res) => {
       return res.status(404).json({ message: "Users not found" });
     }
 
-    // Remove request
+    // Find the friend request. If requestId provided use it, otherwise find by from/to/status
+    let friendRequest = null;
+    if (requestId) {
+      friendRequest = await FriendRequest.findById(requestId);
+    } else {
+      friendRequest = await FriendRequest.findOne({
+        from: fromUserId,
+        to: userId,
+        status: "pending",
+      });
+    }
+
+    if (!friendRequest) {
+      return res.status(404).json({ message: "Friend request not found" });
+    }
+
+    // Decrease requests count
+    await User.updateOne({ _id: userId }, { $inc: { requests: -1 } });
+
+    // Remove from pendingFriendRequests for backward compatibility
     await User.updateOne(
       { _id: userId },
       { $pull: { pendingFriendRequests: { from: fromUserId } } }
@@ -470,7 +514,12 @@ const respondToFriendRequest = async (req, res) => {
           `${user.username} accepted your friend request`
         );
       }
+    }
 
+    // Finally, delete the friend request document to free storage
+    await FriendRequest.deleteOne({ _id: friendRequest._id });
+
+    if (action === "approve") {
       return res.status(200).json({ message: "Friend request approved" });
     }
 
@@ -747,6 +796,25 @@ const getUpdatedFriendBalances = async (req, res) => {
   }
 };
 
+// Get friend requests count for a user
+const getFriendRequestsCount = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      requestsCount: user.requests || 0,
+    });
+  } catch (error) {
+    console.error("Error getting friend requests count:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 export {
   sendOtp,
   userLogin,
@@ -765,4 +833,5 @@ export {
   sendFriendRequest,
   listFriendRequests,
   respondToFriendRequest,
+  getFriendRequestsCount,
 };

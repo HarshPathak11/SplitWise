@@ -40,6 +40,29 @@ const groupSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Friend Request Schema
+const friendRequestSchema = new mongoose.Schema(
+  {
+    from: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    to: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "rejected"],
+      default: "pending",
+    },
+    message: { type: String, default: "" },
+  },
+  { timestamps: true }
+);
+
 // User schema
 const userSchema = new mongoose.Schema(
   {
@@ -60,6 +83,8 @@ const userSchema = new mongoose.Schema(
         createdAt: { type: Date, default: Date.now },
       },
     ],
+    // requests field to store count of friend requests
+    requests: { type: Number, default: 0 },
     groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
     recentExpense: [expenseSchema],
     upiId: { type: String },
@@ -95,5 +120,6 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 const Expense = mongoose.model("Expense", expenseSchema);
 const User = mongoose.model("User", userSchema);
 const Group = mongoose.model("Group", groupSchema);
+const FriendRequest = mongoose.model("FriendRequest", friendRequestSchema);
 
-export { User, Group, Expense };
+export { User, Group, Expense, FriendRequest };
