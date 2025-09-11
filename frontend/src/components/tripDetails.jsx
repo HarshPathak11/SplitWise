@@ -5,6 +5,7 @@ import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import axios from "axios";
 import { useParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TripDetails = () => {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ const TripDetails = () => {
       }
       try {
         const response = await axios.get(
-          `https://fairfare-0hyl.onrender.com/group/get-group/${tripId}`
+          `${API_BASE}group/get-group/${tripId}`
           // `//http://localhost:8000/group/get-group/${tripId}` // Use your local or production URL
         );
         if (response.status === 200) {
@@ -84,7 +85,7 @@ const TripDetails = () => {
      const reloadExpenses = async () => {
        try {
          const response = await axios.get(
-           `https://fairfare-0hyl.onrender.com/group/get-group/${tripId}`
+           `${API_BASE}/group/get-group/${tripId}`
           // `//http://localhost:8000/group/get-group/${tripId}`
          );
          if (response.status === 200) {
@@ -160,7 +161,7 @@ const TripDetails = () => {
       const user = JSON.parse(storedUser);
       const currentUserId = user._id;
       const res = await axios.post(
-        `https://fairfare-0hyl.onrender.com/group/remove-members/${tripId}`,
+        `${API_BASE}/group/remove-members/${tripId}`,
         // `//http://localhost:8000/group/remove-members/${tripId}`,
         {
           members: [currentUserId], // Send only the current user ID to remove

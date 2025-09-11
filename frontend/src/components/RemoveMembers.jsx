@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const RemoveMembers = () => {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ useEffect(() => {
       const memberIds = selectedMembers.map((m) => m._id);
 
       const res = await axios.post(
-        `https://fairfare-0hyl.onrender.com/group/remove-members/${groupId}`,
+        `${API_BASE}/group/remove-members/${groupId}`,
         // `//http://localhost:8000/group/remove-members/${groupId}`,
         {
           members: memberIds,

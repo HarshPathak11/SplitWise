@@ -8,6 +8,7 @@ const TripsSection = () => {
   const navigate = useNavigate();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // Fetch trips for the current user
   useEffect(() => {
@@ -21,8 +22,7 @@ const TripsSection = () => {
         }
 
         const response = await axios.get(
-          `https://fairfare-0hyl.onrender.com/group/user-groups/${userId}`
-          // `//http://localhost:8000/group/user-groups/${userId}`
+          `${API_BASE}/group/user-groups/${userId}`
         );
 
         if (Array.isArray(response.data)) {

@@ -1,10 +1,10 @@
-// src/components/ExpenseCard.jsx
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Trash2, Edit3 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ExpenseCard = ({
   _id,
@@ -52,7 +52,7 @@ const ExpenseCard = ({
   const confirmDelete = async () => {
     try {
       await axios.delete(
-        `https://fairfare-0hyl.onrender.com/group/del-expense/${_id}`
+        `${API_BASE}/group/del-expense/${_id}`
         // `//http://localhost:8000/group/del-expense/${_id}`
       );
       toast.success("Expense deleted");

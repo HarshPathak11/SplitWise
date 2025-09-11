@@ -9,6 +9,7 @@ import { FaHistory } from "react-icons/fa"; // history icon
 import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const FriendCard = ({
   friend,
@@ -93,7 +94,7 @@ const FriendCard = ({
     try {
       if (currentBalance > 0) {
         await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          `${API_BASE}/user/update-friend-balance`,
           // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
@@ -105,7 +106,7 @@ const FriendCard = ({
         );
       } else {
         await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          `${API_BASE}/user/update-friend-balance`,
           // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,

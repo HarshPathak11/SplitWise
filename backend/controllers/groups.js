@@ -399,7 +399,7 @@ const addExpenseController = async (req, res) => {
     if (tokens.length > 0) {
       const payer = users.find((u) => u._id.toString() === paidBy.toString());
       const title = "Tap to see";
-      const body = `${newExpense.title} expense has been added by ${
+      const body = `${newExpense.title} expense has been paid by ${
         payer?.username || "Someone"
       }. \nAmount: ${newExpense.amount}`;
 

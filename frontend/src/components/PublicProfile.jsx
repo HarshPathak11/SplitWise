@@ -6,6 +6,7 @@ import { FaHome } from "react-icons/fa";
 import logo from "../../public/newIcon-192x192.png"; 
 import { FaCopy } from "react-icons/fa";
 import { toast } from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PublicProfile = () => {
   const [loading, setLoading] = useState(true);
@@ -22,7 +23,7 @@ const PublicProfile = () => {
     async function fetchUser() {
       try {
         setLoading(true);
-        const res = await axios.get(`https://fairfare-0hyl.onrender.com/user/${userId}`); // Adjust this endpoint based on your backend
+        const res = await axios.get(`${API_BASE}/user/${userId}`); // Adjust this endpoint based on your backend
         setLoading(false);
         if (res.status === 200) {
           setEmail(res.data.user.email);
@@ -76,7 +77,7 @@ const PublicProfile = () => {
       if (!isFriend) {
         
         const response = await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/add-friends",
+          `${API_BASE}/user/add-friends`,
           {
             email: email,
             autoAdd: true,

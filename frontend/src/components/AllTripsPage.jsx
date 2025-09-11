@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import TripCard from "./tripCard"; // Ensure this component is styled properly
 import { FaArrowLeft } from "react-icons/fa";
 import Cookies from "js-cookie"; // Import Cookies library
-import axios from "axios"; // Import Axios library
+import axios from "axios";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AllTripsPage = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const AllTripsPage = () => {
         }
 
         const response = await axios.get(
-          `https://fairfare-0hyl.onrender.com/group/user-groups/${userId}`
+          `${API_BASE}/group/user-groups/${userId}`
         );
 
         if (Array.isArray(response.data)) {
