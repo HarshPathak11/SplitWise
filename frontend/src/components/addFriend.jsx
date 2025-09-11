@@ -10,7 +10,6 @@ const AddFriend = () => {
 
   const [friends, setFriends] = useState([]); // { email, name? }
   const [search, setSearch] = useState("");
-  const [manualEmail, setManualEmail] = useState("");
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
 
