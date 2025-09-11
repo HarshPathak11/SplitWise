@@ -8,6 +8,7 @@ import Cookies from "js-cookie";
 import { Link } from "react-router-dom";
 import { FaCopy } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TransactionHistory = () => {
   const { friendId } = useParams();
@@ -68,8 +69,7 @@ const TransactionHistory = () => {
         return;
       }
       const res = await axios.get(
-        // `//http://localhost:8000/user/${userId}`
-        `https://fairfare-0hyl.onrender.com/user/${userId}`
+        `${API_BASE}/user/${userId}`
       );
 
       fetchData(res.data.user);
@@ -100,8 +100,7 @@ const TransactionHistory = () => {
       setFriendName(friend?.friend || "Unknown");
 
       const txRes = await axios.get(
-        // `//http://localhost:8000/expenses/${user?._id}/${friendId}`
-        `https://fairfare-0hyl.onrender.com/expenses/${user?._id}/${friendId}`
+        `${API_BASE}/expenses/${user?._id}/${friendId}`
       );
 
       setTransactions(txRes.data.expenses || []);
@@ -131,8 +130,7 @@ const TransactionHistory = () => {
     try {
       setLoading(true);
       await axios.post(
-        // "//http://localhost:8000/user/update-friend-balance",
-        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+        `${API_BASE}/user/update-friend-balance`,
         {
         userEmail: storedUser.email,
         friendEmail: friendName.email,
@@ -168,8 +166,7 @@ const TransactionHistory = () => {
     try {
       setLoading(true);
       await axios.post(
-        // "//http://localhost:8000/user/update-friend-balance",
-        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+        `${API_BASE}/user/update-friend-balance`,
         {
         userEmail: storedUser.email,
         friendEmail: friendName.email,
@@ -201,8 +198,7 @@ const TransactionHistory = () => {
     try {
       if (currentBalance > 0) {
         await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-          // "//http://localhost:8000/user/update-friend-balance",
+          `${API_BASE}/user/update-friend-balance`,
           {
             userEmail: storedUser.email,
             friendEmail: friendName.email,
@@ -214,8 +210,7 @@ const TransactionHistory = () => {
         );
       } else {
         await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-          // "//http://localhost:8000/user/update-friend-balance",
+          `${API_BASE}/user/update-friend-balance`,
           {
             userEmail: storedUser.email,
             friendEmail: friendName.email,

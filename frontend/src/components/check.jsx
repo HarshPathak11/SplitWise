@@ -22,9 +22,7 @@ const ComparisonTable = () => {
         {/* Table Rows */}
         <div className="space-y-4 backdrop-blur-md bg-white/5 rounded-xl p-6 border border-white/20 hover:border-white/30 transition-all duration-300">
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">
-            Expense Tracking
-            </div>
+            <div className="text-white/80">Expense Tracking</div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
@@ -33,9 +31,7 @@ const ComparisonTable = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">
-            Unlimited Events
-            </div>
+            <div className="text-white/80">Unlimited Events</div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
@@ -71,9 +67,7 @@ const ComparisonTable = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">
-            Enhanced Aesthetics
-            </div>
+            <div className="text-white/80">Enhanced Aesthetics</div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
@@ -82,14 +76,12 @@ const ComparisonTable = () => {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
-            <div className="text-white/80">
-            Trip Management
-            </div>
+            <div className="text-white/80">Trip Management</div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
-            ✔️
+              ✔️
             </div>
           </div>
         </div>
@@ -115,32 +107,6 @@ const ComparisonTable = () => {
           </div>
         </div>
       </div>
-
-      {/* Animation Keyframes */}
-      {/* <style>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-      `}</style> */}
     </div>
   );
 };

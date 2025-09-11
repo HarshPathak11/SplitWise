@@ -12,7 +12,8 @@ import {
   updateFriendBalance,
   getUpdatedFriendBalances,
   changePassword,
-  setFcmToken
+  setFcmToken,
+  getUsernames
 } from '../controllers/user.js';
 
 const router = express.Router();
@@ -36,6 +37,7 @@ router.post('/set-fcm-token', setFcmToken);
 router.put('/:id', updateUserProfile);
 
 //GET routes
+router.get('/search', getUsernames);
 router.get('/:id', userDetails);
 
 //DELETE routes

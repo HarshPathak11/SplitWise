@@ -5,6 +5,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Cookies from "js-cookie";
 import { FaArrowLeft } from "react-icons/fa";
 import toast from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ChangePassword = () => {
   const [email, setEmail] = useState(""); // For the email input
@@ -33,7 +34,7 @@ const ChangePassword = () => {
     try {
       // Send OTP request to the backend
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/forgot-password",
+        `${API_BASE}/user/forgot-password`,
         { email }
       );
       if (response.status === 200) {

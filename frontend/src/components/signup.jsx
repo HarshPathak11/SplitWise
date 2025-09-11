@@ -6,6 +6,7 @@ import logo from "../../public/newIcon-192x192.png";
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const SignUp = () => {
   const [username, setUserName] = useState("");
@@ -28,7 +29,7 @@ const SignUp = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/send-otp",
+        `${API_BASE}/user/send-otp`,
         // "//http://localhost:8000/user/send-otp",
         {
           email,
@@ -57,7 +58,7 @@ const SignUp = () => {
   const handleOtpVerify = async () => {
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/verify-otp",
+        `${API_BASE}/user/verify-otp`,
         // "//http://localhost:8000/user/verify-otp",
         {
           email,

@@ -633,6 +633,51 @@ const getUpdatedFriendBalances = async (req, res) => {
   }
 };
 
+function escapeRegex(text = "") {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
+const getUsernames = async (req,res) => {
+  let { username } = req.query;
+  // console.log("username recieved:",username);
+try {
+    
+    if (!username || typeof username !== "string") {
+      return res.status(400).json({ message: "username query is required" });
+    }
+
+    username = username.trim();
+    if (username.length === 0) {
+      return res.status(400).json({ message: "username must not be empty" });
+    }
+    if (username.length > 50) {
+      return res.status(400).json({ message: "username too long" });
+    }
+
+    // Escape regex-special characters to avoid ReDoS and unexpected regex behavior
+    const safe = escapeRegex(username);
+
+    // For prefix-match (recommended for index use): use ^safe
+    // For substring match (less index-friendly): remove ^ 
+    const usePrefixSearch = true;
+    const pattern = usePrefixSearch ? `^${safe}` : safe;
+    const regex = new RegExp(pattern, "i");
+
+    // Query
+    const results = await User.find(
+      { username: regex },
+      { username: 1, email: 1 } // projection: return only username & email and _id
+    )
+      .limit(8)
+      .lean();
+
+    return res.json({ users: results });
+  } catch (err) {
+    console.error("searchUsers error:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 export {
   sendOtp,
   userLogin,
@@ -647,4 +692,5 @@ export {
   changePassword,
   getUpdatedFriendBalances,
   setFcmToken,
+  getUsernames,
 };

@@ -10,6 +10,7 @@ import { requestNotificationPermission } from "../../notifications";
 
 const Dashboard = () => {
   const [user, setUser] = useState();
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     // console.log("Fetching user details on dashboard load");
@@ -23,8 +24,8 @@ const Dashboard = () => {
       // if (!user) {
       try {
         const response = await axios.get(
-          `https://fairfare-0hyl.onrender.com/user/${userId}`
-          // `http://localhost:8000/user/${userId}`
+          `${API_BASE}/user/${userId}`
+          // `https://fairfare-0hyl.onrender.com/user/${userId}`
         );
         // console.log("response is ", response);
 
@@ -36,16 +37,16 @@ const Dashboard = () => {
 
         const fcmToken = await requestNotificationPermission();
 
-        if(response.data.user.fcmToken !== fcmToken || !fcmToken) {
-          
-        await axios.post(
-          // `http://localhost:8000/user/set-fcm-token`,
-          `https://fairfare-0hyl.onrender.com/user/set-fcm-token` ,
-           {
-          fcmToken,
-          userId
-        }); 
-      }
+        if (response.data.user.fcmToken !== fcmToken || !fcmToken) {
+          await axios.post(
+            `${API_BASE}/user/set-fcm-token`,
+            // `https://fairfare-0hyl.onrender.com/user/set-fcm-token` ,
+            {
+              fcmToken,
+              userId,
+            }
+          );
+        }
       } catch (err) {
         console.error("Error fetching user:", err);
       }
@@ -54,7 +55,7 @@ const Dashboard = () => {
 
     getDetails();
   }, []);
-  console.log("User", user);
+  // console.log("User", user);
 
   return (
     <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">

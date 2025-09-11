@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 const FriendsSection = ({ user }) => {
   const [friends, setFriends] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     if (user?.friends) {
@@ -20,8 +21,7 @@ const FriendsSection = ({ user }) => {
     const fetchUpdatedBalances = async () => {
       try {
         const res = await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/get-updated-friend-balances",
-          // "//http://localhost:8000/user/get-updated-friend-balances",
+          `${API_BASE}/user/get-updated-friend-balances`,
           { userId: user?._id }
         );
 
@@ -53,7 +53,7 @@ const FriendsSection = ({ user }) => {
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
       const res = await axios.delete(
-        `https://fairfare-0hyl.onrender.com/user/remove-friend`,
+        `${API_BASE}/user/remove-friend`,
         {
           data: {
             userId: user?._id,
