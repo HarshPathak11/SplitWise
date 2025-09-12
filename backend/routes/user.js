@@ -13,11 +13,10 @@ import {
   getUpdatedFriendBalances,
   changePassword,
   setFcmToken,
-  // friend requests
+  getUsernames,
   sendFriendRequest,
   listFriendRequests,
   respondToFriendRequest,
-  getFriendRequestsCount,
 } from "../controllers/user.js";
 
 const router = express.Router();
@@ -35,9 +34,7 @@ router.post("/remove-friend", removeFriend);
 
 // Friend request routes (added below after importing)
 router.post("/friend-requests/send", sendFriendRequest);
-router.get("/friend-requests/:userId", listFriendRequests);
 router.post("/friend-requests/respond", respondToFriendRequest);
-router.get("/friend-requests-count/:userId", getFriendRequestsCount);
 router.post("/update-friend-balance", updateFriendBalance);
 router.post("/change-password", changePassword);
 router.post("/get-updated-friend-balances", getUpdatedFriendBalances);
@@ -48,6 +45,7 @@ router.put("/:id", updateUserProfile);
 
 //GET routes
 router.get('/search', getUsernames);
+router.get("/friend-requests/:userId", listFriendRequests);
 router.get("/:id", userDetails);
 
 //DELETE routes
