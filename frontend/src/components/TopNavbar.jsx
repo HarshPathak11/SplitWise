@@ -10,9 +10,9 @@ import toast from "react-hot-toast";
 const TopNavbar = () => {
   const navigate = useNavigate();
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     const userId = Cookies.get("id");
-    const response = axios.post("https://fairfare-0hyl.onrender.com/user/remove-fcm-token", {
+    const response = await axios.post("https://fairfare-0hyl.onrender.com/user/remove-fcm-token", {
       userId: userId,
     });
 
