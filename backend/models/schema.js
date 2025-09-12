@@ -53,12 +53,6 @@ const friendRequestSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    status: {
-      type: String,
-      enum: ["pending", "accepted", "rejected"],
-      default: "pending",
-    },
-    message: { type: String, default: "" },
   },
   { timestamps: true }
 );
@@ -76,14 +70,6 @@ const userSchema = new mongoose.Schema(
         balance: { type: Number, default: 0 },
       },
     ],
-    // pendingFriendRequests will store incoming requests
-    pendingFriendRequests: [
-      {
-        from: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        createdAt: { type: Date, default: Date.now },
-      },
-    ],
-    // requests field to store count of friend requests
     requests: { type: Number, default: 0 },
     groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
     recentExpense: [expenseSchema],

@@ -368,67 +368,98 @@ const addFriends = async (req, res) => {
 
 // Friend Requests: send, list, approve, deny
 const sendFriendRequest = async (req, res) => {
+  
   try {
-    const { fromUserId, toEmail, message = "" } = req.body;
+    
+    const { fromUserId, toEmail } = req.body;
     if (!fromUserId || !toEmail) {
       return res.status(400).json({ message: "Incomplete data received" });
     }
 
     const fromUser = await User.findById(fromUserId);
-    const toUser = await User.findOne({ email: toEmail });
-
-    if (!fromUser || !toUser) {
-      return res.status(404).json({ message: "Users not found" });
+    if (!fromUser) {
+      return res.status(404).json({ message: "Sender not found" });
     }
 
-    // If already friends, skip
-    const alreadyFriends = toUser.friends?.some(
-      (f) => String(f.friend) === String(fromUser._id)
-    );
-    if (alreadyFriends) {
-      return res.status(400).json({ message: "Already friends" });
-    }
+    // Normalize to array
+    const emails = Array.isArray(toEmail) ? toEmail : [toEmail];
 
-    // Check if request already exists
-    const existingRequest = await FriendRequest.findOne({
-      from: fromUser._id,
-      to: toUser._id,
-      status: "pending",
-    });
+    const results = [];
 
-    if (existingRequest) {
-      return res.status(400).json({ message: "Request already sent" });
-    }
+    for (const email of emails) {
+      const toUser = await User.findOne({ email });
+      
+      if (!toUser) {
+        results.push({ email, status: "failed", reason: "User not found" });
+        continue;
+      }
 
-    // Create friend request in separate collection
-    const friendRequest = await FriendRequest.create({
-      from: fromUser._id,
-      to: toUser._id,
-      message: message,
-      status: "pending",
-    });
-
-    // Update user's requests count
-    await User.updateOne({ _id: toUser._id }, { $inc: { requests: 1 } });
-
-    // Also add to pendingFriendRequests for backward compatibility
-    await User.updateOne(
-      { _id: toUser._id },
-      { $push: { pendingFriendRequests: { from: fromUser._id } } }
-    );
-
-    // Notify
-    if (toUser.fcmToken) {
-      await sendOneNotification(
-        toUser.fcmToken,
-        "New Friend Request",
-        `${fromUser.username} sent you a friend request`
+      // Skip if already friends
+      const alreadyFriends = toUser.friends?.some(
+        (f) => String(f.friend) === String(fromUser._id)
       );
-    }
+      
+      if (alreadyFriends) {
+        results.push({ email, status: "skipped", reason: "Already friends" });
+        continue;
+      }
 
+      // Skip if request already exists
+      const existingRequest = await FriendRequest.findOne({
+        from: fromUser._id,
+        to: toUser._id,
+      });
+      
+      if (existingRequest) {
+        results.push({
+          email,
+          reason: `Request already sent to ${toUser.username}`,
+        });
+        continue;
+      }
+
+      //Checking if the to user has sent a request to the from user
+      const existingRequest1 = await FriendRequest.findOne({
+        to: fromUser._id,
+        from: toUser._id,
+      });
+      
+      if (existingRequest1) {
+        console.log("Found existing friend request:", existingRequest1);
+        results.push({
+          email,
+          reason: `You have a friend request from ${toUser.username}. Please respond to it.`,
+        });
+        continue;
+      }
+
+      // Create friend request
+      const friendRequest = await FriendRequest.create({
+        from: fromUser._id,
+        to: toUser._id,
+      });
+
+      // Update user's requests count
+      await User.updateOne({ _id: toUser._id }, { $inc: { requests: 1 } });
+
+      // Send notification
+      if (toUser.fcmToken) {
+        await sendOneNotification(
+          toUser.fcmToken,
+          "New Friend Request",
+          `${fromUser.username} sent you a friend request`
+        );
+      }
+
+      results.push({
+        email,
+        status: "success",
+        requestId: friendRequest._id,
+      });
+      
+    }
     return res.status(200).json({
-      message: "Request sent",
-      requestId: friendRequest._id,
+      results,
     });
   } catch (error) {
     console.error("Error sending friend request:", error);
@@ -443,7 +474,6 @@ const listFriendRequests = async (req, res) => {
     // Get friend requests from the separate collection
     const friendRequests = await FriendRequest.find({
       to: userId,
-      status: "pending",
     })
       .populate({
         path: "from",
@@ -479,7 +509,6 @@ const respondToFriendRequest = async (req, res) => {
       friendRequest = await FriendRequest.findOne({
         from: fromUserId,
         to: userId,
-        status: "pending",
       });
     }
 
@@ -489,12 +518,6 @@ const respondToFriendRequest = async (req, res) => {
 
     // Decrease requests count
     await User.updateOne({ _id: userId }, { $inc: { requests: -1 } });
-
-    // Remove from pendingFriendRequests for backward compatibility
-    await User.updateOne(
-      { _id: userId },
-      { $pull: { pendingFriendRequests: { from: fromUserId } } }
-    );
 
     if (action === "approve") {
       // Add to both friends lists if not already present
@@ -798,13 +821,12 @@ const getUpdatedFriendBalances = async (req, res) => {
 
 function escapeRegex(text = "") {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-};
+}
 
-const getUsernames = async (req,res) => {
+const getUsernames = async (req, res) => {
   let { username } = req.query;
   // console.log("username recieved:",username);
-try {
-    
+  try {
     if (!username || typeof username !== "string") {
       return res.status(400).json({ message: "username query is required" });
     }
@@ -821,7 +843,7 @@ try {
     const safe = escapeRegex(username);
 
     // For prefix-match (recommended for index use): use ^safe
-    // For substring match (less index-friendly): remove ^ 
+    // For substring match (less index-friendly): remove ^
     const usePrefixSearch = true;
     const pattern = usePrefixSearch ? `^${safe}` : safe;
     const regex = new RegExp(pattern, "i");
@@ -838,25 +860,6 @@ try {
   } catch (err) {
     console.error("searchUsers error:", err);
     return res.status(500).json({ message: "Internal server error" });
-  }
-}
-
-// Get friend requests count for a user
-const getFriendRequestsCount = async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    return res.status(200).json({
-      requestsCount: user.requests || 0,
-    });
-  } catch (error) {
-    console.error("Error getting friend requests count:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -875,8 +878,7 @@ export {
   getUpdatedFriendBalances,
   setFcmToken,
   getUsernames,
-    sendFriendRequest,
+  sendFriendRequest,
   listFriendRequests,
   respondToFriendRequest,
-  getFriendRequestsCount,
 };

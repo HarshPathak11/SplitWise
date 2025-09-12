@@ -12,34 +12,23 @@ const AddFriend = () => {
 
   const [friends, setFriends] = useState([]); // { email, name? }
   const [search, setSearch] = useState("");
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [requests, setRequests] = useState([]);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-    // Debounce + suggestions
+  // Debounce + suggestions
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]); // [{ _id, username, email }]
   const [isSearching, setIsSearching] = useState(false);
   const controllerRef = useRef(null);
-
-  // Load friends from localStorage when the component mounts
-  useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
 
   const userId = Cookies.get("id");
 
   const fetchRequests = async () => {
     try {
       if (!userId) return;
-      const res = await axios.get(
-        `${API_BASE}/user/friend-requests/${userId}`
-      );
+      const res = await axios.get(`${API_BASE}/user/friend-requests/${userId}`);
       setRequests(res.data || []);
     } catch (e) {
       // console.error(e);
@@ -62,10 +51,11 @@ const AddFriend = () => {
 
   const respond = async (fromUserId, action) => {
     try {
-      await axios.post(
-        `${API_BASE}/user/friend-requests/respond`,
-        { userId, fromUserId, action }
-      );
+      await axios.post(`${API_BASE}/user/friend-requests/respond`, {
+        userId,
+        fromUserId,
+        action,
+      });
       await fetchRequests();
       toast.success(
         action === "approve"
@@ -77,7 +67,7 @@ const AddFriend = () => {
     }
   };
 
-        // Debounce the search value
+  // Debounce the search value
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedQuery(search.trim());
@@ -119,7 +109,7 @@ const AddFriend = () => {
         const users = res.data?.users ?? res.data ?? [];
         // Limit suggestions, map to expected shape
         const mapped = (users || [])
-          .filter((u) => u._id !== user?._id) // exclude self
+          .filter((u) => u._id !== userId) // exclude self
           .slice(0, 8)
           .map((u) => ({
             _id: u._id,
@@ -148,7 +138,6 @@ const AddFriend = () => {
       controllerRef.current = null;
     };
   }, [debouncedQuery]);
-
 
   const handleSuggestionClick = (userObj) => {
     // userObj: { _id, username, email }
@@ -181,7 +170,7 @@ const AddFriend = () => {
   };
 
   const handleDone = async () => {
-    if (!user?.email || !user?._id) {
+    if (!userId) {
       toast.error("User not loaded. Please wait a moment.");
       return;
     }
@@ -190,27 +179,23 @@ const AddFriend = () => {
       toast.error("Please add at least one friend before proceeding.");
       return;
     }
-
     try {
       setLoading(true);
 
-      const response = await axios.post(`${API_BASE}/user/add-friends`, {
-        email: user?.email,
-        autoAdd: false,
-        friendsArray: friends.map((friend) => friend.email),
-      });
+      const response = await axios.post(
+        `${API_BASE}/user/friend-requests/send`,
+        {
+          fromUserId: userId,
+          toEmail: friends.map((f) => f.email),
+        }
+      );
 
       if (response.status === 200) {
-        if (response.data.addedFriends?.length === 0) {
-          toast.success("Invite sent to your friend(s)!");
-        } else {
-          toast.success(
-            `Successfully added ${
-              response.data.addedFriends?.length || 0
-            } friend(s)`
-          );
-        }
-        // ✅ Clear the list after successful addition
+        const results = response.data.results || [];
+
+        results.map((r)=>{r.reason ? toast.success(`(${r.reason})`): ""});
+
+        // ✅ Clear the list after successful attempt
         setFriends([]);
       } else {
         toast.error(`Failed to add friends: ${response.data.message}`);
