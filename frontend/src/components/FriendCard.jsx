@@ -310,8 +310,8 @@ const FriendCard = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-600 text-center w-[90%] max-w-md">
             <p className="text-white text-lg mb-4">
-              Are you sure you want to delete <strong>{friend.username}</strong>
-              ?
+              Are you sure you want to delete <strong>{friend.username}</strong> as friend
+              ? Your current balance track with <strong>{friend.username}</strong> will be lost forever!
             </p>
             <div className="flex justify-center gap-4">
               <button

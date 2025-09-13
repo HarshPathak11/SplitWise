@@ -281,6 +281,46 @@ const addExpenseController = async (req, res) => {
       .json({ success: false, message: "Missing required fields" });
   }
 
+  if (involvedMembers.length === 1 && involvedMembers[0] === paidBy) {
+    return res
+      .status(400)
+      .json({
+        success: false,
+        message: "Cannot split expense with only the payer involved.",
+      });
+  }
+
+  // Get payer's friends list
+  const payer = await User.findById(paidBy).select("friends username");
+  if (!payer) {
+    return res.status(404).json({ success: false, message: "Payer not found" });
+  }
+
+  const friendIds = payer.friends.map((id) => id.toString());
+  
+  // Find all non-friends from involvedMembers (skip self)
+  const notFriends = involvedMembers.filter(
+    (memberId) =>
+      memberId.toString() !== paidBy.toString() && // ✅ skip self
+      !friendIds.includes(memberId.toString())
+  );
+
+  if (notFriends.length > 0) {
+    // Fetch names of non-friends
+    const nonFriendUsers = await User.find({ _id: { $in: notFriends } }).select(
+      "username"
+    );
+
+    const nonFriendNames = nonFriendUsers.map((u) => u.username);
+
+    return res.status(400).json({
+      success: false,
+      message: `Cannot add expense since ${
+        payer.username
+      } is not friends with ${nonFriendNames.join(", ")}`,
+    });
+  }
+
   // Start a transaction session
   const session = await mongoose.startSession();
   session.startTransaction();
