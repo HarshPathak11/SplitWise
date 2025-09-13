@@ -24,6 +24,7 @@ import PublicProfile from "./components/PublicProfile";
 import RemoveMembers from "./components/RemoveMembers";
 import EditExpense from "./components/editExpense";
 import TransactionHistory from "./components/TransactionHistory";
+import ComingSoon from "./ComingSoon";
 
 const router = createBrowserRouter([
   {
@@ -43,6 +44,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "analytics",
+        element: (
+          <ProtectedRoute>
+            <ComingSoon />
           </ProtectedRoute>
         ),
       },

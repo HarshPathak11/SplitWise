@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "start": "concurrently --kill-others-on-fail \"npm run dev --prefix frontend\" \"npm start --prefix backend\""
+    "start": "concurrently \"npm run dev\" \"npm run star\"",
+    "dev": "cd backend && npm start",
+    "star": "cd frontend && npm run dev"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
