@@ -454,7 +454,7 @@ const sendFriendRequest = async (req, res) => {
       results.push({
         email,
         status: "success",
-        requestId: friendRequest._id,
+        reason: "Request sent to " + toUser.username,
       });
       
     }
