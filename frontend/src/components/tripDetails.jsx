@@ -43,7 +43,7 @@ const TripDetails = () => {
       }
       try {
         const response = await axios.get(
-          `${API_BASE}group/get-group/${tripId}`
+          `${API_BASE}/group/get-group/${tripId}`
           // `//http://localhost:8000/group/get-group/${tripId}` // Use your local or production URL
         );
         if (response.status === 200) {

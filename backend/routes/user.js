@@ -31,8 +31,6 @@ router.post("/forgot-password", forgotPassword);
 router.post("/verify-forgot-password", verifyForgotPassword);
 router.post("/add-friends", addFriends);
 router.post("/remove-friend", removeFriend);
-
-// Friend request routes (added below after importing)
 router.post("/friend-requests/send", sendFriendRequest);
 router.post("/friend-requests/respond", respondToFriendRequest);
 router.post("/update-friend-balance", updateFriendBalance);
