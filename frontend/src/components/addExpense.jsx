@@ -119,6 +119,13 @@ const AddExpense = () => {
         // '//http://localhost:8000/group/add-expense',
         payload
       );
+
+      if(response.status === 400){
+        toast.error(`${response.data.message}`);
+        return;
+      }
+
+
       if (response.status === 200) toast.success("Expense added successfully!");
       // console.log("Expense created successfully", response.data);
       // Reset form fields
