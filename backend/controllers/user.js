@@ -281,13 +281,22 @@ const userDetails = async (req, res) => {
       .populate({
         path: "recentExpense",
         options: { sort: { createdAt: -1 } }, // 👈 only latest 3
+        select: "title amount paidBy owedBy createdAt",
         populate: [
           { path: "paidBy", select: "username email" },
           { path: "owedBy.user", select: "username email" },
           { path: "group", select: "name description" },
         ],
       })
-      .select({ recentExpense: { $slice: -3 } });
+      .select({
+        username: 1,
+        email: 1,
+        upiId: 1,
+        groupRequests: 1,
+        aiChatUsage: 1,
+        friends: 1,
+        recentExpense: { $slice: -3 },
+      });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
       return res.status(404).json({ message: "User not found" });
