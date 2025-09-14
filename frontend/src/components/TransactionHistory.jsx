@@ -68,9 +68,7 @@ const TransactionHistory = () => {
         navigate("/login");
         return;
       }
-      const res = await axios.get(
-        `${API_BASE}/user/${userId}`
-      );
+      const res = await axios.get(`${API_BASE}/user/${userId}`);
 
       fetchData(res.data.user);
     } catch (error) {
@@ -129,9 +127,7 @@ const TransactionHistory = () => {
     const paidAmount = Math.abs(amount);
     try {
       setLoading(true);
-      await axios.post(
-        `${API_BASE}/user/update-friend-balance`,
-        {
+      await axios.post(`${API_BASE}/user/update-friend-balance`, {
         userEmail: storedUser.email,
         friendEmail: friendName.email,
         amount: paidAmount,
@@ -165,9 +161,7 @@ const TransactionHistory = () => {
     const receivedAmount = Math.abs(amount);
     try {
       setLoading(true);
-      await axios.post(
-        `${API_BASE}/user/update-friend-balance`,
-        {
+      await axios.post(`${API_BASE}/user/update-friend-balance`, {
         userEmail: storedUser.email,
         friendEmail: friendName.email,
         amount: receivedAmount,
@@ -197,29 +191,23 @@ const TransactionHistory = () => {
 
     try {
       if (currentBalance > 0) {
-        await axios.post(
-          `${API_BASE}/user/update-friend-balance`,
-          {
-            userEmail: storedUser.email,
-            friendEmail: friendName.email,
-            amount: currentBalance,
-            action: "received",
-            note: "Cleared Everything",
-            friendFcmToken: friendName.fcmToken,
-          }
-        );
+        await axios.post(`${API_BASE}/user/update-friend-balance`, {
+          userEmail: storedUser.email,
+          friendEmail: friendName.email,
+          amount: currentBalance,
+          action: "received",
+          note: "Cleared Everything",
+          friendFcmToken: friendName.fcmToken,
+        });
       } else {
-        await axios.post(
-          `${API_BASE}/user/update-friend-balance`,
-          {
-            userEmail: storedUser.email,
-            friendEmail: friendName.email,
-            amount: Math.abs(currentBalance),
-            action: "paid",
-            note: "Cleared Everything",
-            friendFcmToken: friendName.fcmToken,
-          }
-        );
+        await axios.post(`${API_BASE}/user/update-friend-balance`, {
+          userEmail: storedUser.email,
+          friendEmail: friendName.email,
+          amount: Math.abs(currentBalance),
+          action: "paid",
+          note: "Cleared Everything",
+          friendFcmToken: friendName.fcmToken,
+        });
       }
       fetchUser();
       setNetBalance(0);
@@ -355,8 +343,12 @@ const TransactionHistory = () => {
           <div className="flex-1 overflow-y-auto auto p-3">
             {transactions.map((tx) => {
               const isUser = tx.paidBy._id === currentUserId;
-              const owedEntry = tx.owedBy.find((o) => o.user._id === friendId);
-              const amount = owedEntry ? owedEntry.amount : tx.amount;
+              const owedEntry = isUser
+                ? tx.owedBy.find((o) => o.user._id === friendId)
+                : tx.owedBy.find((o) => o.user._id === currentUserId);
+
+              const amount = owedEntry ? owedEntry.amount : 0;
+
               return (
                 <div
                   key={tx._id}
