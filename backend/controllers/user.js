@@ -154,6 +154,120 @@ const userLogin = async (req, res) => {
   }
 };
 
+//Get all expenses for a user
+const getAllExpensesForUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const expenses = await Expense.find({
+      $or: [{ paidBy: userId }, { "owedBy.user": userId }],
+    })
+      .populate({ path: "paidBy", select: "username" })
+      .populate({ path: "owedBy.user", select: "username" });
+
+    res.status(200).json({ expenses });
+  } catch (error) {
+    console.error("Error fetching expenses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get top categories for a user
+const getTopCategoriesForUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const categories = await Expense.aggregate([
+      { $match: { "owedBy.user": userObjectId } },
+      { $group: { _id: "$category", total: { $sum: "$amount" } } },
+      { $sort: { total: -1 } },
+      // { $limit: 4 },
+    ]);
+
+    // Optional: rename _id to name for frontend convenience
+    const formattedCategories = categories.map((cat) => ({
+      name: cat._id,
+      total: cat.total,
+    }));
+
+    res.status(200).json({ categories: formattedCategories });
+  } catch (error) {
+    console.error("Error fetching top categories:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get subcategories for a user within a category
+const getSubCategoriesForUser = async (req, res) => {
+  try {
+    const { userId, category } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const subcategories = await Expense.aggregate([
+      {
+        $match: { "owedBy.user": userObjectId, ...(category && { category }) },
+      },
+      { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
+      { $sort: { total: -1 } },
+    ]);
+
+    const formattedSubcategories = subcategories.map((sub) => ({
+      name: sub._id,
+      total: sub.total,
+    }));
+
+    res.status(200).json({ subcategories: formattedSubcategories });
+  } catch (error) {
+    console.error("Error fetching subcategories:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get all expenses for a user in a specific subcategory
+const getAllExpensesForASubcategory = async (req, res) => {
+  try {
+    const { userId, category, subcategory } = req.body;
+
+    if (!userId || !category || !subcategory) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    // Build the query
+    const query = {
+      "owedBy.user": userObjectId,
+      category: category,
+      subcategory: subcategory,
+    };
+
+    // Fetch expenses and sort by updatedAt descending
+    const expenses = await Expense.find(query)
+      .populate({ path: "paidBy", select: "username" })
+      .populate({ path: "owedBy.user", select: "username" })
+      .sort({ updatedAt: -1 });
+
+    res.status(200).json({ expenses });
+  } catch (error) {
+    console.error("Error fetching expenses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 //Function to fetch user details
 const userDetails = async (req, res) => {
   try {
@@ -166,12 +280,14 @@ const userDetails = async (req, res) => {
       })
       .populate({
         path: "recentExpense",
+        options: { sort: { createdAt: -1 } }, // 👈 only latest 3
         populate: [
           { path: "paidBy", select: "username email" },
           { path: "owedBy.user", select: "username email" },
           { path: "group", select: "name description" },
         ],
-      });
+      })
+      .select({ recentExpense: { $slice: -3 } });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -368,9 +484,7 @@ const addFriends = async (req, res) => {
 
 // Friend Requests: send, list, approve, deny
 const sendFriendRequest = async (req, res) => {
-  
   try {
-    
     const { fromUserId, toEmail } = req.body;
     if (!fromUserId || !toEmail) {
       return res.status(400).json({ message: "Incomplete data received" });
@@ -388,7 +502,7 @@ const sendFriendRequest = async (req, res) => {
 
     for (const email of emails) {
       const toUser = await User.findOne({ email });
-      
+
       if (!toUser) {
         results.push({ email, status: "failed", reason: "User not found" });
         continue;
@@ -398,7 +512,7 @@ const sendFriendRequest = async (req, res) => {
       const alreadyFriends = toUser.friends?.some(
         (f) => String(f.friend) === String(fromUser._id)
       );
-      
+
       if (alreadyFriends) {
         results.push({ email, status: "skipped", reason: "Already friends" });
         continue;
@@ -409,7 +523,7 @@ const sendFriendRequest = async (req, res) => {
         from: fromUser._id,
         to: toUser._id,
       });
-      
+
       if (existingRequest) {
         results.push({
           email,
@@ -423,7 +537,7 @@ const sendFriendRequest = async (req, res) => {
         to: fromUser._id,
         from: toUser._id,
       });
-      
+
       if (existingRequest1) {
         console.log("Found existing friend request:", existingRequest1);
         results.push({
@@ -456,7 +570,6 @@ const sendFriendRequest = async (req, res) => {
         status: "success",
         reason: "Request sent to " + toUser.username,
       });
-      
     }
     return res.status(200).json({
       results,
@@ -881,4 +994,8 @@ export {
   sendFriendRequest,
   listFriendRequests,
   respondToFriendRequest,
+  getAllExpensesForUser,
+  getTopCategoriesForUser,
+  getSubCategoriesForUser,
+  getAllExpensesForASubcategory,
 };

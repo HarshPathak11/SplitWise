@@ -49,11 +49,13 @@ const friendRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
     to: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
   },
   { timestamps: true }
@@ -112,6 +114,8 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     throw error;
   }
 };
+
+expenseSchema.index({ paidBy: 1, "owedBy.user": 1 });
 
 const Expense = mongoose.model("Expense", expenseSchema);
 const User = mongoose.model("User", userSchema);
