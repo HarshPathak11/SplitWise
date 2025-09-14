@@ -24,7 +24,10 @@ import PublicProfile from "./components/PublicProfile";
 import RemoveMembers from "./components/RemoveMembers";
 import EditExpense from "./components/editExpense";
 import TransactionHistory from "./components/TransactionHistory";
-import ComingSoon from "./ComingSoon";
+import Categories from "./components/Categories";
+import Analytics from "./components/Analytics"
+import Subcategories from "./components/Subcategories";
+import Expenses from "./components/Expenses";
 
 const router = createBrowserRouter([
   {
@@ -51,7 +54,31 @@ const router = createBrowserRouter([
         path: "analytics",
         element: (
           <ProtectedRoute>
-            <ComingSoon />
+            <Analytics />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "categories",
+        element: (
+          <ProtectedRoute>
+            <Categories />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "subcategories",
+        element: (
+          <ProtectedRoute>
+            <Subcategories />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "expenses",
+        element: (
+          <ProtectedRoute>
+            <Expenses />
           </ProtectedRoute>
         ),
       },
