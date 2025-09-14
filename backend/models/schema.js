@@ -6,6 +6,8 @@ const expenseSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     amount: { type: Number, required: true },
+    category: { type: String, default: null, index: true },
+    subcategory: { type: String, default: null, index: true },
     paidBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -82,6 +84,14 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+//Label schema
+const LabelCategorySchema = new mongoose.Schema({
+  label: { type: String, unique: true, index: true },
+  category: String,
+  subcategory: String,
+},
+{ timestamps: true });
+
 // Password hashing middleware
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -107,5 +117,6 @@ const Expense = mongoose.model("Expense", expenseSchema);
 const User = mongoose.model("User", userSchema);
 const Group = mongoose.model("Group", groupSchema);
 const FriendRequest = mongoose.model("FriendRequest", friendRequestSchema);
+const LabelCategory = mongoose.model("LabelCategory", LabelCategorySchema);
 
-export { User, Group, Expense, FriendRequest };
+export { User, Group, Expense, FriendRequest, LabelCategory };
