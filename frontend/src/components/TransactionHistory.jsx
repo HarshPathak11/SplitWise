@@ -104,7 +104,7 @@ const TransactionHistory = () => {
         `https://fairfare-0hyl.onrender.com/expenses/${user?._id}/${friendId}`
       );
 
-      setTransactions(txRes.data.expenses || []);
+      setTransactions(txRes.data.expenses.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       setNetBalance(friend.balance || 0);
     } catch (err) {
       toast.error("Error fetching transaction history");
