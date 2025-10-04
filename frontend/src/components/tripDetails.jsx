@@ -9,7 +9,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TripDetails = () => {
   const navigate = useNavigate();
-  const location = useLocation(); 
+  const location = useLocation();
   // console.log(location.state+"state")
 
   const { tripId } = useParams(); // Now you get tripId directly from URL
@@ -74,49 +74,49 @@ const TripDetails = () => {
 
     fetchTripDetails();
   }, [tripId]);
- // 2) Re-fetch only the expenses if `expenseEdited` is true
- useEffect(() => {
-  // console.log(location.state?.expenseEdited)
-   if (location.state?.expenseEdited) {
-     // Clear the flag so we don't loop
-     navigate(location.pathname, { replace: true, state: {} });
+  // 2) Re-fetch only the expenses if `expenseEdited` is true
+  useEffect(() => {
+    // console.log(location.state?.expenseEdited)
+    if (location.state?.expenseEdited) {
+      // Clear the flag so we don't loop
+      navigate(location.pathname, { replace: true, state: {} });
 
-     // Re-fetch just the group (or just the expenses part)
-     const reloadExpenses = async () => {
-       try {
-         const response = await axios.get(
-           `${API_BASE}/group/get-group/${tripId}`
-          // `//http://localhost:8000/group/get-group/${tripId}`
-         );
-         if (response.status === 200) {
-           const group = response.data;
-           // Only update the `expenses` list (you could also update members/tripDetails if needed)
-           const sortedExpenses = group.expenses
-             .slice()
-             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-           setExpenses(sortedExpenses);
+      // Re-fetch just the group (or just the expenses part)
+      const reloadExpenses = async () => {
+        try {
+          const response = await axios.get(
+            `${API_BASE}/group/get-group/${tripId}`
+            // `//http://localhost:8000/group/get-group/${tripId}`
+          );
+          if (response.status === 200) {
+            const group = response.data;
+            // Only update the `expenses` list (you could also update members/tripDetails if needed)
+            const sortedExpenses = group.expenses
+              .slice()
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            setExpenses(sortedExpenses);
 
-           // Keep localStorage in sync
-           const rawCurrentGroup = localStorage.getItem("currentGroup");
-           if (rawCurrentGroup) {
-             try {
-               const cg = JSON.parse(rawCurrentGroup);
-               cg.expenses = group.expenses;
-               localStorage.setItem("currentGroup", JSON.stringify(cg));
-             } catch (e) {
-               console.error("Failed to patch localStorage after edit:", e);
-             }
-           }
-         }
-       } catch (err) {
-         console.error("Error reloading expenses:", err);
-         toast.error("Could not refresh expenses after edit");
-       }
-     };
+            // Keep localStorage in sync
+            const rawCurrentGroup = localStorage.getItem("currentGroup");
+            if (rawCurrentGroup) {
+              try {
+                const cg = JSON.parse(rawCurrentGroup);
+                cg.expenses = group.expenses;
+                localStorage.setItem("currentGroup", JSON.stringify(cg));
+              } catch (e) {
+                console.error("Failed to patch localStorage after edit:", e);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error reloading expenses:", err);
+          toast.error("Could not refresh expenses after edit");
+        }
+      };
 
-     reloadExpenses();
-   }
- }, [location.state?.expenseEdited, tripId, navigate]);
+      reloadExpenses();
+    }
+  }, [location.state?.expenseEdited, tripId, navigate]);
 
   // Handle adding new members (avoid adding existing ones)
   const handleAddMember = () => {
@@ -148,7 +148,7 @@ const TripDetails = () => {
     localStorage.removeItem("currentGroup");
 
     // Navigate back to the dashboard
-    navigate('/dash');
+    navigate("/dash");
   };
 
   const HandleLeaveGroup = async () => {
@@ -188,25 +188,20 @@ const TripDetails = () => {
   };
   const handleDeleteExpense = (deletedExpenseId) => {
     // 2a) Filter it out of local `expenses`
-    setExpenses((prev) =>
-      prev.filter((exp) => exp._id !== deletedExpenseId)
-    );
+    setExpenses((prev) => prev.filter((exp) => exp._id !== deletedExpenseId));
 
     // 2b) Also remove it from the `currentGroup` in localStorage
     const rawCurrentGroup = localStorage.getItem("currentGroup");
     if (rawCurrentGroup) {
       try {
         const cg = JSON.parse(rawCurrentGroup);
-        cg.expenses = cg.expenses.filter(
-          (exp) => exp._id !== deletedExpenseId
-        );
+        cg.expenses = cg.expenses.filter((exp) => exp._id !== deletedExpenseId);
         localStorage.setItem("currentGroup", JSON.stringify(cg));
       } catch (e) {
         console.error("Failed to remove expense from localStorage:", e);
       }
     }
   };
-
 
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
@@ -251,6 +246,41 @@ const TripDetails = () => {
                 <p className="text-base sm:text-lg mt-2 mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
                   {tripDetails?.description}
                 </p>
+
+                {/* Analytics Button */}
+                <button
+                  className="mt-3 inline-flex items-center px-3 sm:px-4 py-2 
+             bg-[#0d1117] border border-gray-700 rounded-md shadow-md 
+             text-xs sm:text-sm md:text-base font-medium text-white 
+             hover:bg-[#1a1f29] hover:border-[#00FFA3] 
+             transition relative overflow-hidden group"
+                >
+                  {/* Shiny effect */}
+                  <span
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+                   translate-x-[-100%] group-hover:translate-x-[100%] 
+                   transition-transform duration-700 ease-in-out"
+                  />
+
+                  {/* Icon */}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-[#00FFA3]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 3v18h18M9 17l3-3 4 4 5-6"
+                    />
+                  </svg>
+
+                  {/* Text */}
+                  <span className="truncate">Analytics</span>
+                </button>
               </>
             )}
           </div>
