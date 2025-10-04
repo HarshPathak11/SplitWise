@@ -410,7 +410,7 @@ const TransactionHistory = () => {
                       </div>
                     </div>
                     <span className="text-xs text-gray-400 mt-1">
-                      {new Date(tx.updatedAt).toLocaleString([], {
+                      {new Date(tx.createdAt).toLocaleString([], {
                         dateStyle: "medium",
                         timeStyle: "short",
                       })}
