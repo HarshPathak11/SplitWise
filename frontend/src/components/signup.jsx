@@ -29,7 +29,7 @@ const SignUp = () => {
     try {
       const response = await axios.post(
         "https://fairfare-0hyl.onrender.com/user/send-otp",
-        // "//http://localhost:8000/user/send-otp",
+        // "http://localhost:8000/user/send-otp",
         {
           email,
           username,
@@ -58,7 +58,7 @@ const SignUp = () => {
     try {
       const response = await axios.post(
         "https://fairfare-0hyl.onrender.com/user/verify-otp",
-        // "//http://localhost:8000/user/verify-otp",
+        // "http://localhost:8000/user/verify-otp",
         {
           email,
           otp,
