@@ -12,9 +12,12 @@ dotenv.config();
 // Send OTP to email
 const sendOtp = async (req, res) => {
   const { email, username } = req.body;
+  console.log(email,' ',username);
 
   if (!email || !username)
     return res.status(400).json({ message: "Incomplete data received" });
+
+  console.log("data received");
 
   const existingUser = await User.findOne({ email });
   const existingUsername = await User.findOne({ username });
@@ -26,9 +29,14 @@ const sendOtp = async (req, res) => {
   if (existingUser) {
     return res.status(410).json({ message: "Email already taken" });
   }
+  console.log(existingUser," ",existingUsername);
+
+  console.log("initiating otp")
 
   const otp = Math.floor(100000 + Math.random() * 900000);
   // console.log("otp sent ", otp);
+
+  console.log(otp,"opt formed")
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -44,16 +52,21 @@ const sendOtp = async (req, res) => {
     subject: `Welcome Onboard ${username}`,
     html: `<h1>Hi ${username},</h1><p>Your OTP for signup is: <h2><strong>${otp}</strong></h2></p><p>This code is valid for 5 minutes.</p><p>Thanks, Fair Fare Team</p>`,
   };
+  console.log(mailOptions)
 
   try {
+    console.log("entering try")
     const hashedOtp = await bcrypt.hash(otp.toString(), 10);
 
     await transporter.sendMail(mailOptions);
+
+    console.log("otp sent")
 
     return res
       .status(200)
       .json({ message: "OTP sent to email", otp: hashedOtp });
   } catch (error) {
+    console.log(error)
     console.error("Failed to send OTP email:", error);
     return res.status(500).json({ message: "Failed to send OTP email" });
   }
