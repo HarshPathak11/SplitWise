@@ -55,6 +55,8 @@ const sendOtp = async (req, res) => {
   console.log(mailOptions)
 
   try {
+    await transporter.verify();
+    console.log("SMTP connection verified");
     console.log("entering try")
     const hashedOtp = await bcrypt.hash(otp.toString(), 10);
 
