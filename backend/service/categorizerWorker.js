@@ -1,4 +1,4 @@
-import { Expense, LabelCategory } from "../models/schema.js";
+import { Expense, LabelCategory, Group } from "../models/schema.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 dotenv.config();

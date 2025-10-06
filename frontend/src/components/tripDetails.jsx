@@ -234,8 +234,10 @@ const TripDetails = () => {
       {/* Card Container */}
       <div className="backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
         {/* Trip Header */}
-        <div className="flex justify-between items-center flex-wrap gap-4">
-          <div>
+        {/* Use a column layout on small screens and a row layout on md+ so the Analytics button
+            sits to the right on larger viewports and stacks centered below the title on small */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex-1">
             {loading ? (
               <p className="text-lg text-gray-300">Loading trip details...</p>
             ) : (
@@ -246,42 +248,49 @@ const TripDetails = () => {
                 <p className="text-base sm:text-lg mt-2 mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
                   {tripDetails?.description}
                 </p>
-
-                {/* Analytics Button */}
-                <button
-                  className="mt-3 inline-flex items-center px-3 sm:px-4 py-2 
-             bg-[#0d1117] border border-gray-700 rounded-md shadow-md 
-             text-xs sm:text-sm md:text-base font-medium text-white 
-             hover:bg-[#1a1f29] hover:border-[#00FFA3] 
-             transition relative overflow-hidden group"
-                >
-                  {/* Shiny effect */}
-                  <span
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
-                   translate-x-[-100%] group-hover:translate-x-[100%] 
-                   transition-transform duration-700 ease-in-out"
-                  />
-
-                  {/* Icon */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-[#00FFA3]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3 3v18h18M9 17l3-3 4 4 5-6"
-                    />
-                  </svg>
-
-                  {/* Text */}
-                  <span className="truncate">Analytics</span>
-                </button>
               </>
+            )}
+          </div>
+
+          {/* Analytics Button container: full-width and centered on small screens, auto width and right aligned on md+ */}
+          <div className="w-full md:w-auto flex justify-center md:justify-end">
+            {!loading && (
+              <button
+                className="mt-3 md:mt-0 inline-flex items-center px-3 sm:px-4 py-2 w-full md:w-auto
+             bg-[#0d1117] border border-gray-700 rounded-md shadow-md
+             text-xs sm:text-sm md:text-base font-medium text-white
+             hover:bg-[#1a1f29] hover:border-[#00FFA3]
+             transition relative overflow-hidden group"
+                onClick={() =>
+                  navigate("/analytics", { state: { group: tripDetails } })
+                }
+              >
+                {/* Shiny effect */}
+                <span
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
+                   translate-x-[-100%] group-hover:translate-x-[100%]
+                   transition-transform duration-700 ease-in-out"
+                />
+
+                {/* Icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-[#00FFA3]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 3v18h18M9 17l3-3 4 4 5-6"
+                  />
+                </svg>
+
+                {/* Text */}
+                <span className="truncate">Analytics</span>
+              </button>
             )}
           </div>
         </div>
