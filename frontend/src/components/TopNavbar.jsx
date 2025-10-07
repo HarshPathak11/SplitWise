@@ -4,16 +4,28 @@ import { FaUser, FaChartBar } from "react-icons/fa";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import { FaRobot } from "react-icons/fa";
+import axios from "axios";
+import toast from "react-hot-toast";
 import dashboardLogo from "../../public/dashboardLogo.png";
 
 const TopNavbar = () => {
   const navigate = useNavigate();
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    const userId = Cookies.get("id");
+    const response = await axios.post("https://fairfare-0hyl.onrender.com/user/remove-fcm-token", {
+      userId: userId,
+    });
+
+    if(response.status === 200){
     Cookies.remove("id");
     Cookies.remove("last4");
     localStorage.clear();
     navigate("/");
+    }
+    else{
+      toast.error("Error signing out. Please try again.");
+    }
   };
 
   return (
