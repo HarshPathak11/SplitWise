@@ -101,7 +101,14 @@ const TransactionHistory = () => {
         `${API_BASE}/expenses/${user?._id}/${friendId}`
       );
 
-      setTransactions(txRes.data.expenses || []);
+      // Sort the transactions by createdAt (latest first)
+      const sortedTransactions = txRes.data.expenses.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      // Reverse the sorted transactions so that latest expense is at the bottom
+      setTransactions(sortedTransactions.reverse());
+      
       setNetBalance(friend.balance || 0);
     } catch (err) {
       toast.error("Error fetching transaction history");
@@ -390,7 +397,7 @@ const TransactionHistory = () => {
                       </div>
                     </div>
                     <span className="text-xs text-gray-400 mt-1">
-                      {new Date(tx.updatedAt).toLocaleString([], {
+                      {new Date(tx.createdAt).toLocaleString([], {
                         dateStyle: "medium",
                         timeStyle: "short",
                       })}
