@@ -100,8 +100,14 @@ const TransactionHistory = () => {
       const txRes = await axios.get(
         `${API_BASE}/expenses/${user?._id}/${friendId}`
       );
+      
+      // Sort the transactions by createdAt (latest first)
+      const sortedTransactions = txRes.data.expenses.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
 
-      setTransactions(txRes.data.expenses || []);
+      // Reverse the sorted transactions so that latest expense is at the bottom
+      setTransactions(sortedTransactions.reverse());
       setNetBalance(friend.balance || 0);
     } catch (err) {
       toast.error("Error fetching transaction history");
