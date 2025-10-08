@@ -21,6 +21,7 @@ import {
   getAllExpensesForUser,
   getSubCategoriesForUser,
   getAllExpensesForASubcategory,
+  removeFcmToken,
 } from "../controllers/user.js";
 
 const router = express.Router();
@@ -41,6 +42,7 @@ router.post("/update-friend-balance", updateFriendBalance);
 router.post("/change-password", changePassword);
 router.post("/get-updated-friend-balances", getUpdatedFriendBalances);
 router.post("/set-fcm-token", setFcmToken);
+router.post('/remove-fcm-token', removeFcmToken);
 router.post("/all-expenses", getAllExpensesForUser);
 router.post("/top-categories", getTopCategoriesForUser);
 router.post("/subcategories", getSubCategoriesForUser);
