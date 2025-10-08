@@ -1,8 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Cookies from "js-cookie";
 import { FaArrowLeft } from "react-icons/fa";
+import toast from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ChangePassword = () => {
   const [email, setEmail] = useState(""); // For the email input
@@ -12,6 +15,8 @@ const ChangePassword = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [isOtpVerified, setIsOtpVerified] = useState(false); // To track OTP verification
+    const [showPassword1, setShowPassword1] = useState(false);
+    const [showPassword2, setShowPassword2] = useState(false);
   const [otpSent, setOtpSent] = useState(false); // To track if OTP has been sent
   const [otpGenerated, setOtpGenerated] = useState(""); // To store the generated OTP
   const navigate = useNavigate();
@@ -28,11 +33,16 @@ const ChangePassword = () => {
     }
     try {
       // Send OTP request to the backend
-      const response = await axios.post("https://fairfare-0hyl.onrender.com/user/forgot-password", { email });      
+      const response = await axios.post(
+        `${API_BASE}/user/forgot-password`,
+        { email }
+      );
       if (response.status === 200) {
         setOtpGenerated(response.data.otp); // Store the generated OTP for later use
         setOtpSent(true); // OTP sent successfully
-        setMessage("OTP sent to your email.");
+        setMessage(
+          "OTP sent to your email. Please check spam if OTP not found."
+        );
       } else {
         setMessage("Error sending OTP. Please try again.");
       }
@@ -49,7 +59,10 @@ const ChangePassword = () => {
     setMessage("");
     try {
       // Verify OTP entered by the user
-      const response = await axios.post("https://fairfare-0hyl.onrender.com/user/verify-forgot-password", { email, otp, otpGenerated });
+      const response = await axios.post(
+        "https://fairfare-0hyl.onrender.com/user/verify-forgot-password",
+        { email, otp, otpGenerated }
+      );
       if (response.status === 200) {
         setIsOtpVerified(true); // OTP verified successfully
         setMessage("OTP verified. You can now change your password.");
@@ -69,9 +82,15 @@ const ChangePassword = () => {
     setLoading(true);
     setMessage("");
 
+    if(!newPassword && !confirmPassword) {
+      toast.error("Please fill in all fields.");
+      setLoading(false);
+      return;
+    }
+
     // Validate password match
     if (newPassword !== confirmPassword) {
-      setMessage("New password and confirm password do not match.");
+      toast.error("New password and confirm password do not match.");
       setLoading(false);
       return;
     }
@@ -94,7 +113,7 @@ const ChangePassword = () => {
       }
     } catch (error) {
       setMessage("Error changing password. Please try again.");
-      console.log("Error changing password:", error);
+      // console.log("Error changing password:", error);
     } finally {
       setLoading(false);
     }
@@ -131,7 +150,7 @@ const ChangePassword = () => {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-gray-700"
+              className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400 mb-5"
               required
             />
             <button
@@ -151,7 +170,7 @@ const ChangePassword = () => {
               placeholder="Enter OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-gray-700"
+              className="w-full px-3 py-2 border rounded-lg mb-4 bg-transparent text-white bg-gray-700"
               required
             />
             <button
@@ -166,22 +185,38 @@ const ChangePassword = () => {
 
         {isOtpVerified && (
           <>
+          <div className="relative mb-4">
             <input
-              type="password"
+              type={showPassword1 ? "text" : "password"}
               placeholder="New Password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-gray-700"
+              className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400"
               required
             />
+            <span
+              onClick={() => setShowPassword1(!showPassword1)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
+            >
+              {showPassword1 ? <FaEyeSlash /> : <FaEye />}
+            </span>
+            </div>
+            <div className="relative mb-4">
             <input
-              type="password"
+              type={showPassword2 ? "text" : "password"}
               placeholder="Confirm New Password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-gray-700"
+              className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400"
               required
             />
+            <span
+              onClick={() => setShowPassword2(!showPassword2)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
+            >
+              {showPassword2 ? <FaEyeSlash /> : <FaEye />}
+            </span>
+            </div>
             <button
               onClick={handleChangePassword}
               className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700"

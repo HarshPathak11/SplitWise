@@ -1,9 +1,10 @@
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
-import { FaMandalorian } from "react-icons/fa";
+import { FaUser, FaChartBar } from "react-icons/fa";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import { FaRobot } from "react-icons/fa";
+import dashboardLogo from "../../public/dashboardLogo.png";
 
 const TopNavbar = () => {
   const navigate = useNavigate();
@@ -20,21 +21,34 @@ const TopNavbar = () => {
       <div className="flex justify-between items-center">
         <div>
           <Link to="/">
-            <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
-              Fair Fare
-            </h1>
+            <img
+              src={dashboardLogo}
+              alt="Fair Fare Dashboard"
+              className="rounded-xl"
+            />
           </Link>
-          <p className="text-sm sm:text-base text-gray-400">DashBoard</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex space-x-8">
-            <Link to="/CashMapAI">
+            <Link to="/analytics">
               <button
-                className="p-2 shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 rounded-lg flex  hover:scale-105 transition-transform duration-300 ease-in-out "
+                className=" p-2 shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 
+             rounded-lg flex items-center justify-center
+              hover:scale-105 transition-transform duration-300 ease-in-out"
+                title="Analytics Dashboard"
+              >
+                Analytics
+                <FaChartBar className="text-white text-2xl pl-2" />
+              </button>
+            </Link>
+          <div className="flex space-x-8">
+            <Link to="/FairAI">
+              <button
+                className="p-2 shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 
+             rounded-lg flex items-center justify-center 
+             hover:scale-105 transition-transform duration-300 ease-in-out"
                 title="AI ChatBot"
               >
-                Fair AI
-                <FaRobot className="text-white text-xl mt-0.5 ml-2" />
+                <FaRobot className="text-white text-2xl ml-1 mr-1" />
               </button>
             </Link>
           </div>
@@ -44,7 +58,7 @@ const TopNavbar = () => {
                 className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
                 title="Edit Profile"
               >
-                <FaMandalorian className="text-white text-xl" />
+                <FaUser className="text-white text-xl" />
               </button>
             </Link>
           </div>

@@ -2,35 +2,39 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ExpenseCard from "./expenseCard"; // Ensure this component is styled properly
 import { FaArrowLeft } from "react-icons/fa";
+import Cookies from "js-cookie";
+import axios from "axios";
 
 const AllExpensesPage = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(false);
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
-    // Retrieve user from localStorage and parse the recentExpense field.
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+    const userId = Cookies.get("id"); // Get userId from cookies
+    if (!userId) return;
+
+    const fetchExpenses = async () => {
       try {
-        const user = JSON.parse(storedUser);
-        if (user?.recentExpense && Array.isArray(user.recentExpense)) {
-          // Sort expenses by createdAt in descending order (most recent first)
-          const sortedExpenses = [...user.recentExpense].sort(
+        setLoading(true);
+        const response = await axios.post(`${API_BASE}/user/all-expenses`, { userId });
+        if (response.data?.expenses) {
+          // Sort by createdAt descending (latest first)
+          const sortedExpenses = response.data.expenses.sort(
             (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
           );
-          // Take the top 4 expenses after sorting.
-          const topExpenses = sortedExpenses;
-          setExpenses(topExpenses);
+          setExpenses(sortedExpenses);
         }
       } catch (error) {
-        console.error("Error parsing user from localStorage:", error);
+        console.error("Error fetching expenses:", error);
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
+    };
 
-  const handleExpenseClick = (expense) => {
-    navigate("/expenseDetails", { state: { expense } });
-  };
+    fetchExpenses();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white overflow-hidden relative">
@@ -46,7 +50,7 @@ const AllExpensesPage = () => {
       {/* Back Button */}
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
         <button
-          onClick={() => navigate("/dash")} // Navigate to the dashboard
+          onClick={() => navigate("/dash")}
           className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
           title="Back to Dashboard"
         >
@@ -66,7 +70,9 @@ const AllExpensesPage = () => {
 
       {/* Expenses List */}
       <div className="flex-1 max-w-4xl mx-auto w-full p-4 overflow-y-auto z-10 relative">
-        {expenses.length === 0 ? (
+        {loading ? (
+          <p className="text-center text-white font-semibold">Loading...</p>
+        ) : expenses.length === 0 ? (
           <p className="text-red-500 text-center font-semibold">
             No expenses found.
           </p>
@@ -74,15 +80,15 @@ const AllExpensesPage = () => {
           <div className="space-y-4">
             {expenses.map((expense) => (
               <ExpenseCard
-              key={expense.id}
-              category={expense.title}
-              time={expense.createdAt}
-              description={""}
-              amount={expense.amount}
-              iconColor={"bg-blue-500"}
-              paidBy={expense.paidBy}
-              beneficiaries={expense.owedBy}
-            />
+                key={expense._id}
+                category={expense.title}
+                time={expense.createdAt}
+                description={""}
+                amount={expense.amount}
+                iconColor={"bg-blue-500"}
+                paidBy={expense.paidBy}
+                beneficiaries={expense.owedBy}
+              />
             ))}
           </div>
         )}

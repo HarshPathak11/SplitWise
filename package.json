@@ -1,7 +1,14 @@
 {
+  "scripts": {
+    "start": "concurrently \"npm run dev\" \"npm run star\"",
+    "dev": "cd backend && npm start",
+    "star": "cd frontend && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
   "dependencies": {
-    "@radix-ui/react-toast": "^1.2.7",
-    "qrcode.react": "^4.2.0",
-    "react-hot-toast": "^2.5.2"
+    "@google/genai": "^1.19.0",
+    "@google/generative-ai": "^0.24.1"
   }
 }

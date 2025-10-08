@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AddMembers = () => {
   const navigate = useNavigate();
@@ -63,7 +64,8 @@ const AddMembers = () => {
       const selectedUsernames = selectedFriends.map((f) => f._id);
 
       const res = await axios.post(
-        `https://fairfare-0hyl.onrender.com/group/add-members/${groupId}`,
+        `${API_BASE}/group/add-members/${groupId}`,
+        // `//http://localhost:8000/group/add-members/${groupId}`,
         {
           members: selectedUsernames,
         }

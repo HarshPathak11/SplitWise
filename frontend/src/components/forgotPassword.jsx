@@ -2,7 +2,8 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import { FaArrowLeft } from "react-icons/fa"; // Import the home icon
+import { FaArrowLeft } from "react-icons/fa";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -16,7 +17,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/forgot-password",
+        `${API_BASE}/user/forgot-password`,
         {
           email,
         }
@@ -27,7 +28,7 @@ const ForgotPassword = () => {
       }
     } catch (error) {
       alert("Failed to send OTP.");
-      console.log("error is ", error);
+      // console.log("error is ", error);
     } finally {
       setLoading(false);
     }
@@ -37,7 +38,7 @@ const ForgotPassword = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/verify-forgot-password",
+        `${API_BASE}/user/verify-forgot-password`,
         {
           otpGenerated,
           otp,
@@ -53,7 +54,7 @@ const ForgotPassword = () => {
       }
     } catch (error) {
       alert("OTP verification failed.");
-      console.log("error is ", error);
+      // console.log("error is ", error);
     } finally {
       setLoading(false);
     }

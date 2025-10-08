@@ -1,9 +1,11 @@
 import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
+import logo from "../../public/newIcon-192x192.png"; 
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const LogIn = () => {
   const [email, setEmail] = React.useState("");
@@ -11,6 +13,10 @@ const LogIn = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [loading, setLoading] = React.useState(false); // NEW state
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const redirectPath = queryParams.get("redirect") || "/dash"; // fallback to dashboard or home
 
   //UseEffect to Check if user logged in before or not if yes then directly take them to dashboard
   useEffect(() => {
@@ -38,7 +44,7 @@ const LogIn = () => {
 
       setLoading(true); // Start loading
       const response = await axios.post(
-        `https://fairfare-0hyl.onrender.com/user/login`,
+        `${API_BASE}/user/login`,
         {
           email,
           password,
@@ -47,7 +53,7 @@ const LogIn = () => {
 
       if (response.data.user) {
         Cookies.set("id", response.data.user._id, { expires: 7 });
-        navigate("/dash");
+        navigate(redirectPath);
       }
     } catch (error) {
       console.error("Error logging in:", error);
@@ -80,7 +86,7 @@ const LogIn = () => {
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
           <div className="flex items-center ">
-            <img src="../icon.svg" alt="Icon" className="w-8 h-8 mr-2" />
+            <img src={logo} alt="Icon" className="w-8 h-8 mr-2" />
             <span className="text-4xl text-center font-bold text-white">
               FairFare
             </span>
@@ -105,7 +111,7 @@ const LogIn = () => {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="Email Address"
-                className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300 text-white bg-transparent placeholder-gray-400"
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300 text-white bg-transparent placeholder-gray-400"
               />
             </div>
             <div className="mb-4 relative">

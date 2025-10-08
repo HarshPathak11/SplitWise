@@ -1,3 +1,288 @@
+# import os
+# import hashlib
+# from datetime import datetime
+# from bson import ObjectId
+# from flask import Flask, request, jsonify
+# from flask_cors import CORS
+# from pymongo import MongoClient
+# from dotenv import load_dotenv
+# from groq import Groq
+# from astrapy import DataAPIClient
+
+# # ─── Setup ────────────────────────────────────────────────────────────────
+# load_dotenv()
+# MONGO_URI                  = os.getenv("MONGO_URI")
+# GROQ_API_KEY               = os.getenv("GROQ_API_KEY")
+# ASTRA_DB_API_ENDPOINT      = os.getenv("ASTRA_DB_API_ENDPOINT")
+# ASTRA_DB_APPLICATION_TOKEN = os.getenv("ASTRA_DB_APPLICATION_TOKEN")
+# VECTOR_COLLECTION          = os.getenv("VECTOR_COLLECTION", "user_data_vector")
+
+# app = Flask(__name__)
+# CORS(app)
+
+# mongo_client = MongoClient(MONGO_URI)
+# db           = mongo_client["Splitwise"]
+
+# groq_client  = Groq(api_key=GROQ_API_KEY)
+# astra_client = DataAPIClient(ASTRA_DB_APPLICATION_TOKEN)
+# database     = astra_client.get_database(ASTRA_DB_API_ENDPOINT)
+# collection   = database.get_collection(VECTOR_COLLECTION)
+
+# # ─── Helpers ───────────────────────────────────────────────────────────────
+
+# def get_populated_user(user_id: str) -> dict | None:
+#     """Fetch user + fully populate groups (with members & expenses), recentExpense, and friends."""
+#     raw = db.users.find_one({"_id": ObjectId(user_id)})
+#     if not raw:
+#         return None
+
+#     user = {
+#         "_id":      raw["_id"],
+#         "username": raw.get("username")
+#     }
+
+#     # 1) populate groups + members + embedded expenses
+#     populated_groups = []
+#     for gid in raw.get("groups", []):
+#         grp = db.groups.find_one({"_id": gid})
+#         if not grp:
+#             continue
+
+#         # members
+#         members = list(db.users.find(
+#             {"_id": {"$in": grp.get("members", [])}},
+#             {"username": 1, "_id": 0}
+#         ))
+#         grp["members_docs"] = members
+
+#         # group’s embedded expenses
+#         exp_docs = []
+#         for exp in grp.get("expenses", []):
+#             e = dict(exp)
+#             paid = db.users.find_one(
+#                 {"_id": exp.get("paidBy")},
+#                 {"username": 1, "_id": 0}
+#             )
+#             e["paidBy_doc"] = paid or {}
+
+#             owed_list = []
+#             for owed in exp.get("owedBy", []):
+#                 od  = dict(owed)
+#                 usr = db.users.find_one(
+#                     {"_id": owed.get("user")},
+#                     {"username": 1, "_id": 0}
+#                 )
+#                 od["user_doc"] = usr or {}
+#                 owed_list.append(od)
+#             e["owedBy"] = owed_list
+
+#             exp_docs.append(e)
+
+#         grp["expenses_docs"] = exp_docs
+#         populated_groups.append(grp)
+
+#     user["groups"] = populated_groups
+
+#     # 2) populate recentExpense → paidBy + owedBy.user
+#     populated_expenses = []
+#     for exp in raw.get("recentExpense", []):
+#         e = dict(exp)
+#         paid = db.users.find_one(
+#             {"_id": exp.get("paidBy")},
+#             {"username": 1, "_id": 0}
+#         )
+#         e["paidBy_doc"] = paid or {}
+
+#         owed_list = []
+#         for owed in exp.get("owedBy", []):
+#             od  = dict(owed)
+#             usr = db.users.find_one(
+#                 {"_id": owed.get("user")},
+#                 {"username": 1, "_id": 0}
+#             )
+#             od["user_doc"] = usr or {}
+#             owed_list.append(od)
+#         e["owedBy"] = owed_list
+
+#         populated_expenses.append(e)
+#     user["recentExpense"] = populated_expenses
+
+#     # 3) populate friends → friend
+#     populated_friends = []
+#     for fr in raw.get("friends", []):
+#         friend_id = fr.get("friend")
+#         f = dict(fr)
+#         if friend_id:
+#             friend_doc = db.users.find_one(
+#                 {"_id": friend_id},
+#                 {"username": 1, "email": 1, "_id": 0}
+#             )
+#         else:
+#             friend_doc = {}
+#         f["friend_doc"] = friend_doc or {}
+#         populated_friends.append(f)
+#     user["friends"] = populated_friends
+
+#     return user
+
+# def generate_doc_id(user_id: str, text: str) -> str:
+#     """MD5 of user_id + text to ensure per-user uniqueness."""
+#     return hashlib.md5(f"{user_id}:{text}".encode("utf-8")).hexdigest()
+
+# def upsert_user_documents(user_id: str, documents: list[str]):
+#     """Upsert all snippets and prune any old ones."""
+#     new_ids = []
+#     for doc in documents:
+#         did = generate_doc_id(user_id, doc)
+#         new_ids.append(did)
+#         collection.update_one(
+#             {"_id": did},
+#             {"$set": {"user_id": user_id, "content": doc, "$vectorize": doc}},
+#             upsert=True
+#         )
+#     # delete any vectors not in the current batch
+#     collection.delete_many({
+#         "user_id": user_id,
+#         "_id":     {"$nin": new_ids}
+#     })
+
+# def aggregate_user_data(user: dict) -> list[str]:
+#     """Build text snippets from the populated user dict."""
+#     docs = []
+
+#     # User header
+#     docs.append(f"User: {user.get('username','Unnamed User')}")
+
+#     # Groups + their expenses
+#     if user.get("groups"):
+#         for grp in user["groups"]:
+#             name    = grp.get("name", "Unnamed Trip")
+#             members = [m.get("username", "Unknown") for m in grp.get("members_docs", [])]
+#             docs.append(f"Trip '{name}' with members: {', '.join(members)}")
+
+#             for exp in grp.get("expenses_docs", []):
+#                 title        = exp.get("title", "No title")
+#                 amount       = exp.get("amount", 0)
+#                 paid_by      = exp.get("paidBy_doc", {}).get("username", "Unknown")
+#                 owed_details = [
+#                     f"{o.get('user_doc', {}).get('username','Unknown')}: ₹{o.get('amount', 0)}"
+#                     for o in exp.get("owedBy", [])
+#                 ]
+#                 docs.append(
+#                     f"In group '{name}', expense '{title}' of ₹{amount}, "
+#                     f"paid by {paid_by}. Split: {', '.join(owed_details)}"
+#                 )
+#     else:
+#         docs.append("No groups found for this user.")
+
+#     # Recent Expenses (outside any group)
+#     if user.get("recentExpense"):
+#         for exp in user["recentExpense"]:
+#             title        = exp.get("title", "No title")
+#             amount       = exp.get("amount", 0)
+#             paid_by      = exp.get("paidBy_doc", {}).get("username", "Unknown")
+#             owed_details = [
+#                 f"{o.get('user_doc', {}).get('username','Unknown')}: ₹{o.get('amount', 0)}"
+#                 for o in exp.get("owedBy", [])
+#             ]
+#             docs.append(
+#                 f"Expense '{title}' of ₹{amount}, paid by {paid_by}. "
+#                 f"Split: {', '.join(owed_details)}"
+#             )
+#     else:
+#         docs.append("No recent expenses found.")
+
+#     # Friends
+#     if user.get("friends"):
+#         for fr in user["friends"]:
+#             fd    = fr.get("friend_doc", {})
+#             name  = fd.get("username", "Unknown")
+#             email = fd.get("email", "No email")
+#             bal   = fr.get("balance", 0)
+#             docs.append(f"Friend: {name} ({email}) | Balance: ₹{bal}")
+#     else:
+#         docs.append("No friends found for this user.")
+
+#     return docs
+
+# def construct_prompt(context: str, query: str) -> str:
+#     base = (
+#         "You are FairFare AI, a personal finance assistant designed to help users manage their expenses and financial relationships.\n\n"
+#         "Context Details:\n"
+#     )
+#     return base + context + f"\n\nQuery: {query}\n"
+
+# def generate_answer(prompt: str) -> str:
+#     chat = groq_client.chat.completions.create(
+#         messages=[{"role": "user", "content": prompt}],
+#         model="llama-3.3-70b-versatile"
+#     )
+#     return chat.choices[0].message.content
+
+# # ─── Flask Endpoint ────────────────────────────────────────────────────
+
+# @app.route("/assist", methods=["POST"])
+# def assist():
+#     data    = request.get_json()
+#     user_id = data.get("userId")
+#     query   = data.get("query")
+
+#     if not user_id or not query:
+#         return jsonify({"message": "Missing fields"}), 400
+
+#     # Fetch the populated user document
+#     user = get_populated_user(user_id)
+#     if user is None:
+#         return jsonify({"message": "User not found"}), 404
+
+#     # Daily chat limit check
+#     usage   = db.users.find_one({"_id": ObjectId(user_id)}).get("aiChatUsage", {})
+#     today   = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+#     last    = usage.get("lastUsed")
+#     count   = usage.get("count", 0)
+#     if last:
+#         last_dt = datetime.fromisoformat(last)
+#         if last_dt >= today:
+#             if count >= 10:
+#                 return jsonify({"answer": "Daily AI chat limit reached (10 per day)"}), 200
+#             count += 1
+#         else:
+#             count = 1
+#     else:
+#         count = 1
+#     db.users.update_one(
+#         {"_id": ObjectId(user_id)},
+#         {
+#             "$set": {
+#                 "aiChatUsage.count": count,
+#                 "aiChatUsage.lastUsed": datetime.now().isoformat()
+#             }
+#         }
+#     )
+
+#     # Build, upsert, and search vectors
+#     snippets    = aggregate_user_data(user)
+#     upsert_user_documents(user_id, snippets)
+#     vector_docs = collection.find(
+#         {"user_id": user_id},
+#         sort={"$vectorize": query},
+#         limit=5
+#     )
+#     context = "\n".join(d["content"] for d in vector_docs)
+
+#     if not context.strip():
+#         return jsonify({"answer": "I don’t have enough data to answer that yet."})
+
+#     # Call LLM
+#     prompt = construct_prompt(context, query)
+#     answer = generate_answer(prompt)
+#     return jsonify({"answer": answer})
+
+# if __name__ == "__main__":
+#     port = int(os.getenv("PORT", 5000))
+#     app.run(host="0.0.0.0", port=port, debug=False)
+
+
 import os
 import hashlib
 from datetime import datetime
@@ -74,22 +359,55 @@ def aggregate_user_data(user):
     user_name = user.get("username", "Unnamed User")
     docs.append(f"User: {user_name}")
 
-    # Groups / Trips
+   # …inside your aggregate_user_data(user) function…
+
+# Groups / Trips with embedded expenses
     if user.get("groups"):
         for group_id in user["groups"]:
             if isinstance(group_id, ObjectId):
                 group = db.groups.find_one({"_id": group_id})
                 if group:
-                    trip_name = group.get("name", "Unnamed Trip")
-                    member_ids = group.get("members", [])
+                    # Trip header
+                    trip_name   = group.get("name", "Unnamed Trip")
+                    member_ids  = group.get("members", [])
                     member_names = []
                     for m_id in member_ids:
                         member_doc = db.users.find_one({"_id": m_id})
-                        if member_doc:
-                            member_names.append(member_doc.get("username", str(m_id)))
-                        else:
-                            member_names.append(str(m_id))
+                        member_names.append(
+                            member_doc.get("username", str(m_id))
+                            if member_doc else str(m_id)
+                        )
                     docs.append(f"Trip '{trip_name}' with members: {', '.join(member_names)}")
+
+                    # Now include each embedded expense in this group
+                    for exp in group.get("expenses", []):
+                        title       = exp.get("title", "No title")
+                        amount      = exp.get("amount", 0)
+
+                        # Resolve payer username
+                        paid_by_id = exp.get("paidBy")
+                        if isinstance(paid_by_id, ObjectId):
+                            payer_doc = db.users.find_one({"_id": paid_by_id})
+                            paid_by = payer_doc.get("username", str(paid_by_id)) if payer_doc else str(paid_by_id)
+                        else:
+                            paid_by = str(paid_by_id)
+
+                        # Build owed-by details
+                        owed_details = []
+                        for entry in exp.get("owedBy", []):
+                            owed_user_id = entry.get("user")
+                            owed_amount  = entry.get("amount", 0)
+                            if isinstance(owed_user_id, ObjectId):
+                                owed_user_doc = db.users.find_one({"_id": owed_user_id})
+                                owed_username = owed_user_doc.get("username", str(owed_user_id)) if owed_user_doc else str(owed_user_id)
+                            else:
+                                owed_username = str(owed_user_id)
+                            owed_details.append(f"{owed_username}: ₹{owed_amount}")
+
+                        docs.append(
+                            f"In group '{trip_name}', expense '{title}' of ₹{amount}, "
+                            f"paid by {paid_by}. Split: {', '.join(owed_details)}"
+                        )
     else:
         docs.append("No groups found for this user.")
 
@@ -186,7 +504,7 @@ def assist():
     if last_used:
         last_used_dt = datetime.fromisoformat(last_used)
         if last_used_dt >= today:
-            if count >= 10:
+            if count >= 11:
                 return jsonify({"answer": "Daily AI chat limit reached (10 per day)"}), 200
             count += 1
         else:
@@ -212,7 +530,7 @@ def assist():
 
     prompt = construct_prompt(context, query)
     answer = generate_answer(prompt)
-    return jsonify({"answer": answer})
+    return jsonify({"answer": answer, "updatedCount" : count})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

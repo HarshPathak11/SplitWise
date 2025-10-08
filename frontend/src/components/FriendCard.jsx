@@ -1,9 +1,15 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
 import { FaTrash, FaCopy } from "react-icons/fa";
+import { FiLink } from "react-icons/fi";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
 import axios from "axios";
 import { QRCodeCanvas } from "qrcode.react";
+import { FaHistory } from "react-icons/fa"; // history icon
+import { toast } from "react-hot-toast";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const FriendCard = ({
   friend,
@@ -16,8 +22,10 @@ const FriendCard = ({
   const [settleAmount, setSettleAmount] = useState(balance);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
-
+  const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user"));
+
+  // console.log(friend);
 
   const toggleDropdown = () => {
     setShowDropdown((prev) => {
@@ -78,48 +86,71 @@ const FriendCard = ({
 
   const handleSettleBalance = async () => {
     const currentBalance = balance;
-    if (currentBalance === 0) return;
+    if (currentBalance === 0) {
+      toast.error("No balance to settle.");
+      return;
+    }
 
     try {
       if (currentBalance > 0) {
         await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          `${API_BASE}/user/update-friend-balance`,
+          // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
             amount: currentBalance,
             action: "received",
+            note: "Cleared Everything",
           }
         );
       } else {
         await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          `${API_BASE}/user/update-friend-balance`,
+          // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
             friendEmail: friend.email,
             amount: Math.abs(currentBalance),
             action: "paid",
+            note: "Cleared Everything",
           }
         );
       }
       balance = 0;
       updateFriendBalance(friend.email, balance);
       setSettleAmount(0);
-      setShowDropdown(false);
-      setShowQRCode(false);
     } catch (error) {
-      console.error("Error settling friend balance:", error);
+      toast.error("Please refresh the page first!");
     }
   };
+
+  const TransactionHistoryPage = async () => {
+    navigate(`/transaction-history/${friend._id}`);
+  }
 
   return (
     <div
       key={index}
       className="bg-gray-700/50 backdrop-blur-sm cursor-pointer rounded-lg border border-gray-600/30 p-2 sm:p-3 mb-2"
     >
-      <div onClick={toggleDropdown} className="flex justify-between items-center">
+      <div
+        // onClick={toggleDropdown}
+        onClick={TransactionHistoryPage}
+        className="flex justify-between items-center"
+      >
         <div>
-          <p className="text-sm text-white">{friend.username}</p>
+          <div className="flex items-center gap-1">
+            <p className="text-sm text-white">{friend.username}</p>
+            <a
+              href={`https://fair-fare-phi.vercel.app/public-profile/${friend._id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="View Public Profile"
+            >
+              <FiLink className="text-white hover:text-blue-400 transition w-4 h-4" />
+            </a>
+          </div>
           <p
             className={`text-xs ${
               Number(balance) > 0
@@ -136,10 +167,17 @@ const FriendCard = ({
               : "Settled"}
           </p>
         </div>
+
         <div
           className="flex items-center gap-5 z-10"
           onClick={(e) => e.stopPropagation()}
         >
+          <Link
+            to={`/transaction-history/${friend._id}`}
+            className="text-blue-400 hover:text-blue-300 transition"
+          >
+            <FaHistory className="w-5 h-5" />
+          </Link>
           <button
             title="Settle Up"
             onClick={handleSettleBalance}
@@ -161,7 +199,7 @@ const FriendCard = ({
       </div>
 
       {showDropdown && (
-        <div className="mt-3 bg-gray-800 rounded-lg p-3 border border-gray-600">
+       <div className="mt-3 opacity-0 bg-gray-800 rounded-lg p-3 border border-gray-600">
           <p className="text-sm text-white mb-2 flex items-center justify-between">
             <span className="font-medium">UPI ID:</span>{" "}
             <span className="flex-grow">{friend.upiId || "Not Available"}</span>
@@ -171,7 +209,10 @@ const FriendCard = ({
                 className="ml-2 p-2 bg-gray-600 rounded flex items-center"
                 title="Copy UPI ID"
               >
-                <FaCopy className="h-3 w-4 text-white" />
+                <FaCopy
+                  onClick={() => toast.success("UPI ID copied to clipboard!")}
+                  className="h-3 w-4 text-white"
+                />
               </button>
             )}
           </p>
@@ -184,9 +225,18 @@ const FriendCard = ({
             onChange={(e) => {
               let value = e.target.value;
               if (value === "") return setSettleAmount("");
-              if (!value.startsWith("0.") && !value.startsWith("-0.") && value.length > 1 && !value.startsWith("-")) {
+              if (
+                !value.startsWith("0.") &&
+                !value.startsWith("-0.") &&
+                value.length > 1 &&
+                !value.startsWith("-")
+              ) {
                 value = value.replace(/^0+/, "");
-              } else if (value.startsWith("-") && value.length > 2 && !value.startsWith("-0.")) {
+              } else if (
+                value.startsWith("-") &&
+                value.length > 2 &&
+                !value.startsWith("-0.")
+              ) {
                 value = "-" + value.replace(/^-0+/, "");
               }
               const parsed = parseFloat(value);
@@ -260,7 +310,8 @@ const FriendCard = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-600 text-center w-[90%] max-w-md">
             <p className="text-white text-lg mb-4">
-              Are you sure you want to delete <strong>{friend.username}</strong>?
+              Are you sure you want to delete <strong>{friend.username}</strong> as friend
+              ? Your current balance track with <strong>{friend.username}</strong> will be lost forever!
             </p>
             <div className="flex justify-center gap-4">
               <button
@@ -273,7 +324,7 @@ const FriendCard = ({
                 Yes
               </button>
               <button
-                onClick={() => setShowConfirmDelete(false)}
+                onClick={() => {setShowConfirmDelete(false); setShowDropdown(false);}}
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
               >
                 No
