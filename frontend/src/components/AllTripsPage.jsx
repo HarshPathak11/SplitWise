@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import TripCard from "./tripCard"; // Ensure this component is styled properly
 import { FaArrowLeft } from "react-icons/fa";
 import Cookies from "js-cookie"; // Import Cookies library
-import axios from "axios"; // Import Axios library
+import axios from "axios";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AllTripsPage = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const AllTripsPage = () => {
         }
 
         const response = await axios.get(
-          `https://fairfare-0hyl.onrender.com/group/user-groups/${userId}`
+          `${API_BASE}/group/user-groups/${userId}`
         );
 
         if (Array.isArray(response.data)) {
@@ -33,9 +34,7 @@ const AllTripsPage = () => {
           const sortedTrips = [...response.data].sort(
             (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
           );
-          // Take the top 4 expenses after sorting.
-          const topTrips = sortedTrips.slice(0, 4);
-          setTrips(topTrips);
+          setTrips(sortedTrips);
         }
       } catch (error) {
         console.error("Error fetching trips:", error);
@@ -79,7 +78,7 @@ const AllTripsPage = () => {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 max-w-4xl mx-auto mt-10">
+      <div className="relative z-10 max-w-4xl mx-auto mt-20">
         <h1 className="text-3xl font-bold text-center text-[#00F5FF] mb-6">
           Your Trips and Events
         </h1>

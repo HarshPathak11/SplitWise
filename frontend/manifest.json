@@ -1,0 +1,20 @@
+{
+  "short_name": "FairFare",
+  "name": "FairFare - Simplify Trip Expenses",
+  "icons": [
+    {
+      "src": "/newIcon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/newIconV2-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/?v=2",
+  "display": "standalone",
+  "theme_color": "#3978F2",          
+  "background_color": "#ffffff"      
+}

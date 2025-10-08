@@ -2,8 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
+import logo from "../../public/newIcon-192x192.png"; 
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import toast from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const SignUp = () => {
   const [username, setUserName] = useState("");
@@ -25,10 +28,14 @@ const SignUp = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post("https://fairfare-0hyl.onrender.com/user/send-otp", {
-        email,
-        username,
-      });
+      const response = await axios.post(
+        `${API_BASE}/user/send-otp`,
+        // "//http://localhost:8000/user/send-otp",
+        {
+          email,
+          username,
+        }
+      );
 
       if (response.status === 200) {
         setOtpSent(response.data.otp);
@@ -36,9 +43,12 @@ const SignUp = () => {
       }
     } catch (error) {
       if (error.response && error.response.status === 410) {
-        alert("Email already Taken!");
+        toast.error("Email already Taken!");
+      }
+      else if (error.response && error.response.status === 400) {
+        toast.error("Username already Taken!");
       } else {
-        alert("Failed to send OTP.");
+        toast.error("Failed to send OTP.");
       }
     } finally {
       setLoading(false);
@@ -48,7 +58,8 @@ const SignUp = () => {
   const handleOtpVerify = async () => {
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/verify-otp",
+        `${API_BASE}/user/verify-otp`,
+        // "//http://localhost:8000/user/verify-otp",
         {
           email,
           otp,
@@ -70,9 +81,7 @@ const SignUp = () => {
 
   return (
     <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
-      {" "}
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
-        <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
           <button
             onClick={() => navigate("/")} // Navigate to the landing page route
             className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
@@ -80,7 +89,6 @@ const SignUp = () => {
           >
             <FaHome className="text-white text-xl" />
           </button>
-        </div>
       </div>
       {/* Animated Background */}
       <div className="absolute inset-0 z-0">
@@ -94,7 +102,7 @@ const SignUp = () => {
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
           <div className="flex items-center ">
-            <img src="../icon.svg" alt="Icon" className="w-8 h-8 mr-2" />
+            <img src={logo} alt="Icon" className="w-8 h-8 mr-2" />
             <span className="text-4xl text-center font-bold text-white">
               FairFare
             </span>
@@ -114,7 +122,7 @@ const SignUp = () => {
               value={username}
               onChange={(e) => setUserName(e.target.value)}
               type="text"
-              placeholder="Name"
+              placeholder="Full Name"
               className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
             />
           </div>

@@ -20,6 +20,14 @@ import AllExpenses from "./components/AllExpenses";
 import CashMapAI from "./components/CashMapAI";
 import AppLayout from "./AppLayout";
 import Documentation from "./components/documentation";
+import PublicProfile from "./components/PublicProfile";
+import RemoveMembers from "./components/RemoveMembers";
+import EditExpense from "./components/editExpense";
+import TransactionHistory from "./components/TransactionHistory";
+import Categories from "./components/Categories";
+import Analytics from "./components/Analytics"
+import Subcategories from "./components/Subcategories";
+import Expenses from "./components/Expenses";
 
 const router = createBrowserRouter([
   {
@@ -43,6 +51,38 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "analytics",
+        element: (
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "categories",
+        element: (
+          <ProtectedRoute>
+            <Categories />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "subcategories",
+        element: (
+          <ProtectedRoute>
+            <Subcategories />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "expenses",
+        element: (
+          <ProtectedRoute>
+            <Expenses />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "add-expense",
         element: (
           <ProtectedRoute>
@@ -51,10 +91,26 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "expense/edit",
+        element: (
+          <ProtectedRoute>
+            <EditExpense/>
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "add-members/:groupId",
         element: (
           <ProtectedRoute>
             <AddMembers />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "remove-members/:groupId",
+        element: (
+          <ProtectedRoute>
+            <RemoveMembers />
           </ProtectedRoute>
         ),
       },
@@ -107,7 +163,15 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "CashMapAI",
+        path: "transaction-history/:friendId",
+        element: (
+          <ProtectedRoute>
+            <TransactionHistory />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "FairAI",
         element: (
           <ProtectedRoute>
             <CashMapAI />
@@ -143,7 +207,10 @@ const router = createBrowserRouter([
         path: "*",
         element: <NotFound />,
       },
-
+      {
+        path: "/public-profile/:userId",
+        element: <PublicProfile />,
+      },
       {
         path: "/documentation",
         element: <Documentation />,

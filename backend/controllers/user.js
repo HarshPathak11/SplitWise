@@ -1,7 +1,11 @@
-import { User } from "../models/schema.js";
+import { User, Expense, FriendRequest } from "../models/schema.js";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
+import {
+  sendOneNotification,
+  sendMultipleNotifications,
+} from "../controllers/Notifications.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -13,13 +17,18 @@ const sendOtp = async (req, res) => {
     return res.status(400).json({ message: "Incomplete data received" });
 
   const existingUser = await User.findOne({ email });
+  const existingUsername = await User.findOne({ username });
+
+  if (existingUsername) {
+    return res.status(400).json({ message: "Username already taken" });
+  }
 
   if (existingUser) {
     return res.status(410).json({ message: "Email already taken" });
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-  console.log("otp sent ", otp);
+  // console.log("otp sent ", otp);
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -73,7 +82,7 @@ const verifyOtp = async (req, res) => {
       email,
       password: cleanPassword, // schema middleware handles hashing
     });
-    
+
     if (referId) {
       const referUser = await User.findById(referId);
       if (!referUser) {
@@ -84,17 +93,19 @@ const verifyOtp = async (req, res) => {
         { _id: referId },
         { $push: { friends: { friend: newUser._id, balance: 0 } } }
       );
-      
+
       await User.updateOne(
         { _id: newUser._id },
         { $push: { friends: { friend: referId, balance: 0 } } }
       );
-    }    
+    }
 
     return res.status(200).json(newUser);
   } catch (error) {
     console.error("Error during user creation:", error);
-    return res.status(500).json({ message: "Server error while creating user" });
+    return res
+      .status(500)
+      .json({ message: "Server error while creating user" });
   }
 };
 
@@ -102,8 +113,7 @@ const verifyOtp = async (req, res) => {
 const userLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("email and password ", email, password);
-    
+    // console.log("email and password ", email, password);
 
     if (!email || !password) {
       return res.status(400).json({ message: "Incomplete data received" });
@@ -119,7 +129,7 @@ const userLogin = async (req, res) => {
 
     // Use the schema's comparePassword method
     const isPasswordValid = await user.comparePassword(cleanPassword);
-    console.log("Password comparison result: ", isPasswordValid);    
+    // console.log("Password comparison result: ", isPasswordValid);
 
     if (!isPasswordValid) {
       return res.status(400).json({
@@ -144,23 +154,149 @@ const userLogin = async (req, res) => {
   }
 };
 
+//Get all expenses for a user
+const getAllExpensesForUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const expenses = await Expense.find({
+      $or: [{ paidBy: userId }, { "owedBy.user": userId }],
+    })
+      .populate({ path: "paidBy", select: "username" })
+      .populate({ path: "owedBy.user", select: "username" });
+
+    res.status(200).json({ expenses });
+  } catch (error) {
+    console.error("Error fetching expenses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get top categories for a user
+const getTopCategoriesForUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const categories = await Expense.aggregate([
+      { $match: { "owedBy.user": userObjectId } },
+      { $group: { _id: "$category", total: { $sum: "$amount" } } },
+      { $sort: { total: -1 } },
+      // { $limit: 4 },
+    ]);
+
+    // Optional: rename _id to name for frontend convenience
+    const formattedCategories = categories.map((cat) => ({
+      name: cat._id,
+      total: cat.total,
+    }));
+
+    res.status(200).json({ categories: formattedCategories });
+  } catch (error) {
+    console.error("Error fetching top categories:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get subcategories for a user within a category
+const getSubCategoriesForUser = async (req, res) => {
+  try {
+    const { userId, category } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const subcategories = await Expense.aggregate([
+      {
+        $match: { "owedBy.user": userObjectId, ...(category && { category }) },
+      },
+      { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
+      { $sort: { total: -1 } },
+    ]);
+
+    const formattedSubcategories = subcategories.map((sub) => ({
+      name: sub._id,
+      total: sub.total,
+    }));
+
+    res.status(200).json({ subcategories: formattedSubcategories });
+  } catch (error) {
+    console.error("Error fetching subcategories:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get all expenses for a user in a specific subcategory
+const getAllExpensesForASubcategory = async (req, res) => {
+  try {
+    const { userId, category, subcategory } = req.body;
+
+    if (!userId || !category || !subcategory) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    // Build the query
+    const query = {
+      "owedBy.user": userObjectId,
+      category: category,
+      subcategory: subcategory,
+    };
+
+    // Fetch expenses and sort by updatedAt descending
+    const expenses = await Expense.find(query)
+      .populate({ path: "paidBy", select: "username" })
+      .populate({ path: "owedBy.user", select: "username" })
+      .sort({ updatedAt: -1 });
+
+    res.status(200).json({ expenses });
+  } catch (error) {
+    console.error("Error fetching expenses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 //Function to fetch user details
 const userDetails = async (req, res) => {
   try {
     const userId = req.params.id;
-    
 
-    const user = await User.findById(userId).populate({
-      path: "friends.friend",
-      select: "username email upiId", // optional: select only needed fields
-    }).populate({
-      path: "recentExpense",
-      populate: [
-        { path: "paidBy", select: "username email" },
-        { path: "owedBy.user", select: "username email" },
-        { path: "group", select: "name description" }
-      ]
-    });
+    const user = await User.findById(userId)
+      .populate({
+        path: "friends.friend",
+        select: "username email upiId", // optional: select only needed fields
+      })
+      .populate({
+        path: "recentExpense",
+        options: { sort: { createdAt: -1 } }, // 👈 only latest 3
+        select: "title amount paidBy owedBy createdAt",
+        populate: [
+          { path: "paidBy", select: "username email" },
+          { path: "owedBy.user", select: "username email" },
+          { path: "group", select: "name description" },
+        ],
+      })
+      .select({
+        username: 1,
+        email: 1,
+        upiId: 1,
+        groupRequests: 1,
+        aiChatUsage: 1,
+        friends: 1,
+        recentExpense: { $slice: -3 },
+      });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -170,6 +306,31 @@ const userDetails = async (req, res) => {
   } catch (err) {
     console.error("Error fetching user details:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+const setFcmToken = async (req, res) => {
+  try {
+    const { fcmToken, userId } = req.body;
+
+    if (!fcmToken) {
+      return res.status(400).json({ message: "FCM token is required" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { fcmToken },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "FCM token set successfully", user });
+  } catch (error) {
+    console.error("Error setting FCM token:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -205,10 +366,44 @@ const updateUserProfile = async (req, res) => {
 
 //Adding the friends
 const addFriends = async (req, res) => {
-  const { email, friendsArray } = req.body;
+  const { email, friendsArray, autoAdd } = req.body;
 
   if (!email || !Array.isArray(friendsArray) || friendsArray.length === 0) {
     return res.status(400).json({ message: "Incomplete data received" });
+  }
+
+  if (autoAdd) {
+    const user = await User.findOne({ email });
+
+    const friend = await User.findOne({ _id: friendsArray[0] });
+
+    if (!user || !friend) {
+      return res.status(404).json({ message: "User or Friend not found" });
+    }
+
+    await User.updateOne(
+      { _id: friend._id },
+      { $addToSet: { friends: { friend: user._id, balance: 0 } } }
+    );
+
+    await User.updateOne(
+      { _id: user._id, "friends.friend": { $ne: friend._id } }, // prevent duplicates
+      { $push: { friends: { friend: friend._id, balance: 0 } } }
+    );
+
+    // ✅ Send notifications
+    if (friend.fcmToken) {
+      const tokens = [friend.fcmToken];
+      const title = "New Friend Added";
+      const body = `${user.username} has added you as a friend!`;
+
+      await sendMultipleNotifications(tokens, title, body);
+    }
+
+    return res.status(200).json({
+      message: "Friend added successfully",
+      friend,
+    });
   }
 
   try {
@@ -240,7 +435,6 @@ const addFriends = async (req, res) => {
             { _id: user._id, "friends.friend": { $ne: friend._id } }, // prevent duplicates
             { $push: { friends: { friend: friend._id, balance: 0 } } }
           );
-          
         }
         // Similarly, ensure the friendship is mutual.
         if (!friend.friends.some((f) => f.friend?.equals(user._id))) {
@@ -255,6 +449,15 @@ const addFriends = async (req, res) => {
           email: friend.email,
           username: friend.username,
         });
+
+        //Send Notification
+        if (friend.fcmToken) {
+          const tokens = [friend.fcmToken];
+          const title = "New Friend Added";
+          const body = `${user.username} has added you as a friend!`;
+
+          await sendMultipleNotifications(tokens, title, body);
+        }
       } else {
         // Friend does not exist — send invitation email.
         const mailOptions = {
@@ -267,9 +470,10 @@ const addFriends = async (req, res) => {
                  <a href="https://fair-fare-phi.vercel.app/signup/${user._id}">Join Fair Fare</a></p>
                  <p>Thanks,<br/>Fair Fare Team</p>`,
         };
-        await transporter.sendMail(mailOptions)
+        await transporter
+          .sendMail(mailOptions)
           .then(() => {
-            console.log("Email sent to new friend ", friendEmail);
+            // console.log("Email sent to new friend ", friendEmail);
           })
           .catch((err) => {
             console.error("Failed to send email to ", friendEmail, err);
@@ -287,66 +491,289 @@ const addFriends = async (req, res) => {
   }
 };
 
+// Friend Requests: send, list, approve, deny
+const sendFriendRequest = async (req, res) => {
+  try {
+    const { fromUserId, toEmail } = req.body;
+    if (!fromUserId || !toEmail) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const fromUser = await User.findById(fromUserId);
+    if (!fromUser) {
+      return res.status(404).json({ message: "Sender not found" });
+    }
+
+    // Normalize to array
+    const emails = Array.isArray(toEmail) ? toEmail : [toEmail];
+
+    const results = [];
+
+    for (const email of emails) {
+      const toUser = await User.findOne({ email });
+
+      if (!toUser) {
+        results.push({ email, status: "failed", reason: "User not found" });
+        continue;
+      }
+
+      // Skip if already friends
+      const alreadyFriends = toUser.friends?.some(
+        (f) => String(f.friend) === String(fromUser._id)
+      );
+
+      if (alreadyFriends) {
+        results.push({ email, status: "skipped", reason: "Already friends" });
+        continue;
+      }
+
+      // Skip if request already exists
+      const existingRequest = await FriendRequest.findOne({
+        from: fromUser._id,
+        to: toUser._id,
+      });
+
+      if (existingRequest) {
+        results.push({
+          email,
+          reason: `Request already sent to ${toUser.username}`,
+        });
+        continue;
+      }
+
+      //Checking if the to user has sent a request to the from user
+      const existingRequest1 = await FriendRequest.findOne({
+        to: fromUser._id,
+        from: toUser._id,
+      });
+
+      if (existingRequest1) {
+        console.log("Found existing friend request:", existingRequest1);
+        results.push({
+          email,
+          reason: `You have a friend request from ${toUser.username}. Please respond to it.`,
+        });
+        continue;
+      }
+
+      // Create friend request
+      const friendRequest = await FriendRequest.create({
+        from: fromUser._id,
+        to: toUser._id,
+      });
+
+      // Update user's requests count
+      await User.updateOne({ _id: toUser._id }, { $inc: { requests: 1 } });
+
+      // Send notification
+      if (toUser.fcmToken) {
+        await sendOneNotification(
+          toUser.fcmToken,
+          "New Friend Request",
+          `${fromUser.username} sent you a friend request`
+        );
+      }
+
+      results.push({
+        email,
+        status: "success",
+        reason: "Request sent to " + toUser.username,
+      });
+    }
+    return res.status(200).json({
+      results,
+    });
+  } catch (error) {
+    console.error("Error sending friend request:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const listFriendRequests = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Get friend requests from the separate collection
+    const friendRequests = await FriendRequest.find({
+      to: userId,
+    })
+      .populate({
+        path: "from",
+        select: "username email",
+      })
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json(friendRequests);
+  } catch (error) {
+    console.error("Error listing friend requests:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const respondToFriendRequest = async (req, res) => {
+  try {
+    const { userId, fromUserId, action, requestId } = req.body; // action: 'approve' | 'deny'
+    if (!userId || !fromUserId || !action) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const user = await User.findById(userId);
+    const fromUser = await User.findById(fromUserId);
+    if (!user || !fromUser) {
+      return res.status(404).json({ message: "Users not found" });
+    }
+
+    // Find the friend request. If requestId provided use it, otherwise find by from/to/status
+    let friendRequest = null;
+    if (requestId) {
+      friendRequest = await FriendRequest.findById(requestId);
+    } else {
+      friendRequest = await FriendRequest.findOne({
+        from: fromUserId,
+        to: userId,
+      });
+    }
+
+    if (!friendRequest) {
+      return res.status(404).json({ message: "Friend request not found" });
+    }
+
+    // Decrease requests count
+    await User.updateOne({ _id: userId }, { $inc: { requests: -1 } });
+
+    if (action === "approve") {
+      // Add to both friends lists if not already present
+      await User.updateOne(
+        { _id: user._id, "friends.friend": { $ne: fromUser._id } },
+        { $push: { friends: { friend: fromUser._id, balance: 0 } } }
+      );
+      await User.updateOne(
+        { _id: fromUser._id, "friends.friend": { $ne: user._id } },
+        { $push: { friends: { friend: user._id, balance: 0 } } }
+      );
+
+      if (fromUser.fcmToken) {
+        await sendOneNotification(
+          fromUser.fcmToken,
+          "Friend Request Accepted",
+          `${user.username} accepted your friend request`
+        );
+      }
+    }
+
+    // Finally, delete the friend request document to free storage
+    await FriendRequest.deleteOne({ _id: friendRequest._id });
+
+    if (action === "approve") {
+      return res.status(200).json({ message: "Friend request approved" });
+    }
+
+    return res.status(200).json({ message: "Friend request denied" });
+  } catch (error) {
+    console.error("Error responding to friend request:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 const updateFriendBalance = async (req, res) => {
-  const { userEmail, friendEmail, amount, action } = req.body;
-  // console.log("userEmail", userEmail, "friendEmail", friendEmail, "amount", amount, "action", action);
-  
-  if (!userEmail || !friendEmail || !amount || !action) {
+  const { userEmail, friendEmail, amount, action, note } = req.body;
+
+  if (!userEmail || !friendEmail || !amount || !action || !note) {
     return res.status(400).json({ message: "Incomplete data received" });
   }
 
   const value = parseFloat(amount);
   if (isNaN(value) || value <= 0) {
-    return res.status(400).json({ message: "Amount must be a positive number" });
+    return res
+      .status(400)
+      .json({ message: "Amount must be a positive number" });
   }
 
   try {
     // Fetch both users
     const user = await User.findOne({ email: userEmail });
     const friend = await User.findOne({ email: friendEmail });
-    
+
     if (!user || !friend) {
       return res.status(404).json({ message: "User or friend not found" });
     }
-    
+
+    // ✅ Check if balance is already 0 and note says "Cleared Everything"
+    const friendRecord = user.friends.find(
+      (f) => f.friend.toString() === friend._id.toString()
+    );
+    // console.log(friendRecord);
+
+    if (
+      friendRecord &&
+      friendRecord.balance === 0 &&
+      note === "Cleared Everything"
+    ) {
+      return res.status(400).json({ message: "Balance already settled" });
+    }
+
     let userIncrement, friendIncrement;
-    
-    // When user pays friend, update as follows:
-    // - In user's friends array (for the friend): balance increases (+amount)
-    // - In friend's friends array (for the user): balance decreases (-amount)
-    if (action === "paid") {      
+    let payer, owedUser;
+
+    if (action === "paid") {
       userIncrement = value;
       friendIncrement = -value;
-    } 
-    // When user receives from friend, the reverse logic applies:
-    // - In user's friends array (for the friend): balance decreases (-amount)
-    // - In friend's friends array (for the user): balance increases (+amount)
-    else if (action === "received") {
+      payer = user;
+      owedUser = friend;
+    } else if (action === "received") {
       userIncrement = -value;
       friendIncrement = value;
+      payer = friend;
+      owedUser = user;
     } else {
       return res.status(400).json({ message: "Invalid action type" });
     }
-    
+
     // Update the user's friend record (user -> friend)
     const userUpdateResult = await User.updateOne(
       { email: userEmail, "friends.friend": friend._id },
       { $inc: { "friends.$.balance": userIncrement } }
     );
-    
+
     // Update the friend's record (friend -> user)
     const friendUpdateResult = await User.updateOne(
       { email: friendEmail, "friends.friend": user._id },
       { $inc: { "friends.$.balance": friendIncrement } }
     );
-    
-    // If one of the update operations did not match a document, you might consider
-    // creating the missing subdocument. Here we assume that friendship already exists.
-    
-    return res.status(200).json({ 
-      message: "Friend balance updated",
+
+    // Create expense document
+    const expense = await Expense.create({
+      title: note,
+      amount: value,
+      paidBy: payer._id,
+      owedBy: [
+        {
+          user: owedUser._id,
+          amount: value,
+        },
+      ],
+    });
+
+    // Push expense to payer's recentExpense
+    await User.updateOne(
+      { _id: payer._id },
+      { $push: { recentExpense: expense } }
+    );
+
+    // ✅ Send notifications
+    if (friend.fcmToken) {
+      sendOneNotification(
+        friend.fcmToken,
+        "Balance Updated",
+        `Your transaction with ${user.username} has been updated.`
+      );
+    }
+
+    return res.status(200).json({
+      message: "Friend balance updated & expense added",
       userUpdate: userUpdateResult,
-      friendUpdate: friendUpdateResult
+      friendUpdate: friendUpdateResult,
+      expense,
     });
   } catch (error) {
     console.error("Error updating friend balance:", error);
@@ -355,7 +782,6 @@ const updateFriendBalance = async (req, res) => {
 };
 
 const removeFriend = async (req, res) => {
-  
   const { friendId, userId } = req.body;
 
   if (!friendId) {
@@ -378,7 +804,7 @@ const removeFriend = async (req, res) => {
     console.error("Error removing friend:", error);
     return res.status(500).json({ message: "Server error" });
   }
-}
+};
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -389,7 +815,7 @@ const forgotPassword = async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-  console.log("otp sent ", otp);
+  // console.log("otp sent ", otp);
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -443,11 +869,13 @@ const verifyForgotPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
   const { userId, newPassword } = req.body;
-  console.log(userId,newPassword)
+  // console.log(userId,newPassword)
 
   // Validate required fields
   if (!userId || !newPassword) {
-    return res.status(400).json({ message: "Please provide userId and newPassword." });
+    return res
+      .status(400)
+      .json({ message: "Please provide userId and newPassword." });
   }
 
   try {
@@ -462,9 +890,9 @@ const changePassword = async (req, res) => {
 
     // Use the schema's comparePassword method
     const isPasswordValid = await user.comparePassword(cleanPassword);
-    console.log("Password comparison result: ", isPasswordValid);
+    // console.log("Password comparison result: ", isPasswordValid);
 
-    if(isPasswordValid) {
+    if (isPasswordValid) {
       return res.status(400).json({
         message: "New password cannot be same as old password",
       });
@@ -479,7 +907,9 @@ const changePassword = async (req, res) => {
     res.status(200).json({ message: "Password changed successfully." });
   } catch (error) {
     console.error("Error changing password:", error);
-    res.status(500).json({ message: "Internal server error.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error.", error: error.message });
   }
 };
 
@@ -499,8 +929,8 @@ const getUpdatedFriendBalances = async (req, res) => {
 
     // Create an array of friend balances in the desired format
     const updatedData = user.friends.map((f) => ({
-      friendId: f.friend._id,  // friend ID
-      balance: f.balance,      // balance
+      friendId: f.friend._id, // friend ID
+      balance: f.balance, // balance
     }));
 
     // Send the updated data as response
@@ -508,6 +938,50 @@ const getUpdatedFriendBalances = async (req, res) => {
   } catch (error) {
     console.error("Error fetching updated friend balances:", error);
     return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+function escapeRegex(text = "") {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const getUsernames = async (req, res) => {
+  let { username } = req.query;
+  // console.log("username recieved:",username);
+  try {
+    if (!username || typeof username !== "string") {
+      return res.status(400).json({ message: "username query is required" });
+    }
+
+    username = username.trim();
+    if (username.length === 0) {
+      return res.status(400).json({ message: "username must not be empty" });
+    }
+    if (username.length > 50) {
+      return res.status(400).json({ message: "username too long" });
+    }
+
+    // Escape regex-special characters to avoid ReDoS and unexpected regex behavior
+    const safe = escapeRegex(username);
+
+    // For prefix-match (recommended for index use): use ^safe
+    // For substring match (less index-friendly): remove ^
+    const usePrefixSearch = true;
+    const pattern = usePrefixSearch ? `^${safe}` : safe;
+    const regex = new RegExp(pattern, "i");
+
+    // Query
+    const results = await User.find(
+      { username: regex },
+      { username: 1, email: 1 } // projection: return only username & email and _id
+    )
+      .limit(8)
+      .lean();
+
+    return res.json({ users: results });
+  } catch (err) {
+    console.error("searchUsers error:", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -524,4 +998,13 @@ export {
   updateFriendBalance,
   changePassword,
   getUpdatedFriendBalances,
+  setFcmToken,
+  getUsernames,
+  sendFriendRequest,
+  listFriendRequests,
+  respondToFriendRequest,
+  getAllExpensesForUser,
+  getTopCategoriesForUser,
+  getSubCategoriesForUser,
+  getAllExpensesForASubcategory,
 };

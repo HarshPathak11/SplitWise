@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 
 export default function TripCard({ trip, onClick, amount }) {
-  console.log(trip)
+  // console.log(trip)
   const options = {
     year: 'numeric',
     month: 'short',

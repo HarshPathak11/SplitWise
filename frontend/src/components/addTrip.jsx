@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom"; // Import useNavigate and Link for navigation
 import axios from "axios"; // Import axios for HTTP requests
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AddTrip = () => {
   const navigate = useNavigate(); // Initialize the navigation hook
@@ -20,12 +21,21 @@ const AddTrip = () => {
     }
   }, []);
 
-  // Handle friend selection
   const handleFriendSelection = (friendId) => {
+    let updatedSelected;
     if (selectedFriends.includes(friendId)) {
-      setSelectedFriends(selectedFriends.filter((id) => id !== friendId));
+      updatedSelected = selectedFriends.filter((id) => id !== friendId);
     } else {
-      setSelectedFriends([...selectedFriends, friendId]);
+      updatedSelected = [...selectedFriends, friendId];
+    }
+
+    setSelectedFriends(updatedSelected);
+
+    // Sync "Select All" checkbox
+    if (updatedSelected.length === friends.length) {
+      setSelectAll(true);
+    } else {
+      setSelectAll(false);
     }
   };
 
@@ -54,23 +64,32 @@ const AddTrip = () => {
     };
 
     try {
-      console.log(" sending Trip Data as:", tripData); // Log the trip data for debugging
-      if (!tripData.name) {
+      // console.log(" sending Trip Data as:", tripData); // Log the trip data for debugging
+      if (!tripData.name.trim()) {
         toast.error("Title is required!");
         return;
       }
 
+      if (
+        tripData.from &&
+        tripData.to &&
+        new Date(tripData.to) < new Date(tripData.from)
+      ) {
+        toast.error("End date cannot be before start date!");
+        return;
+      }
+
       const res = await axios.post(
-        "https://fairfare-0hyl.onrender.com/group/create-group",
+        `${API_BASE}/group/create-group`,
         tripData
       );
-      console.log("Response:", res.data); // Log the response for debugging
+      // console.log("Response:", res.data); // Log the response for debugging
 
       if (res.status !== 200 && res.status !== 201) {
         throw new Error("Failed to create trip");
       }
 
-      console.log("Trip created:", res.data);
+      // console.log("Trip created:", res.data);
       navigate("/dash");
     } catch (error) {
       console.error("Error creating trip:", error);
@@ -144,6 +163,7 @@ const AddTrip = () => {
               <input
                 type="date"
                 value={toDate}
+                min={fromDate} // 👈 Ensures To Date can't be before From Date
                 onChange={(e) => setToDate(e.target.value)}
                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3]"
               />
@@ -175,20 +195,24 @@ const AddTrip = () => {
             </label>
 
             <div className="flex flex-col gap-2">
-              {friends.map((friend, index) => (
-                <label key={index} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    value={friend.friend._id}
-                    checked={selectedFriends.includes(friend.friend._id)}
-                    onChange={() => handleFriendSelection(friend.friend._id)}
-                    className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
-                  />
-                  <span className="text-sm text-gray-300">
-                    {friend.friend.username}
-                  </span>
-                </label>
-              ))}
+              {[...friends]
+                .sort((a, b) =>
+                  a.friend.username.localeCompare(b.friend.username)
+                )
+                .map((friend, index) => (
+                  <label key={index} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      value={friend.friend._id}
+                      checked={selectedFriends.includes(friend.friend._id)}
+                      onChange={() => handleFriendSelection(friend.friend._id)}
+                      className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
+                    />
+                    <span className="text-sm text-gray-300">
+                      {friend.friend.username}
+                    </span>
+                  </label>
+                ))}
             </div>
           </div>
 
