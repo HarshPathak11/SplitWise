@@ -315,10 +315,10 @@ const userDetails = async (req, res) => {
         username: 1,
         email: 1,
         upiId: 1,
-        groupRequests: 1,
         aiChatUsage: 1,
         friends: 1,
         recentExpense: { $slice: -3 },
+        requests: 1,
       });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {

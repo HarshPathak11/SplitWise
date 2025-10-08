@@ -48,7 +48,7 @@ const Dashboard = () => {
 
     getDetails();
   }, []);
-
+console.log(user);
   return (
     <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
       {/* Animated background elements */}
