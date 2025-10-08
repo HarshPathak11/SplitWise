@@ -1092,4 +1092,5 @@ export {
   getTopCategoriesForUser,
   getSubCategoriesForUser,
   getAllExpensesForASubcategory,
+  removeFcmToken,
 };
