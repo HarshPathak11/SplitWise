@@ -540,7 +540,7 @@ const SuperAdminDash = () => {
                       onClick={handleMockBroadcast}
                       className="px-3 py-2 bg-yellow-600 rounded"
                     >
-                     
+                      Broadcast
                     </button>
                     <button
                       onClick={() => {
