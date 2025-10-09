@@ -121,6 +121,7 @@ export default function Categories() {
                     category: category,
                     subcategory: sub.name,
                     total: sub.total,
+                    group: group,
                   }}
                 >
                   <span className="text-white font-semibold text-sm sm:text-base">
