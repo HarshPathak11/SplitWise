@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
+import logo from "../../public/newIcon-192x192.png"; 
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const SignUp = () => {
   const [username, setUserName] = useState("");
@@ -27,7 +29,8 @@ const SignUp = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/send-otp",
+        `${API_BASE}/user/send-otp`,
+        // "//http://localhost:8000/user/send-otp",
         {
           email,
           username,
@@ -55,7 +58,8 @@ const SignUp = () => {
   const handleOtpVerify = async () => {
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/verify-otp",
+        `${API_BASE}/user/verify-otp`,
+        // "//http://localhost:8000/user/verify-otp",
         {
           email,
           otp,
@@ -98,7 +102,7 @@ const SignUp = () => {
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
           <div className="flex items-center ">
-            <img src="../icon.svg" alt="Icon" className="w-8 h-8 mr-2" />
+            <img src={logo} alt="Icon" className="w-8 h-8 mr-2" />
             <span className="text-4xl text-center font-bold text-white">
               FairFare
             </span>

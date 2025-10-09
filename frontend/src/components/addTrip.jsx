@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom"; // Import useNavigate and Link for navigation
 import axios from "axios"; // Import axios for HTTP requests
 import { toast } from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AddTrip = () => {
   const navigate = useNavigate(); // Initialize the navigation hook
@@ -20,14 +21,6 @@ const AddTrip = () => {
     }
   }, []);
 
-  // Handle friend selection
-  // const handleFriendSelection = (friendId) => {
-  //   if (selectedFriends.includes(friendId)) {
-  //     setSelectedFriends(selectedFriends.filter((id) => id !== friendId));
-  //   } else {
-  //     setSelectedFriends([...selectedFriends, friendId]);
-  //   }
-  // };
   const handleFriendSelection = (friendId) => {
     let updatedSelected;
     if (selectedFriends.includes(friendId)) {
@@ -87,7 +80,7 @@ const AddTrip = () => {
       }
 
       const res = await axios.post(
-        "https://fairfare-0hyl.onrender.com/group/create-group",
+        `${API_BASE}/group/create-group`,
         tripData
       );
       // console.log("Response:", res.data); // Log the response for debugging

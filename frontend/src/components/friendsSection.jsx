@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 const FriendsSection = ({ user }) => {
   const [friends, setFriends] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     if (user?.friends) {
@@ -20,7 +21,7 @@ const FriendsSection = ({ user }) => {
     const fetchUpdatedBalances = async () => {
       try {
         const res = await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/get-updated-friend-balances",
+          `${API_BASE}/user/get-updated-friend-balances`,
           { userId: user?._id }
         );
 
@@ -44,7 +45,6 @@ const FriendsSection = ({ user }) => {
 
     const interval = setInterval(() => {
       fetchUpdatedBalances();
-
     }, 2000); // Every 2 seconds
 
     return () => clearInterval(interval); // Cleanup
@@ -52,15 +52,12 @@ const FriendsSection = ({ user }) => {
 
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
-      const res = await axios.delete(
-        `https://fairfare-0hyl.onrender.com/user/remove-friend`,
-        {
-          data: {
-            userId: user?._id,
-            friendId: friendIdToDelete,
-          },
-        }
-      );
+      const res = await axios.delete(`${API_BASE}/user/remove-friend`, {
+        data: {
+          userId: user?._id,
+          friendId: friendIdToDelete,
+        },
+      });
 
       if (res.status === 200) {
         setFriends((prev) =>
@@ -94,6 +91,26 @@ const FriendsSection = ({ user }) => {
     }
   };
 
+  // Split and sort
+  const sortedFriends = [
+    // 1. Friends with non-zero balance, sorted alphabetically by name
+    ...filteredFriends
+      .filter((f) => f.balance !== 0)
+      // 1. Friends with non-zero balance, sorted by descending balance
+      .sort((a, b) => b.balance - a.balance),
+    // 2. Friends with zero balance, sorted alphabetically by name
+    ...filteredFriends
+      .filter((f) => f.balance === 0)
+      .sort((a, b) => {
+        const nameA =
+          a.friend && a.friend.username ? a.friend.username.toLowerCase() : "";
+        const nameB =
+          b.friend && b.friend.username ? b.friend.username.toLowerCase() : "";
+
+        return nameA.localeCompare(nameB);
+      }),
+  ];
+
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1 p-2 mb-auto">
       <div className="flex justify-between items-center mb-2 sm:mb-1">
@@ -114,6 +131,11 @@ const FriendsSection = ({ user }) => {
               className="p-2 rounded-full bg-blue-600 hover:bg-blue-900 text-white transition-colors"
               title="Add Friend"
             >
+              {user?.requests > 0 && (
+                <span className="absolute top-3 right-3 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                  {user?.requests}
+                </span>
+              )}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
@@ -135,19 +157,20 @@ const FriendsSection = ({ user }) => {
 
       {/* Scrollable Friends List */}
       <div
-        className={`space-y-2 ${filteredFriends.length > 4
-            ? "overflow-y-auto max-h-[275px] pr-1 custom-scrollbar"
+        className={`space-y-2 ${
+          filteredFriends.length > 4
+            ? "overflow-y-auto max-h-[331px] pr-1 custom-scrollbar"
             : ""
-          }`}
+        }`}
       >
-        {filteredFriends.length === 0 ? (
+        {sortedFriends.length === 0 ? (
           <p className="text-red-500 text-center font-semibold">
             You have no friends as always.
           </p>
         ) : (
-          filteredFriends.map((f, index) => (
+          sortedFriends.map((f, index) => (
             <FriendCard
-              key={f.friend?._id}
+              key={f.friend?._id || index}
               friend={f.friend}
               balance={f.balance}
               index={index}
