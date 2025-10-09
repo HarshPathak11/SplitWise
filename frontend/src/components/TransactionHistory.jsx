@@ -26,6 +26,7 @@ const TransactionHistory = () => {
   const bottomRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [storedUser, setStoredUser] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const userId = Cookies.get("id");
 
   const handleScroll = () => {
@@ -100,7 +101,7 @@ const TransactionHistory = () => {
       const txRes = await axios.get(
         `${API_BASE}/expenses/${user?._id}/${friendId}`
       );
-      
+
       // Sort the transactions by createdAt (latest first)
       const sortedTransactions = txRes.data.expenses.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -194,7 +195,7 @@ const TransactionHistory = () => {
       toast.error("No balance to remind.");
       return;
     }
-    if(currentBalance < 0){
+    if (currentBalance < 0) {
       toast.error("You owe money. Cannot send reminder.");
       return;
     }
@@ -242,6 +243,19 @@ const TransactionHistory = () => {
     } catch (error) {
       toast.error("Please refresh the page first!");
     }
+  };
+
+  const confirmSettle = () => {
+    setShowConfirm(true);
+  };
+
+  const handleConfirmYes = () => {
+    setShowConfirm(false);
+    handleSettleBalance();
+  };
+
+  const handleConfirmNo = () => {
+    setShowConfirm(false);
   };
 
   return (
@@ -307,22 +321,22 @@ const TransactionHistory = () => {
               )}
             </div>
           </div>
-            <div>
-          <button
-            title="Remind"
-            onClick={handleSendReminder}
-            className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
-          >
-            <FaBell className="w-8 h-8" />
-          </button>
+          <div>
+            <button
+              title="Remind"
+              onClick={handleSendReminder}
+              className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
+            >
+              <FaBell className="w-8 h-8" />
+            </button>
 
-          <button
-            title="Settle Up"
-            onClick={handleSettleBalance}
-            className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
-          >
-            <MdOutlineCurrencyExchange className="w-8 h-8" />
-          </button>
+            <button
+              title="Settle Up"
+              onClick={confirmSettle}
+              className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
+            >
+              <MdOutlineCurrencyExchange className="w-8 h-8" />
+            </button>
           </div>
         </div>
       </div>
@@ -517,6 +531,37 @@ const TransactionHistory = () => {
           </div>
         </div>
       </div>
+      {/* ✅ Confirmation Popup */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-2xl shadow-xl text-center w-80">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Confirm Settlement
+            </h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to settle your complete balance with{" "}
+              <span className="font-bold text-blue-400">
+                {friendName.username}
+              </span>
+              ?
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleConfirmYes}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white font-medium"
+              >
+                Yes
+              </button>
+              <button
+                onClick={handleConfirmNo}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white font-medium"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

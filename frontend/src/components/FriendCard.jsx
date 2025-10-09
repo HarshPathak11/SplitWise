@@ -21,6 +21,7 @@ const FriendCard = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [settleAmount, setSettleAmount] = useState(balance);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showConfirmSettle, setShowConfirmSettle] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user"));
@@ -127,7 +128,7 @@ const FriendCard = ({
 
   const TransactionHistoryPage = async () => {
     navigate(`/transaction-history/${friend._id}`);
-  }
+  };
 
   return (
     <div
@@ -180,7 +181,7 @@ const FriendCard = ({
           </Link>
           <button
             title="Settle Up"
-            onClick={handleSettleBalance}
+            onClick={() => { setShowConfirmSettle(true); setShowDropdown(true); }}
             className="text-yellow-400 hover:text-yellow-300 transition"
           >
             <MdOutlineCurrencyExchange className="w-5 h-5" />
@@ -199,7 +200,7 @@ const FriendCard = ({
       </div>
 
       {showDropdown && (
-       <div className="mt-3 opacity-0 bg-gray-800 rounded-lg p-3 border border-gray-600">
+        <div className="mt-3 opacity-0 bg-gray-800 rounded-lg p-3 border border-gray-600">
           <p className="text-sm text-white mb-2 flex items-center justify-between">
             <span className="font-medium">UPI ID:</span>{" "}
             <span className="flex-grow">{friend.upiId || "Not Available"}</span>
@@ -310,8 +311,9 @@ const FriendCard = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-600 text-center w-[90%] max-w-md">
             <p className="text-white text-lg mb-4">
-              Are you sure you want to delete <strong>{friend.username}</strong> as friend
-              ? Your current balance track with <strong>{friend.username}</strong> will be lost forever!
+              Are you sure you want to delete <strong>{friend.username}</strong>{" "}
+              as friend ? Your current balance track with{" "}
+              <strong>{friend.username}</strong> will be lost forever!
             </p>
             <div className="flex justify-center gap-4">
               <button
@@ -324,7 +326,43 @@ const FriendCard = ({
                 Yes
               </button>
               <button
-                onClick={() => {setShowConfirmDelete(false); setShowDropdown(false);}}
+                onClick={() => {
+                  setShowConfirmDelete(false);
+                  setShowDropdown(false);
+                }}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConfirmSettle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-600 text-center w-[90%] max-w-md">
+            <p className="text-white text-lg mb-4">
+              Are you sure you want to{" "}
+              <strong>settle your complete balance</strong> with{" "}
+              <strong>{friend.username}</strong>?
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => {
+                  setShowConfirmSettle(false);
+                  setShowDropdown(false);
+                  handleSettleBalance(); // ✅ call original function
+                }}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmSettle(false);
+                  setShowDropdown(false);
+                }}
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
               >
                 No
