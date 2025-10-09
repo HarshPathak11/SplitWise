@@ -146,15 +146,6 @@ const ExpenseCard = ({
       {isExpanded && (
         <div className="mt-4 bg-gray-900 p-4 rounded-lg">
           <p className="text-gray-300 mb-2">
-            <strong>Category:</strong> {category}
-            {subcategory && (
-              <span className="text-gray-400">
-                {" "}
-                &nbsp;→ &nbsp;{subcategory}
-              </span>
-            )}
-          </p>
-          <p className="text-gray-300 mb-2">
             <strong>Paid by:</strong> {paidBy.username}
           </p>
           <p className="text-gray-300 mb-2">
