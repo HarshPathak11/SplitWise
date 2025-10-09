@@ -12,7 +12,12 @@ const AddTrip = () => {
   const [description, setDescription] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [selectAll, setSelectAll] = useState(false); // State to track "Select All" toggle
+  const [search, setSearch] = useState("");
+
+  // Filtered (visible) friends according to search
+  const filteredFriends = friends.filter((f) =>
+    f.friend.username.toLowerCase().includes(search.toLowerCase())
+  );
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -31,25 +36,18 @@ const AddTrip = () => {
 
     setSelectedFriends(updatedSelected);
 
-    // Sync "Select All" checkbox
-    if (updatedSelected.length === friends.length) {
+    // If all filtered (visible) friends are selected, enable selectAll
+    if (
+      filteredFriends.length > 0 &&
+      filteredFriends.every((f) => updatedSelected.includes(f.friend._id))
+    ) {
       setSelectAll(true);
     } else {
       setSelectAll(false);
     }
   };
 
-  // Handle "Select All" toggle
-  const handleSelectAll = () => {
-    if (selectAll) {
-      // Unselect all friends
-      setSelectedFriends([]);
-    } else {
-      // Select all friends
-      setSelectedFriends(friends.map((friend) => friend.friend._id));
-    }
-    setSelectAll(!selectAll); // Toggle the "Select All" state
-  };
+  
 
   const handleAddTrip = async (e) => {
     e.preventDefault();
@@ -183,36 +181,33 @@ const AddTrip = () => {
             <h3 className="text-lg font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
               Add Friends
             </h3>
-
-            <label className="flex items-center space-x-2 py-3 text-white">
+            {/* Search*/}
+            <div className="flex items-center gap-2 mb-3">
               <input
-                type="checkbox"
-                checked={selectAll}
-                onChange={handleSelectAll}
-                className="w-4 h-4"
+                type="text"
+                placeholder="Search friends..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 px-3 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3] placeholder-gray-400 text-sm"
               />
-              <span className="text-sm">Select All</span>
-            </label>
+            </div>
 
-            <div className="flex flex-col gap-2">
+            {/* Scrollable friends list (filtered) */}
+            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-2">
               {[...friends]
+                .filter((f) =>
+                  f.friend.username.toLowerCase().includes(search.toLowerCase())
+                )
                 .sort((a, b) =>
                   a.friend.username.localeCompare(b.friend.username)
-                )
-                .map((friend, index) => (
-                  <label key={index} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      value={friend.friend._id}
-                      checked={selectedFriends.includes(friend.friend._id)}
-                      onChange={() => handleFriendSelection(friend.friend._id)}
-                      className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
-                    />
-                    <span className="text-sm text-gray-300">
-                      {friend.friend.username}
-                    </span>
-                  </label>
-                ))}
+                )}
+
+              {/* No results */}
+              {friends.filter((f) =>
+                f.friend.username.toLowerCase().includes(search.toLowerCase())
+              ).length === 0 && (
+                <p className="text-sm text-gray-400">No friends found.</p>
+              )}
             </div>
           </div>
 

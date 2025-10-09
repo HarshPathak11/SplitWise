@@ -9,6 +9,7 @@ import {
   FaSignOutAlt,
   FaArrowLeft,
 } from "react-icons/fa";
+import toast from "react-hot-toast";
 import Cookies from "js-cookie";
 
 const AdminDash = () => {
@@ -46,6 +47,73 @@ const AdminDash = () => {
       // ignore
     }
     navigate("/admin-login");
+  };
+
+  // --- Limited admin mock actions (frontend-only) ---
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+
+  const pushLog = (action, details) => {
+    const e = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      action,
+      details,
+      actor: username || "admin",
+      timestamp: new Date().toISOString(),
+    };
+    setAuditLogs((s) => [e, ...s].slice(0, 200));
+  };
+
+  const confirmTyped = (message) => {
+    const typed = window.prompt(message + "\nType CONFIRM to continue:");
+    return typed === "CONFIRM";
+  };
+
+  const handleGenerateReport = () => {
+    pushLog("GENERATE_REPORT", { scope: "summary" });
+    toast.success("Mock report generated (summary)");
+  };
+
+  const handleInviteUser = () => {
+    const email = window.prompt("Enter user email to invite (mock):");
+    if (!email) return;
+    pushLog("INVITE_USER", { email });
+    toast.success(`Mock invite sent to ${email}`);
+  };
+
+  const handleSuspendUser = () => {
+    const id = window.prompt("Enter user id to suspend/reinstate (mock):");
+    if (!id) return;
+    const action = window.prompt("Type SUSPEND or REINSTATE:");
+    if (!action) return;
+    pushLog("SUSPEND_REINSTATE_USER", { userId: id, action });
+    toast.success(`Mock ${action} for ${id}`);
+  };
+
+  const handleTargetedBroadcast = () => {
+    const msg = window.prompt(
+      "Enter message to send to a user segment (mock):"
+    );
+    if (!msg) return;
+    pushLog("BROADCAST_TARGETED", { message: msg });
+    toast.success("Mock targeted broadcast queued");
+  };
+
+  const handleViewAuditSummary = () => {
+    // show a compact summary of recent actions
+    const summary = auditLogs
+      .slice(0, 10)
+      .map((a) => `${a.action} by ${a.actor}`)
+      .join("\n");
+    window.alert(summary || "No recent admin actions (mock)");
+    pushLog("VIEW_AUDIT_SUMMARY", { count: auditLogs.length });
+  };
+
+  const handleToggleMaintenance = () => {
+    if (!confirmTyped("Toggle maintenance mode (mock)?")) return;
+    setMaintenanceMode((m) => !m);
+    pushLog("TOGGLE_MAINTENANCE", { newState: !maintenanceMode });
+    toast.success(`Mock maintenance mode: ${!maintenanceMode}`);
   };
 
   return (
@@ -91,7 +159,8 @@ const AdminDash = () => {
                   <div>
                     <h3 className="font-semibold">View Reports</h3>
                     <p className="text-sm text-gray-300">
-                      View system and financial reports.
+                      View system and financial reports. (Admins can view
+                      summaries only)
                     </p>
                   </div>
                 </div>
@@ -105,7 +174,8 @@ const AdminDash = () => {
                   <div>
                     <h3 className="font-semibold">Manage Users</h3>
                     <p className="text-sm text-gray-300">
-                      Add, remove or suspend user accounts.
+                      Add or suspend users (limited — admin cannot hard-delete
+                      or purge PII).
                     </p>
                   </div>
                 </div>
@@ -119,7 +189,8 @@ const AdminDash = () => {
                   <div>
                     <h3 className="font-semibold">System Settings</h3>
                     <p className="text-sm text-gray-300">
-                      Configure app-wide settings and policies.
+                      Configure non-sensitive app settings (Admins cannot change
+                      secrets or infra configs).
                     </p>
                   </div>
                 </div>
@@ -133,7 +204,8 @@ const AdminDash = () => {
                   <div>
                     <h3 className="font-semibold">Notifications</h3>
                     <p className="text-sm text-gray-300">
-                      View and broadcast system-wide notifications.
+                      Queue targeted notifications (Admins cannot broadcast to
+                      all users without SuperAdmin approval).
                     </p>
                   </div>
                 </div>
@@ -143,14 +215,41 @@ const AdminDash = () => {
             <div className="mt-8 bg-gray-800/30 border border-white/8 rounded-2xl p-6">
               <h4 className="font-semibold mb-3">Quick Actions</h4>
               <div className="flex flex-wrap gap-3">
-                <button className="px-4 py-2 bg-indigo-600 rounded-lg shadow">
+                <button
+                  onClick={handleGenerateReport}
+                  className="px-4 py-2 bg-indigo-600 rounded-lg shadow"
+                >
                   Generate Report
                 </button>
-                <button className="px-4 py-2 bg-green-600 rounded-lg shadow">
-                  Invite Admin
+                <button
+                  onClick={handleInviteUser}
+                  className="px-4 py-2 bg-green-600 rounded-lg shadow"
+                >
+                  Invite User
                 </button>
-                <button className="px-4 py-2 bg-amber-600 rounded-lg shadow">
-                  System Audit
+                <button
+                  onClick={handleViewAuditSummary}
+                  className="px-4 py-2 bg-amber-600 rounded-lg shadow"
+                >
+                  View Audit Summary
+                </button>
+                <button
+                  onClick={handleToggleMaintenance}
+                  className="px-4 py-2 bg-red-600 rounded-lg shadow"
+                >
+                  Toggle Maintenance
+                </button>
+                <button
+                  onClick={handleSuspendUser}
+                  className="px-4 py-2 bg-gray-600 rounded-lg shadow"
+                >
+                  Suspend/Reinstate User
+                </button>
+                <button
+                  onClick={handleTargetedBroadcast}
+                  className="px-4 py-2 bg-yellow-600 rounded-lg shadow"
+                >
+                  Targeted Broadcast
                 </button>
               </div>
             </div>
