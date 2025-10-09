@@ -1,4 +1,9 @@
 import { createBrowserRouter } from "react-router-dom";
+import AdminDash from "./components/AdminDash";
+import AdminLogin from "./components/AdminLogin";
+import SuperAdminLogin from "./components/SuperAdminLogin";
+import SuperAdminDash from "./components/SuperAdminDash";
+import AdminSelect from "./components/AdminSelect";
 import Dashboard from "./components/DashBoard";
 import LandingPage from "./components/home";
 import LogIn from "./components/login";
@@ -25,7 +30,7 @@ import RemoveMembers from "./components/RemoveMembers";
 import EditExpense from "./components/editExpense";
 import TransactionHistory from "./components/TransactionHistory";
 import Categories from "./components/Categories";
-import Analytics from "./components/Analytics"
+import Analytics from "./components/Analytics";
 import Subcategories from "./components/Subcategories";
 import Expenses from "./components/Expenses";
 
@@ -41,6 +46,26 @@ const router = createBrowserRouter([
             <Dashboard />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "admin-dash",
+        element: <AdminDash />,
+      },
+      {
+        path: "admin-select",
+        element: <AdminSelect />,
+      },
+      {
+        path: "super-admin",
+        element: <SuperAdminDash />,
+      },
+      {
+        path: "super-admin-login",
+        element: <SuperAdminLogin />,
+      },
+      {
+        path: "admin-login",
+        element: <AdminLogin />,
       },
       {
         path: "profile",
@@ -94,7 +119,7 @@ const router = createBrowserRouter([
         path: "expense/edit",
         element: (
           <ProtectedRoute>
-            <EditExpense/>
+            <EditExpense />
           </ProtectedRoute>
         ),
       },

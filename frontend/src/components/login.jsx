@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
-import logo from "../../public/newIcon-192x192.png"; 
+import logo from "../../public/newIcon-192x192.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -43,13 +43,10 @@ const LogIn = () => {
       }
 
       setLoading(true); // Start loading
-      const response = await axios.post(
-        `${API_BASE}/user/login`,
-        {
-          email,
-          password,
-        }
-      );
+      const response = await axios.post(`${API_BASE}/user/login`, {
+        email,
+        password,
+      });
 
       if (response.data.user) {
         Cookies.set("id", response.data.user._id, { expires: 7 });
@@ -136,6 +133,12 @@ const LogIn = () => {
                 className="text-sm text-slate-300 hover:text-blue-300 hover:underline"
               >
                 Forgot your password?
+              </Link>
+              <br />
+              <Link to="/admin-select">
+                <button className="text-sm text-slate-300 hover:text-blue-300 hover:underline">
+                  Login as Adminitrator?
+                </button>
               </Link>
             </div>
             <button

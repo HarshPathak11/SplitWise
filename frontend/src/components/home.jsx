@@ -8,7 +8,7 @@ import FAQ from "./FaqSection";
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  
+
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
@@ -19,27 +19,27 @@ const LandingPage = () => {
       setDeferredPrompt(e);
       setShowPrompt(true);
     };
-    
+
     window.addEventListener("beforeinstallprompt", handler);
     const checkPWA = () => {
       return (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true
-    );
-    }
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true
+      );
+    };
 
-  // Delay the PWA check slightly (important for mobile PWAs)
-  const timeoutId = setTimeout(() => {
-    const res = checkPWA();
-    setIsPWA(res);
+    // Delay the PWA check slightly (important for mobile PWAs)
+    const timeoutId = setTimeout(() => {
+      const res = checkPWA();
+      setIsPWA(res);
 
-    if (res) {
-      const userId = Cookies.get("id");
-      if (userId) {
-        navigate("/dash");
+      if (res) {
+        const userId = Cookies.get("id");
+        if (userId) {
+          navigate("/dash");
+        }
       }
-    }
-  }, 500); // Try 300–500ms
+    }, 500); // Try 300–500ms
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
@@ -90,7 +90,7 @@ const LandingPage = () => {
       )}
 
       {/* Bottom-right Install Button */}
-      {!isPWA &&
+      {!isPWA && (
         <button
           onClick={handleInstallClick}
           className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 border border-blue-400/30"
@@ -107,7 +107,7 @@ const LandingPage = () => {
         >
           Install App
         </button>
-      }
+      )}
 
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -124,6 +124,7 @@ const LandingPage = () => {
         <div className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
           FairFare
         </div>
+
         <div className="flex space-x-6">
           <Link to="/features">
             <button className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 hover:scale-105 border border-blue-400/30">
@@ -146,7 +147,10 @@ const LandingPage = () => {
         </div>
 
         <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
-          <p>Some content on this page might be from previous versions and not upto date</p>
+          <p>
+            Some content on this page might be from previous versions and not
+            upto date
+          </p>
           <h1 className="text-4xl lg:text-5xl font-bold  p-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
             Split it <br /> Its easy this way.
           </h1>
