@@ -3,7 +3,9 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
+import logo from "../../public/newIcon-192x192.png"; 
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const LogIn = () => {
   const [email, setEmail] = React.useState("");
@@ -42,7 +44,7 @@ const LogIn = () => {
 
       setLoading(true); // Start loading
       const response = await axios.post(
-        `https://fairfare-0hyl.onrender.com/user/login`,
+        `${API_BASE}/user/login`,
         {
           email,
           password,
@@ -84,7 +86,7 @@ const LogIn = () => {
       <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
         <div className="relative z-10">
           <div className="flex items-center ">
-            <img src="../icon.svg" alt="Icon" className="w-8 h-8 mr-2" />
+            <img src={logo} alt="Icon" className="w-8 h-8 mr-2" />
             <span className="text-4xl text-center font-bold text-white">
               FairFare
             </span>

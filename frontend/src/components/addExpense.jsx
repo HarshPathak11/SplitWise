@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 // Accepts an optional groupId prop so that it can be passed directly if available
 const AddExpense = () => {
@@ -114,9 +115,17 @@ const AddExpense = () => {
       setIsLoading(true); // ✅ Start loading
       // Replace with your backend endpoint
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/group/add-expense",
+        `${API_BASE}/group/add-expense`,
+        // '//http://localhost:8000/group/add-expense',
         payload
       );
+
+      if(response.status === 400){
+        toast.error(`${response.data.message}`);
+        return;
+      }
+
+
       if (response.status === 200) toast.success("Expense added successfully!");
       // console.log("Expense created successfully", response.data);
       // Reset form fields

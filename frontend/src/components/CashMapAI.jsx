@@ -4,11 +4,9 @@ import {
   FaArrowRight,
   FaRobot,
   FaArrowDown,
-  FaInfoCircle,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import toast from "react-hot-toast";
 
 function CashMapAI() {
   const chatContainerRef = React.useRef(null);
@@ -116,11 +114,6 @@ function CashMapAI() {
     e.preventDefault();
     if (!input.trim()) return;
 
-    // if (dailyCount >= 10) {
-    //   toast.error("You've reached the 10 queries limit for today!");
-    //   return;
-    // }
-
     const userMessage = { type: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -135,22 +128,6 @@ function CashMapAI() {
     setTimeout(() => nudgeForAIReply(), 200); // add a slight delay to let DOM update
 
     scrollToBottom();
-
-    // // Timeout in case no response in 5 seconds
-    // timeoutRef.current = setTimeout(() => {
-    //   setIsWaitingForResponse(false); // Re-enable input
-    //   setMessages((prev) => {
-    //     const updated = [...prev];
-    //     updated.pop(); // Remove the "analyzing..." message
-    //     return [
-    //       ...updated,
-    //       {
-    //         type: "bot",
-    //         content: "⚠ Sorry, something went wrong. Please try again.",
-    //       },
-    //     ];
-    //   });
-    // }, 10000); // 5 seconds fallback timeout
 
     try {
       const storedUser = localStorage.getItem("user");

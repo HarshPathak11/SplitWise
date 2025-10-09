@@ -31,30 +31,24 @@ const ComparisonTable = () => {
           </p>
         </div>
 
-        {/* Comparison Table */}
-        <div className="bg-gradient-to-b from-gray-900/50 to-gray-800/30 rounded-2xl border border-gray-700/50 overflow-hidden backdrop-blur-xl">
-          {/* Table Header */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 p-8 border-b border-gray-700/50 bg-gray-900/30">
-            <div className=" hidden md:flex items-center justify-center">
-              <span className="text-lg font-semibold text-gray-300">Features</span>
+        {/* Table Rows */}
+        <div className="space-y-4 backdrop-blur-md bg-white/5 rounded-xl p-6 border border-white/20 hover:border-white/30 transition-all duration-300">
+          <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
+            <div className="text-white/80">Expense Tracking</div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+              ✔️
             </div>
-            <div className="flex flex-col items-center justify-center text-center">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-6 h-6 text-blue-400" />
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                  FairFare
-                </span>
-              </div>
-              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30">
-                {/* <Star className="w-4 h-4 text-blue-400 fill-current" /> */}
-                <span className="text-xs text-blue-300">Recommended</span>
-              </div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+              ✔️
             </div>
-            <div className="flex flex-col items-center justify-center text-center">
-              <span className="text-2xl font-bold text-gray-300 mb-2">SplitWise</span>
-              <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full">
-              <span className="text-xs text-gray-500">Competitor</span>
-              </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
+            <div className="text-white/80">Unlimited Events</div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+              ✔️
+            </div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+              ❌
             </div>
           </div>
 
@@ -95,28 +89,22 @@ const ComparisonTable = () => {
               </div>
             ))}
           </div>
-
-          {/* Pricing Footer */}
-          <div className="grid grid-cols-3 gap-8 p-8 border-t border-gray-700/50 bg-gradient-to-r from-gray-900/40 to-gray-800/40">
-            <div className="flex items-center justify-center">
-              <span className="text-xl font-bold text-white">Annual Cost</span>
+          <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
+            <div className="text-white/80">Enhanced Aesthetics</div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+              ✔️
             </div>
-            <div className="flex flex-col items-center justify-center text-center">
-              <div className="mb-2">
-                <span className="text-5xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  $0
-                </span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30">
-                {/* <Star className="w-4 h-4 text-green-400 fill-current" /> */}
-                <span className="text-green-300 font-semibold text-sm">Forever Free</span>
-              </div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+              ❌
             </div>
-            <div className="flex flex-col items-center justify-center text-center">
-              <div className="mb-2">
-                <span className="text-5xl font-bold text-gray-300">$40</span>
-              </div>
-              <span className="text-gray-500 font-medium">per year</span>
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
+            <div className="text-white/80">Trip Management</div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+              ✔️
+            </div>
+            <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
+              ✔️
             </div>
           </div>
         </div>

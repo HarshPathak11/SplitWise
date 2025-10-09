@@ -1,42 +1,114 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import ComparisonTable from "./check";
 import Footer from "./footer";
-import Aurora from './Aurora';
-import RotatingText from "../ui/RotatingText";
-import SpotlightCard from "../ui/SpotLight";
-
-import { Link } from "react-router-dom";
+import Cookies from "js-cookie";
+import { Link, useNavigate } from "react-router-dom";
 import Documentation from "./documentation";
 import FAQ from "./FaqSection";
-import Navbar from "./Navbar";
-
-// FAQItem Component
-const FAQItem = ({ question, answer, isOpen, onClick }) => {
-  return (
-    <div
-      className="bg-white/5 p-6 rounded-lg border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer"
-      onClick={onClick}
-    >
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-white">{question}</h3>
-        <span
-          className={`text-white transform transition-transform ${
-            isOpen ? "rotate-180" : "rotate-0"
-          }`}
-        >
-          ▼
-        </span>
-      </div>
-      {isOpen && <p className="text-gray-400 mt-4">{answer}</p>}
-    </div>
-  );
-};
 
 const LandingPage = () => {
-  // const [openIndex, setOpenIndex] = useState(null);
+  const navigate = useNavigate();
+  
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [isPWA, setIsPWA] = useState(false);
+  // const [showInstallButton, setShowInstallButton] = useState(false);
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowPrompt(true);
+    };
+    
+    window.addEventListener("beforeinstallprompt", handler);
+    const checkPWA = () => {
+      return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true
+    );
+    }
+
+  // Delay the PWA check slightly (important for mobile PWAs)
+  const timeoutId = setTimeout(() => {
+    const res = checkPWA();
+    setIsPWA(res);
+
+    if (res) {
+      const userId = Cookies.get("id");
+      if (userId) {
+        navigate("/dash");
+      }
+    }
+  }, 500); // Try 300–500ms
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      setShowPrompt(false);
+      setDeferredPrompt(null);
+    }
+  };
+
+  const handleNoThanks = () => {
+    setShowPrompt(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#000000] flex flex-col items-center relative overflow-hidden">
+      {/* PWA Install Modal */}
+      {showPrompt && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 w-11/12 max-w-sm text-center">
+            <h2 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 mb-4">
+              Install FairFare App
+            </h2>
+            <p className="text-gray-400 mb-6">
+              Add FairFare to your home screen for quick access.
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleNoThanks}
+                className="bg-transparent border text-white border-white/30 py-2 px-4 rounded-lg hover:bg-white/10 transition-all duration-300"
+              >
+                No Thanks
+              </button>
+              <button
+                onClick={handleInstallClick}
+                className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 border border-blue-400/30"
+              >
+                Install
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom-right Install Button */}
+      {!isPWA &&
+        <button
+          onClick={handleInstallClick}
+          className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 border border-blue-400/30"
+          style={{
+            position: "fixed",
+            bottom: "20px",
+            right: "20px",
+            padding: "12px 16px",
+            border: "none",
+            borderRadius: "8px",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+            zIndex: 1000,
+          }}
+        >
+          Install App
+        </button>
+      }
+
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -inset-[10px] opacity-30">
@@ -75,23 +147,11 @@ const LandingPage = () => {
           <img src="/save.svg" className="drop-shadow-2xl" alt="Illustration" />
         </div>
 
-      <SpotlightCard className="custom-spotlight-card p-10 sm:p-16" spotlightColor="rgba(0, 229, 255, 0.3)">
-        {/* <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300"> */}
-          <h1 className="text-6xl text-white font-bold mb-2">FairFare</h1>
-          <span className="text-5xl text-white font-bold flex flex-col md:flex-row items-center mb-2"><span className="mr-3 mb-2 sm:mb-0"> Easy</span><RotatingText
-  texts={['Splitting','Tracking','Money']}
-  mainClassName="px-4 bg-blue-700 text-5xl text-white font-bold overflow-hidden py-2 justify-center rounded-lg max-w-fit inline"
-  staggerFrom={"last"}
-  initial={{ y: "100%" }}
-  animate={{ y: 0 }}
-  exit={{ y: "-120%" }}
-  staggerDuration={0.025}
-  splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
-  transition={{ type: "spring", damping: 30, stiffness: 400 }}
-  rotationInterval={2000}
-/></span>
-         
-       
+        <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
+          <p>Some content on this page might be from previous versions and not upto date</p>
+          <h1 className="text-4xl lg:text-5xl font-bold  p-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
+            Split it <br /> Its easy this way.
+          </h1>
           <p className="text-gray-400 mb-8">
             Why use Splitwise if we can do the same job but for free.
           </p>
@@ -196,7 +256,7 @@ const LandingPage = () => {
       </section>
 
       <section className="w-full bg-[#000000]  relative z-10">
-      <FAQ/>
+        <FAQ />
       </section>
 
       {/* Add the animation keyframes */}
@@ -258,7 +318,7 @@ const LandingPage = () => {
           }
         }
       `}</style>
-     
+
       <Footer />
     </div>
   );

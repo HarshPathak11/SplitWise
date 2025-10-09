@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { toast } from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const Profile = () => {
       if (!user && userId) {
         try {
           const response = await axios.get(
-            `https://fairfare-0hyl.onrender.com/user/${userId}`
+            `${API_BASE}/user/${userId}`
           );
           if (response.status === 200) {
             const fetchedUser = response.data.user;
@@ -50,7 +51,7 @@ const Profile = () => {
     try {
       const userId = Cookies.get("id");
       const response = await axios.put(
-        `https://fairfare-0hyl.onrender.com/user/${userId}`,
+        `${API_BASE}/user/${userId}`,
         profile
       );
 
@@ -103,7 +104,6 @@ const Profile = () => {
           onClick={async () => {
             const userId = Cookies.get("id");
             const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
-            // const profileLink = `https://a286-2405-201-603c-3806-54f2-bca2-fbc8-598e.ngrok-free.app/public-profile/${userId}`;
             const message = `Hey! 👋
 
 Check out my FairFare profile:
@@ -115,13 +115,13 @@ ${profileLink}
 https://fair-fare-phi.vercel.app/addFriend
 
 Email:
-${user.email}
+${user.username}
 
 Let’s split and share smarter with FairFare! 💸`;
 
             if (navigator.share) {
               try {
-                await navigator.clipboard.writeText(user.email);
+                // await navigator.clipboard.writeText(user.email);
                   await navigator.share({
                     title: "Check out my FairFare profile!",
                     text: message,
