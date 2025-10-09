@@ -15,11 +15,8 @@ dotenv.config();
 const sendOtp = async (req, res) => {
   const { email, username } = req.body;
 
-
   if (!email || !username)
     return res.status(400).json({ message: "Incomplete data received" });
-
-  
 
   const existingUser = await User.findOne({ email });
   const existingUsername = await User.findOne({ username });
@@ -31,10 +28,8 @@ const sendOtp = async (req, res) => {
   if (existingUser) {
     return res.status(410).json({ message: "Email already taken" });
   }
-  
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-
 
   // Ensure API key is set
   if (!process.env.SENDGRID_API_KEY) {
@@ -56,11 +51,10 @@ const sendOtp = async (req, res) => {
            <p>Your OTP for signup is:</p>
            <h2><strong>${otp}</strong></h2>
            <p>This code is valid for 5 minutes.</p>
-           <p>Thanks, Fair Fare Team</p>`
+           <p>Thanks, Fair Fare Team</p>`,
   };
 
   try {
-  
     const hashedOtp = await bcrypt.hash(String(otp), 10);
 
     // send the email
@@ -71,7 +65,9 @@ const sendOtp = async (req, res) => {
     // Optionally store hashedOtp + expiry in DB here so you can validate later
     // e.g. await OtpModel.create({ email, otp: hashedOtp, expiresAt: Date.now() + 5*60*1000 });
 
-    return res.status(200).json({ message: "OTP sent to email", otp: hashedOtp });
+    return res
+      .status(200)
+      .json({ message: "OTP sent to email", otp: hashedOtp });
   } catch (error) {
     // SendGrid errors may include response body with details
     console.error("SendGrid error:", error);
@@ -315,10 +311,10 @@ const userDetails = async (req, res) => {
         username: 1,
         email: 1,
         upiId: 1,
-        groupRequests: 1,
         aiChatUsage: 1,
         friends: 1,
         recentExpense: { $slice: -3 },
+        requests: 1,
       });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
@@ -357,6 +353,44 @@ const setFcmToken = async (req, res) => {
   }
 };
 
+const notifyFriend = async (req, res) => {
+  const { friendId, userId } = req.body;
+  const user = await User.findOne({ _id: userId });
+  const friend = await User.findOne({ _id: friendId });
+
+  let balance = 0;
+  let found = false;
+
+  for (const f of friend.friends) {
+    // console.log(f);
+    if (f.friend.toString() === userId.toString()) {
+      found = true;
+      if (f.balance < 0) {
+        balance = f.balance;
+        break;
+      } else if (f.balance === 0) {
+        return res.status(400).json({ message: "No balance to settle" });
+      } else {
+        return res.status(400).json({ message: "You owe your friend!" });
+      }
+    }
+  }
+
+  if (!found) return res.status(404).json({ message: "Friend not found in friend list" });
+
+  // Send FCM notification if available
+  if (friend.fcmToken) {
+    const token = friend.fcmToken;
+    const title = "Healthy Reminder";
+    const body = `It's always good to settle your balances. You owe ${user.username} ₹${Math.abs(balance)}.`;
+
+    await sendOneNotification(token, title, body);
+    return res.status(200).json({ message: "Notification sent successfully!" });
+  }
+
+  return res.status(404).json({message: "FCM not found for friend"});
+};
+
 const removeFcmToken = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -364,7 +398,11 @@ const removeFcmToken = async (req, res) => {
       return res.status(400).json({ message: "User ID is required" });
     }
 
-    const user = await User.findByIdAndUpdate(userId, { fcmToken: null }, { new: true });
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { fcmToken: null },
+      { new: true }
+    );
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -503,7 +541,9 @@ const addFriends = async (req, res) => {
       } else {
         // Friend does not exist — send invitation email via SendGrid (if configured)
         if (!process.env.SENDGRID_API_KEY || !process.env.SENDING_EMAIL) {
-          console.warn(`Skipping invite email to ${friendEmail} — SendGrid not configured`);
+          console.warn(
+            `Skipping invite email to ${friendEmail} — SendGrid not configured`
+          );
           continue;
         }
 
@@ -860,7 +900,6 @@ const removeFriend = async (req, res) => {
   }
 };
 
-
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
@@ -1093,4 +1132,5 @@ export {
   getSubCategoriesForUser,
   getAllExpensesForASubcategory,
   removeFcmToken,
+  notifyFriend,
 };
