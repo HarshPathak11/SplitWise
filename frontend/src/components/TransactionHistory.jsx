@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { FaArrowDown } from "react-icons/fa";
+import { FaArrowDown, FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { Link } from "react-router-dom";
@@ -188,6 +188,28 @@ const TransactionHistory = () => {
     }
   };
 
+  const handleSendReminder = async () => {
+    const currentBalance = netBalance;
+    if (currentBalance === 0) {
+      toast.error("No balance to remind.");
+      return;
+    }
+    if(currentBalance < 0){
+      toast.error("You owe money. Cannot send reminder.");
+      return;
+    }
+    try {
+      await axios.post(`${API_BASE}/user/notify`, {
+        userId: userId,
+        friendId: friendId,
+      });
+      toast.success("Payment reminder sent!");
+    } catch (error) {
+      toast.error("Error sending payment reminder");
+      console.error("Error sending payment reminder:", error);
+    }
+  };
+
   const handleSettleBalance = async () => {
     const currentBalance = netBalance;
     if (currentBalance === 0) {
@@ -285,6 +307,14 @@ const TransactionHistory = () => {
               )}
             </div>
           </div>
+            <div>
+          <button
+            title="Remind"
+            onClick={handleSendReminder}
+            className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
+          >
+            <FaBell className="w-8 h-8" />
+          </button>
 
           <button
             title="Settle Up"
@@ -293,6 +323,7 @@ const TransactionHistory = () => {
           >
             <MdOutlineCurrencyExchange className="w-8 h-8" />
           </button>
+          </div>
         </div>
       </div>
 
