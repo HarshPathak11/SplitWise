@@ -132,7 +132,7 @@ const FriendsSection = ({ user }) => {
               title="Add Friend"
             >
               {user?.requests > 0 && (
-                <span className="absolute top-3 right-3 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                <span className="absolute top-1 right-0 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                   {user?.requests}
                 </span>
               )}

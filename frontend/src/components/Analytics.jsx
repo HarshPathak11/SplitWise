@@ -37,47 +37,59 @@ export default function Analytics() {
         // If a group object is provided via navigation state, derive categories from group.expenses
         if (group && Array.isArray(group.expenses)) {
           // compute timeframe start
-          const now = new Date();
-          let startDate = null;
-          if (timeframe === "day") {
-            startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          } else if (timeframe === "week") {
-            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          } else {
-            // month -> start of current month
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          }
+          // const now = new Date();
+          // let startDate = null;
+          // if (timeframe === "day") {
+          //   startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          // } else if (timeframe === "week") {
+          //   startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          // } else {
+          //   // month -> start of current month
+          //   startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          // }
 
-          const filtered = group.expenses.filter((exp) => {
-            try {
-              const d = new Date(exp.createdAt || exp.updatedAt || exp.date);
-              return d >= startDate;
-            } catch (e) {
-              return false;
-            }
-          });
+          // const filtered = group.expenses.filter((exp) => {
+          //   try {
+          //     const d = new Date(exp.createdAt || exp.updatedAt || exp.date);
+          //     return d >= startDate;
+          //   } catch (e) {
+          //     return false;
+          //   }
+          // });
 
           // track filtered count for message rendering
-          setFilteredCount(filtered.length);
+        //   setFilteredCount(filtered.length);
 
-          const map = {};
-          filtered.forEach((exp) => {
-            const name =
-              exp.category && exp.category !== "null"
-                ? exp.category
-                : exp.subcategory && exp.subcategory !== "null"
-                ? exp.subcategory
-                : exp.title || "Uncategorized";
-            const amount = Number(exp.amount) || 0;
-            map[name] = (map[name] || 0) + amount;
-          });
-          const categories = Object.keys(map).map((name) => ({
-            name,
-            total: map[name],
-          }));
-          categories.sort((a, b) => b.total - a.total);
-          setTopCategories(categories);
-          return;
+        //   const map = {};
+        //   filtered.forEach((exp) => {
+        //     const name =
+        //       exp.category && exp.category !== "null"
+        //         ? exp.category
+        //         : exp.subcategory && exp.subcategory !== "null"
+        //         ? exp.subcategory
+        //         : exp.title || "Uncategorized";
+        //     const amount = Number(exp.amount) || 0;
+        //     map[name] = (map[name] || 0) + amount;
+        //   });
+        //   const categories = Object.keys(map).map((name) => ({
+        //     name,
+        //     total: map[name],
+        //   }));
+        //   categories.sort((a, b) => b.total - a.total);
+        //   setTopCategories(categories);
+        //   return;
+
+          // fetch from backend for group top categories
+          const response = await axios.get(
+            `${API_BASE}/group/${group._id}/top-categories`
+          );
+          if (response.data?.categories) {
+            // console.log("Group top categories:", response.data.categories);
+            setTopCategories(response.data.categories);
+          }
+
+        return;
+
         }
 
         // Fallback to user-level top categories

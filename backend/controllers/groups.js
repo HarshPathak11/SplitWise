@@ -799,6 +799,98 @@ const getExpenseController = async (req, res) => {
   }
 };
 
+//Get top categories for a user
+const getTopCategoriesForGroupExpense = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    if (!groupId) {
+      return res.status(400).json({ message: "Group ID is required" });
+    }
+
+    const groupObjectId = new mongoose.Types.ObjectId(groupId);
+
+    const categories = await Expense.aggregate([
+      { $match: { "group": groupObjectId } },
+      { $group: { _id: "$category", total: { $sum: "$amount" } } },
+      { $sort: { total: -1 } },
+      // { $limit: 4 },
+    ]);
+
+    // Optional: rename _id to name for frontend convenience
+    const formattedCategories = categories.map((cat) => ({
+      name: cat._id,
+      total: cat.total,
+    }));
+
+    res.status(200).json({ categories: formattedCategories });
+  } catch (error) {
+    console.error("Error fetching top categories:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get subcategories for a user within a category
+const getSubCategoriesForGroup = async (req, res) => {
+  try {
+    const { groupId, category } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ message: "Group ID is required" });
+    }
+
+    const groupObjectId = new mongoose.Types.ObjectId(groupId);
+
+    const subcategories = await Expense.aggregate([
+      {
+        $match: { "group": groupObjectId, ...(category && { category }) },
+      },
+      { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
+      { $sort: { total: -1 } },
+    ]);
+
+    const formattedSubcategories = subcategories.map((sub) => ({
+      name: sub._id,
+      total: sub.total,
+    }));
+
+    res.status(200).json({ subcategories: formattedSubcategories });
+  } catch (error) {
+    console.error("Error fetching subcategories:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get all expenses for a user in a specific subcategory
+const getAllExpensesForASubcategoryInGroup = async (req, res) => {
+  try {
+    const { groupId, category, subcategory } = req.body;
+
+    if (!groupId || !category || !subcategory) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(groupId);
+
+    // Build the query
+    const query = {
+      "group": userObjectId,
+      category: category,
+      subcategory: subcategory,
+    };
+
+    // Fetch expenses and sort by updatedAt descending
+    const expenses = await Expense.find(query)
+      .populate({ path: "paidBy", select: "username" })
+      .populate({ path: "owedBy.user", select: "username" })
+      .sort({ updatedAt: -1 });
+
+    res.status(200).json({ expenses });
+  } catch (error) {
+    console.error("Error fetching expenses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   createGroup,
   getGroupDetails,
@@ -811,4 +903,7 @@ export {
   addafterDeleteExpenseController,
   deleteExpenseController,
   getExpenseController,
+  getTopCategoriesForGroupExpense,
+  getSubCategoriesForGroup,
+  getAllExpensesForASubcategoryInGroup
 };
