@@ -70,7 +70,7 @@ export default function Expenses() {
           // fetch from backend for group top categories
           const response = await axios.post(
             `${API_BASE}/group/expenses-by-subcategory`,
-            { category: category, groupId: group._id }
+            { category: category, groupId: group._id, subcategory: subcategory }
           );
           if (response.data?.expenses) {
             // console.log("Group sub categories:", response.data.expenses);
@@ -103,7 +103,6 @@ export default function Expenses() {
   const filteredExpenses = expenses.filter((exp) =>
     exp.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
   return (
     <div className="p-4 bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 min-h-screen">
       <Header title={`${subcategory || "Expenses"}`} backPath="/categories" />
