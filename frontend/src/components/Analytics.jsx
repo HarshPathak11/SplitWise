@@ -20,6 +20,7 @@ export default function Analytics() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const location = useLocation();
   const group = location?.state?.group;
+  
 
   const COLORS = [
     "#4F46E5", // indigo
