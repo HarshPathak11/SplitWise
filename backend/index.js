@@ -9,8 +9,7 @@ import userRoutes from "./routes/user.js";
 import groupRoutes from "./routes/group.js";
 import expenseRoutes from "./routes/expense.js";
 import promoRoutes from "./routes/promo.js";
-
-import { postMessage, resetUnread } from './controllers/chat.js';
+import session from "express-session";
 
 const app = express();
 

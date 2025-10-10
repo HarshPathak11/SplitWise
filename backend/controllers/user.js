@@ -198,21 +198,34 @@ const getAllExpensesForUser = async (req, res) => {
 //Get top categories for a user
 const getTopCategoriesForUser = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId, startDate, endDate } = req.body;
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
     }
 
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
+    // Base match condition
+    const matchConditions = { "owedBy.user": userObjectId };
+
+    // Add date filter if provided
+    if (startDate || endDate) {
+      matchConditions.createdAt = {};
+      if (startDate) matchConditions.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const adjustedEnd = new Date(endDate);
+        adjustedEnd.setHours(23, 59, 59, 999);
+        matchConditions.createdAt.$lte = adjustedEnd;
+      }
+    }
+
     const categories = await Expense.aggregate([
-      { $match: { "owedBy.user": userObjectId } },
+      { $match: matchConditions },
       { $group: { _id: "$category", total: { $sum: "$amount" } } },
       { $sort: { total: -1 } },
       // { $limit: 4 },
     ]);
 
-    // Optional: rename _id to name for frontend convenience
     const formattedCategories = categories.map((cat) => ({
       name: cat._id,
       total: cat.total,
@@ -225,10 +238,40 @@ const getTopCategoriesForUser = async (req, res) => {
   }
 };
 
+
 //Get subcategories for a user within a category
+// const getSubCategoriesForUser = async (req, res) => {
+//   try {
+//     const { userId, category } = req.body;
+
+//     if (!userId) {
+//       return res.status(400).json({ message: "User ID is required" });
+//     }
+
+//     const userObjectId = new mongoose.Types.ObjectId(userId);
+
+//     const subcategories = await Expense.aggregate([
+//       {
+//         $match: { "owedBy.user": userObjectId, ...(category && { category }) },
+//       },
+//       { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
+//       { $sort: { total: -1 } },
+//     ]);
+
+//     const formattedSubcategories = subcategories.map((sub) => ({
+//       name: sub._id,
+//       total: sub.total,
+//     }));
+
+//     res.status(200).json({ subcategories: formattedSubcategories });
+//   } catch (error) {
+//     console.error("Error fetching subcategories:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 const getSubCategoriesForUser = async (req, res) => {
   try {
-    const { userId, category } = req.body;
+    const { userId, category, startDate, endDate } = req.body;
 
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
@@ -236,9 +279,26 @@ const getSubCategoriesForUser = async (req, res) => {
 
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
+    // Create time filter if provided
+    const timeFilter = {};
+    if (startDate && endDate) {
+      timeFilter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    } else if (startDate) {
+      timeFilter.createdAt = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      timeFilter.createdAt = { $lte: new Date(endDate) };
+    }
+
     const subcategories = await Expense.aggregate([
       {
-        $match: { "owedBy.user": userObjectId, ...(category && { category }) },
+        $match: {
+          "owedBy.user": userObjectId,
+          ...(category && { category }),
+          ...timeFilter,
+        },
       },
       { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
       { $sort: { total: -1 } },
@@ -256,10 +316,41 @@ const getSubCategoriesForUser = async (req, res) => {
   }
 };
 
+
 //Get all expenses for a user in a specific subcategory
+// const getAllExpensesForASubcategory = async (req, res) => {
+//   try {
+//     const { userId, category, subcategory } = req.body;
+
+//     if (!userId || !category || !subcategory) {
+//       return res.status(400).json({ message: "Incomplete data received" });
+//     }
+
+//     const userObjectId = new mongoose.Types.ObjectId(userId);
+
+//     // Build the query
+//     const query = {
+//       "owedBy.user": userObjectId,
+//       category: category,
+//       subcategory: subcategory,
+//     };
+
+//     // Fetch expenses and sort by updatedAt descending
+//     const expenses = await Expense.find(query)
+//       .populate({ path: "paidBy", select: "username" })
+//       .populate({ path: "owedBy.user", select: "username" })
+//       .sort({ updatedAt: -1 });
+
+//     res.status(200).json({ expenses });
+//   } catch (error) {
+//     console.error("Error fetching expenses:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 const getAllExpensesForASubcategory = async (req, res) => {
   try {
-    const { userId, category, subcategory } = req.body;
+    const { userId, category, subcategory, startDate, endDate } = req.body;
+   
 
     if (!userId || !category || !subcategory) {
       return res.status(400).json({ message: "Incomplete data received" });
@@ -270,9 +361,23 @@ const getAllExpensesForASubcategory = async (req, res) => {
     // Build the query
     const query = {
       "owedBy.user": userObjectId,
-      category: category,
-      subcategory: subcategory,
+      category,
+      subcategory,
     };
+
+    // Add date range filter if provided
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    } else if (startDate) {
+      query.createdAt = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      query.createdAt = { $lte: new Date(endDate) };
+    }
+
+ 
 
     // Fetch expenses and sort by updatedAt descending
     const expenses = await Expense.find(query)
@@ -286,6 +391,7 @@ const getAllExpensesForASubcategory = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 //Function to fetch user details
 const userDetails = async (req, res) => {

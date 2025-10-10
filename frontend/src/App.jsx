@@ -215,10 +215,6 @@ const router = createBrowserRouter([
         path: "/documentation",
         element: <Documentation />,
       },
-      {
-        path: "/dmsection",
-        element: <ChatsPage/>,
-      }
     ],
   },
 ]);

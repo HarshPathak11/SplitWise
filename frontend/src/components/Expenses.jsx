@@ -3,77 +3,42 @@ import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookie from "js-cookie";
+import { Search, Calendar, Receipt, TrendingUp, Filter } from "lucide-react";
 
 export default function Expenses() {
   const location = useLocation();
-  const { category, subcategory, total } = location.state || {};
+  const { category, subcategory, total, timeframe, startDate, endDate } =
+    location.state || {};
   const userId = Cookie.get("id");
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const group = location?.state?.group;
 
+
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(""); // 🔍 Search term state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("date");
 
-  // Fetch expenses from backend
+
   useEffect(() => {
     if (!userId) return;
 
     const fetchExpenses = async () => {
       setLoading(true);
       try {
+        
+
         if (group && Array.isArray(group.expenses)) {
-          // console.log("Group object found in state, deriving subcategories from group.expenses");
-          // compute timeframe start
-          // const now = new Date();
-          // let startDate = null;
-          // if (timeframe === "day") {
-          //   startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          // } else if (timeframe === "week") {
-          //   startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          // } else {
-          //   // month -> start of current month
-          //   startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          // }
-
-          // const filtered = group.expenses.filter((exp) => {
-          //   try {
-          //     const d = new Date(exp.createdAt || exp.updatedAt || exp.date);
-          //     return d >= startDate;
-          //   } catch (e) {
-          //     return false;
-          //   }
-          // });
-
-          // track filtered count for message rendering
-          //   setFilteredCount(filtered.length);
-
-          //   const map = {};
-          //   filtered.forEach((exp) => {
-          //     const name =
-          //       exp.category && exp.category !== "null"
-          //         ? exp.category
-          //         : exp.subcategory && exp.subcategory !== "null"
-          //         ? exp.subcategory
-          //         : exp.title || "Uncategorized";
-          //     const amount = Number(exp.amount) || 0;
-          //     map[name] = (map[name] || 0) + amount;
-          //   });
-          //   const categories = Object.keys(map).map((name) => ({
-          //     name,
-          //     total: map[name],
-          //   }));
-          //   categories.sort((a, b) => b.total - a.total);
-          //   setTopCategories(categories);
-          //   return;
-
-          // fetch from backend for group top categories
           const response = await axios.post(
             `${API_BASE}/group/expenses-by-subcategory`,
-            { category: category, groupId: group._id, subcategory: subcategory }
+            {
+              category: category,
+              groupId: group._id,
+              subcategory: subcategory,
+              ...(startDate && { startDate, endDate }),
+            }
           );
           if (response.data?.expenses) {
-            // console.log("Group sub categories:", response.data.expenses);
             setExpenses(response.data.expenses || []);
           }
 
@@ -86,6 +51,7 @@ export default function Expenses() {
             userId,
             category: category,
             subcategory: subcategory,
+            ...(startDate && { startDate, endDate }),
           }
         );
         setExpenses(response.data.expenses || []);
@@ -97,66 +63,195 @@ export default function Expenses() {
     };
 
     fetchExpenses();
-  }, [userId, category, subcategory, API_BASE]);
+  }, [userId, category, subcategory, API_BASE, startDate, endDate]);
+  
 
-  // Filter expenses based on search term
-  const filteredExpenses = expenses.filter((exp) =>
-    exp.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredExpenses = expenses
+    .filter((exp) =>
+      exp.title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      } else if (sortBy === "amount-high") {
+        return b.amount - a.amount;
+      } else if (sortBy === "amount-low") {
+        return a.amount - b.amount;
+      }
+      return 0;
+    });
+
+  const totalAmount = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const averageAmount =
+    filteredExpenses.length > 0 ? totalAmount / filteredExpenses.length : 0;
+
+  const getTimePeriodLabel = () => {
+    if (!timeframe || timeframe === "all") return "All Time";
+    if (timeframe === "day") return "Today";
+    if (timeframe === "week") return "This Week";
+    if (timeframe === "month") return "This Month";
+    if (timeframe === "custom" && startDate && endDate) {
+      return `${new Date(startDate).toLocaleDateString()} - ${new Date(
+        endDate
+      ).toLocaleDateString()}`;
+    }
+    return "All Time";
+  };
+
   return (
-    <div className="p-4 bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 min-h-screen">
-      <Header title={`${subcategory || "Expenses"}`} backPath="/categories" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-900 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-5xl mx-auto">
+        <Header title={subcategory || "Expenses"} backPath="/subcategories" />
 
-      <div className="ml-10 mr-10 sm:ml-20 sm:mr-20">
-        {/* Search Bar */}
-        <div className="mt-6 mb-4">
-          <div className="relative">
+        {timeframe && timeframe !== "all" && (
+          <div className="mt-4 mb-6 flex items-center gap-2 bg-blue-900/30 backdrop-blur-sm border border-blue-500/30 rounded-xl px-4 py-3">
+            <Calendar size={18} className="text-blue-400" />
+            <span className="text-blue-300 text-sm font-medium">
+              Showing expenses for: {getTimePeriodLabel()}
+            </span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 mb-8">
+          <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 backdrop-blur-md rounded-2xl p-5 border-2 border-blue-500/30 shadow-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="text-blue-400" size={20} />
+              <p className="text-blue-300 text-sm font-medium">Total</p>
+            </div>
+            <p className="text-white text-2xl font-bold">
+              ₹{totalAmount.toLocaleString()}
+            </p>
+          </div>
+          <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-800/20 backdrop-blur-md rounded-2xl p-5 border-2 border-cyan-500/30 shadow-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <Receipt className="text-cyan-400" size={20} />
+              <p className="text-cyan-300 text-sm font-medium">Count</p>
+            </div>
+            <p className="text-white text-2xl font-bold">
+              {filteredExpenses.length}
+            </p>
+          </div>
+          <div className="bg-gradient-to-br from-sky-900/40 to-sky-800/20 backdrop-blur-md rounded-2xl p-5 border-2 border-sky-500/30 shadow-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="text-sky-400" size={20} />
+              <p className="text-sky-300 text-sm font-medium">Average</p>
+            </div>
+            <p className="text-white text-2xl font-bold">
+              ₹{Math.round(averageAmount).toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400"
+              size={20}
+            />
             <input
               type="text"
-              placeholder="🔍 Search expenses..."
+              placeholder="Search expenses..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)} // 🔍 Update state as user types
-              className="w-full p-3 sm:p-4 rounded-2xl backdrop-blur-md bg-white/10 border-2 border-white/20 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 rounded-xl backdrop-blur-md bg-gray-900/60 border-2 border-blue-500/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all"
             />
           </div>
-        </div>
-
-        {/* Total Expenses */}
-        <div className="mt-6 p-3 sm:p-4 rounded-2xl backdrop-blur-md bg-white/10 border-2 border-white/20">
-          <div className="flex justify-between items-center text-white">
-            <span className="font-semibold">Total Expenses:</span>
-            <span className="font-bold text-lg">₹{total}</span>
+          <div className="relative sm:w-48">
+            <Filter
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 pointer-events-none"
+              size={20}
+            />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full appearance-none pl-12 pr-10 py-3 rounded-xl backdrop-blur-md bg-gray-900/60 border-2 border-blue-500/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all cursor-pointer"
+            >
+              <option value="date">Latest First</option>
+              <option value="amount-high">Highest Amount</option>
+              <option value="amount-low">Lowest Amount</option>
+            </select>
           </div>
         </div>
 
-        {/* Expenses List */}
-        <div className="space-y-3 mt-4">
-          {loading ? (
-            <p className="text-white text-center mt-4">Loading expenses...</p>
-          ) : filteredExpenses.length === 0 ? (
-            <p className="text-white text-center mt-4">No expenses found.</p>
-          ) : (
-            filteredExpenses.map((exp) => (
-              <div
-                key={exp._id}
-                className={`flex justify-between items-center p-3 sm:p-4 rounded-xl sm:rounded-2xl backdrop-blur-md bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-white/20 hover:scale-[1.02] transition-all duration-300 cursor-pointer`}
-                onClick={() => console.log("Expense clicked:", exp.title)}
-              >
-                <div className="flex flex-col">
-                  <span className="text-white font-medium text-sm sm:text-base">
-                    {exp.title}
-                  </span>
-                  <span className="text-white/70 text-xs mt-1">
-                    {new Date(exp.createdAt).toLocaleDateString()}
-                  </span>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
+              <p className="text-white/80 font-medium">Loading expenses...</p>
+            </div>
+          </div>
+        ) : filteredExpenses.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Receipt size={40} className="text-blue-400" />
+            </div>
+            <p className="text-blue-300 font-semibold text-lg">
+              No expenses found
+            </p>
+            <p className="text-gray-400 text-sm mt-2">
+              {searchTerm
+                ? "Try adjusting your search"
+                : "Start adding expenses to track your spending"}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredExpenses.map((exp, idx) => {
+              const isRecent =
+                new Date().getTime() - new Date(exp.createdAt).getTime() <
+                86400000;
+              return (
+                <div
+                  key={exp._id}
+                  className="group relative overflow-hidden bg-gradient-to-r from-gray-900/60 to-blue-900/20 backdrop-blur-md rounded-2xl p-5 border-2 border-blue-500/20 hover:border-blue-400/50 hover:scale-[1.01] transition-all duration-300 shadow-lg hover:shadow-blue-500/20 cursor-pointer"
+                  onClick={() => console.log("Expense clicked:", exp.title)}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-blue-600/5 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                  <div className="relative flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                          <Receipt className="text-blue-400" size={18} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white font-semibold text-base truncate">
+                              {exp.title}
+                            </span>
+                            {isRecent && (
+                              <span className="px-2 py-0.5 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 text-xs font-medium">
+                                New
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-white/60 text-sm">
+                            {new Date(exp.createdAt).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right ml-4">
+                      <span className="text-white font-bold text-xl block">
+                        ₹{exp.amount.toLocaleString()}
+                      </span>
+                      <span className="text-blue-400 text-xs">
+                        {((exp.amount / totalAmount) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-white font-bold text-base sm:text-lg">
-                  ₹{exp.amount}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

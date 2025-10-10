@@ -33,7 +33,7 @@ const ComparisonTable = () => {
 
         {/* Table Rows */}
         <div className="space-y-4 backdrop-blur-md bg-white/5 rounded-xl p-6 border border-white/20 hover:border-white/30 transition-all duration-300">
-          <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
+          {/* <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
             <div className="text-white/80">Expense Tracking</div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
@@ -50,7 +50,7 @@ const ComparisonTable = () => {
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ❌
             </div>
-          </div>
+          </div> */}
 
           {/* Feature Rows */}
           <div className="divide-y divide-gray-700/30">
@@ -89,7 +89,7 @@ const ComparisonTable = () => {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
+          {/* <div className="grid grid-cols-3 gap-4 text-center hover:bg-white/5 p-3 rounded-lg transition-all duration-300">
             <div className="text-white/80">Enhanced Aesthetics</div>
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
@@ -106,7 +106,7 @@ const ComparisonTable = () => {
             <div className="text-green-400 text-xl transform hover:scale-110 transition-transform duration-300">
               ✔️
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Call to Action */}
