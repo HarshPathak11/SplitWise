@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { Link, useNavigate } from "react-router-dom";
 import Documentation from "./documentation";
 import FAQ from "./FaqSection";
+import Navbar from "./Navbar";
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -175,15 +176,11 @@ const LandingPage = () => {
             </button>
           </div>
         {/* </div> */}
-        </SpotlightCard>
+        {/* </SpotlightCard> */}
+        </div>
       </div>
       
-       <Aurora
-  colorStops={["#3A29FF", "#FF94B4", "#FF3232"]}
-  blend={0.5}
-  amplitude={1.0}
-  speed={0.8}
-/>
+       
       <div id="comparison-table">
         <ComparisonTable />
       </div>

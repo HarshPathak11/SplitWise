@@ -26,7 +26,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1 lg:space-x-1">
+          <div className="md:flex items-center space-x-1 lg:space-x-1">
             <a
               href="/features"
               className="group relative px-4 lg:px-6 py-2 lg:py-3 text-gray-300 hover:text-white font-medium text-sm lg:text-base transition-all duration-300 rounded-lg hover:bg-white/5"
