@@ -96,9 +96,8 @@ const ExpenseCard = ({
           <div className={`${iconColor} p-3 rounded-full`}></div>
           <div className="ml-4">
             <h3 className="font-semibold">{title || category}</h3>
-            <p className="text-sm text-gray-400">{date}</p>
             {/* Inline categorization shown even when card is collapsed */}
-            <p className="text-xs text-gray-300 mt-1">
+            <p className="text-sm text-gray-300 mt-1">
               {category ? (
                 <span>
                   <strong className="font-medium text-gray-200">
@@ -116,6 +115,7 @@ const ExpenseCard = ({
                 <span className="italic text-gray-500">Categorizing...</span>
               )}
             </p>
+            <p className="text-xs pt-1 text-gray-400">{date}</p>
           </div>
         </div>
 
