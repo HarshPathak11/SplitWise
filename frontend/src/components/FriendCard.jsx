@@ -44,7 +44,7 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
     try {
       await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+        `${API_BASE}/user/update-friend-balance`,
         {
           userEmail: currentUser.email,
           friendEmail: friend.email,
@@ -67,7 +67,7 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
     try {
       await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+        `${API_BASE}/user/update-friend-balance`,
         {
           userEmail: currentUser.email,
           friendEmail: friend.email,
