@@ -9,6 +9,20 @@ import {
 import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
 dotenv.config();
+import streamifier from 'streamifier';
+import cloudinary from "../config/cloudinary.js";
+
+/**
+ * Helper: upload buffer to Cloudinary
+ */
+const uploadFromBuffer = (buffer, folder = 'profile_photos') =>
+  new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: 'image', transformation: [{ width: 500, height: 500, crop: 'fill' }] },
+      (error, result) => (error ? reject(error) : resolve(result))
+    );
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
 
 // Send OTP to email
 
@@ -421,6 +435,7 @@ const userDetails = async (req, res) => {
         friends: 1,
         recentExpense: { $slice: -3 },
         requests: 1,
+        profilePhotoUrl: 1,
       });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
@@ -1215,6 +1230,43 @@ const getUsernames = async (req, res) => {
   }
 };
 
+const uploadProfilePhoto = async (req, res) => {
+  try {
+    const { id } = req.params;
+    // if (!req.user || req.user.id !== id) return res.status(403).json({ message: 'Forbidden' });
+    if (!req.file || !req.file.buffer) return res.status(400).json({ message: 'No file uploaded' });
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    console.log("req",user)
+
+    // upload to Cloudinary
+    const result = await uploadFromBuffer(req.file.buffer);
+
+    // delete previous Cloudinary image if present
+    if (user.profilePhotoId) {
+      try {
+        await cloudinary.uploader.destroy(user.profilePhotoId);
+      } catch (err) {
+        console.warn('Failed to delete previous Cloudinary image:', err.message);
+      }
+    }
+
+    // Save URL + public_id to user document (fields: profilePhotoUrl, profilePhotoId)
+    user.profilePhotoUrl = result.secure_url;
+    user.profilePhotoId = result.public_id;
+    await user.save();
+
+    const publicUser = user.toObject();
+    delete publicUser.password;
+    res.status(200).json({ user: publicUser });
+  } catch (err) {
+    console.error('uploadProfilePhoto error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 export {
   sendOtp,
   userLogin,
@@ -1239,4 +1291,5 @@ export {
   getAllExpensesForASubcategory,
   removeFcmToken,
   notifyFriend,
+  uploadProfilePhoto
 };
