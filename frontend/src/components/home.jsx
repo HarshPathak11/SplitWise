@@ -8,12 +8,17 @@ import FAQ from "./FaqSection";
 
 const LandingPage = () => {
   const navigate = useNavigate();
-
+  const [showInstallSteps, setShowInstallSteps] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
   // const [showInstallButton, setShowInstallButton] = useState(false);
   useEffect(() => {
+    // Detect iOS device
+    const userAgent = navigator.userAgent;
+    setIsIOS(/iPad|iPhone|iPod/.test(userAgent));
+
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -48,11 +53,17 @@ const LandingPage = () => {
   }, []);
 
   const handleInstallClick = async () => {
+    // Always show detailed steps popup first when clicking bottom-right button
+    setShowInstallSteps(true);
+  };
+
+  const handleDirectInstall = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       setShowPrompt(false);
       setDeferredPrompt(null);
     }
+    setShowInstallSteps(false);
   };
 
   const handleNoThanks = () => {
@@ -84,6 +95,175 @@ const LandingPage = () => {
               >
                 Install
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detailed Installation Steps Popup */}
+      {showInstallSteps && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400">
+                Install FairFare App
+              </h2>
+              <button
+                onClick={() => setShowInstallSteps(false)}
+                className="text-gray-400 hover:text-white text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <p className="text-gray-300 mb-6 text-center">
+              Follow these steps to add FairFare to your home screen:
+            </p>
+
+            {/* iOS Instructions */}
+            {isIOS && (
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    1
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">Tap the Share button</p>
+                    <p className="text-sm text-gray-400">
+                      Look for the share icon at the bottom of your Safari
+                      browser
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    2
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">
+                      Scroll down and tap "Add to Home Screen"
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      You'll see this option in the share menu
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    3
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">Tap "Add" to confirm</p>
+                    <p className="text-sm text-gray-400">
+                      The app will be added to your home screen
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Android Instructions */}
+            {!isIOS && /Android/.test(navigator.userAgent) && (
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    1
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">
+                      Tap the menu button (three dots)
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      Look for the menu icon in your Chrome browser
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    2
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">
+                      Select "Add to Home screen" or "Install app"
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      This option should be visible in the menu
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    3
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">
+                      Tap "Add" or "Install" to confirm
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      The app will be installed on your device
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Generic Instructions for other devices */}
+            {!isIOS && !/Android/.test(navigator.userAgent) && (
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    1
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">
+                      Look for the install button in your browser
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      Most modern browsers show an install prompt
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    2
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">Click "Install" when prompted</p>
+                    <p className="text-sm text-gray-400">
+                      Follow your browser's installation process
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 p-4 bg-blue-500/20 rounded-lg border border-blue-400/30">
+              <p className="text-blue-200 text-sm text-center">
+                💡 <strong>Tip:</strong> Once installed, you can access FairFare
+                directly from your home screen like any other app!
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-4 mt-6">
+              <button
+                onClick={() => setShowInstallSteps(false)}
+                className="bg-transparent border text-white border-white/30 py-2 px-4 rounded-lg hover:bg-white/10 transition-all duration-300"
+              >
+                Got it!
+              </button>
+              {deferredPrompt && (
+                <button
+                  onClick={handleDirectInstall}
+                  className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-6 rounded-lg hover:bg-blue-700/80 transition-all duration-300 border border-blue-400/30"
+                >
+                  Try Direct Install
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -124,7 +304,6 @@ const LandingPage = () => {
         <div className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
           FairFare
         </div>
-
         <div className="flex space-x-6">
           <Link to="/features">
             <button className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 hover:scale-105 border border-blue-400/30">
