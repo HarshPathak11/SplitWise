@@ -82,6 +82,8 @@ const userSchema = new mongoose.Schema(
       count: { type: Number, default: 0 },
       lastUsed: { type: Date, default: null },
     },
+    profilePhotoUrl: { type: String, default: null }, // secure_url from Cloudinary
+    profilePhotoId:  { type: String, default: null }, // public_id used for deletion
   },
   { timestamps: true }
 );
