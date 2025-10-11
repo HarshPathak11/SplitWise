@@ -56,8 +56,8 @@ const AddTrip = () => {
 
     const user = JSON.parse(localStorage.getItem("user"));
     const tripData = {
-      name: tripName,
-      description,
+      name: tripName.trim(),
+      description: description.trim(),
       from: fromDate,
       to: toDate,
       members: [user._id, ...selectedFriends],
@@ -79,10 +79,7 @@ const AddTrip = () => {
         return;
       }
 
-      const res = await axios.post(
-        `${API_BASE}/group/create-group`,
-        tripData
-      );
+      const res = await axios.post(`${API_BASE}/group/create-group`, tripData);
       // console.log("Response:", res.data); // Log the response for debugging
 
       if (res.status !== 200 && res.status !== 201) {
@@ -106,7 +103,8 @@ const AddTrip = () => {
         <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
       </div>
 
-      <div className="absolute top-4 left-4">
+      {/* Back Button with proper spacing */}
+      <div className="absolute top-4 left-4 z-20">
         <Link to="/dash">
           <button
             className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-110 transition-transform duration-300 ease-in-out"
@@ -130,8 +128,8 @@ const AddTrip = () => {
         </Link>
       </div>
 
-      {/* Add Trip Form */}
-      <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
+      {/* Add Trip Form with proper margin for back button */}
+      <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10 mt-16 sm:mt-0">
         <h2 className="text-2xl font-bold text-[#00F5FF] mb-4">Add New Trip</h2>
         <form className="flex flex-col gap-4" onSubmit={handleAddTrip}>
           {/* Trip Name */}
@@ -178,7 +176,7 @@ const AddTrip = () => {
             className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3] rows-4 sm:rows-6 placeholder-gray-400 text-sm sm:text-base"
           />
 
-          {/* Add Friends Section */}
+          {/* Add Friends Section with scrollable container */}
           <div>
             <h3 className="text-lg font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
               Add Friends
@@ -194,25 +192,38 @@ const AddTrip = () => {
               <span className="text-sm">Select All</span>
             </label>
 
-            <div className="flex flex-col gap-2">
-              {[...friends]
-                .sort((a, b) =>
-                  a.friend.username.localeCompare(b.friend.username)
-                )
-                .map((friend, index) => (
-                  <label key={index} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      value={friend.friend._id}
-                      checked={selectedFriends.includes(friend.friend._id)}
-                      onChange={() => handleFriendSelection(friend.friend._id)}
-                      className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
-                    />
-                    <span className="text-sm text-gray-300">
-                      {friend.friend.username}
-                    </span>
-                  </label>
-                ))}
+            {/* Scrollable friends list container */}
+            {/* Scrollable friends list container */}
+            <div
+              className="max-h-48 overflow-y-auto pr-2 
+    [&::-webkit-scrollbar]:w-2
+    [&::-webkit-scrollbar-track]:bg-gray-800
+    [&::-webkit-scrollbar-thumb]:bg-gray-600
+    [&::-webkit-scrollbar-thumb]:rounded-full
+    [&::-webkit-scrollbar-thumb:hover]:bg-gray-500"
+            >
+              <div className="flex flex-col gap-2">
+                {[...friends]
+                  .sort((a, b) =>
+                    a.friend.username.localeCompare(b.friend.username)
+                  )
+                  .map((friend, index) => (
+                    <label key={index} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        value={friend.friend._id}
+                        checked={selectedFriends.includes(friend.friend._id)}
+                        onChange={() =>
+                          handleFriendSelection(friend.friend._id)
+                        }
+                        className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
+                      />
+                      <span className="text-sm text-gray-300">
+                        {friend.friend.username}
+                      </span>
+                    </label>
+                  ))}
+              </div>
             </div>
           </div>
 

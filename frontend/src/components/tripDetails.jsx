@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
+import { FaChartBar } from "react-icons/fa";
 import axios from "axios";
 import { useParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -236,64 +237,78 @@ const TripDetails = () => {
         {/* Trip Header */}
         {/* Use a column layout on small screens and a row layout on md+ so the Analytics button
             sits to the right on larger viewports and stacks centered below the title on small */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex-1">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex-1 w-full">
             {loading ? (
               <p className="text-lg text-gray-300">Loading trip details...</p>
             ) : (
               <>
-                <h1 className="text-3xl sm:text-5xl mr-auto pb-3 mb-1 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3]">
-                  {tripDetails?.name}
-                </h1>
-                <p className="text-base sm:text-lg mt-2 mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
+                {/* Title and Button row - FIXED: Always horizontal */}
+                <div className="flex flex-row justify-between items-center gap-3 w-full">
+                  {/* Title - will shrink to make space for button */}
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-3xl sm:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] break-words truncate">
+                      {tripDetails?.name}
+                    </h1>
+                  </div>
+
+                  {/* Analytics Button - Always on the right, compact on mobile */}
+                  {!loading && (
+                    <div className="flex-shrink-0">
+                      <button
+                        className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2
+                  bg-[#0d1117] border border-gray-700 rounded-md shadow-md
+                  text-sm font-medium text-white
+                  hover:bg-[#1a1f29] border-[#00FFA3]
+                  transition relative overflow-hidden group"
+                        onClick={() =>
+                          navigate("/analytics", {
+                            state: { group: tripDetails },
+                          })
+                        }
+                      >
+                        <FaChartBar/>
+                        {/* Shiny effect */}
+                        <span
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
+                    -translate-x-full group-hover:translate-x-full
+                    transition-transform duration-700 ease-in-out"
+                        />
+
+                        {/* Icon - hidden on smallest screens, shown on sm+ */}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="hidden xs:block h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-[#00FFA3]"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M3 3v18h18M9 17l3-3 4 4 5-6"
+                          />
+                        </svg>
+
+                        {/* Text */}
+                        <span className="truncate text-xs pl-1 sm:text-sm">
+                          Analytics
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                <p className="text-base sm:text-lg mt-2 mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text break-words">
                   {tripDetails?.description}
                 </p>
               </>
             )}
           </div>
-
-          {/* Analytics Button container: full-width and centered on small screens, auto width and right aligned on md+ */}
-          <div className="w-full md:w-auto flex justify-center md:justify-end">
-            {!loading && (
-              <button
-                className="mt-3 md:mt-0 inline-flex items-center px-3 sm:px-4 py-2 w-full md:w-auto
-             bg-[#0d1117] border border-gray-700 rounded-md shadow-md
-             text-xs sm:text-sm md:text-base font-medium text-white
-             hover:bg-[#1a1f29] hover:border-[#00FFA3]
-             transition relative overflow-hidden group"
-                onClick={() =>
-                  navigate("/analytics", { state: { group: tripDetails } })
-                }
-              >
-                {/* Shiny effect */}
-                <span
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
-                   translate-x-[-100%] group-hover:translate-x-[100%]
-                   transition-transform duration-700 ease-in-out"
-                />
-
-                {/* Icon */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-[#00FFA3]"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 3v18h18M9 17l3-3 4 4 5-6"
-                  />
-                </svg>
-
-                {/* Text */}
-                <span className="truncate">Analytics</span>
-              </button>
-            )}
-          </div>
         </div>
+
         {/* Members Section */}
         <div>
           <div className="flex justify-between items-center mb-3">
