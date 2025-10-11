@@ -7,18 +7,17 @@ import { Search, Calendar, Receipt, TrendingUp, Filter } from "lucide-react";
 
 export default function Expenses() {
   const location = useLocation();
-  const { category, subcategory, total, timeframe, startDate, endDate } =
+  const { category, subcategory, timeframe, startDate, endDate } =
     location.state || {};
   const userId = Cookie.get("id");
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const group = location?.state?.group;
 
-
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("date");
-
+  const [expandedExpenseId, setExpandedExpenseId] = useState(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -26,8 +25,6 @@ export default function Expenses() {
     const fetchExpenses = async () => {
       setLoading(true);
       try {
-        
-
         if (group && Array.isArray(group.expenses)) {
           const response = await axios.post(
             `${API_BASE}/group/expenses-by-subcategory`,
@@ -64,15 +61,14 @@ export default function Expenses() {
 
     fetchExpenses();
   }, [userId, category, subcategory, API_BASE, startDate, endDate]);
-  
 
   const filteredExpenses = expenses
-    .filter((exp) =>
-      exp.title.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((exp) => exp.title.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
       if (sortBy === "date") {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       } else if (sortBy === "amount-high") {
         return b.amount - a.amount;
       } else if (sortBy === "amount-low") {
@@ -81,9 +77,21 @@ export default function Expenses() {
       return 0;
     });
 
-  const totalAmount = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  // ✅ Calculate total only for the current user’s owed amounts
+  const totalAmount = filteredExpenses.reduce((sum, exp) => {
+    const owedEntry = exp.owedBy?.find(
+      (o) => o.user?._id === userId || o.user === userId
+    );
+    return sum + (owedEntry?.amount || 0);
+  }, 0);
+
+  // ✅ Average based on how many expenses involve this user
+  const userExpenses = filteredExpenses.filter((exp) =>
+    exp.owedBy?.some((o) => o.user?._id === userId || o.user === userId)
+  );
+
   const averageAmount =
-    filteredExpenses.length > 0 ? totalAmount / filteredExpenses.length : 0;
+    userExpenses.length > 0 ? totalAmount / userExpenses.length : 0;
 
   const getTimePeriodLabel = () => {
     if (!timeframe || timeframe === "all") return "All Time";
@@ -158,7 +166,7 @@ export default function Expenses() {
           </div>
           <div className="relative sm:w-48">
             <Filter
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 pointer-events-none"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 z-50 pointer-events-none"
               size={20}
             />
             <select
@@ -170,6 +178,22 @@ export default function Expenses() {
               <option value="amount-high">Highest Amount</option>
               <option value="amount-low">Lowest Amount</option>
             </select>
+            <svg
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white pointer-events-none"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M4 6L8 10L12 6"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
         </div>
 
@@ -196,18 +220,27 @@ export default function Expenses() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredExpenses.map((exp, idx) => {
+            {filteredExpenses.map((exp) => {
               const isRecent =
                 new Date().getTime() - new Date(exp.createdAt).getTime() <
                 86400000;
+
+              const isExpanded = expandedExpenseId === exp._id;
+
               return (
                 <div
                   key={exp._id}
                   className="group relative overflow-hidden bg-gradient-to-r from-gray-900/60 to-blue-900/20 backdrop-blur-md rounded-2xl p-5 border-2 border-blue-500/20 hover:border-blue-400/50 hover:scale-[1.01] transition-all duration-300 shadow-lg hover:shadow-blue-500/20 cursor-pointer"
-                  onClick={() => console.log("Expense clicked:", exp.title)}
+                  onClick={() =>
+                    setExpandedExpenseId((prev) =>
+                      prev === exp._id ? null : exp._id
+                    )
+                  }
                 >
+                  {/* Hover gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-blue-600/5 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
+                  {/* Main expense row */}
                   <div className="relative flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-2">
@@ -225,7 +258,7 @@ export default function Expenses() {
                               </span>
                             )}
                           </div>
-                          <span className="text-white/60 text-sm">
+                          <span className="text-white/60 text-sm block">
                             {new Date(exp.createdAt).toLocaleDateString(
                               "en-US",
                               {
@@ -238,6 +271,7 @@ export default function Expenses() {
                         </div>
                       </div>
                     </div>
+
                     <div className="text-right ml-4">
                       <span className="text-white font-bold text-xl block">
                         ₹{exp.amount.toLocaleString()}
@@ -246,6 +280,57 @@ export default function Expenses() {
                         {((exp.amount / totalAmount) * 100).toFixed(1)}%
                       </span>
                     </div>
+                  </div>
+
+                  {/* Extra info shown only when this expense is expanded */}
+                  <div
+                    className={`transition-all duration-300 overflow-hidden ${
+                      isExpanded
+                        ? "max-h-40 mt-3 border-t border-blue-500/20 pt-3"
+                        : "max-h-0"
+                    }`}
+                  >
+                    {isExpanded && (
+                      <div className="space-y-1 animate-fade-in">
+                        {exp.paidBy && (
+                          <p className="text-xs text-blue-300">
+                            <span className="font-medium text-blue-400">
+                              Paid by:
+                            </span>{" "}
+                            {exp.paidBy.username ||
+                              exp.paidBy.name ||
+                              "Unknown"}
+                          </p>
+                        )}
+
+                        {exp.owedBy?.length > 0 && (
+                          <p className="text-xs text-cyan-300">
+                            <span className="font-medium text-cyan-400">
+                              Beneficiaries:
+                            </span>{" "}
+                            {exp.owedBy
+                              .map(
+                                (o) =>
+                                  `${
+                                    o.user?.username ||
+                                    o.user?.name ||
+                                    "Unknown"
+                                  } (₹${o.amount})`
+                              )
+                              .join(", ")}
+                          </p>
+                        )}
+
+                        {exp?.group && (
+                          <p className="text-xs text-sky-300">
+                            <span className="font-medium text-sky-400">
+                              Group:
+                            </span>{" "}
+                            {exp.group?.name || "Unnamed Group"}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
