@@ -60,7 +60,7 @@ const ChangePassword = () => {
     try {
       // Verify OTP entered by the user
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/verify-forgot-password",
+        `${API_BASE}/user/verify-forgot-password`,
         { email, otp, otpGenerated }
       );
       if (response.status === 200) {
@@ -97,7 +97,7 @@ const ChangePassword = () => {
 
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/change-password",
+        `${API_BASE}/user/change-password`,
         { userId, newPassword }
       );
       setMessage(
