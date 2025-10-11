@@ -18,6 +18,7 @@ const Dashboard = () => {
       const userId = Cookies.get("id");
       localStorage.removeItem("tripMembers");
       localStorage.removeItem("currentGroup");
+      let fcmTokens = [];
 
       try {
         const response = await axios.get(
@@ -28,11 +29,12 @@ const Dashboard = () => {
           setUser(response.data.user); // Update state with fetched user data
 
           localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
+          fcmTokens = response.data.user.fcmToken || []; // Filter out null/undefined tokens
         }
 
         const fcmToken = await requestNotificationPermission();
 
-        if (response.data.user.fcmToken !== fcmToken || response.data.user.fcmToken === null || !response.data.user.fcmToken) {
+        if (fcmToken && (!fcmTokens.includes(fcmToken) || fcmTokens === null )) {
           await axios.post(
             `${API_BASE}/user/set-fcm-token`,
             {

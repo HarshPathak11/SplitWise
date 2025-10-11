@@ -315,6 +315,7 @@ const userDetails = async (req, res) => {
         friends: 1,
         recentExpense: { $slice: -3 },
         requests: 1,
+        fcmToken: 1,
       });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
