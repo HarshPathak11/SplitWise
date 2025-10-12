@@ -21,7 +21,7 @@ const ChangePassword = () => {
   const [otpGenerated, setOtpGenerated] = useState(""); // To store the generated OTP
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const userId = user.user._id;
+  const userId = Cookies.get("id");
 
   const handleSendOtp = async () => {
     setLoading(true);

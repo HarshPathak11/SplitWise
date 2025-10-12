@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { Link, useNavigate } from "react-router-dom";
 import Documentation from "./documentation";
 import FAQ from "./FaqSection";
+import Navbar from "./Navbar";
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -300,7 +301,7 @@ const LandingPage = () => {
       </div>
 
       {/* Navbar */}
-      <nav className="w-full flex justify-between items-center px-10 py-5 backdrop-blur-lg bg-black/20 border-b border-white/10 z-50">
+      {/* <nav className="w-full flex justify-between items-center px-10 py-5 backdrop-blur-lg bg-black/20 border-b border-white/10 z-50">
         <div className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
           FairFare
         </div>
@@ -317,9 +318,11 @@ const LandingPage = () => {
             </button>
           </Link>
         </div>
-      </nav>
+      </nav> */}
+      <Navbar/>
 
       {/* Main Content */}
+    
       <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-11 lg:px-10 py-20 relative z-10">
         <div>
           <img src="/save.svg" className="drop-shadow-2xl" alt="Illustration" />
@@ -355,14 +358,17 @@ const LandingPage = () => {
               Learn More
             </button>
           </div>
+        {/* </div> */}
+        {/* </SpotlightCard> */}
         </div>
       </div>
-
+      
+       
       <div id="comparison-table">
         <ComparisonTable />
       </div>
 
-      <div id="documentation-section">
+      <div id="doc">
         <Documentation />
       </div>
 

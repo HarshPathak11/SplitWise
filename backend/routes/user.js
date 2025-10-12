@@ -23,8 +23,9 @@ import {
   getAllExpensesForASubcategory,
   removeFcmToken,
   notifyFriend,
+  uploadProfilePhoto
 } from "../controllers/user.js";
-
+import upload from "../middleware/multer.js";
 const router = express.Router();
 
 // Define routes
@@ -52,6 +53,7 @@ router.post("/notify", notifyFriend);
 
 //PUT routes
 router.put("/:id", updateUserProfile);
+router.put('/:id/photo',  upload.single('profilePhoto'),uploadProfilePhoto);
 
 //GET routes
 router.get('/search', getUsernames);
