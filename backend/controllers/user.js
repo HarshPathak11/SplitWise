@@ -1259,41 +1259,80 @@ const getUsernames = async (req, res) => {
   }
 };
 
+// const uploadProfilePhoto = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     // if (!req.user || req.user.id !== id) return res.status(403).json({ message: 'Forbidden' });
+//     if (!req.file || !req.file.buffer)
+//       return res.status(400).json({ message: "No file uploaded" });
+
+//     const user = await User.findById(id);
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     // console.log("req", user);
+
+//     // upload to Cloudinary
+//     const result = await uploadFromBuffer(req.file.buffer);
+
+//     // delete previous Cloudinary image if present
+//     if (user.profilePhotoId) {
+//       try {
+//         await cloudinary.uploader.destroy(user.profilePhotoId);
+//       } catch (err) {
+//         console.warn(
+//           "Failed to delete previous Cloudinary image:",
+//           err.message
+//         );
+//       }
+//     }
+
+//     // Save URL + public_id to user document (fields: profilePhotoUrl, profilePhotoId)
+//     user.profilePhotoUrl = result.secure_url;
+//     user.profilePhotoId = result.public_id;
+//     await user.save();
+
+//     const publicUser = user.toObject();
+//     delete publicUser.password;
+//     res.status(200).json({ user: publicUser });
+//   } catch (err) {
+//     console.error("uploadProfilePhoto error:", err);
+//     res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// };
+
 const uploadProfilePhoto = async (req, res) => {
   try {
     const { id } = req.params;
-    // if (!req.user || req.user.id !== id) return res.status(403).json({ message: 'Forbidden' });
+
     if (!req.file || !req.file.buffer)
       return res.status(400).json({ message: "No file uploaded" });
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // console.log("req", user);
-
-    // upload to Cloudinary
+    // Upload to Cloudinary
     const result = await uploadFromBuffer(req.file.buffer);
 
-    // delete previous Cloudinary image if present
+    // Delete previous Cloudinary image if it exists
     if (user.profilePhotoId) {
       try {
         await cloudinary.uploader.destroy(user.profilePhotoId);
       } catch (err) {
-        console.warn(
-          "Failed to delete previous Cloudinary image:",
-          err.message
-        );
+        console.warn("Failed to delete previous Cloudinary image:", err.message);
       }
     }
 
-    // Save URL + public_id to user document (fields: profilePhotoUrl, profilePhotoId)
-    user.profilePhotoUrl = result.secure_url;
-    user.profilePhotoId = result.public_id;
-    await user.save();
+    // Update user document directly
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        profilePhotoUrl: result.secure_url,
+        profilePhotoId: result.public_id,
+      },
+      { new: true, select: "-password" } // return updated doc and exclude password
+    );
 
-    const publicUser = user.toObject();
-    delete publicUser.password;
-    res.status(200).json({ user: publicUser });
+    res.status(200).json({ user: updatedUser });
   } catch (err) {
     console.error("uploadProfilePhoto error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
