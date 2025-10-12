@@ -1269,7 +1269,7 @@ const uploadProfilePhoto = async (req, res) => {
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    console.log("req", user);
+    // console.log("req", user);
 
     // upload to Cloudinary
     const result = await uploadFromBuffer(req.file.buffer);
