@@ -21,14 +21,14 @@ const TripsSection = () => {
           return;
         }
 
-        // const response = await axios.get(
-        //   `${API_BASE}/group/user-groups/${userId}`
-        // );
-        const response = JSON.parse(localStorage.getItem("user"));
+        const response = await axios.get(
+          `${API_BASE}/group/user-groups/${userId}`
+        );
+        // const response = JSON.parse(localStorage.getItem("user"));
 
-        if (Array.isArray(response.groups)) {
+        if (Array.isArray(response.data)) {
           // Sort expenses by updatedAt in descending order (most recent first)
-          const sortedTrips = [...response.groups].sort(
+          const sortedTrips = [...response.data].sort(
             (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
           );
           // Take the top 4 expenses after sorting.
