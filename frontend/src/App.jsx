@@ -28,6 +28,9 @@ import Categories from "./components/Categories";
 import Analytics from "./components/Analytics"
 import Subcategories from "./components/Subcategories";
 import Expenses from "./components/Expenses";
+import AdminDashboard from "./admin/AdminDashboard";
+import MarketingCampaigns from "./admin/MarketingCampaigns";
+import NotificationCampaign from "./admin/NotificationCampaign";
 
 const router = createBrowserRouter([
   {
@@ -175,6 +178,30 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <CashMapAI />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "admin",
+        element: (
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "marketing",
+        element: (
+          <ProtectedRoute>
+            <MarketingCampaigns />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "marketing/notification",
+        element: (
+          <ProtectedRoute>
+            <NotificationCampaign />
           </ProtectedRoute>
         ),
       },

@@ -1098,7 +1098,7 @@ const getUsernames = async (req, res) => {
     // Query
     const results = await User.find(
       { username: regex },
-      { username: 1, email: 1 } // projection: return only username & email and _id
+      { username: 1, email: 1, profilePhotoUrl: 1 } // projection: return only username & email and _id
     )
       .limit(8)
       .lean();

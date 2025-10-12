@@ -115,6 +115,7 @@ const AddFriend = () => {
             _id: u._id,
             username: u.username,
             email: u.email,
+            profilePhotoUrl: u.profilePhotoUrl || "/userIcon.png", // fallback if no photo
           }));
 
         setSuggestions(mapped);
@@ -193,7 +194,9 @@ const AddFriend = () => {
       if (response.status === 200) {
         const results = response.data.results || [];
 
-        results.map((r)=>{r.reason ? toast.success(`(${r.reason})`): ""});
+        results.map((r) => {
+          r.reason ? toast.success(`(${r.reason})`) : "";
+        });
 
         // ✅ Clear the list after successful attempt
         setFriends([]);
@@ -324,11 +327,16 @@ const AddFriend = () => {
               {suggestions.map((s) => (
                 <div
                   key={s._id}
-                  onMouseDown={(e) => e.preventDefault()} // prevent input blur
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSuggestionClick(s)}
-                  className="px-4 py-3 hover:bg-gray-800 cursor-pointer flex justify-between items-center"
+                  className="px-4 py-2 hover:bg-gray-800 cursor-pointer flex items-center gap-3"
                 >
-                  <div>
+                  <img
+                    src={s.profilePhotoUrl}
+                    alt={s.username}
+                    className="w-8 h-8 rounded-full object-cover border border-gray-600"
+                  />
+                  <div className="flex flex-col">
                     <div className="font-medium text-white">{s.username}</div>
                     <div className="text-xs text-gray-400">{s.email}</div>
                   </div>
