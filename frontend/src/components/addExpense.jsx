@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Calculator, X } from "lucide-react";
+import { ArrowLeft, DeleteIcon } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -103,11 +103,9 @@ const AddExpense = () => {
       toast.error("Invalid expression");
       return false;
     }
-    // format to 2 decimals (but drop .00 when not needed?) keep two decimals
+    // Just show result in calculator, don't update amount field
     const formatted = Number(res);
-    setMainAmount(formatted);
-    setShowCalculator(false);
-    setCalcExpr("");
+    setCalcExpr(formatted.toString());
     return true;
   };
 
@@ -253,107 +251,9 @@ const AddExpense = () => {
               value={mainAmount}
               onChange={(e) => setMainAmount(e.target.value)}
               pattern="^\d*(\.\d{0,2})?$"
-              className="bg-[#121212] border border-gray-600 text-white w-full px-4 py-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white pr-12"
+              className="bg-[#121212] border border-gray-600 text-white w-full px-4 py-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white"
             />
-            <button
-              type="button"
-              aria-label="Open calculator"
-              onClick={() => setShowCalculator(true)}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white p-2 rounded hover:bg-gray-800"
-            >
-              <Calculator className="w-5 h-5" />
-            </button>
           </div>
-
-          {/* Calculator popup/modal */}
-          {showCalculator && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center">
-              <div
-                className="absolute inset-0 bg-black/60"
-                onClick={() => {
-                  setShowCalculator(false);
-                  setCalcExpr("");
-                }}
-              />
-              <div className="relative z-10 w-[320px] sm:w-[420px] bg-[#0b0b0b] border border-gray-700 rounded-2xl p-4 shadow-2xl">
-                <div className="flex justify-between items-center mb-3">
-                  <div className="text-lg font-semibold">Calculator</div>
-                  <button
-                    className="p-2 rounded hover:bg-gray-800"
-                    onClick={() => {
-                      setShowCalculator(false);
-                      setCalcExpr("");
-                    }}
-                    aria-label="Close calculator"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="mb-3">
-                  <input
-                    className="w-full bg-black border border-gray-600 text-white px-3 py-2 rounded-lg text-right text-xl"
-                    inputMode="decimal"
-                    pattern="^\d*(\.\d{0,2})?$"
-                    value={calcExpr}
-                    onChange={(e) => setCalcExpr(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-
-                <div className="grid grid-cols-4 gap-2">
-                  {[
-                    "7",
-                    "8",
-                    "9",
-                    "/",
-                    "4",
-                    "5",
-                    "6",
-                    "*",
-                    "1",
-                    "2",
-                    "3",
-                    "-",
-                    "(",
-                    "0",
-                    ")",
-                    "+",
-                  ].map((k) => (
-                    <button
-                      key={k}
-                      onClick={() => appendToCalc(k)}
-                      className="px-3 py-2 bg-[#121212] rounded-lg text-white text-lg hover:bg-gray-800"
-                    >
-                      {k}
-                    </button>
-                  ))}
-
-                  <button
-                    onClick={handleCalcClear}
-                    className="col-span-2 px-3 py-2 bg-red-600 rounded-lg text-white text-lg hover:bg-red-700"
-                  >
-                    C
-                  </button>
-                  <button
-                    onClick={handleCalcBackspace}
-                    className="px-3 py-2 bg-yellow-600 rounded-lg text-white text-lg hover:bg-yellow-700"
-                  >
-                    ←
-                  </button>
-                  <button
-                    onClick={handleCalcEqual}
-                    className="px-3 py-2 bg-green-500 rounded-lg text-white text-lg hover:bg-green-600"
-                  >
-                    =
-                  </button>
-                </div>
-                <div className="text-sm text-gray-400 mt-3">
-                  Tip: Use your keyboard / numpad. Press Enter to apply
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Paid By dropdown (includes the logged-in user and friends) */}
@@ -476,6 +376,82 @@ const AddExpense = () => {
           >
             {isLoading ? "Adding..." : "Add"}
           </button>
+        </div>
+        {/* Simple Calculator - always visible above amount input */}
+        <div className="w-full bg-[#0b0b0b] border border-gray-700 rounded-2xl p-4 shadow-2xl mb-4">
+          <div className="flex justify-between items-center mb-3">
+            <div className="text-lg font-semibold">Calculator</div>
+            <button
+              className="p-2 rounded hover:bg-gray-800"
+              onClick={() => {
+                setShowCalculator(false);
+                setCalcExpr("");
+              }}
+              aria-label="Close calculator"
+            ></button>
+          </div>
+
+          <div className="mb-3">
+            <input
+              className="w-full bg-black border border-gray-600 text-white px-3 py-2 rounded-lg text-right text-xl"
+              inputMode="decimal"
+              pattern="^\d*(\.\d{0,2})?$"
+              value={calcExpr}
+              onChange={(e) => setCalcExpr(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              "7",
+              "8",
+              "9",
+              "/",
+              "4",
+              "5",
+              "6",
+              "*",
+              "1",
+              "2",
+              "3",
+              "-",
+              "(",
+              "0",
+              ")",
+              "+",
+            ].map((k) => (
+              <button
+                key={k}
+                onClick={() => appendToCalc(k)}
+                className="px-3 py-2 bg-[#121212] rounded-lg text-white text-lg hover:bg-gray-800"
+              >
+                {k}
+              </button>
+            ))}
+
+            <button
+              onClick={handleCalcClear}
+              className="col-span-2 px-3 py-2 bg-red-600 rounded-lg text-white text-lg hover:bg-red-700"
+            >
+              C
+            </button>
+            <button
+              onClick={handleCalcBackspace}
+              className="px-3 py-2 bg-yellow-600 rounded-lg text-white text-lg hover:bg-yellow-700"
+            >
+              <DeleteIcon className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleCalcEqual}
+              className="px-3 py-2 bg-green-500 rounded-lg text-white text-lg hover:bg-green-600"
+            >
+              =
+            </button>
+          </div>
+          <div className="text-sm text-gray-400 mt-3">
+            Tip: Use your keyboard / numpad. Press Enter to calculate
+          </div>
         </div>
       </div>
     </div>
