@@ -25,7 +25,7 @@ import RemoveMembers from "./components/RemoveMembers";
 import EditExpense from "./components/editExpense";
 import TransactionHistory from "./components/TransactionHistory";
 import Categories from "./components/Categories";
-import Analytics from "./components/Analytics"
+import Analytics from "./components/Analytics";
 import Subcategories from "./components/Subcategories";
 import Expenses from "./components/Expenses";
 import AdminDashboard from "./admin/AdminDashboard";
@@ -97,7 +97,7 @@ const router = createBrowserRouter([
         path: "expense/edit",
         element: (
           <ProtectedRoute>
-            <EditExpense/>
+            <EditExpense />
           </ProtectedRoute>
         ),
       },

@@ -12,7 +12,12 @@ const AddTrip = () => {
   const [description, setDescription] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [selectAll, setSelectAll] = useState(false); // State to track "Select All" toggle
+  const [search, setSearch] = useState("");
+
+  // Filtered (visible) friends according to search
+  const filteredFriends = friends.filter((f) =>
+    f.friend.username.toLowerCase().includes(search.toLowerCase())
+  );
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -31,25 +36,18 @@ const AddTrip = () => {
 
     setSelectedFriends(updatedSelected);
 
-    // Sync "Select All" checkbox
-    if (updatedSelected.length === friends.length) {
+    // If all filtered (visible) friends are selected, enable selectAll
+    if (
+      filteredFriends.length > 0 &&
+      filteredFriends.every((f) => updatedSelected.includes(f.friend._id))
+    ) {
       setSelectAll(true);
     } else {
       setSelectAll(false);
     }
   };
 
-  // Handle "Select All" toggle
-  const handleSelectAll = () => {
-    if (selectAll) {
-      // Unselect all friends
-      setSelectedFriends([]);
-    } else {
-      // Select all friends
-      setSelectedFriends(friends.map((friend) => friend.friend._id));
-    }
-    setSelectAll(!selectAll); // Toggle the "Select All" state
-  };
+  
 
   const handleAddTrip = async (e) => {
     e.preventDefault();
@@ -181,16 +179,17 @@ const AddTrip = () => {
             <h3 className="text-lg font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
               Add Friends
             </h3>
-
-            <label className="flex items-center space-x-2 py-3 text-white">
+            {/* Search*/}
+            <div className="flex items-center gap-2 mb-3">
               <input
-                type="checkbox"
-                checked={selectAll}
-                onChange={handleSelectAll}
-                className="w-4 h-4"
+                type="text"
+                placeholder="Search friends..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 px-3 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3] placeholder-gray-400 text-sm"
               />
               <span className="text-sm">Select All</span>
-            </label>
+            </div>
 
             {/* Scrollable friends list container */}
             {/* Scrollable friends list container */}
