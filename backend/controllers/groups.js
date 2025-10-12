@@ -296,8 +296,8 @@ const addExpenseController = async (req, res) => {
     return res.status(404).json({ success: false, message: "Payer not found" });
   }
 
-  const friendIds = payer.friends.map((id) => id.toString());
-  
+  const friendIds = payer.friends.map((f) => f.friend.toString());
+    
   // Find all non-friends from involvedMembers (skip self)
   const notFriends = involvedMembers.filter(
     (memberId) =>
