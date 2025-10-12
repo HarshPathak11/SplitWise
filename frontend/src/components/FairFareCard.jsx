@@ -7,7 +7,9 @@ const FairFareCard = () => {
   const [last4, setLast4] = useState(""); // State for last4
   const [netBalance, setNetBalance] = useState(0); // State for net balance
   const [balanceMessage, setBalanceMessage] = useState(""); // State for balance message
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || {});
+  const [user, setUser] = useState(
+    () => JSON.parse(localStorage.getItem("user")) || {}
+  );
 
   // Generate or retrieve last4 using cookies
   useEffect(() => {
@@ -27,14 +29,14 @@ const FairFareCard = () => {
       const updatedUser = JSON.parse(localStorage.getItem("user")) || {};
       setUser(updatedUser);
     }, 1000); // Check every second, or adjust if needed
-  
+
     return () => clearInterval(interval);
   }, [user]);
 
   // Calculate net balance
   useEffect(() => {
-    const userFriends=user?.friends || [];
-    
+    const userFriends = user?.friends || [];
+
     if (userFriends && userFriends.length > 0) {
       const totalBalance = userFriends.reduce(
         (sum, friend) => sum + Number(friend.balance || 0),
@@ -144,9 +146,20 @@ const FairFareCard = () => {
               </svg>
             </div>
             <div className="flex items-center mt-2 space-x-4 mb-1">
-              <div className="w-10 h-10 bg-white text-indigo-700 rounded-full flex items-center justify-center font-bold text-md border-2 border-white shadow">
-                {getInitials(user?.username)}
+              <div className="w-12 h-12 rounded-full bg-white border-2 border-white shadow flex items-center justify-center overflow-hidden">
+                {user?.profilePhotoUrl ? (
+                  <img
+                    src={user.profilePhotoUrl}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="flex items-center justify-center w-full h-full text-indigo-700 font-bold text-md">
+                    {getInitials(user?.username)}
+                  </span>
+                )}
               </div>
+
               <div className="text-lg font-semibold tracking-wider uppercase">
                 {user?.username}
               </div>

@@ -43,15 +43,12 @@ const FriendCard = ({
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
     try {
-      await axios.post(
-        `${API_BASE}/user/update-friend-balance`,
-        {
-          userEmail: currentUser.email,
-          friendEmail: friend.email,
-          amount,
-          action: "paid",
-        }
-      );
+      await axios.post(`${API_BASE}/user/update-friend-balance`, {
+        userEmail: currentUser.email,
+        friendEmail: friend.email,
+        amount,
+        action: "paid",
+      });
       balance = parseFloat((Number(balance) + amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
       setSettleAmount(balance);
@@ -66,15 +63,12 @@ const FriendCard = ({
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
     try {
-      await axios.post(
-        `${API_BASE}/user/update-friend-balance`,
-        {
-          userEmail: currentUser.email,
-          friendEmail: friend.email,
-          amount,
-          action: "received",
-        }
-      );
+      await axios.post(`${API_BASE}/user/update-friend-balance`, {
+        userEmail: currentUser.email,
+        friendEmail: friend.email,
+        amount,
+        action: "received",
+      });
       balance = parseFloat((Number(balance) - amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
       setSettleAmount(balance);
@@ -130,6 +124,16 @@ const FriendCard = ({
     navigate(`/transaction-history/${friend._id}`);
   };
 
+  const getInitials = (name) =>
+    name
+      ? name
+          .trim()
+          .split(" ")
+          .map((word) => word[0]?.toUpperCase())
+          .slice(0, 2)
+          .join("")
+      : "U";
+
   return (
     <div
       key={index}
@@ -140,33 +144,42 @@ const FriendCard = ({
         onClick={TransactionHistoryPage}
         className="flex justify-between items-center"
       >
-        <div>
-          <div className="flex items-center gap-1">
-            <p className="text-sm text-white">{friend.username}</p>
-            <a
-              href={`https://fair-fare-phi.vercel.app/public-profile/${friend._id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="View Public Profile"
-            >
-              <FiLink className="text-white hover:text-blue-400 transition w-4 h-4" />
-            </a>
+        <div className="flex justify-between items-center w-full">
+          {/* Left side: image + username + balance */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-white overflow-hidden flex items-center justify-center flex-shrink-0">
+              {friend?.profilePhotoUrl ? (
+                <img
+                  src={friend.profilePhotoUrl}
+                  alt={`${friend.username} profile`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="flex items-center justify-center w-full h-full text-indigo-700 font-bold text-sm">
+                  {getInitials(friend?.username)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col">
+              <p className="text-sm text-white">{friend.username}</p>
+              <p
+                className={`text-xs ${
+                  Number(balance) > 0
+                    ? "text-green-400"
+                    : Number(balance) < 0
+                    ? "text-red-400"
+                    : "text-gray-400"
+                }`}
+              >
+                {Number(balance) > 0
+                  ? `Owes you ₹${Number(balance).toFixed(2)}`
+                  : Number(balance) < 0
+                  ? `You owe ₹${Math.abs(Number(balance).toFixed(2))}`
+                  : "Settled"}
+              </p>
+            </div>
           </div>
-          <p
-            className={`text-xs ${
-              Number(balance) > 0
-                ? "text-green-400"
-                : Number(balance) < 0
-                ? "text-red-400"
-                : "text-gray-400"
-            }`}
-          >
-            {Number(balance) > 0
-              ? `Owes you ₹${Number(balance).toFixed(2)}`
-              : Number(balance) < 0
-              ? `You owe ₹${Math.abs(Number(balance).toFixed(2))}`
-              : "Settled"}
-          </p>
         </div>
 
         <div
@@ -181,7 +194,10 @@ const FriendCard = ({
           </Link>
           <button
             title="Settle Up"
-            onClick={() => { setShowConfirmSettle(true); setShowDropdown(true); }}
+            onClick={() => {
+              setShowConfirmSettle(true);
+              setShowDropdown(true);
+            }}
             className="text-yellow-400 hover:text-yellow-300 transition"
           >
             <MdOutlineCurrencyExchange className="w-5 h-5" />
