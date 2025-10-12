@@ -70,7 +70,6 @@ const TransactionHistory = () => {
         return;
       }
       const res = await axios.get(`${API_BASE}/user/${userId}`);
-
       fetchData(res.data.user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -291,9 +290,11 @@ const TransactionHistory = () => {
         </button>
         <Link to={`/public-profile/${friendName._id}`}>
           <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-lg font-medium">
-            {friendName.username
-              ? friendName.username.charAt(0).toUpperCase()
-              : "?"}
+            {friendName?.profilePhotoUrl ?
+              <img src={friendName.profilePhotoUrl} alt={friendName.username} className="w-full h-full rounded-full object-cover" />
+              : friendName.username
+                ? friendName.username.charAt(0).toUpperCase()
+                : "?"}
           </div>
         </Link>
         <div className="ml-3 flex items-start justify-between w-full">
