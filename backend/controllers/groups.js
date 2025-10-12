@@ -281,6 +281,46 @@ const addExpenseController = async (req, res) => {
       .json({ success: false, message: "Missing required fields" });
   }
 
+  if (involvedMembers.length === 1 && involvedMembers[0] === paidBy) {
+    return res.status(400).json({
+      success: false,
+      message: "Cannot split expense with only the payer involved.",
+    });
+  }
+
+  // Get payer's friends list
+  const payer = await User.findById(paidBy).select("friends username");
+  if (!payer) {
+    return res.status(404).json({ success: false, message: "Payer not found" });
+  }
+
+  const friendIds = payer.friends.map((f) => f.friend.toString());
+    
+  // Find all non-friends from involvedMembers (skip self)
+  const notFriends = involvedMembers.filter(
+    (memberId) =>
+      memberId.toString() !== paidBy.toString() && // ✅ skip self
+      !friendIds.includes(memberId.toString())
+  );
+
+  console.log("Not friends with:", notFriends);
+
+  if (notFriends.length > 0) {
+    // Fetch names of non-friends
+    const nonFriendUsers = await User.find({ _id: { $in: notFriends } }).select(
+      "username"
+    );
+
+    const nonFriendNames = nonFriendUsers.map((u) => u.username);
+
+    return res.status(400).json({
+      success: false,
+      message: `Cannot add expense since ${
+        payer.username
+      } is not friends with ${nonFriendNames.join(", ")}`,
+    });
+  }
+
   // Start a transaction session
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -399,7 +439,7 @@ const addExpenseController = async (req, res) => {
     if (tokens.length > 0) {
       const payer = users.find((u) => u._id.toString() === paidBy.toString());
       const title = "Tap to see";
-      const body = `${newExpense.title} expense has been added by ${
+      const body = `${newExpense.title} expense has been paid by ${
         payer?.username || "Someone"
       }. \nAmount: ${newExpense.amount}`;
 
@@ -759,6 +799,230 @@ const getExpenseController = async (req, res) => {
   }
 };
 
+//Get top categories for a user
+// const getTopCategoriesForGroupExpense = async (req, res) => {
+//   try {
+//     const { groupId } = req.params;
+//     if (!groupId) {
+//       return res.status(400).json({ message: "Group ID is required" });
+//     }
+
+//     const groupObjectId = new mongoose.Types.ObjectId(groupId);
+
+//     const categories = await Expense.aggregate([
+//       { $match: { "group": groupObjectId } },
+//       { $group: { _id: "$category", total: { $sum: "$amount" } } },
+//       { $sort: { total: -1 } },
+//       // { $limit: 4 },
+//     ]);
+
+//     // Optional: rename _id to name for frontend convenience
+//     const formattedCategories = categories.map((cat) => ({
+//       name: cat._id,
+//       total: cat.total,
+//     }));
+
+//     res.status(200).json({ categories: formattedCategories });
+//   } catch (error) {
+//     console.error("Error fetching top categories:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+const getTopCategoriesForGroupExpense = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { startDate, endDate } = req.query; // frontend sends these as query params
+
+    if (!groupId) {
+      return res.status(400).json({ message: "Group ID is required" });
+    }
+
+    const groupObjectId = new mongoose.Types.ObjectId(groupId);
+
+    // Base match condition
+    const matchConditions = { group: groupObjectId };
+
+    // Add date filter if provided
+    if (startDate || endDate) {
+      matchConditions.createdAt = {};
+      if (startDate) matchConditions.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const adjustedEnd = new Date(endDate);
+        adjustedEnd.setHours(23, 59, 59, 999);
+        matchConditions.createdAt.$lte = adjustedEnd;
+      }
+    }
+
+    const categories = await Expense.aggregate([
+      { $match: matchConditions },
+      { $group: { _id: "$category", total: { $sum: "$amount" } } },
+      { $sort: { total: -1 } },
+      // { $limit: 4 },
+    ]);
+
+    const formattedCategories = categories.map((cat) => ({
+      name: cat._id,
+      total: cat.total,
+    }));
+
+    res.status(200).json({ categories: formattedCategories });
+  } catch (error) {
+    console.error("Error fetching top categories:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// //Get subcategories for a user within a category
+// const getSubCategoriesForGroup = async (req, res) => {
+//   try {
+//     const { groupId, category } = req.body;
+
+//     if (!groupId) {
+//       return res.status(400).json({ message: "Group ID is required" });
+//     }
+
+//     const groupObjectId = new mongoose.Types.ObjectId(groupId);
+
+//     const subcategories = await Expense.aggregate([
+//       {
+//         $match: { "group": groupObjectId, ...(category && { category }) },
+//       },
+//       { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
+//       { $sort: { total: -1 } },
+//     ]);
+
+//     const formattedSubcategories = subcategories.map((sub) => ({
+//       name: sub._id,
+//       total: sub.total,
+//     }));
+
+//     res.status(200).json({ subcategories: formattedSubcategories });
+//   } catch (error) {
+//     console.error("Error fetching subcategories:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// //Get all expenses for a user in a specific subcategory
+// const getAllExpensesForASubcategoryInGroup = async (req, res) => {
+//   try {
+//     const { groupId, category, subcategory } = req.body;
+
+//     if (!groupId || !category || !subcategory) {
+//       return res.status(400).json({ message: "Incomplete data received" });
+//     }
+
+//     const userObjectId = new mongoose.Types.ObjectId(groupId);
+
+//     // Build the query
+//     const query = {
+//       "group": userObjectId,
+//       category: category,
+//       subcategory: subcategory,
+//     };
+
+//     // Fetch expenses and sort by updatedAt descending
+//     const expenses = await Expense.find(query)
+//       .populate({ path: "paidBy", select: "username" })
+//       .populate({ path: "owedBy.user", select: "username" })
+//       .sort({ updatedAt: -1 });
+
+//     res.status(200).json({ expenses });
+//   } catch (error) {
+//     console.error("Error fetching expenses:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// Get subcategories for a group within a category (with optional timeline filter)
+const getSubCategoriesForGroup = async (req, res) => {
+  try {
+    const { groupId, category, startDate, endDate } = req.body;
+
+    if (!groupId) {
+      return res.status(400).json({ message: "Group ID is required" });
+    }
+
+    const groupObjectId = new mongoose.Types.ObjectId(groupId);
+
+    // Build match stage
+    const matchStage = { group: groupObjectId, ...(category && { category }) };
+
+    // Add timeline filter
+    if (startDate && endDate) {
+      matchStage.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    } else if (startDate) {
+      matchStage.createdAt = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      matchStage.createdAt = { $lte: new Date(endDate) };
+    }
+
+    const subcategories = await Expense.aggregate([
+      { $match: matchStage },
+      { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
+      { $sort: { total: -1 } },
+    ]);
+
+    const formattedSubcategories = subcategories.map((sub) => ({
+      name: sub._id,
+      total: sub.total,
+    }));
+
+    res.status(200).json({ subcategories: formattedSubcategories });
+  } catch (error) {
+    console.error("Error fetching subcategories:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get all expenses for a subcategory within a group (with optional timeline filter)
+const getAllExpensesForASubcategoryInGroup = async (req, res) => {
+  try {
+    const { groupId, category, subcategory, startDate, endDate } = req.body;
+
+    if (!groupId || !category || !subcategory) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const groupObjectId = new mongoose.Types.ObjectId(groupId);
+
+    // Build the query
+    const query = {
+      group: groupObjectId,
+      category,
+      subcategory,
+    };
+
+    // Add optional date filters
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    } else if (startDate) {
+      query.createdAt = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      query.createdAt = { $lte: new Date(endDate) };
+    }
+
+    // Fetch expenses and sort by updatedAt descending
+    const expenses = await Expense.find(query)
+      .populate({ path: "paidBy", select: "username" })
+      .populate({ path: "owedBy.user", select: "username" })
+      .sort({ updatedAt: -1 });
+
+    res.status(200).json({ expenses });
+  } catch (error) {
+    console.error("Error fetching expenses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 export {
   createGroup,
   getGroupDetails,
@@ -771,4 +1035,7 @@ export {
   addafterDeleteExpenseController,
   deleteExpenseController,
   getExpenseController,
+  getTopCategoriesForGroupExpense,
+  getSubCategoriesForGroup,
+  getAllExpensesForASubcategoryInGroup,
 };

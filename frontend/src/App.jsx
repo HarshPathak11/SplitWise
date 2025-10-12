@@ -24,6 +24,13 @@ import PublicProfile from "./components/PublicProfile";
 import RemoveMembers from "./components/RemoveMembers";
 import EditExpense from "./components/editExpense";
 import TransactionHistory from "./components/TransactionHistory";
+import Categories from "./components/Categories";
+import Analytics from "./components/Analytics";
+import Subcategories from "./components/Subcategories";
+import Expenses from "./components/Expenses";
+import AdminDashboard from "./admin/AdminDashboard";
+import MarketingCampaigns from "./admin/MarketingCampaigns";
+import NotificationCampaign from "./admin/NotificationCampaign";
 
 const router = createBrowserRouter([
   {
@@ -47,6 +54,38 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "analytics",
+        element: (
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "categories",
+        element: (
+          <ProtectedRoute>
+            <Categories />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "subcategories",
+        element: (
+          <ProtectedRoute>
+            <Subcategories />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "expenses",
+        element: (
+          <ProtectedRoute>
+            <Expenses />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "add-expense",
         element: (
           <ProtectedRoute>
@@ -58,7 +97,7 @@ const router = createBrowserRouter([
         path: "expense/edit",
         element: (
           <ProtectedRoute>
-            <EditExpense/>
+            <EditExpense />
           </ProtectedRoute>
         ),
       },
@@ -139,6 +178,30 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <CashMapAI />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "admin",
+        element: (
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "marketing",
+        element: (
+          <ProtectedRoute>
+            <MarketingCampaigns />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "marketing/notification",
+        element: (
+          <ProtectedRoute>
+            <NotificationCampaign />
           </ProtectedRoute>
         ),
       },

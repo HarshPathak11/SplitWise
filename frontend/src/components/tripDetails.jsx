@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
+import { FaChartBar } from "react-icons/fa";
 import axios from "axios";
 import { useParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TripDetails = () => {
   const navigate = useNavigate();
-  const location = useLocation(); 
+  const location = useLocation();
   // console.log(location.state+"state")
 
   const { tripId } = useParams(); // Now you get tripId directly from URL
@@ -42,7 +44,7 @@ const TripDetails = () => {
       }
       try {
         const response = await axios.get(
-          `https://fairfare-0hyl.onrender.com/group/get-group/${tripId}`
+          `${API_BASE}/group/get-group/${tripId}`
           // `//http://localhost:8000/group/get-group/${tripId}` // Use your local or production URL
         );
         if (response.status === 200) {
@@ -73,49 +75,49 @@ const TripDetails = () => {
 
     fetchTripDetails();
   }, [tripId]);
- // 2) Re-fetch only the expenses if `expenseEdited` is true
- useEffect(() => {
-  // console.log(location.state?.expenseEdited)
-   if (location.state?.expenseEdited) {
-     // Clear the flag so we don't loop
-     navigate(location.pathname, { replace: true, state: {} });
+  // 2) Re-fetch only the expenses if `expenseEdited` is true
+  useEffect(() => {
+    // console.log(location.state?.expenseEdited)
+    if (location.state?.expenseEdited) {
+      // Clear the flag so we don't loop
+      navigate(location.pathname, { replace: true, state: {} });
 
-     // Re-fetch just the group (or just the expenses part)
-     const reloadExpenses = async () => {
-       try {
-         const response = await axios.get(
-           `https://fairfare-0hyl.onrender.com/group/get-group/${tripId}`
-          // `//http://localhost:8000/group/get-group/${tripId}`
-         );
-         if (response.status === 200) {
-           const group = response.data;
-           // Only update the `expenses` list (you could also update members/tripDetails if needed)
-           const sortedExpenses = group.expenses
-             .slice()
-             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-           setExpenses(sortedExpenses);
+      // Re-fetch just the group (or just the expenses part)
+      const reloadExpenses = async () => {
+        try {
+          const response = await axios.get(
+            `${API_BASE}/group/get-group/${tripId}`
+            // `//http://localhost:8000/group/get-group/${tripId}`
+          );
+          if (response.status === 200) {
+            const group = response.data;
+            // Only update the `expenses` list (you could also update members/tripDetails if needed)
+            const sortedExpenses = group.expenses
+              .slice()
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            setExpenses(sortedExpenses);
 
-           // Keep localStorage in sync
-           const rawCurrentGroup = localStorage.getItem("currentGroup");
-           if (rawCurrentGroup) {
-             try {
-               const cg = JSON.parse(rawCurrentGroup);
-               cg.expenses = group.expenses;
-               localStorage.setItem("currentGroup", JSON.stringify(cg));
-             } catch (e) {
-               console.error("Failed to patch localStorage after edit:", e);
-             }
-           }
-         }
-       } catch (err) {
-         console.error("Error reloading expenses:", err);
-         toast.error("Could not refresh expenses after edit");
-       }
-     };
+            // Keep localStorage in sync
+            const rawCurrentGroup = localStorage.getItem("currentGroup");
+            if (rawCurrentGroup) {
+              try {
+                const cg = JSON.parse(rawCurrentGroup);
+                cg.expenses = group.expenses;
+                localStorage.setItem("currentGroup", JSON.stringify(cg));
+              } catch (e) {
+                console.error("Failed to patch localStorage after edit:", e);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error reloading expenses:", err);
+          toast.error("Could not refresh expenses after edit");
+        }
+      };
 
-     reloadExpenses();
-   }
- }, [location.state?.expenseEdited, tripId, navigate]);
+      reloadExpenses();
+    }
+  }, [location.state?.expenseEdited, tripId, navigate]);
 
   // Handle adding new members (avoid adding existing ones)
   const handleAddMember = () => {
@@ -147,7 +149,7 @@ const TripDetails = () => {
     localStorage.removeItem("currentGroup");
 
     // Navigate back to the dashboard
-    navigate('/dash');
+    navigate("/dash");
   };
 
   const HandleLeaveGroup = async () => {
@@ -160,7 +162,7 @@ const TripDetails = () => {
       const user = JSON.parse(storedUser);
       const currentUserId = user._id;
       const res = await axios.post(
-        `https://fairfare-0hyl.onrender.com/group/remove-members/${tripId}`,
+        `${API_BASE}/group/remove-members/${tripId}`,
         // `//http://localhost:8000/group/remove-members/${tripId}`,
         {
           members: [currentUserId], // Send only the current user ID to remove
@@ -187,25 +189,20 @@ const TripDetails = () => {
   };
   const handleDeleteExpense = (deletedExpenseId) => {
     // 2a) Filter it out of local `expenses`
-    setExpenses((prev) =>
-      prev.filter((exp) => exp._id !== deletedExpenseId)
-    );
+    setExpenses((prev) => prev.filter((exp) => exp._id !== deletedExpenseId));
 
     // 2b) Also remove it from the `currentGroup` in localStorage
     const rawCurrentGroup = localStorage.getItem("currentGroup");
     if (rawCurrentGroup) {
       try {
         const cg = JSON.parse(rawCurrentGroup);
-        cg.expenses = cg.expenses.filter(
-          (exp) => exp._id !== deletedExpenseId
-        );
+        cg.expenses = cg.expenses.filter((exp) => exp._id !== deletedExpenseId);
         localStorage.setItem("currentGroup", JSON.stringify(cg));
       } catch (e) {
         console.error("Failed to remove expense from localStorage:", e);
       }
     }
   };
-
 
   return (
     <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
@@ -238,22 +235,80 @@ const TripDetails = () => {
       {/* Card Container */}
       <div className="backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
         {/* Trip Header */}
-        <div className="flex justify-between items-center flex-wrap gap-4">
-          <div>
+        {/* Use a column layout on small screens and a row layout on md+ so the Analytics button
+            sits to the right on larger viewports and stacks centered below the title on small */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex-1 w-full">
             {loading ? (
               <p className="text-lg text-gray-300">Loading trip details...</p>
             ) : (
               <>
-                <h1 className="text-3xl sm:text-5xl mr-auto pb-3 mb-1 font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3]">
-                  {tripDetails?.name}
-                </h1>
-                <p className="text-base sm:text-lg mt-2 mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
+                {/* Title and Button row - FIXED: Always horizontal */}
+                <div className="flex flex-row justify-between items-center gap-3 w-full">
+                  {/* Title - will shrink to make space for button */}
+                  <div className="flex-1 min-w-0">
+                    <h1 className="text-3xl sm:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] break-words truncate">
+                      {tripDetails?.name}
+                    </h1>
+                  </div>
+
+                  {/* Analytics Button - Always on the right, compact on mobile */}
+                  {!loading && (
+                    <div className="flex-shrink-0">
+                      <button
+                        className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2
+                  bg-[#0d1117] border border-gray-700 rounded-md shadow-md
+                  text-sm font-medium text-white
+                  hover:bg-[#1a1f29] border-[#00FFA3]
+                  transition relative overflow-hidden group"
+                        onClick={() =>
+                          navigate("/analytics", {
+                            state: { group: tripDetails },
+                          })
+                        }
+                      >
+                        <FaChartBar/>
+                        {/* Shiny effect */}
+                        <span
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
+                    -translate-x-full group-hover:translate-x-full
+                    transition-transform duration-700 ease-in-out"
+                        />
+
+                        {/* Icon - hidden on smallest screens, shown on sm+ */}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="hidden xs:block h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-[#00FFA3]"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M3 3v18h18M9 17l3-3 4 4 5-6"
+                          />
+                        </svg>
+
+                        {/* Text */}
+                        <span className="truncate text-xs pl-1 sm:text-sm">
+                          Analytics
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                <p className="text-base sm:text-lg mt-2 mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text break-words">
                   {tripDetails?.description}
                 </p>
               </>
             )}
           </div>
         </div>
+
         {/* Members Section */}
         <div>
           <div className="flex justify-between items-center mb-3">

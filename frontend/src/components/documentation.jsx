@@ -54,37 +54,6 @@ const Documentation = () => {
     },
   ];
 
-  // return (
-  //   <div className="min-h-screen bg-[#000000] text-white py-10 px-4 sm:px-6 lg:px-8">
-  //     <h1 className="text-4xl font-bold text-center mb-10 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-  //     Have a detailed tour of your personal dashboard
-  //     </h1>
-  //     <div className="space-y-10">
-  //       {sections.map((section, index) => (
-  //         <div
-  //           key={section.id}
-  //           className={`flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-10 ${
-  //             index % 2 === 0 ? "" : "md:flex-row-reverse"
-  //           }`}
-  //         >
-  //           {/* Photo Section */}
-  //           <div className="w-full md:w-1/2">
-  //           <img src={section.image} alt={`${section.title} screenshot`} loading="lazy" />
-
-  //           </div>
-  //           {/* Description Section */}
-  //           <div className="w-full md:w-1/2">
-  //             <h2 className="text-2xl font-semibold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400">
-  //               {section.title}
-  //             </h2>
-  //             <p className="text-gray-400">{section.description}</p>
-  //           </div>
-  //         </div>
-  //       ))}
-  //     </div>
-  //   </div>
-  // );
-
   const fadeUpVariant = {
     hidden: { opacity: 0, y: 50 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },

@@ -8,6 +8,7 @@ const TripsSection = () => {
   const navigate = useNavigate();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // Fetch trips for the current user
   useEffect(() => {
@@ -20,14 +21,14 @@ const TripsSection = () => {
           return;
         }
 
-        const response = await axios.get(
-          `https://fairfare-0hyl.onrender.com/group/user-groups/${userId}`
-          // `//http://localhost:8000/group/user-groups/${userId}`
-        );
+        // const response = await axios.get(
+        //   `${API_BASE}/group/user-groups/${userId}`
+        // );
+        const response = JSON.parse(localStorage.getItem("user"));
 
-        if (Array.isArray(response.data)) {
-          // Sort expenses by createdAt in descending order (most recent first)
-          const sortedTrips = [...response.data].sort(
+        if (Array.isArray(response.groups)) {
+          // Sort expenses by updatedAt in descending order (most recent first)
+          const sortedTrips = [...response.groups].sort(
             (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
           );
           // Take the top 4 expenses after sorting.

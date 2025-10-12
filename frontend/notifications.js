@@ -5,7 +5,7 @@ import { messaging } from "./firebase";
 export const requestNotificationPermission = async () => {
   return Notification.requestPermission()
   .then((permission) => {
-    if (permission === "granted") {
+    if (permission === "granted" || permission === "default") {
       return getToken(messaging, {
         vapidKey: "BJcK5VxVvregTfM4nPYNTg6s3GviBV0JeYFgbXaXoXrIadRMdvmxlwfwwK9LOsXqTgmmxqsiYp7nORzMJx5Mg0M"
       });

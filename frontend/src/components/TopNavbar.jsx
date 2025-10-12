@@ -1,28 +1,29 @@
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
-import { FaUser } from "react-icons/fa";
+import { FaUser, FaChartBar } from "react-icons/fa";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import { FaRobot } from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
+import dashboardLogo from "../../public/dashboardLogo.png";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TopNavbar = () => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
     const userId = Cookies.get("id");
-    const response = await axios.post("https://fairfare-0hyl.onrender.com/user/remove-fcm-token", {
+    const response = await axios.post(`${API_BASE}/user/remove-fcm-token`, {
       userId: userId,
     });
 
-    if(response.status === 200){
-    Cookies.remove("id");
-    Cookies.remove("last4");
-    localStorage.clear();
-    navigate("/");
-    }
-    else{
+    if (response.status === 200) {
+      Cookies.remove("id");
+      Cookies.remove("last4");
+      localStorage.clear();
+      navigate("/");
+    } else {
       toast.error("Error signing out. Please try again.");
     }
   };
@@ -32,21 +33,34 @@ const TopNavbar = () => {
       <div className="flex justify-between items-center">
         <div>
           <Link to="/">
-            <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] hover:animate-text">
-              Fair Fare
-            </h1>
+            <img
+              src={dashboardLogo}
+              alt="Fair Fare Dashboard"
+              className="rounded-xl"
+            />
           </Link>
-          <p className="text-sm sm:text-base text-gray-400">DashBoard</p>
         </div>
         <div className="flex items-center gap-3">
+          <Link to="/analytics">
+            <button
+              className=" p-2 shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 
+             rounded-lg flex items-center justify-center
+              hover:scale-105 transition-transform duration-300 ease-in-out"
+              title="Analytics Dashboard"
+            >
+              Analytics
+              <FaChartBar className="text-white text-2xl pl-2" />
+            </button>
+          </Link>
           <div className="flex space-x-8">
             <Link to="/FairAI">
               <button
-                className="p-2 shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 rounded-lg flex  hover:scale-105 transition-transform duration-300 ease-in-out "
+                className="p-2 shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 
+             rounded-lg flex items-center justify-center 
+             hover:scale-105 transition-transform duration-300 ease-in-out"
                 title="AI ChatBot"
               >
-                Fair AI
-                <FaRobot className="text-white text-xl mt-0.5 ml-2" />
+                <FaRobot className="text-white text-2xl ml-1 mr-1" />
               </button>
             </Link>
           </div>

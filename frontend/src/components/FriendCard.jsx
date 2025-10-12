@@ -9,6 +9,7 @@ import { FaHistory } from "react-icons/fa"; // history icon
 import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const FriendCard = ({
   friend,
@@ -20,6 +21,7 @@ const FriendCard = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [settleAmount, setSettleAmount] = useState(balance);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showConfirmSettle, setShowConfirmSettle] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem("user"));
@@ -41,15 +43,12 @@ const FriendCard = ({
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
     try {
-      await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-        {
-          userEmail: currentUser.email,
-          friendEmail: friend.email,
-          amount,
-          action: "paid",
-        }
-      );
+      await axios.post(`${API_BASE}/user/update-friend-balance`, {
+        userEmail: currentUser.email,
+        friendEmail: friend.email,
+        amount,
+        action: "paid",
+      });
       balance = parseFloat((Number(balance) + amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
       setSettleAmount(balance);
@@ -64,15 +63,12 @@ const FriendCard = ({
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
     try {
-      await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-        {
-          userEmail: currentUser.email,
-          friendEmail: friend.email,
-          amount,
-          action: "received",
-        }
-      );
+      await axios.post(`${API_BASE}/user/update-friend-balance`, {
+        userEmail: currentUser.email,
+        friendEmail: friend.email,
+        amount,
+        action: "received",
+      });
       balance = parseFloat((Number(balance) - amount).toFixed(2));
       updateFriendBalance(friend.email, balance);
       setSettleAmount(balance);
@@ -93,7 +89,7 @@ const FriendCard = ({
     try {
       if (currentBalance > 0) {
         await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          `${API_BASE}/user/update-friend-balance`,
           // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
@@ -105,7 +101,7 @@ const FriendCard = ({
         );
       } else {
         await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
+          `${API_BASE}/user/update-friend-balance`,
           // "//http://localhost:8000/user/update-friend-balance",
           {
             userEmail: currentUser.email,
@@ -126,7 +122,17 @@ const FriendCard = ({
 
   const TransactionHistoryPage = async () => {
     navigate(`/transaction-history/${friend._id}`);
-  }
+  };
+
+  const getInitials = (name) =>
+    name
+      ? name
+          .trim()
+          .split(" ")
+          .map((word) => word[0]?.toUpperCase())
+          .slice(0, 2)
+          .join("")
+      : "U";
 
   return (
     <div
@@ -138,33 +144,42 @@ const FriendCard = ({
         onClick={TransactionHistoryPage}
         className="flex justify-between items-center"
       >
-        <div>
-          <div className="flex items-center gap-1">
-            <p className="text-sm text-white">{friend.username}</p>
-            <a
-              href={`https://fair-fare-phi.vercel.app/public-profile/${friend._id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="View Public Profile"
-            >
-              <FiLink className="text-white hover:text-blue-400 transition w-4 h-4" />
-            </a>
+        <div className="flex justify-between items-center w-full">
+          {/* Left side: image + username + balance */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-white overflow-hidden flex items-center justify-center flex-shrink-0">
+              {friend?.profilePhotoUrl ? (
+                <img
+                  src={friend.profilePhotoUrl}
+                  alt={`${friend.username} profile`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="flex items-center justify-center w-full h-full text-indigo-700 font-bold text-sm">
+                  {getInitials(friend?.username)}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col">
+              <p className="text-sm text-white">{friend.username}</p>
+              <p
+                className={`text-xs ${
+                  Number(balance) > 0
+                    ? "text-green-400"
+                    : Number(balance) < 0
+                    ? "text-red-400"
+                    : "text-gray-400"
+                }`}
+              >
+                {Number(balance) > 0
+                  ? `Owes you ₹${Number(balance).toFixed(2)}`
+                  : Number(balance) < 0
+                  ? `You owe ₹${Math.abs(Number(balance).toFixed(2))}`
+                  : "Settled"}
+              </p>
+            </div>
           </div>
-          <p
-            className={`text-xs ${
-              Number(balance) > 0
-                ? "text-green-400"
-                : Number(balance) < 0
-                ? "text-red-400"
-                : "text-gray-400"
-            }`}
-          >
-            {Number(balance) > 0
-              ? `Owes you ₹${Number(balance).toFixed(2)}`
-              : Number(balance) < 0
-              ? `You owe ₹${Math.abs(Number(balance).toFixed(2))}`
-              : "Settled"}
-          </p>
         </div>
 
         <div
@@ -179,7 +194,10 @@ const FriendCard = ({
           </Link>
           <button
             title="Settle Up"
-            onClick={handleSettleBalance}
+            onClick={() => {
+              setShowConfirmSettle(true);
+              setShowDropdown(true);
+            }}
             className="text-yellow-400 hover:text-yellow-300 transition"
           >
             <MdOutlineCurrencyExchange className="w-5 h-5" />
@@ -198,7 +216,7 @@ const FriendCard = ({
       </div>
 
       {showDropdown && (
-       <div className="mt-3 opacity-0 bg-gray-800 rounded-lg p-3 border border-gray-600">
+        <div className="mt-3 opacity-0 bg-gray-800 rounded-lg p-3 border border-gray-600">
           <p className="text-sm text-white mb-2 flex items-center justify-between">
             <span className="font-medium">UPI ID:</span>{" "}
             <span className="flex-grow">{friend.upiId || "Not Available"}</span>
@@ -309,8 +327,9 @@ const FriendCard = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-600 text-center w-[90%] max-w-md">
             <p className="text-white text-lg mb-4">
-              Are you sure you want to delete <strong>{friend.username}</strong>
-              ?
+              Are you sure you want to delete <strong>{friend.username}</strong>{" "}
+              as friend ? Your current balance track with{" "}
+              <strong>{friend.username}</strong> will be lost forever!
             </p>
             <div className="flex justify-center gap-4">
               <button
@@ -323,7 +342,43 @@ const FriendCard = ({
                 Yes
               </button>
               <button
-                onClick={() => {setShowConfirmDelete(false); setShowDropdown(false);}}
+                onClick={() => {
+                  setShowConfirmDelete(false);
+                  setShowDropdown(false);
+                }}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConfirmSettle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-600 text-center w-[90%] max-w-md">
+            <p className="text-white text-lg mb-4">
+              Are you sure you want to{" "}
+              <strong>settle your complete balance</strong> with{" "}
+              <strong>{friend.username}</strong>?
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => {
+                  setShowConfirmSettle(false);
+                  setShowDropdown(false);
+                  handleSettleBalance(); // ✅ call original function
+                }}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmSettle(false);
+                  setShowDropdown(false);
+                }}
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
               >
                 No
