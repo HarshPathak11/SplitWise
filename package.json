@@ -9,6 +9,13 @@
   },
   "dependencies": {
     "@google/genai": "^1.19.0",
-    "@google/generative-ai": "^0.24.1"
+    "@google/generative-ai": "^0.24.1",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-toast": "^1.2.15",
+    "framer-motion": "^12.23.24",
+    "gapi-script": "^1.2.0",
+    "lucide-react": "^0.545.0",
+    "react-router-dom": "^7.9.4",
+    "tailwindcss": "^4.1.14"
   }
 }

@@ -282,12 +282,10 @@ const addExpenseController = async (req, res) => {
   }
 
   if (involvedMembers.length === 1 && involvedMembers[0] === paidBy) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: "Cannot split expense with only the payer involved.",
-      });
+    return res.status(400).json({
+      success: false,
+      message: "Cannot split expense with only the payer involved.",
+    });
   }
 
   // Get payer's friends list
@@ -296,14 +294,20 @@ const addExpenseController = async (req, res) => {
     return res.status(404).json({ success: false, message: "Payer not found" });
   }
 
-  const friendIds = payer.friends.map((id) => id.toString());
-  
+  console.log("Payer:", payer);
+
+  const friendIds = payer.friends.map((f) => f.friend.toString());
+
+  console.log("Payer's friends:", friendIds);
+
   // Find all non-friends from involvedMembers (skip self)
   const notFriends = involvedMembers.filter(
     (memberId) =>
       memberId.toString() !== paidBy.toString() && // ✅ skip self
       !friendIds.includes(memberId.toString())
   );
+
+  console.log("Not friends with:", notFriends);
 
   if (notFriends.length > 0) {
     // Fetch names of non-friends
@@ -810,7 +814,7 @@ const getTopCategoriesForGroupExpense = async (req, res) => {
     const groupObjectId = new mongoose.Types.ObjectId(groupId);
 
     const categories = await Expense.aggregate([
-      { $match: { "group": groupObjectId } },
+      { $match: { group: groupObjectId } },
       { $group: { _id: "$category", total: { $sum: "$amount" } } },
       { $sort: { total: -1 } },
       // { $limit: 4 },
@@ -842,7 +846,7 @@ const getSubCategoriesForGroup = async (req, res) => {
 
     const subcategories = await Expense.aggregate([
       {
-        $match: { "group": groupObjectId, ...(category && { category }) },
+        $match: { group: groupObjectId, ...(category && { category }) },
       },
       { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
       { $sort: { total: -1 } },
@@ -873,7 +877,7 @@ const getAllExpensesForASubcategoryInGroup = async (req, res) => {
 
     // Build the query
     const query = {
-      "group": userObjectId,
+      group: userObjectId,
       category: category,
       subcategory: subcategory,
     };
@@ -905,5 +909,5 @@ export {
   getExpenseController,
   getTopCategoriesForGroupExpense,
   getSubCategoriesForGroup,
-  getAllExpensesForASubcategoryInGroup
+  getAllExpensesForASubcategoryInGroup,
 };
