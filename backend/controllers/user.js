@@ -441,7 +441,7 @@ const userDetails = async (req, res) => {
     const user = await User.findById(userId)
       .populate({
         path: "friends.friend",
-        select: "username email upiId", // optional: select only needed fields
+        select: "username email upiId profilePhotoUrl", // optional: select only needed fields
       })
       .populate({
         path: "recentExpense",
@@ -453,6 +453,11 @@ const userDetails = async (req, res) => {
           { path: "group", select: "name description" },
         ],
       })
+      .populate({
+        path: "groups",
+        select: "name description tripTotal from to createdAt updatedAt members",
+        options: { sort: { updatedAt: -1 }, limit: 3 }, // 👈 most recently updated groups first
+      })
       .select({
         username: 1,
         email: 1,
@@ -463,7 +468,8 @@ const userDetails = async (req, res) => {
         requests: 1,
         fcmToken: 1,
         profilePhotoUrl: 1,
-      });
+      })
+      .lean();
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
       return res.status(404).json({ message: "User not found" });
