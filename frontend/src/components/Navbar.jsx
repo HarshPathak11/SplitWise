@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sparkles, Menu, X } from 'lucide-react';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLarge, setIsLarge] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsLarge(window.innerWidth >= 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -26,7 +34,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="md:flex items-center space-x-1 lg:space-x-1">
+          {isLarge && <div className="md:flex items-center space-x-1 lg:space-x-1">
             <a
               href="/features"
               className="group relative px-4 lg:px-6 py-2 lg:py-3 text-gray-300 hover:text-white font-medium text-sm lg:text-base transition-all duration-300 rounded-lg hover:bg-white/5"
@@ -63,7 +71,7 @@ const Navbar = () => {
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400/20 to-purple-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </a>
             </div>
-          </div>
+          </div>}
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">

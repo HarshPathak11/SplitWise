@@ -23,6 +23,14 @@ export default function Analytics() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
   const location = useLocation();
   const group = location?.state?.group;
+  const [isLarge, setIsLarge] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsLarge(window.innerWidth >= 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const COLORS = [
     "#3B82F6",
@@ -273,86 +281,135 @@ export default function Analytics() {
               <h2 className="text-white font-bold text-xl sm:text-2xl text-center bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                 Spending Distribution
               </h2>
-              <div className="h-80 sm:h-96 lg:h-[500px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={topCategories}
-                      dataKey="total"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius="65%"
-                      innerRadius="45%"
-                      fill="#8884d8"
-                      paddingAngle={3}
-                      label={({ name, percent, cx, cy, midAngle, outerRadius, innerRadius }) => {
-                        const RADIAN = Math.PI / 180;
-                        const showName = percent >= 0.08;
+              
+              {/* Enhanced Pie Chart with Side Labels */}
+              <div className="w-full h-full flex flex-col lg:flex-row items-center justify-center">
+                {/* Chart Container */}
+                <div className="w-full lg:w-1/2 h-64 lg:h-80 mb-6 lg:mb-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={topCategories}
+                        dataKey="total"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius="80%"
+                        innerRadius="55%"
+                        fill="#8884d8"
+                        paddingAngle={2}
+                        startAngle={90}
+                        endAngle={450}
+                        cornerRadius={8}
+                      >
+                        {topCategories.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                            className="hover:opacity-90 transition-all duration-300 cursor-pointer"
+                            stroke="rgba(255, 255, 255, 0.1)"
+                            strokeWidth={2}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        content={<CustomTooltip />}
+                        wrapperStyle={{ 
+                          backdropFilter: 'blur(10px)',
+                          backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                          borderRadius: '12px',
+                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
 
-                        if (showName) {
-                          const radius = outerRadius + 30;
-                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                          return (
-                            <g>
-                              <text
-                                x={x}
-                                y={y - 8}
-                                fill="white"
-                                textAnchor={x > cx ? 'start' : 'end'}
-                                dominantBaseline="central"
-                                className="text-xs sm:text-sm font-bold drop-shadow-lg"
-                              >
-                                {name.length > 15 ? name.substring(0, 12) + '...' : name}
-                              </text>
-                              <text
-                                x={x}
-                                y={y + 8}
-                                fill="#60A5FA"
-                                textAnchor={x > cx ? 'start' : 'end'}
-                                dominantBaseline="central"
-                                className="text-xs sm:text-sm font-semibold"
-                              >
-                                {`${(percent * 100).toFixed(1)}%`}
-                              </text>
-                            </g>
-                          );
-                        } else if (percent >= 0.03) {
-                          const radius = (innerRadius + outerRadius) / 2;
-                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                          return (
-                            <text
-                              x={x}
-                              y={y}
-                              fill="white"
-                              textAnchor="middle"
-                              dominantBaseline="central"
-                              className="text-xs font-bold drop-shadow-lg"
+                {/* Labels Container - Desktop Version */}
+                {isLarge && <div className="md:block md:w-1/2 md:pl-8">
+                  <div className="space-y-4">
+                    {topCategories.map((entry, index) => {
+                      const percent = (entry.total / totalSpending) * 100;
+                      
+                      return (
+                        <div 
+                          key={`label-${index}`}
+                          className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-gray-800/50 to-blue-900/30 hover:from-gray-700/50 hover:to-blue-800/30 transition-all duration-300 cursor-pointer group border border-blue-500/30 hover:border-blue-400/50"
+                        >
+                          <div className="flex items-center space-x-4 flex-1 min-w-0">
+                            {/* Color Indicator with Animation */}
+                            <div 
+                              className="w-4 h-4 rounded-full flex-shrink-0 transition-transform duration-300 group-hover:scale-125 shadow-lg"
+                              style={{ 
+                                backgroundColor: COLORS[index % COLORS.length],
+                                boxShadow: `0 0 12px ${COLORS[index % COLORS.length]}40`
+                              }}
+                            />
+                            
+                            {/* Category Name */}
+                            <span className="text-sm font-semibold text-white truncate">
+                              {entry.name}
+                            </span>
+                          </div>
+                          
+                          {/* Percentage with beautiful styling */}
+                          <div className="flex items-center space-x-3">
+                            <div className="w-16 bg-gray-700/30 rounded-full h-2 overflow-hidden">
+                              <div 
+                                className="h-full rounded-full transition-all duration-1000 ease-out"
+                                style={{ 
+                                  width: `${percent}%`,
+                                  backgroundColor: COLORS[index % COLORS.length],
+                                  boxShadow: `0 0 8px ${COLORS[index % COLORS.length]}`
+                                }}
+                              />
+                            </div>
+                            <span 
+                              className="text-lg font-bold min-w-12 text-right transition-all duration-300 group-hover:scale-110"
+                              style={{ color: COLORS[index % COLORS.length] }}
                             >
-                              {`${(percent * 100).toFixed(0)}%`}
-                            </text>
-                          );
-                        }
-                        return null;
-                      }}
-                    >
-                      {topCategories.map((_, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                          className="hover:opacity-80 transition-opacity duration-300 cursor-pointer"
-                          stroke="rgba(15, 23, 42, 0.8)"
-                          strokeWidth={3}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
+                              {`${percent.toFixed(0)}%`}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                }
+
+                {/* Mobile Labels - Grid Layout */}
+                <div className="w-full lg:w-1/2 lg:pl-8 lg:hidden">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {topCategories.map((entry, index) => {
+                      const percent = (entry.total / totalSpending) * 100;
+                      
+                      return (
+                        <div 
+                          key={`label-mobile-${index}`}
+                          className="flex items-center p-3 rounded-xl bg-gray-800/40 hover:bg-gray-700/50 transition-all duration-300 cursor-pointer group border border-blue-500/30"
+                        >
+                          <div 
+                            className="w-3 h-3 rounded-full mr-3 flex-shrink-0 transition-transform duration-300 group-hover:scale-125"
+                            style={{ 
+                              backgroundColor: COLORS[index % COLORS.length],
+                              boxShadow: `0 0 8px ${COLORS[index % COLORS.length]}`
+                            }}
+                          />
+                          <span className="text-sm font-medium text-white truncate flex-1 mr-2">
+                            {entry.name}
+                          </span>
+                          <span 
+                            className="text-base font-bold transition-all duration-300 group-hover:scale-110"
+                            style={{ color: COLORS[index % COLORS.length] }}
+                          >
+                            {`${percent.toFixed(0)}%`}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           )}
