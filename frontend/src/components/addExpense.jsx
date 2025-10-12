@@ -438,7 +438,7 @@ const AddExpense = () => {
             </button>
             <button
               onClick={handleCalcBackspace}
-              className="px-3 py-2 bg-yellow-600 rounded-lg text-white text-lg hover:bg-yellow-700"
+              className="flex justify-center items-center px-3 py-2 bg-yellow-600 rounded-lg text-white text-lg hover:bg-yellow-700"
             >
               <DeleteIcon className="w-5 h-5" />
             </button>

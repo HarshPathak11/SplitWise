@@ -9,6 +9,24 @@ import {
 import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
 dotenv.config();
+import streamifier from "streamifier";
+import cloudinary from "../config/cloudinary.js";
+
+/**
+ * Helper: upload buffer to Cloudinary
+ */
+const uploadFromBuffer = (buffer, folder = "profile_photos") =>
+  new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: "image",
+        transformation: [{ width: 500, height: 500, crop: "fill" }],
+      },
+      (error, result) => (error ? reject(error) : resolve(result))
+    );
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
 
 // Send OTP to email
 
@@ -198,21 +216,50 @@ const getAllExpensesForUser = async (req, res) => {
 //Get top categories for a user
 const getTopCategoriesForUser = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId, startDate, endDate } = req.body;
+
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
     }
 
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
+    // Base match condition
+    const matchConditions = { "owedBy.user": userObjectId };
+
+    // Add date filter if provided
+    if (startDate || endDate) {
+      matchConditions.createdAt = {};
+      if (startDate) matchConditions.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const adjustedEnd = new Date(endDate);
+        adjustedEnd.setHours(23, 59, 59, 999);
+        matchConditions.createdAt.$lte = adjustedEnd;
+      }
+    }
+
     const categories = await Expense.aggregate([
+      // Match only expenses that include the user in owedBy
+      { $match: matchConditions },
+
+      // Unwind owedBy so each owedBy entry is treated separately
+      { $unwind: "$owedBy" },
+
+      // Match again to ensure we only include entries for this specific user
       { $match: { "owedBy.user": userObjectId } },
-      { $group: { _id: "$category", total: { $sum: "$amount" } } },
+
+      // Group by category and sum the owedBy.amount
+      {
+        $group: {
+          _id: "$category",
+          total: { $sum: "$owedBy.amount" },
+        },
+      },
+
       { $sort: { total: -1 } },
-      // { $limit: 4 },
+      // { $limit: 4 } // you can uncomment this if you want only top 4
     ]);
 
-    // Optional: rename _id to name for frontend convenience
     const formattedCategories = categories.map((cat) => ({
       name: cat._id,
       total: cat.total,
@@ -226,9 +273,38 @@ const getTopCategoriesForUser = async (req, res) => {
 };
 
 //Get subcategories for a user within a category
+// const getSubCategoriesForUser = async (req, res) => {
+//   try {
+//     const { userId, category } = req.body;
+
+//     if (!userId) {
+//       return res.status(400).json({ message: "User ID is required" });
+//     }
+
+//     const userObjectId = new mongoose.Types.ObjectId(userId);
+
+//     const subcategories = await Expense.aggregate([
+//       {
+//         $match: { "owedBy.user": userObjectId, ...(category && { category }) },
+//       },
+//       { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
+//       { $sort: { total: -1 } },
+//     ]);
+
+//     const formattedSubcategories = subcategories.map((sub) => ({
+//       name: sub._id,
+//       total: sub.total,
+//     }));
+
+//     res.status(200).json({ subcategories: formattedSubcategories });
+//   } catch (error) {
+//     console.error("Error fetching subcategories:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 const getSubCategoriesForUser = async (req, res) => {
   try {
-    const { userId, category } = req.body;
+    const { userId, category, startDate, endDate } = req.body;
 
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
@@ -236,11 +312,39 @@ const getSubCategoriesForUser = async (req, res) => {
 
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
+    // Create time filter if provided
+    const timeFilter = {};
+    if (startDate && endDate) {
+      timeFilter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    } else if (startDate) {
+      timeFilter.createdAt = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      timeFilter.createdAt = { $lte: new Date(endDate) };
+    }
+
     const subcategories = await Expense.aggregate([
+      // Match only expenses that include the user in owedBy
       {
-        $match: { "owedBy.user": userObjectId, ...(category && { category }) },
+        $match: {
+          "owedBy.user": userObjectId,
+          ...(category && { category }),
+          ...timeFilter,
+        },
       },
-      { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
+      // Unwind owedBy array to access each owedBy entry individually
+      { $unwind: "$owedBy" },
+      // Match again to include only the owedBy for this user
+      { $match: { "owedBy.user": userObjectId } },
+      // Group by subcategory and sum only the owed amount for this user
+      {
+        $group: {
+          _id: "$subcategory",
+          total: { $sum: "$owedBy.amount" },
+        },
+      },
       { $sort: { total: -1 } },
     ]);
 
@@ -257,9 +361,38 @@ const getSubCategoriesForUser = async (req, res) => {
 };
 
 //Get all expenses for a user in a specific subcategory
+// const getAllExpensesForASubcategory = async (req, res) => {
+//   try {
+//     const { userId, category, subcategory } = req.body;
+
+//     if (!userId || !category || !subcategory) {
+//       return res.status(400).json({ message: "Incomplete data received" });
+//     }
+
+//     const userObjectId = new mongoose.Types.ObjectId(userId);
+
+//     // Build the query
+//     const query = {
+//       "owedBy.user": userObjectId,
+//       category: category,
+//       subcategory: subcategory,
+//     };
+
+//     // Fetch expenses and sort by updatedAt descending
+//     const expenses = await Expense.find(query)
+//       .populate({ path: "paidBy", select: "username" })
+//       .populate({ path: "owedBy.user", select: "username" })
+//       .sort({ updatedAt: -1 });
+
+//     res.status(200).json({ expenses });
+//   } catch (error) {
+//     console.error("Error fetching expenses:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 const getAllExpensesForASubcategory = async (req, res) => {
   try {
-    const { userId, category, subcategory } = req.body;
+    const { userId, category, subcategory, startDate, endDate } = req.body;
 
     if (!userId || !category || !subcategory) {
       return res.status(400).json({ message: "Incomplete data received" });
@@ -270,14 +403,27 @@ const getAllExpensesForASubcategory = async (req, res) => {
     // Build the query
     const query = {
       "owedBy.user": userObjectId,
-      category: category,
-      subcategory: subcategory,
+      category,
+      subcategory,
     };
+
+    // Add date range filter if provided
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    } else if (startDate) {
+      query.createdAt = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      query.createdAt = { $lte: new Date(endDate) };
+    }
 
     // Fetch expenses and sort by updatedAt descending
     const expenses = await Expense.find(query)
       .populate({ path: "paidBy", select: "username" })
       .populate({ path: "owedBy.user", select: "username" })
+      .populate({ path: "group", select: "name" })
       .sort({ updatedAt: -1 });
 
     res.status(200).json({ expenses });
@@ -316,6 +462,7 @@ const userDetails = async (req, res) => {
         recentExpense: { $slice: -3 },
         requests: 1,
         fcmToken: 1,
+        profilePhotoUrl: 1,
       });
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
@@ -377,19 +524,22 @@ const notifyFriend = async (req, res) => {
     }
   }
 
-  if (!found) return res.status(404).json({ message: "Friend not found in friend list" });
+  if (!found)
+    return res.status(404).json({ message: "Friend not found in friend list" });
 
   // Send FCM notification if available
   if (friend.fcmToken) {
     const token = friend.fcmToken;
     const title = "Healthy Reminder";
-    const body = `It's always good to settle your balances. You owe ${user.username} ₹${Math.abs(balance)}.`;
+    const body = `It's always good to settle your balances. You owe ${
+      user.username
+    } ₹${Math.abs(balance)}.`;
 
     await sendOneNotification(token, title, body);
     return res.status(200).json({ message: "Notification sent successfully!" });
   }
 
-  return res.status(404).json({message: "FCM not found for friend"});
+  return res.status(404).json({ message: "FCM not found for friend" });
 };
 
 const removeFcmToken = async (req, res) => {
@@ -1110,6 +1260,86 @@ const getUsernames = async (req, res) => {
   }
 };
 
+// const uploadProfilePhoto = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     // if (!req.user || req.user.id !== id) return res.status(403).json({ message: 'Forbidden' });
+//     if (!req.file || !req.file.buffer)
+//       return res.status(400).json({ message: "No file uploaded" });
+
+//     const user = await User.findById(id);
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     // console.log("req", user);
+
+//     // upload to Cloudinary
+//     const result = await uploadFromBuffer(req.file.buffer);
+
+//     // delete previous Cloudinary image if present
+//     if (user.profilePhotoId) {
+//       try {
+//         await cloudinary.uploader.destroy(user.profilePhotoId);
+//       } catch (err) {
+//         console.warn(
+//           "Failed to delete previous Cloudinary image:",
+//           err.message
+//         );
+//       }
+//     }
+
+//     // Save URL + public_id to user document (fields: profilePhotoUrl, profilePhotoId)
+//     user.profilePhotoUrl = result.secure_url;
+//     user.profilePhotoId = result.public_id;
+//     await user.save();
+
+//     const publicUser = user.toObject();
+//     delete publicUser.password;
+//     res.status(200).json({ user: publicUser });
+//   } catch (err) {
+//     console.error("uploadProfilePhoto error:", err);
+//     res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// };
+
+const uploadProfilePhoto = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file || !req.file.buffer)
+      return res.status(400).json({ message: "No file uploaded" });
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Upload to Cloudinary
+    const result = await uploadFromBuffer(req.file.buffer);
+
+    // Delete previous Cloudinary image if it exists
+    if (user.profilePhotoId) {
+      try {
+        await cloudinary.uploader.destroy(user.profilePhotoId);
+      } catch (err) {
+        console.warn("Failed to delete previous Cloudinary image:", err.message);
+      }
+    }
+
+    // Update user document directly
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        profilePhotoUrl: result.secure_url,
+        profilePhotoId: result.public_id,
+      },
+      { new: true, select: "-password" } // return updated doc and exclude password
+    );
+
+    res.status(200).json({ user: updatedUser });
+  } catch (err) {
+    console.error("uploadProfilePhoto error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 export {
   sendOtp,
   userLogin,
@@ -1134,4 +1364,5 @@ export {
   getAllExpensesForASubcategory,
   removeFcmToken,
   notifyFriend,
+  uploadProfilePhoto,
 };

@@ -1,3 +1,4 @@
+// server.js
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
@@ -8,7 +9,6 @@ import userRoutes from "./routes/user.js";
 import groupRoutes from "./routes/group.js";
 import expenseRoutes from "./routes/expense.js";
 import promoRoutes from "./routes/promo.js";
-
 import session from "express-session";
 
 const app = express();
@@ -23,14 +23,13 @@ app.use(
       credentials: true // Allow credentials (cookies, authorization headers, etc.)
 }));
 app.use(session({
-    secret: 'erfghluhafs',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 10 * 60 * 1000 },
-  })
-);
+  secret: process.env.SESSION_SECRET || 'defaultsecret',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { maxAge: 10 * 60 * 1000 }
+}));
 
-//Connecting to mongo DB
+// Connect to MongoDB
 connectDB();
 
 //Ping Route
