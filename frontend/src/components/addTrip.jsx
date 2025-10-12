@@ -13,6 +13,7 @@ const AddTrip = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [search, setSearch] = useState("");
+  const [selectAll, setSelectAll] = useState(false);
 
   // Filtered (visible) friends according to search
   const filteredFriends = friends.filter((f) =>
@@ -25,6 +26,18 @@ const AddTrip = () => {
       setFriends(user.friends); // assuming user.friends is an array of friend objects
     }
   }, []);
+
+  // Update selectAll state when search changes or friends change
+  useEffect(() => {
+    if (filteredFriends.length > 0) {
+      const allFilteredSelected = filteredFriends.every((f) =>
+        selectedFriends.includes(f.friend._id)
+      );
+      setSelectAll(allFilteredSelected);
+    } else {
+      setSelectAll(false);
+    }
+  }, [filteredFriends, selectedFriends]);
 
   const handleFriendSelection = (friendId) => {
     let updatedSelected;
@@ -47,7 +60,24 @@ const AddTrip = () => {
     }
   };
 
-  
+  const handleSelectAll = () => {
+    if (selectAll) {
+      // Deselect all filtered friends
+      const filteredFriendIds = filteredFriends.map((f) => f.friend._id);
+      setSelectedFriends(
+        selectedFriends.filter((id) => !filteredFriendIds.includes(id))
+      );
+      setSelectAll(false);
+    } else {
+      // Select all filtered friends
+      const filteredFriendIds = filteredFriends.map((f) => f.friend._id);
+      const newSelected = [
+        ...new Set([...selectedFriends, ...filteredFriendIds]),
+      ];
+      setSelectedFriends(newSelected);
+      setSelectAll(true);
+    }
+  };
 
   const handleAddTrip = async (e) => {
     e.preventDefault();
@@ -188,10 +218,19 @@ const AddTrip = () => {
                 onChange={(e) => setSearch(e.target.value)}
                 className="flex-1 px-3 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3] placeholder-gray-400 text-sm"
               />
-              <span className="text-sm">Select All</span>
+              <button
+                type="button"
+                onClick={handleSelectAll}
+                className={`text-sm px-2 py-1 rounded transition-colors ${
+                  selectAll
+                    ? "bg-[#00FFA3] text-black"
+                    : "bg-gray-700 text-white hover:bg-gray-600"
+                }`}
+              >
+                {selectAll ? "Deselect All" : "Select All"}
+              </button>
             </div>
 
-            {/* Scrollable friends list container */}
             {/* Scrollable friends list container */}
             <div
               className="max-h-48 overflow-y-auto pr-2 
@@ -202,7 +241,7 @@ const AddTrip = () => {
     [&::-webkit-scrollbar-thumb:hover]:bg-gray-500"
             >
               <div className="flex flex-col gap-2">
-                {[...friends]
+                {[...filteredFriends]
                   .sort((a, b) =>
                     a.friend.username.localeCompare(b.friend.username)
                   )
