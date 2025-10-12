@@ -5,6 +5,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Cookies from "js-cookie";
 import { FaArrowLeft } from "react-icons/fa";
 import toast from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ChangePassword = () => {
   const [email, setEmail] = useState(""); // For the email input
@@ -20,7 +21,7 @@ const ChangePassword = () => {
   const [otpGenerated, setOtpGenerated] = useState(""); // To store the generated OTP
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const userId = user.user._id;
+  const userId = Cookies.get("id");
 
   const handleSendOtp = async () => {
     setLoading(true);
@@ -33,7 +34,7 @@ const ChangePassword = () => {
     try {
       // Send OTP request to the backend
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/forgot-password",
+        `${API_BASE}/user/forgot-password`,
         { email }
       );
       if (response.status === 200) {
@@ -59,7 +60,7 @@ const ChangePassword = () => {
     try {
       // Verify OTP entered by the user
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/verify-forgot-password",
+        `${API_BASE}/user/verify-forgot-password`,
         { email, otp, otpGenerated }
       );
       if (response.status === 200) {
@@ -96,7 +97,7 @@ const ChangePassword = () => {
 
     try {
       const response = await axios.post(
-        "https://fairfare-0hyl.onrender.com/user/change-password",
+        `${API_BASE}/user/change-password`,
         { userId, newPassword }
       );
       setMessage(

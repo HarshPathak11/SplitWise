@@ -2,12 +2,13 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { FaArrowDown } from "react-icons/fa";
+import { FaArrowDown, FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { Link } from "react-router-dom";
 import { FaCopy } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TransactionHistory = () => {
   const { friendId } = useParams();
@@ -25,6 +26,7 @@ const TransactionHistory = () => {
   const bottomRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [storedUser, setStoredUser] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
   const userId = Cookies.get("id");
 
   const handleScroll = () => {
@@ -67,11 +69,7 @@ const TransactionHistory = () => {
         navigate("/login");
         return;
       }
-      const res = await axios.get(
-        // `//http://localhost:8000/user/${userId}`
-        `https://fairfare-0hyl.onrender.com/user/${userId}`
-      );
-
+      const res = await axios.get(`${API_BASE}/user/${userId}`);
       fetchData(res.data.user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -100,8 +98,7 @@ const TransactionHistory = () => {
       setFriendName(friend?.friend || "Unknown");
 
       const txRes = await axios.get(
-        // `//http://localhost:8000/expenses/${user?._id}/${friendId}`
-        `https://fairfare-0hyl.onrender.com/expenses/${user?._id}/${friendId}`
+        `${API_BASE}/expenses/${user?._id}/${friendId}`
       );
 
       // Sort the transactions by createdAt (latest first)
@@ -111,7 +108,6 @@ const TransactionHistory = () => {
 
       // Reverse the sorted transactions so that latest expense is at the bottom
       setTransactions(sortedTransactions.reverse());
-      
       setNetBalance(friend.balance || 0);
     } catch (err) {
       toast.error("Error fetching transaction history");
@@ -137,10 +133,7 @@ const TransactionHistory = () => {
     const paidAmount = Math.abs(amount);
     try {
       setLoading(true);
-      await axios.post(
-        // "//http://localhost:8000/user/update-friend-balance",
-        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-        {
+      await axios.post(`${API_BASE}/user/update-friend-balance`, {
         userEmail: storedUser.email,
         friendEmail: friendName.email,
         amount: paidAmount,
@@ -174,10 +167,7 @@ const TransactionHistory = () => {
     const receivedAmount = Math.abs(amount);
     try {
       setLoading(true);
-      await axios.post(
-        // "//http://localhost:8000/user/update-friend-balance",
-        "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-        {
+      await axios.post(`${API_BASE}/user/update-friend-balance`, {
         userEmail: storedUser.email,
         friendEmail: friendName.email,
         amount: receivedAmount,
@@ -198,6 +188,28 @@ const TransactionHistory = () => {
     }
   };
 
+  const handleSendReminder = async () => {
+    const currentBalance = netBalance;
+    if (currentBalance === 0) {
+      toast.error("No balance to remind.");
+      return;
+    }
+    if (currentBalance < 0) {
+      toast.error("You owe money. Cannot send reminder.");
+      return;
+    }
+    try {
+      await axios.post(`${API_BASE}/user/notify`, {
+        userId: userId,
+        friendId: friendId,
+      });
+      toast.success("Payment reminder sent!");
+    } catch (error) {
+      toast.error("Error sending payment reminder");
+      console.error("Error sending payment reminder:", error);
+    }
+  };
+
   const handleSettleBalance = async () => {
     const currentBalance = netBalance;
     if (currentBalance === 0) {
@@ -207,37 +219,42 @@ const TransactionHistory = () => {
 
     try {
       if (currentBalance > 0) {
-        await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-          // "//http://localhost:8000/user/update-friend-balance",
-          {
-            userEmail: storedUser.email,
-            friendEmail: friendName.email,
-            amount: currentBalance,
-            action: "received",
-            note: "Cleared Everything",
-            friendFcmToken: friendName.fcmToken,
-          }
-        );
+        await axios.post(`${API_BASE}/user/update-friend-balance`, {
+          userEmail: storedUser.email,
+          friendEmail: friendName.email,
+          amount: currentBalance,
+          action: "received",
+          note: "Cleared Everything",
+          friendFcmToken: friendName.fcmToken,
+        });
       } else {
-        await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/update-friend-balance",
-          // "//http://localhost:8000/user/update-friend-balance",
-          {
-            userEmail: storedUser.email,
-            friendEmail: friendName.email,
-            amount: Math.abs(currentBalance),
-            action: "paid",
-            note: "Cleared Everything",
-            friendFcmToken: friendName.fcmToken,
-          }
-        );
+        await axios.post(`${API_BASE}/user/update-friend-balance`, {
+          userEmail: storedUser.email,
+          friendEmail: friendName.email,
+          amount: Math.abs(currentBalance),
+          action: "paid",
+          note: "Cleared Everything",
+          friendFcmToken: friendName.fcmToken,
+        });
       }
       fetchUser();
       setNetBalance(0);
     } catch (error) {
       toast.error("Please refresh the page first!");
     }
+  };
+
+  const confirmSettle = () => {
+    setShowConfirm(true);
+  };
+
+  const handleConfirmYes = () => {
+    setShowConfirm(false);
+    handleSettleBalance();
+  };
+
+  const handleConfirmNo = () => {
+    setShowConfirm(false);
   };
 
   return (
@@ -273,9 +290,11 @@ const TransactionHistory = () => {
         </button>
         <Link to={`/public-profile/${friendName._id}`}>
           <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-lg font-medium">
-            {friendName.username
-              ? friendName.username.charAt(0).toUpperCase()
-              : "?"}
+            {friendName?.profilePhotoUrl ?
+              <img src={friendName.profilePhotoUrl} alt={friendName.username} className="w-full h-full rounded-full object-cover" />
+              : friendName.username
+                ? friendName.username.charAt(0).toUpperCase()
+                : "?"}
           </div>
         </Link>
         <div className="ml-3 flex items-start justify-between w-full">
@@ -303,14 +322,23 @@ const TransactionHistory = () => {
               )}
             </div>
           </div>
+          <div>
+            <button
+              title="Remind"
+              onClick={handleSendReminder}
+              className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
+            >
+              <FaBell className="w-8 h-8" />
+            </button>
 
-          <button
-            title="Settle Up"
-            onClick={handleSettleBalance}
-            className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
-          >
-            <MdOutlineCurrencyExchange className="w-8 h-8" />
-          </button>
+            <button
+              title="Settle Up"
+              onClick={confirmSettle}
+              className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
+            >
+              <MdOutlineCurrencyExchange className="w-8 h-8" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -367,8 +395,12 @@ const TransactionHistory = () => {
           <div className="flex-1 overflow-y-auto auto p-3">
             {transactions.map((tx) => {
               const isUser = tx.paidBy._id === currentUserId;
-              const owedEntry = tx.owedBy.find((o) => o.user._id === friendId);
-              const amount = owedEntry ? owedEntry.amount : tx.amount;
+              const owedEntry = isUser
+                ? tx.owedBy.find((o) => o.user._id === friendId)
+                : tx.owedBy.find((o) => o.user._id === currentUserId);
+
+              const amount = owedEntry ? owedEntry.amount : 0;
+
               return (
                 <div
                   key={tx._id}
@@ -500,6 +532,37 @@ const TransactionHistory = () => {
           </div>
         </div>
       </div>
+      {/* ✅ Confirmation Popup */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-2xl shadow-xl text-center w-80">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Confirm Settlement
+            </h3>
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to settle your complete balance with{" "}
+              <span className="font-bold text-blue-400">
+                {friendName.username}
+              </span>
+              ?
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleConfirmYes}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white font-medium"
+              >
+                Yes
+              </button>
+              <button
+                onClick={handleConfirmNo}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white font-medium"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

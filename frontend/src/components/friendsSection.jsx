@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 const FriendsSection = ({ user }) => {
   const [friends, setFriends] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     if (user?.friends) {
@@ -20,8 +21,7 @@ const FriendsSection = ({ user }) => {
     const fetchUpdatedBalances = async () => {
       try {
         const res = await axios.post(
-          "https://fairfare-0hyl.onrender.com/user/get-updated-friend-balances",
-          // "//http://localhost:8000/user/get-updated-friend-balances",
+          `${API_BASE}/user/get-updated-friend-balances`,
           { userId: user?._id }
         );
 
@@ -52,15 +52,12 @@ const FriendsSection = ({ user }) => {
 
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
-      const res = await axios.delete(
-        `https://fairfare-0hyl.onrender.com/user/remove-friend`,
-        {
-          data: {
-            userId: user?._id,
-            friendId: friendIdToDelete,
-          },
-        }
-      );
+      const res = await axios.delete(`${API_BASE}/user/remove-friend`, {
+        data: {
+          userId: user?._id,
+          friendId: friendIdToDelete,
+        },
+      });
 
       if (res.status === 200) {
         setFriends((prev) =>
@@ -134,6 +131,11 @@ const FriendsSection = ({ user }) => {
               className="p-2 rounded-full bg-blue-600 hover:bg-blue-900 text-white transition-colors"
               title="Add Friend"
             >
+              {user?.requests > 0 && (
+                <span className="absolute top-1 right-0 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                  {user?.requests}
+                </span>
+              )}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"

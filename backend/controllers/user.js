@@ -1,4 +1,4 @@
-import { User, Expense } from "../models/schema.js";
+import { User, Expense, FriendRequest } from "../models/schema.js";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
@@ -9,17 +9,32 @@ import {
 import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
 dotenv.config();
+import streamifier from "streamifier";
+import cloudinary from "../config/cloudinary.js";
+
+/**
+ * Helper: upload buffer to Cloudinary
+ */
+const uploadFromBuffer = (buffer, folder = "profile_photos") =>
+  new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: "image",
+        transformation: [{ width: 500, height: 500, crop: "fill" }],
+      },
+      (error, result) => (error ? reject(error) : resolve(result))
+    );
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
 
 // Send OTP to email
 
 const sendOtp = async (req, res) => {
   const { email, username } = req.body;
 
-
   if (!email || !username)
     return res.status(400).json({ message: "Incomplete data received" });
-
-  
 
   const existingUser = await User.findOne({ email });
   const existingUsername = await User.findOne({ username });
@@ -31,10 +46,8 @@ const sendOtp = async (req, res) => {
   if (existingUser) {
     return res.status(410).json({ message: "Email already taken" });
   }
-  
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-
 
   // Ensure API key is set
   if (!process.env.SENDGRID_API_KEY) {
@@ -56,11 +69,10 @@ const sendOtp = async (req, res) => {
            <p>Your OTP for signup is:</p>
            <h2><strong>${otp}</strong></h2>
            <p>This code is valid for 5 minutes.</p>
-           <p>Thanks, Fair Fare Team</p>`
+           <p>Thanks, Fair Fare Team</p>`,
   };
 
   try {
-  
     const hashedOtp = await bcrypt.hash(String(otp), 10);
 
     // send the email
@@ -71,7 +83,9 @@ const sendOtp = async (req, res) => {
     // Optionally store hashedOtp + expiry in DB here so you can validate later
     // e.g. await OtpModel.create({ email, otp: hashedOtp, expiresAt: Date.now() + 5*60*1000 });
 
-    return res.status(200).json({ message: "OTP sent to email", otp: hashedOtp });
+    return res
+      .status(200)
+      .json({ message: "OTP sent to email", otp: hashedOtp });
   } catch (error) {
     // SendGrid errors may include response body with details
     console.error("SendGrid error:", error);
@@ -177,6 +191,248 @@ const userLogin = async (req, res) => {
   }
 };
 
+//Get all expenses for a user
+const getAllExpensesForUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const expenses = await Expense.find({
+      $or: [{ paidBy: userId }, { "owedBy.user": userId }],
+    })
+      .populate({ path: "paidBy", select: "username" })
+      .populate({ path: "owedBy.user", select: "username" });
+
+    res.status(200).json({ expenses });
+  } catch (error) {
+    console.error("Error fetching expenses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get top categories for a user
+const getTopCategoriesForUser = async (req, res) => {
+  try {
+    const { userId, startDate, endDate } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    // Base match condition
+    const matchConditions = { "owedBy.user": userObjectId };
+
+    // Add date filter if provided
+    if (startDate || endDate) {
+      matchConditions.createdAt = {};
+      if (startDate) matchConditions.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const adjustedEnd = new Date(endDate);
+        adjustedEnd.setHours(23, 59, 59, 999);
+        matchConditions.createdAt.$lte = adjustedEnd;
+      }
+    }
+
+    const categories = await Expense.aggregate([
+      // Match only expenses that include the user in owedBy
+      { $match: matchConditions },
+
+      // Unwind owedBy so each owedBy entry is treated separately
+      { $unwind: "$owedBy" },
+
+      // Match again to ensure we only include entries for this specific user
+      { $match: { "owedBy.user": userObjectId } },
+
+      // Group by category and sum the owedBy.amount
+      {
+        $group: {
+          _id: "$category",
+          total: { $sum: "$owedBy.amount" },
+        },
+      },
+
+      { $sort: { total: -1 } },
+      // { $limit: 4 } // you can uncomment this if you want only top 4
+    ]);
+
+    const formattedCategories = categories.map((cat) => ({
+      name: cat._id,
+      total: cat.total,
+    }));
+
+    res.status(200).json({ categories: formattedCategories });
+  } catch (error) {
+    console.error("Error fetching top categories:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get subcategories for a user within a category
+// const getSubCategoriesForUser = async (req, res) => {
+//   try {
+//     const { userId, category } = req.body;
+
+//     if (!userId) {
+//       return res.status(400).json({ message: "User ID is required" });
+//     }
+
+//     const userObjectId = new mongoose.Types.ObjectId(userId);
+
+//     const subcategories = await Expense.aggregate([
+//       {
+//         $match: { "owedBy.user": userObjectId, ...(category && { category }) },
+//       },
+//       { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
+//       { $sort: { total: -1 } },
+//     ]);
+
+//     const formattedSubcategories = subcategories.map((sub) => ({
+//       name: sub._id,
+//       total: sub.total,
+//     }));
+
+//     res.status(200).json({ subcategories: formattedSubcategories });
+//   } catch (error) {
+//     console.error("Error fetching subcategories:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+const getSubCategoriesForUser = async (req, res) => {
+  try {
+    const { userId, category, startDate, endDate } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    // Create time filter if provided
+    const timeFilter = {};
+    if (startDate && endDate) {
+      timeFilter.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    } else if (startDate) {
+      timeFilter.createdAt = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      timeFilter.createdAt = { $lte: new Date(endDate) };
+    }
+
+    const subcategories = await Expense.aggregate([
+      // Match only expenses that include the user in owedBy
+      {
+        $match: {
+          "owedBy.user": userObjectId,
+          ...(category && { category }),
+          ...timeFilter,
+        },
+      },
+      // Unwind owedBy array to access each owedBy entry individually
+      { $unwind: "$owedBy" },
+      // Match again to include only the owedBy for this user
+      { $match: { "owedBy.user": userObjectId } },
+      // Group by subcategory and sum only the owed amount for this user
+      {
+        $group: {
+          _id: "$subcategory",
+          total: { $sum: "$owedBy.amount" },
+        },
+      },
+      { $sort: { total: -1 } },
+    ]);
+
+    const formattedSubcategories = subcategories.map((sub) => ({
+      name: sub._id,
+      total: sub.total,
+    }));
+
+    res.status(200).json({ subcategories: formattedSubcategories });
+  } catch (error) {
+    console.error("Error fetching subcategories:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Get all expenses for a user in a specific subcategory
+// const getAllExpensesForASubcategory = async (req, res) => {
+//   try {
+//     const { userId, category, subcategory } = req.body;
+
+//     if (!userId || !category || !subcategory) {
+//       return res.status(400).json({ message: "Incomplete data received" });
+//     }
+
+//     const userObjectId = new mongoose.Types.ObjectId(userId);
+
+//     // Build the query
+//     const query = {
+//       "owedBy.user": userObjectId,
+//       category: category,
+//       subcategory: subcategory,
+//     };
+
+//     // Fetch expenses and sort by updatedAt descending
+//     const expenses = await Expense.find(query)
+//       .populate({ path: "paidBy", select: "username" })
+//       .populate({ path: "owedBy.user", select: "username" })
+//       .sort({ updatedAt: -1 });
+
+//     res.status(200).json({ expenses });
+//   } catch (error) {
+//     console.error("Error fetching expenses:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+const getAllExpensesForASubcategory = async (req, res) => {
+  try {
+    const { userId, category, subcategory, startDate, endDate } = req.body;
+
+    if (!userId || !category || !subcategory) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    // Build the query
+    const query = {
+      "owedBy.user": userObjectId,
+      category,
+      subcategory,
+    };
+
+    // Add date range filter if provided
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    } else if (startDate) {
+      query.createdAt = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      query.createdAt = { $lte: new Date(endDate) };
+    }
+
+    // Fetch expenses and sort by updatedAt descending
+    const expenses = await Expense.find(query)
+      .populate({ path: "paidBy", select: "username" })
+      .populate({ path: "owedBy.user", select: "username" })
+      .populate({ path: "group", select: "name" })
+      .sort({ updatedAt: -1 });
+
+    res.status(200).json({ expenses });
+  } catch (error) {
+    console.error("Error fetching expenses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 //Function to fetch user details
 const userDetails = async (req, res) => {
   try {
@@ -185,16 +441,35 @@ const userDetails = async (req, res) => {
     const user = await User.findById(userId)
       .populate({
         path: "friends.friend",
-        select: "username email upiId", // optional: select only needed fields
+        select: "username email upiId profilePhotoUrl", // optional: select only needed fields
       })
       .populate({
         path: "recentExpense",
+        options: { sort: { createdAt: -1 } }, // 👈 only latest 3
+        select: "title amount paidBy owedBy createdAt",
         populate: [
           { path: "paidBy", select: "username email" },
           { path: "owedBy.user", select: "username email" },
           { path: "group", select: "name description" },
         ],
-      });
+      })
+      .populate({
+        path: "groups",
+        select: "name description tripTotal from to createdAt updatedAt members",
+        options: { sort: { updatedAt: -1 }, limit: 3 }, // 👈 most recently updated groups first
+      })
+      .select({
+        username: 1,
+        email: 1,
+        upiId: 1,
+        aiChatUsage: 1,
+        friends: 1,
+        recentExpense: { $slice: -3 },
+        requests: 1,
+        fcmToken: 1,
+        profilePhotoUrl: 1,
+      })
+      .lean();
     // console.log(user.friends) // exclude sensitive fields
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -232,6 +507,47 @@ const setFcmToken = async (req, res) => {
   }
 };
 
+const notifyFriend = async (req, res) => {
+  const { friendId, userId } = req.body;
+  const user = await User.findOne({ _id: userId });
+  const friend = await User.findOne({ _id: friendId });
+
+  let balance = 0;
+  let found = false;
+
+  for (const f of friend.friends) {
+    // console.log(f);
+    if (f.friend.toString() === userId.toString()) {
+      found = true;
+      if (f.balance < 0) {
+        balance = f.balance;
+        break;
+      } else if (f.balance === 0) {
+        return res.status(400).json({ message: "No balance to settle" });
+      } else {
+        return res.status(400).json({ message: "You owe your friend!" });
+      }
+    }
+  }
+
+  if (!found)
+    return res.status(404).json({ message: "Friend not found in friend list" });
+
+  // Send FCM notification if available
+  if (friend.fcmToken) {
+    const token = friend.fcmToken;
+    const title = "Healthy Reminder";
+    const body = `It's always good to settle your balances. You owe ${
+      user.username
+    } ₹${Math.abs(balance)}.`;
+
+    await sendOneNotification(token, title, body);
+    return res.status(200).json({ message: "Notification sent successfully!" });
+  }
+
+  return res.status(404).json({ message: "FCM not found for friend" });
+};
+
 const removeFcmToken = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -239,7 +555,11 @@ const removeFcmToken = async (req, res) => {
       return res.status(400).json({ message: "User ID is required" });
     }
 
-    const user = await User.findByIdAndUpdate(userId, { fcmToken: null }, { new: true });
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { fcmToken: null },
+      { new: true }
+    );
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -321,6 +641,7 @@ const addFriends = async (req, res) => {
       const tokens = [friend.fcmToken];
       const title = "New Friend Added";
       const body = `${user.username} has added you as a friend!`;
+
       await sendMultipleNotifications(tokens, title, body);
     }
 
@@ -377,7 +698,9 @@ const addFriends = async (req, res) => {
       } else {
         // Friend does not exist — send invitation email via SendGrid (if configured)
         if (!process.env.SENDGRID_API_KEY || !process.env.SENDING_EMAIL) {
-          console.warn(`Skipping invite email to ${friendEmail} — SendGrid not configured`);
+          console.warn(
+            `Skipping invite email to ${friendEmail} — SendGrid not configured`
+          );
           continue;
         }
 
@@ -415,6 +738,190 @@ const addFriends = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in addFriends:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// Friend Requests: send, list, approve, deny
+const sendFriendRequest = async (req, res) => {
+  try {
+    const { fromUserId, toEmail } = req.body;
+    if (!fromUserId || !toEmail) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const fromUser = await User.findById(fromUserId);
+    if (!fromUser) {
+      return res.status(404).json({ message: "Sender not found" });
+    }
+
+    // Normalize to array
+    const emails = Array.isArray(toEmail) ? toEmail : [toEmail];
+
+    const results = [];
+
+    for (const email of emails) {
+      const toUser = await User.findOne({ email });
+
+      if (!toUser) {
+        results.push({ email, status: "failed", reason: "User not found" });
+        continue;
+      }
+
+      // Skip if already friends
+      const alreadyFriends = toUser.friends?.some(
+        (f) => String(f.friend) === String(fromUser._id)
+      );
+
+      if (alreadyFriends) {
+        results.push({ email, status: "skipped", reason: "Already friends" });
+        continue;
+      }
+
+      // Skip if request already exists
+      const existingRequest = await FriendRequest.findOne({
+        from: fromUser._id,
+        to: toUser._id,
+      });
+
+      if (existingRequest) {
+        results.push({
+          email,
+          reason: `Request already sent to ${toUser.username}`,
+        });
+        continue;
+      }
+
+      //Checking if the to user has sent a request to the from user
+      const existingRequest1 = await FriendRequest.findOne({
+        to: fromUser._id,
+        from: toUser._id,
+      });
+
+      if (existingRequest1) {
+        console.log("Found existing friend request:", existingRequest1);
+        results.push({
+          email,
+          reason: `You have a friend request from ${toUser.username}. Please respond to it.`,
+        });
+        continue;
+      }
+
+      // Create friend request
+      const friendRequest = await FriendRequest.create({
+        from: fromUser._id,
+        to: toUser._id,
+      });
+
+      // Update user's requests count
+      await User.updateOne({ _id: toUser._id }, { $inc: { requests: 1 } });
+
+      // Send notification
+      if (toUser.fcmToken) {
+        await sendOneNotification(
+          toUser.fcmToken,
+          "New Friend Request",
+          `${fromUser.username} sent you a friend request`
+        );
+      }
+
+      results.push({
+        email,
+        status: "success",
+        reason: "Request sent to " + toUser.username,
+      });
+    }
+    return res.status(200).json({
+      results,
+    });
+  } catch (error) {
+    console.error("Error sending friend request:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const listFriendRequests = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Get friend requests from the separate collection
+    const friendRequests = await FriendRequest.find({
+      to: userId,
+    })
+      .populate({
+        path: "from",
+        select: "username email",
+      })
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json(friendRequests);
+  } catch (error) {
+    console.error("Error listing friend requests:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const respondToFriendRequest = async (req, res) => {
+  try {
+    const { userId, fromUserId, action, requestId } = req.body; // action: 'approve' | 'deny'
+    if (!userId || !fromUserId || !action) {
+      return res.status(400).json({ message: "Incomplete data received" });
+    }
+
+    const user = await User.findById(userId);
+    const fromUser = await User.findById(fromUserId);
+    if (!user || !fromUser) {
+      return res.status(404).json({ message: "Users not found" });
+    }
+
+    // Find the friend request. If requestId provided use it, otherwise find by from/to/status
+    let friendRequest = null;
+    if (requestId) {
+      friendRequest = await FriendRequest.findById(requestId);
+    } else {
+      friendRequest = await FriendRequest.findOne({
+        from: fromUserId,
+        to: userId,
+      });
+    }
+
+    if (!friendRequest) {
+      return res.status(404).json({ message: "Friend request not found" });
+    }
+
+    // Decrease requests count
+    await User.updateOne({ _id: userId }, { $inc: { requests: -1 } });
+
+    if (action === "approve") {
+      // Add to both friends lists if not already present
+      await User.updateOne(
+        { _id: user._id, "friends.friend": { $ne: fromUser._id } },
+        { $push: { friends: { friend: fromUser._id, balance: 0 } } }
+      );
+      await User.updateOne(
+        { _id: fromUser._id, "friends.friend": { $ne: user._id } },
+        { $push: { friends: { friend: user._id, balance: 0 } } }
+      );
+
+      if (fromUser.fcmToken) {
+        await sendOneNotification(
+          fromUser.fcmToken,
+          "Friend Request Accepted",
+          `${user.username} accepted your friend request`
+        );
+      }
+    }
+
+    // Finally, delete the friend request document to free storage
+    await FriendRequest.deleteOne({ _id: friendRequest._id });
+
+    if (action === "approve") {
+      return res.status(200).json({ message: "Friend request approved" });
+    }
+
+    return res.status(200).json({ message: "Friend request denied" });
+  } catch (error) {
+    console.error("Error responding to friend request:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -504,9 +1011,8 @@ const updateFriendBalance = async (req, res) => {
       { $push: { recentExpense: expense } }
     );
 
-    // ✅ Send notifications    
+    // ✅ Send notifications
     if (friend.fcmToken) {
-      
       sendOneNotification(
         friend.fcmToken,
         "Balance Updated",
@@ -550,7 +1056,6 @@ const removeFriend = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
-
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -717,6 +1222,130 @@ const getUpdatedFriendBalances = async (req, res) => {
   }
 };
 
+function escapeRegex(text = "") {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const getUsernames = async (req, res) => {
+  let { username } = req.query;
+  // console.log("username recieved:",username);
+  try {
+    if (!username || typeof username !== "string") {
+      return res.status(400).json({ message: "username query is required" });
+    }
+
+    username = username.trim();
+    if (username.length === 0) {
+      return res.status(400).json({ message: "username must not be empty" });
+    }
+    if (username.length > 50) {
+      return res.status(400).json({ message: "username too long" });
+    }
+
+    // Escape regex-special characters to avoid ReDoS and unexpected regex behavior
+    const safe = escapeRegex(username);
+
+    // For prefix-match (recommended for index use): use ^safe
+    // For substring match (less index-friendly): remove ^
+    const usePrefixSearch = true;
+    const pattern = usePrefixSearch ? `^${safe}` : safe;
+    const regex = new RegExp(pattern, "i");
+
+    // Query
+    const results = await User.find(
+      { username: regex },
+      { username: 1, email: 1, profilePhotoUrl: 1 } // projection: return only username & email and _id
+    )
+      .limit(8)
+      .lean();
+
+    return res.json({ users: results });
+  } catch (err) {
+    console.error("searchUsers error:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// const uploadProfilePhoto = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     // if (!req.user || req.user.id !== id) return res.status(403).json({ message: 'Forbidden' });
+//     if (!req.file || !req.file.buffer)
+//       return res.status(400).json({ message: "No file uploaded" });
+
+//     const user = await User.findById(id);
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     // console.log("req", user);
+
+//     // upload to Cloudinary
+//     const result = await uploadFromBuffer(req.file.buffer);
+
+//     // delete previous Cloudinary image if present
+//     if (user.profilePhotoId) {
+//       try {
+//         await cloudinary.uploader.destroy(user.profilePhotoId);
+//       } catch (err) {
+//         console.warn(
+//           "Failed to delete previous Cloudinary image:",
+//           err.message
+//         );
+//       }
+//     }
+
+//     // Save URL + public_id to user document (fields: profilePhotoUrl, profilePhotoId)
+//     user.profilePhotoUrl = result.secure_url;
+//     user.profilePhotoId = result.public_id;
+//     await user.save();
+
+//     const publicUser = user.toObject();
+//     delete publicUser.password;
+//     res.status(200).json({ user: publicUser });
+//   } catch (err) {
+//     console.error("uploadProfilePhoto error:", err);
+//     res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// };
+
+const uploadProfilePhoto = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file || !req.file.buffer)
+      return res.status(400).json({ message: "No file uploaded" });
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Upload to Cloudinary
+    const result = await uploadFromBuffer(req.file.buffer);
+
+    // Delete previous Cloudinary image if it exists
+    if (user.profilePhotoId) {
+      try {
+        await cloudinary.uploader.destroy(user.profilePhotoId);
+      } catch (err) {
+        console.warn("Failed to delete previous Cloudinary image:", err.message);
+      }
+    }
+
+    // Update user document directly
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        profilePhotoUrl: result.secure_url,
+        profilePhotoId: result.public_id,
+      },
+      { new: true, select: "-password" } // return updated doc and exclude password
+    );
+
+    res.status(200).json({ user: updatedUser });
+  } catch (err) {
+    console.error("uploadProfilePhoto error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 export {
   sendOtp,
   userLogin,
@@ -731,5 +1360,15 @@ export {
   changePassword,
   getUpdatedFriendBalances,
   setFcmToken,
+  getUsernames,
+  sendFriendRequest,
+  listFriendRequests,
+  respondToFriendRequest,
+  getAllExpensesForUser,
+  getTopCategoriesForUser,
+  getSubCategoriesForUser,
+  getAllExpensesForASubcategory,
   removeFcmToken,
+  notifyFriend,
+  uploadProfilePhoto,
 };

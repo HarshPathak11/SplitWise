@@ -5,41 +5,47 @@ import Cookies from "js-cookie";
 import { Link, useNavigate } from "react-router-dom";
 import Documentation from "./documentation";
 import FAQ from "./FaqSection";
+import Navbar from "./Navbar";
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  
+  const [showInstallSteps, setShowInstallSteps] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
   // const [showInstallButton, setShowInstallButton] = useState(false);
   useEffect(() => {
+    // Detect iOS device
+    const userAgent = navigator.userAgent;
+    setIsIOS(/iPad|iPhone|iPod/.test(userAgent));
+
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowPrompt(true);
     };
-    
+
     window.addEventListener("beforeinstallprompt", handler);
     const checkPWA = () => {
       return (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true
-    );
-    }
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true
+      );
+    };
 
-  // Delay the PWA check slightly (important for mobile PWAs)
-  const timeoutId = setTimeout(() => {
-    const res = checkPWA();
-    setIsPWA(res);
+    // Delay the PWA check slightly (important for mobile PWAs)
+    const timeoutId = setTimeout(() => {
+      const res = checkPWA();
+      setIsPWA(res);
 
-    if (res) {
-      const userId = Cookies.get("id");
-      if (userId) {
-        navigate("/dash");
+      if (res) {
+        const userId = Cookies.get("id");
+        if (userId) {
+          navigate("/dash");
+        }
       }
-    }
-  }, 500); // Try 300–500ms
+    }, 500); // Try 300–500ms
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
@@ -48,11 +54,17 @@ const LandingPage = () => {
   }, []);
 
   const handleInstallClick = async () => {
+    // Always show detailed steps popup first when clicking bottom-right button
+    setShowInstallSteps(true);
+  };
+
+  const handleDirectInstall = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       setShowPrompt(false);
       setDeferredPrompt(null);
     }
+    setShowInstallSteps(false);
   };
 
   const handleNoThanks = () => {
@@ -89,8 +101,177 @@ const LandingPage = () => {
         </div>
       )}
 
+      {/* Detailed Installation Steps Popup */}
+      {showInstallSteps && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400">
+                Install FairFare App
+              </h2>
+              <button
+                onClick={() => setShowInstallSteps(false)}
+                className="text-gray-400 hover:text-white text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <p className="text-gray-300 mb-6 text-center">
+              Follow these steps to add FairFare to your home screen:
+            </p>
+
+            {/* iOS Instructions */}
+            {isIOS && (
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    1
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">Tap the Share button</p>
+                    <p className="text-sm text-gray-400">
+                      Look for the share icon at the bottom of your Safari
+                      browser
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    2
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">
+                      Scroll down and tap "Add to Home Screen"
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      You'll see this option in the share menu
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    3
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">Tap "Add" to confirm</p>
+                    <p className="text-sm text-gray-400">
+                      The app will be added to your home screen
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Android Instructions */}
+            {!isIOS && /Android/.test(navigator.userAgent) && (
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    1
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">
+                      Tap the menu button (three dots)
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      Look for the menu icon in your Chrome browser
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    2
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">
+                      Select "Add to Home screen" or "Install app"
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      This option should be visible in the menu
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    3
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">
+                      Tap "Add" or "Install" to confirm
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      The app will be installed on your device
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Generic Instructions for other devices */}
+            {!isIOS && !/Android/.test(navigator.userAgent) && (
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    1
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">
+                      Look for the install button in your browser
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      Most modern browsers show an install prompt
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start space-x-3">
+                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                    2
+                  </div>
+                  <div className="text-gray-300">
+                    <p className="font-medium">Click "Install" when prompted</p>
+                    <p className="text-sm text-gray-400">
+                      Follow your browser's installation process
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 p-4 bg-blue-500/20 rounded-lg border border-blue-400/30">
+              <p className="text-blue-200 text-sm text-center">
+                💡 <strong>Tip:</strong> Once installed, you can access FairFare
+                directly from your home screen like any other app!
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-4 mt-6">
+              <button
+                onClick={() => setShowInstallSteps(false)}
+                className="bg-transparent border text-white border-white/30 py-2 px-4 rounded-lg hover:bg-white/10 transition-all duration-300"
+              >
+                Got it!
+              </button>
+              {deferredPrompt && (
+                <button
+                  onClick={handleDirectInstall}
+                  className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-6 rounded-lg hover:bg-blue-700/80 transition-all duration-300 border border-blue-400/30"
+                >
+                  Try Direct Install
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bottom-right Install Button */}
-      {!isPWA &&
+      {!isPWA && (
         <button
           onClick={handleInstallClick}
           className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 border border-blue-400/30"
@@ -107,7 +288,7 @@ const LandingPage = () => {
         >
           Install App
         </button>
-      }
+      )}
 
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -120,7 +301,7 @@ const LandingPage = () => {
       </div>
 
       {/* Navbar */}
-      <nav className="w-full flex justify-between items-center px-10 py-5 backdrop-blur-lg bg-black/20 border-b border-white/10 z-50">
+      {/* <nav className="w-full flex justify-between items-center px-10 py-5 backdrop-blur-lg bg-black/20 border-b border-white/10 z-50">
         <div className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
           FairFare
         </div>
@@ -137,16 +318,21 @@ const LandingPage = () => {
             </button>
           </Link>
         </div>
-      </nav>
+      </nav> */}
+      <Navbar/>
 
       {/* Main Content */}
+    
       <div className="flex flex-col-reverse md:flex-row items-center justify-center lg:space-x-10 px-11 lg:px-10 py-20 relative z-10">
         <div>
           <img src="/save.svg" className="drop-shadow-2xl" alt="Illustration" />
         </div>
 
         <div className="lg:w-1/2 text-center lg:text-left backdrop-blur-lg bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300">
-          <p>Some content on this page might be from previous versions and not upto date</p>
+          <p>
+            Some content on this page might be from previous versions and not
+            upto date
+          </p>
           <h1 className="text-4xl lg:text-5xl font-bold  p-5 bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-text">
             Split it <br /> Its easy this way.
           </h1>
@@ -172,14 +358,17 @@ const LandingPage = () => {
               Learn More
             </button>
           </div>
+        {/* </div> */}
+        {/* </SpotlightCard> */}
         </div>
       </div>
-
+      
+       
       <div id="comparison-table">
         <ComparisonTable />
       </div>
 
-      <div id="documentation-section">
+      <div id="doc">
         <Documentation />
       </div>
 

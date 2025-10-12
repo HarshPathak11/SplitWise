@@ -10,52 +10,47 @@ import { requestNotificationPermission } from "../../notifications";
 
 const Dashboard = () => {
   const [user, setUser] = useState();
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
-    // console.log("Fetching user details on dashboard load");
 
     async function getDetails() {
       const userId = Cookies.get("id");
-      // console.log("userId is ", userId);
       localStorage.removeItem("tripMembers");
       localStorage.removeItem("currentGroup");
+      let fcmTokens = [];
 
-      // if (!user) {
       try {
         const response = await axios.get(
-          `https://fairfare-0hyl.onrender.com/user/${userId}`
-          // `http://localhost:8000/user/${userId}`
+          `${API_BASE}/user/${userId}`
         );
-        // console.log("response is ", response);
 
         if (response.status === 200) {
           setUser(response.data.user); // Update state with fetched user data
 
           localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
+          fcmTokens = response.data.user.fcmToken || []; // Filter out null/undefined tokens
         }
 
         const fcmToken = await requestNotificationPermission();
 
-        if(response.data.user.fcmToken !== fcmToken || response.data.user.fcmToken === null || !response.data.user.fcmToken) {
-          
-        await axios.post(
-          // `http://localhost:8000/user/set-fcm-token`,
-          `https://fairfare-0hyl.onrender.com/user/set-fcm-token` ,
-           {
-          fcmToken,
-          userId
-        }); 
-      }
+        if (fcmToken && (!fcmTokens.includes(fcmToken) || fcmTokens === null )) {
+          await axios.post(
+            `${API_BASE}/user/set-fcm-token`,
+            {
+              fcmToken,
+              userId,
+            }
+          );
+        }
       } catch (err) {
         console.error("Error fetching user:", err);
       }
-      // }
     }
 
     getDetails();
   }, []);
-  console.log("User", user);
-
+// console.log(user);
   return (
     <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
       {/* Animated background elements */}

@@ -1,14 +1,16 @@
-// src/components/ExpenseCard.jsx
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Trash2, Edit3 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ExpenseCard = ({
   _id,
+  title,
   category,
+  subcategory,
   time,
   description, // (we aren’t using description in expanded view, but you can if needed)
   amount,
@@ -35,7 +37,9 @@ const ExpenseCard = ({
         originalExpense: {
           _id,
           time,
+          title,
           category,
+          subcategory,
           description,
           amount,
           paidBy,
@@ -52,7 +56,7 @@ const ExpenseCard = ({
   const confirmDelete = async () => {
     try {
       await axios.delete(
-        `https://fairfare-0hyl.onrender.com/group/del-expense/${_id}`
+        `${API_BASE}/group/del-expense/${_id}`
         // `//http://localhost:8000/group/del-expense/${_id}`
       );
       toast.success("Expense deleted");
@@ -82,14 +86,36 @@ const ExpenseCard = ({
   const date = new Date(time).toLocaleString("en-US", options);
 
   return (
-    <div className="flex flex-col bg-gray-800 p-4 rounded-lg mb-4 cursor-pointer transition-all duration-300 ease-in-out" onClick={handleToggle}>
+    <div
+      className="flex flex-col bg-gray-800 p-4 rounded-lg mb-4 cursor-pointer transition-all duration-300 ease-in-out"
+      onClick={handleToggle}
+    >
       {/* Main card content */}
       <div className="flex justify-between items-center">
         <div className="flex items-center">
           <div className={`${iconColor} p-3 rounded-full`}></div>
           <div className="ml-4">
-            <h3 className="font-semibold">{category}</h3>
-            <p className="text-sm text-gray-400">{date}</p>
+            <h3 className="font-semibold">{title || category}</h3>
+            {/* Inline categorization shown even when card is collapsed */}
+            <p className="text-sm text-gray-300 mt-1">
+              {category ? (
+                <span>
+                  <strong className="font-medium text-gray-200">
+                    Category:
+                  </strong>
+                  <span className="text-gray-300"> {category}</span>
+                  {subcategory && (
+                    <span className="text-gray-400">
+                      {" "}
+                      &nbsp;→&nbsp; {subcategory}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span className="italic text-gray-500">Categorizing...</span>
+              )}
+            </p>
+            <p className="text-xs pt-1 text-gray-400">{date}</p>
           </div>
         </div>
 
@@ -169,7 +195,8 @@ const ExpenseCard = ({
 
 ExpenseCard.propTypes = {
   _id: PropTypes.string.isRequired,
-  category: PropTypes.string.isRequired,
+  category: PropTypes.string,
+  subcategory: PropTypes.string,
   time: PropTypes.string.isRequired,
   description: PropTypes.string,
   amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,

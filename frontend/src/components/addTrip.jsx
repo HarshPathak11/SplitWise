@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom"; // Import useNavigate and Link for navigation
 import axios from "axios"; // Import axios for HTTP requests
 import { toast } from "react-hot-toast";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AddTrip = () => {
   const navigate = useNavigate(); // Initialize the navigation hook
@@ -11,7 +12,13 @@ const AddTrip = () => {
   const [description, setDescription] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [selectAll, setSelectAll] = useState(false); // State to track "Select All" toggle
+  const [search, setSearch] = useState("");
+  const [selectAll, setSelectAll] = useState(false);
+
+  // Filtered (visible) friends according to search
+  const filteredFriends = friends.filter((f) =>
+    f.friend.username.toLowerCase().includes(search.toLowerCase())
+  );
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -20,14 +27,18 @@ const AddTrip = () => {
     }
   }, []);
 
-  // Handle friend selection
-  // const handleFriendSelection = (friendId) => {
-  //   if (selectedFriends.includes(friendId)) {
-  //     setSelectedFriends(selectedFriends.filter((id) => id !== friendId));
-  //   } else {
-  //     setSelectedFriends([...selectedFriends, friendId]);
-  //   }
-  // };
+  // Update selectAll state when search changes or friends change
+  useEffect(() => {
+    if (filteredFriends.length > 0) {
+      const allFilteredSelected = filteredFriends.every((f) =>
+        selectedFriends.includes(f.friend._id)
+      );
+      setSelectAll(allFilteredSelected);
+    } else {
+      setSelectAll(false);
+    }
+  }, [filteredFriends, selectedFriends]);
+
   const handleFriendSelection = (friendId) => {
     let updatedSelected;
     if (selectedFriends.includes(friendId)) {
@@ -38,24 +49,34 @@ const AddTrip = () => {
 
     setSelectedFriends(updatedSelected);
 
-    // Sync "Select All" checkbox
-    if (updatedSelected.length === friends.length) {
+    // If all filtered (visible) friends are selected, enable selectAll
+    if (
+      filteredFriends.length > 0 &&
+      filteredFriends.every((f) => updatedSelected.includes(f.friend._id))
+    ) {
       setSelectAll(true);
     } else {
       setSelectAll(false);
     }
   };
 
-  // Handle "Select All" toggle
   const handleSelectAll = () => {
     if (selectAll) {
-      // Unselect all friends
-      setSelectedFriends([]);
+      // Deselect all filtered friends
+      const filteredFriendIds = filteredFriends.map((f) => f.friend._id);
+      setSelectedFriends(
+        selectedFriends.filter((id) => !filteredFriendIds.includes(id))
+      );
+      setSelectAll(false);
     } else {
-      // Select all friends
-      setSelectedFriends(friends.map((friend) => friend.friend._id));
+      // Select all filtered friends
+      const filteredFriendIds = filteredFriends.map((f) => f.friend._id);
+      const newSelected = [
+        ...new Set([...selectedFriends, ...filteredFriendIds]),
+      ];
+      setSelectedFriends(newSelected);
+      setSelectAll(true);
     }
-    setSelectAll(!selectAll); // Toggle the "Select All" state
   };
 
   const handleAddTrip = async (e) => {
@@ -63,8 +84,8 @@ const AddTrip = () => {
 
     const user = JSON.parse(localStorage.getItem("user"));
     const tripData = {
-      name: tripName,
-      description,
+      name: tripName.trim(),
+      description: description.trim(),
       from: fromDate,
       to: toDate,
       members: [user._id, ...selectedFriends],
@@ -86,10 +107,7 @@ const AddTrip = () => {
         return;
       }
 
-      const res = await axios.post(
-        "https://fairfare-0hyl.onrender.com/group/create-group",
-        tripData
-      );
+      const res = await axios.post(`${API_BASE}/group/create-group`, tripData);
       // console.log("Response:", res.data); // Log the response for debugging
 
       if (res.status !== 200 && res.status !== 201) {
@@ -113,7 +131,8 @@ const AddTrip = () => {
         <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
       </div>
 
-      <div className="absolute top-4 left-4">
+      {/* Back Button with proper spacing */}
+      <div className="absolute top-4 left-4 z-20">
         <Link to="/dash">
           <button
             className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-110 transition-transform duration-300 ease-in-out"
@@ -137,8 +156,8 @@ const AddTrip = () => {
         </Link>
       </div>
 
-      {/* Add Trip Form */}
-      <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
+      {/* Add Trip Form with proper margin for back button */}
+      <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10 mt-16 sm:mt-0">
         <h2 className="text-2xl font-bold text-[#00F5FF] mb-4">Add New Trip</h2>
         <form className="flex flex-col gap-4" onSubmit={handleAddTrip}>
           {/* Trip Name */}
@@ -185,41 +204,64 @@ const AddTrip = () => {
             className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3] rows-4 sm:rows-6 placeholder-gray-400 text-sm sm:text-base"
           />
 
-          {/* Add Friends Section */}
+          {/* Add Friends Section with scrollable container */}
           <div>
             <h3 className="text-lg font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
               Add Friends
             </h3>
-
-            <label className="flex items-center space-x-2 py-3 text-white">
+            {/* Search*/}
+            <div className="flex items-center gap-2 mb-3">
               <input
-                type="checkbox"
-                checked={selectAll}
-                onChange={handleSelectAll}
-                className="w-4 h-4"
+                type="text"
+                placeholder="Search friends..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 px-3 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3] placeholder-gray-400 text-sm"
               />
-              <span className="text-sm">Select All</span>
-            </label>
+              <button
+                type="button"
+                onClick={handleSelectAll}
+                className={`text-sm px-2 py-1 rounded transition-colors ${
+                  selectAll
+                    ? "bg-[#00FFA3] text-black"
+                    : "bg-gray-700 text-white hover:bg-gray-600"
+                }`}
+              >
+                {selectAll ? "Deselect All" : "Select All"}
+              </button>
+            </div>
 
-            <div className="flex flex-col gap-2">
-              {[...friends]
-                .sort((a, b) =>
-                  a.friend.username.localeCompare(b.friend.username)
-                )
-                .map((friend, index) => (
-                  <label key={index} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      value={friend.friend._id}
-                      checked={selectedFriends.includes(friend.friend._id)}
-                      onChange={() => handleFriendSelection(friend.friend._id)}
-                      className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
-                    />
-                    <span className="text-sm text-gray-300">
-                      {friend.friend.username}
-                    </span>
-                  </label>
-                ))}
+            {/* Scrollable friends list container */}
+            <div
+              className="max-h-48 overflow-y-auto pr-2 
+    [&::-webkit-scrollbar]:w-2
+    [&::-webkit-scrollbar-track]:bg-gray-800
+    [&::-webkit-scrollbar-thumb]:bg-gray-600
+    [&::-webkit-scrollbar-thumb]:rounded-full
+    [&::-webkit-scrollbar-thumb:hover]:bg-gray-500"
+            >
+              <div className="flex flex-col gap-2">
+                {[...filteredFriends]
+                  .sort((a, b) =>
+                    a.friend.username.localeCompare(b.friend.username)
+                  )
+                  .map((friend, index) => (
+                    <label key={index} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        value={friend.friend._id}
+                        checked={selectedFriends.includes(friend.friend._id)}
+                        onChange={() =>
+                          handleFriendSelection(friend.friend._id)
+                        }
+                        className="w-4 h-4 text-blue-500 bg-gray-700 border-gray-600 focus:ring-blue-500 rounded"
+                      />
+                      <span className="text-sm text-gray-300">
+                        {friend.friend.username}
+                      </span>
+                    </label>
+                  ))}
+              </div>
             </div>
           </div>
 
