@@ -143,8 +143,8 @@ const PublicProfile = () => {
                     <button
                       onClick={async () => {
                         const userId = Cookies.get("id");
-                        // const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
-                        const profileLink = `http://localhost:8000/public-profile/${userId}`;
+                        const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
+                        // const profileLink = `http://localhost:8000/public-profile/${userId}`;
                         const message = `Hey! 👋
             
 Check out my FairFare profile:
