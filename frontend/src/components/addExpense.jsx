@@ -176,6 +176,8 @@ const AddExpense = () => {
       customAmounts: splitMode === "unequally" ? amounts : {},
     };
 
+    if(totalEntered > 50000){ toast.error("Amount must be smaller than 50k"); return;}
+
     try {
       setIsLoading(true); // ✅ Start loading
       // Replace with your backend endpoint
