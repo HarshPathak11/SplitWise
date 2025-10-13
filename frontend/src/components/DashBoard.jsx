@@ -9,11 +9,19 @@ import TopNavbar from "./TopNavbar";
 import { requestNotificationPermission } from "../../notifications";
 
 const Dashboard = () => {
-  const [user, setUser] = useState();
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      console.error("Failed to parse user from localStorage:", e);
+      return null;
+    }
+  });
+
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
-
     async function getDetails() {
       const userId = Cookies.get("id");
       localStorage.removeItem("tripMembers");
@@ -21,27 +29,38 @@ const Dashboard = () => {
       let fcmTokens = [];
 
       try {
-        const response = await axios.get(
-          `${API_BASE}/user/${userId}`
-        );
+        if (user) {
+          const lastUpdatedAtUser = await axios.get(
+            `${API_BASE}/user/last-updated-at/${userId}`
+          );
+          if (lastUpdatedAtUser.data.lastUpdatedAt > user.updatedAt) {
+            const response = await axios.get(`${API_BASE}/user/${userId}`);
 
-        if (response.status === 200) {
-          setUser(response.data.user); // Update state with fetched user data
+            if (response.status === 200) {
+              setUser(response.data.user); // Update state with fetched user data
 
-          localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
-          fcmTokens = response.data.user.fcmToken || []; // Filter out null/undefined tokens
+              localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
+              fcmTokens = response.data.user.fcmToken || []; // Filter out null/undefined tokens
+            }
+          }
+        } else {
+          const response = await axios.get(`${API_BASE}/user/${userId}`);
+
+          if (response.status === 200) {
+            setUser(response.data.user); // Update state with fetched user data
+
+            localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
+            fcmTokens = response.data.user.fcmToken || []; // Filter out null/undefined tokens
+          }
         }
 
         const fcmToken = await requestNotificationPermission();
 
-        if (fcmToken && (!fcmTokens.includes(fcmToken) || fcmTokens === null )) {
-          await axios.post(
-            `${API_BASE}/user/set-fcm-token`,
-            {
-              fcmToken,
-              userId,
-            }
-          );
+        if (fcmToken && (!fcmTokens.includes(fcmToken) || fcmTokens === null)) {
+          await axios.post(`${API_BASE}/user/set-fcm-token`, {
+            fcmToken,
+            userId,
+          });
         }
       } catch (err) {
         console.error("Error fetching user:", err);
@@ -50,7 +69,7 @@ const Dashboard = () => {
 
     getDetails();
   }, []);
-// console.log(user);
+  // console.log(user);
   return (
     <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
       {/* Animated background elements */}
@@ -72,7 +91,7 @@ const Dashboard = () => {
           <FairFareCard />
 
           {/* Trips Section */}
-          <TripsSection />
+          <TripsSection user={user} />
         </div>
 
         <div className="space-y-4 h-full flex flex-col">

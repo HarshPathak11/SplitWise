@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
 import Cookies from "js-cookie";
 import TripCard from "./tripCard"; // adjust path as needed
 
-const TripsSection = () => {
+const TripsSection = (user) => {
   const navigate = useNavigate();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-  // Fetch trips for the current user
+  // // Fetch trips for the current user
   useEffect(() => {
     const fetchTrips = async () => {
       try {
@@ -21,14 +19,11 @@ const TripsSection = () => {
           return;
         }
 
-        const response = await axios.get(
-          `${API_BASE}/group/user-groups/${userId}`
-        );
-        // const response = JSON.parse(localStorage.getItem("user"));
+        const response = user?.user?.groups || [];
 
-        if (Array.isArray(response.data)) {
+        if (Array.isArray(response)) {
           // Sort expenses by updatedAt in descending order (most recent first)
-          const sortedTrips = [...response.data].sort(
+          const sortedTrips = [...response].sort(
             (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
           );
           // Take the top 4 expenses after sorting.
