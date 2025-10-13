@@ -131,7 +131,7 @@ const TransactionHistory = () => {
       return;
     }
     const paidAmount = Math.abs(amount);
-    if(receivedAmount > 50000){toast.error("Amount cannot be more than 50k");return;}
+    if(paidAmount > 50000){toast.error("Amount cannot be more than 50k");return;}
     try {
       setLoading(true);
       await axios.post(`${API_BASE}/user/update-friend-balance`, {
