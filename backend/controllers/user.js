@@ -468,6 +468,7 @@ const userDetails = async (req, res) => {
         requests: 1,
         fcmToken: 1,
         profilePhotoUrl: 1,
+        updatedAt: 1,
       })
       .lean();
     // console.log(user.friends) // exclude sensitive fields
@@ -1346,6 +1347,19 @@ const uploadProfilePhoto = async (req, res) => {
   }
 };
 
+const getUserLastUpdatedAt = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ lastUpdatedAt: user.updatedAt });
+  } catch (err) {
+    console.error("getUserLastUpdatedAt error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 export {
   sendOtp,
   userLogin,
@@ -1371,4 +1385,5 @@ export {
   removeFcmToken,
   notifyFriend,
   uploadProfilePhoto,
+  getUserLastUpdatedAt,
 };

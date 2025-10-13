@@ -23,7 +23,8 @@ import {
   getAllExpensesForASubcategory,
   removeFcmToken,
   notifyFriend,
-  uploadProfilePhoto
+  uploadProfilePhoto,
+  getUserLastUpdatedAt,
 } from "../controllers/user.js";
 import upload from "../middleware/multer.js";
 const router = express.Router();
@@ -58,6 +59,7 @@ router.put('/:id/photo',  upload.single('profilePhoto'),uploadProfilePhoto);
 //GET routes
 router.get('/search', getUsernames);
 router.get("/friend-requests/:userId", listFriendRequests);
+router.get("/last-updated-at/:id", getUserLastUpdatedAt);
 router.get("/:id", userDetails);
 
 //DELETE routes
