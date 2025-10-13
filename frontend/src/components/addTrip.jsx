@@ -161,7 +161,7 @@ const AddTrip = () => {
         <h2 className="text-2xl font-bold text-[#00F5FF] mb-4">Add New Trip</h2>
         <form className="flex flex-col gap-4" onSubmit={handleAddTrip}>
           {/* Trip Name */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
           <label className="block text-white mb-2">Trip Name</label>
           <input
             type="text"
@@ -179,6 +179,7 @@ const AddTrip = () => {
               <label className="block text-white mb-2">From</label>
               <input
                 type="date"
+                placeholder="Start Date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3]"
@@ -191,6 +192,7 @@ const AddTrip = () => {
               </label>
               <input
                 type="date"
+                placeholder="End date"
                 value={toDate}
                 min={fromDate} // 👈 Ensures To Date can't be before From Date
                 onChange={(e) => setToDate(e.target.value)}
