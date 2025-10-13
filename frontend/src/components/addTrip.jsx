@@ -161,6 +161,8 @@ const AddTrip = () => {
         <h2 className="text-2xl font-bold text-[#00F5FF] mb-4">Add New Trip</h2>
         <form className="flex flex-col gap-4" onSubmit={handleAddTrip}>
           {/* Trip Name */}
+          <div className="flex flex-col sm:flex-row gap-4">
+          <label className="block text-white mb-2">Trip Name</label>
           <input
             type="text"
             placeholder="Enter trip name"
@@ -168,6 +170,7 @@ const AddTrip = () => {
             onChange={(e) => setTripName(e.target.value)}
             className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3] focus:ring-2 focus:ring-[#00FFA3] placeholder-gray-400 text-sm sm:text-base"
           />
+          </div>
 
           {/* From and To Date Section */}
           <div className="flex flex-col sm:flex-row gap-4">
@@ -197,12 +200,17 @@ const AddTrip = () => {
           </div>
 
           {/* Trip Description */}
+          <div className="flex-1">
+              <label className="block text-white mb-2" htmlFor="toDate">
+                Trip Description
+              </label>
           <textarea
             placeholder="Enter trip description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-[#00FFA3] rows-4 sm:rows-6 placeholder-gray-400 text-sm sm:text-base"
           />
+          </div>
 
           {/* Add Friends Section with scrollable container */}
           <div>
