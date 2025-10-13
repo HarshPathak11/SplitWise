@@ -539,7 +539,7 @@ const notifyFriend = async (req, res) => {
     const title = "Healthy Reminder";
     const body = `It's always good to settle your balances. You owe ${
       user.username
-    } ₹${Math.abs(balance)}.`;
+    } ₹${Math.abs(balance).toFixed(2)}.`;
 
     await sendOneNotification(token, title, body);
     return res.status(200).json({ message: "Notification sent successfully!" });
