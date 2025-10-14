@@ -57,7 +57,7 @@ const ProfileEnhanced = () => {
             setProfile(fetchedUser);
             if (fetchedUser.profilePhotoUrl)
               setPreview(fetchedUser.profilePhotoUrl);
-            localStorage.setItem("user", JSON.stringify({ user: fetchedUser }));
+            localStorage.setItem("user", JSON.stringify(fetchedUser));
           }
         } catch (err) {
           console.error("Error fetching user:", err);

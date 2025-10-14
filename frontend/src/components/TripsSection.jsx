@@ -37,7 +37,7 @@ const TripsSection = (user) => {
       }
     };
     fetchTrips();
-  }, []);
+  }, [user]);
 
   const handleTripClick = (trip) => {
     navigate(`/tripDetails/${trip._id}`);
@@ -87,13 +87,11 @@ const TripsSection = (user) => {
       </div>
 
       <div className="space-y-2 cursor-pointer overflow-y-auto">
-        {loading ? (
-          <p className="text-blue-400 text-center">Loading trips...</p>
-        ) : trips.length === 0 ? (
-          <p className="text-red-500 text-center font-semibold">
-            Get a life add some trips.
-          </p>
-        ) : (
+        {
+        // loading ? (
+        //   <p className="text-blue-400 text-center">Loading trips...</p>
+        // ) : 
+        trips && trips.length > 0 ? (
           trips.map((trip) => (
             <TripCard
               key={trip._id}
@@ -101,8 +99,12 @@ const TripsSection = (user) => {
               trip={trip}
               onClick={() => handleTripClick(trip)}
             />
-          ))
-        )}
+          ))) : (
+          <p className="text-red-500 text-center font-semibold">
+            Get a life add some trips.
+          </p>
+        )
+        }
       </div>
 
       {/* {!loading && trips.length > 0 && (
