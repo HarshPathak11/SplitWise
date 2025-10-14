@@ -382,7 +382,7 @@ const addExpenseController = async (req, res) => {
       await Group.findByIdAndUpdate(
         groupId,
         {
-          $push: { expenses: newExpense.toObject() },
+          $push: { expenses: newExpense._id },
           $inc: { tripTotal: newExpense.amount }, // 👈 increment tripTotal
         },
         { session }
@@ -391,7 +391,7 @@ const addExpenseController = async (req, res) => {
 
     await User.findByIdAndUpdate(
       paidBy,
-      { $push: { recentExpense: newExpense.toObject() } },
+      { $push: { recentExpense: newExpense._id } },
       { session }
     );
 
@@ -607,7 +607,7 @@ const addafterDeleteExpenseController = async (req, res) => {
       await Group.findByIdAndUpdate(
         groupId,
         {
-          $push: { expenses: newExpense.toObject() },
+          $push: { expenses: newExpense._id },
           $inc: { tripTotal: newExpense.amount },
         },
         { session }
@@ -617,7 +617,7 @@ const addafterDeleteExpenseController = async (req, res) => {
     // 2) Update payer's recentExpense
     await User.findByIdAndUpdate(
       paidBy,
-      { $push: { recentExpense: newExpense.toObject() } },
+      { $push: { recentExpense: newExpense._id } },
       { session, select: false }
     );
 
