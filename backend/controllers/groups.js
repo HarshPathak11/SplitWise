@@ -1013,6 +1013,7 @@ const getAllExpensesForASubcategoryInGroup = async (req, res) => {
     const expenses = await Expense.find(query)
       .populate({ path: "paidBy", select: "username" })
       .populate({ path: "owedBy.user", select: "username" })
+      .populate({ path: "group", select: "name" })
       .sort({ updatedAt: -1 });
 
     res.status(200).json({ expenses });
