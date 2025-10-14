@@ -303,7 +303,7 @@ const addExpenseController = async (req, res) => {
       !friendIds.includes(memberId.toString())
   );
 
-  console.log("Not friends with:", notFriends);
+  // console.log("Not friends with:", notFriends);
 
   if (notFriends.length > 0) {
     // Fetch names of non-friends
