@@ -37,7 +37,7 @@ const TripsSection = (user) => {
       }
     };
     fetchTrips();
-  }, []);
+  }, [user]);
 
   const handleTripClick = (trip) => {
     navigate(`/tripDetails/${trip._id}`);
