@@ -1009,7 +1009,7 @@ const updateFriendBalance = async (req, res) => {
     // Push expense to payer's recentExpense
     await User.updateOne(
       { _id: payer._id },
-      { $push: { recentExpense: expense } }
+      { $push: { recentExpense: expense._id } }
     );
 
     // ✅ Send notifications
