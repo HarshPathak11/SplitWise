@@ -76,7 +76,7 @@ const userSchema = new mongoose.Schema(
     ],
     requests: { type: Number, default: 0 },
     groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
-    recentExpense: [expenseSchema],
+    recentExpense: [{ type: mongoose.Schema.Types.ObjectId, ref: "Expense" }],
     upiId: { type: String },
     aiChatUsage: {
       count: { type: Number, default: 0 },
