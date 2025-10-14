@@ -382,7 +382,7 @@ const addExpenseController = async (req, res) => {
       await Group.findByIdAndUpdate(
         groupId,
         {
-          $push: { expenses: newExpense.toObject() },
+          $push: { expenses: newExpense._id },
           $inc: { tripTotal: newExpense.amount }, // 👈 increment tripTotal
         },
         { session }
