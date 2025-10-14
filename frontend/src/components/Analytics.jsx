@@ -3,13 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Calendar, ChevronDown } from "lucide-react";
 
 export default function Analytics() {
@@ -81,7 +75,6 @@ export default function Analytics() {
       try {
         setLoading(true);
 
-
         if (group && Array.isArray(group.expenses)) {
           const apiStartDate = getDateFilterForAPI();
           const response = await axios.get(
@@ -140,7 +133,9 @@ export default function Analytics() {
       return (
         <div className="bg-gray-900/95 backdrop-blur-sm border border-blue-500/30 rounded-lg p-3 shadow-xl">
           <p className="text-white font-semibold mb-1">{data.name}</p>
-          <p className="text-blue-400 font-bold">₹{data.value.toLocaleString()}</p>
+          <p className="text-blue-400 font-bold">
+            ₹{data.value.toLocaleString()}
+          </p>
           <p className="text-gray-400 text-sm">
             {((data.value / totalSpending) * 100).toFixed(1)}% of total
           </p>
@@ -226,9 +221,7 @@ export default function Analytics() {
             </p>
           </div>
           <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-800/20 backdrop-blur-md rounded-2xl p-6 border-2 border-cyan-500/30 shadow-2xl">
-            <p className="text-cyan-300 text-sm font-medium mb-2">
-              Categories
-            </p>
+            <p className="text-cyan-300 text-sm font-medium mb-2">Categories</p>
             <p className="text-white text-3xl font-bold">
               {topCategories.length}
             </p>
@@ -240,7 +233,9 @@ export default function Analytics() {
             <p className="text-white text-3xl font-bold">
               ₹
               {topCategories.length > 0
-                ? Math.round(totalSpending / topCategories.length).toLocaleString()
+                ? Math.round(
+                    totalSpending / topCategories.length
+                  ).toLocaleString()
                 : 0}
             </p>
           </div>
@@ -251,7 +246,9 @@ export default function Analytics() {
             <div className="h-64 sm:h-96 flex items-center justify-center">
               <div className="text-center space-y-4">
                 <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
-                <p className="text-white/80 font-medium">Loading analytics...</p>
+                <p className="text-white/80 font-medium">
+                  Loading analytics...
+                </p>
               </div>
             </div>
           ) : topCategories.length === 0 ? (
@@ -281,7 +278,7 @@ export default function Analytics() {
               <h2 className="text-white font-bold text-xl sm:text-2xl text-center bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                 Spending Distribution
               </h2>
-              
+
               {/* Enhanced Pie Chart with Side Labels */}
               <div className="w-full h-full flex flex-col lg:flex-row items-center justify-center">
                 {/* Chart Container */}
@@ -312,94 +309,103 @@ export default function Analytics() {
                           />
                         ))}
                       </Pie>
-                      <Tooltip 
+                      <Tooltip
                         content={<CustomTooltip />}
-                        wrapperStyle={{ 
-                          backdropFilter: 'blur(10px)',
-                          backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                          borderRadius: '12px',
-                          border: '1px solid rgba(255, 255, 255, 0.1)'
+                        wrapperStyle={{
+                          backdropFilter: "blur(10px)",
+                          backgroundColor: "rgba(15, 23, 42, 0.8)",
+                          borderRadius: "12px",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
                         }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
 
-                {/* Labels Container - Desktop Version */}
-                {isLarge && <div className="md:block md:w-1/2 md:pl-8">
-                  <div className="space-y-4">
-                    {topCategories.map((entry, index) => {
-                      const percent = (entry.total / totalSpending) * 100;
-                      
-                      return (
-                        <div 
-                          key={`label-${index}`}
-                          className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-gray-800/50 to-blue-900/30 hover:from-gray-700/50 hover:to-blue-800/30 transition-all duration-300 cursor-pointer group border border-blue-500/30 hover:border-blue-400/50"
-                        >
-                          <div className="flex items-center space-x-4 flex-1 min-w-0">
-                            {/* Color Indicator with Animation */}
-                            <div 
-                              className="w-4 h-4 rounded-full flex-shrink-0 transition-transform duration-300 group-hover:scale-125 shadow-lg"
-                              style={{ 
-                                backgroundColor: COLORS[index % COLORS.length],
-                                boxShadow: `0 0 12px ${COLORS[index % COLORS.length]}40`
-                              }}
-                            />
-                            
-                            {/* Category Name */}
-                            <span className="text-sm font-semibold text-white truncate">
-                              {entry.name}
-                            </span>
-                          </div>
-                          
-                          {/* Percentage with beautiful styling */}
-                          <div className="flex items-center space-x-3">
-                            <div className="w-16 bg-gray-700/30 rounded-full h-2 overflow-hidden">
-                              <div 
-                                className="h-full rounded-full transition-all duration-1000 ease-out"
-                                style={{ 
-                                  width: `${percent}%`,
-                                  backgroundColor: COLORS[index % COLORS.length],
-                                  boxShadow: `0 0 8px ${COLORS[index % COLORS.length]}`
+                {/* Labels Container */}
+                {isLarge && (
+                  <div className="md:block md:w-1/2 md:pl-8">
+                    <div className="space-y-4">
+                      {topCategories.map((entry, index) => {
+                        const percent = (entry.total / totalSpending) * 100;
+
+                        return (
+                          <div
+                            key={`label-${index}`}
+                            className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-gray-800/50 to-blue-900/30 hover:from-gray-700/50 hover:to-blue-800/30 transition-all duration-300 cursor-pointer group border border-blue-500/30 hover:border-blue-400/50"
+                          >
+                            <div className="flex items-center space-x-4 flex-1 min-w-0">
+                              {/* Color Indicator with Animation */}
+                              <div
+                                className="w-4 h-4 rounded-full flex-shrink-0 transition-transform duration-300 group-hover:scale-125 shadow-lg"
+                                style={{
+                                  backgroundColor:
+                                    COLORS[index % COLORS.length],
+                                  boxShadow: `0 0 12px ${
+                                    COLORS[index % COLORS.length]
+                                  }40`,
                                 }}
                               />
+
+                              {/* Category Name */}
+                              <span className="text-sm font-semibold text-white truncate">
+                                {entry.name}
+                              </span>
                             </div>
-                            <span 
-                              className="text-lg font-bold min-w-12 text-right transition-all duration-300 group-hover:scale-110"
-                              style={{ color: COLORS[index % COLORS.length] }}
-                            >
-                              {`${percent.toFixed(0)}%`}
-                            </span>
+
+                            {/* Percentage with beautiful styling */}
+                            <div className="flex items-center space-x-3">
+                              <div className="w-16 bg-gray-700/30 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all duration-1000 ease-out"
+                                  style={{
+                                    width: `${percent}%`,
+                                    backgroundColor:
+                                      COLORS[index % COLORS.length],
+                                    boxShadow: `0 0 8px ${
+                                      COLORS[index % COLORS.length]
+                                    }`,
+                                  }}
+                                />
+                              </div>
+                              <span
+                                className="text-lg font-bold min-w-12 text-right transition-all duration-300 group-hover:scale-110"
+                                style={{ color: COLORS[index % COLORS.length] }}
+                              >
+                                {`${percent.toFixed(0)}%`}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-                }
+                )}
 
                 {/* Mobile Labels - Grid Layout */}
                 <div className="w-full lg:w-1/2 lg:pl-8 lg:hidden">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {topCategories.map((entry, index) => {
                       const percent = (entry.total / totalSpending) * 100;
-                      
+
                       return (
-                        <div 
+                        <div
                           key={`label-mobile-${index}`}
                           className="flex items-center p-3 rounded-xl bg-gray-800/40 hover:bg-gray-700/50 transition-all duration-300 cursor-pointer group border border-blue-500/30"
                         >
-                          <div 
+                          <div
                             className="w-3 h-3 rounded-full mr-3 flex-shrink-0 transition-transform duration-300 group-hover:scale-125"
-                            style={{ 
+                            style={{
                               backgroundColor: COLORS[index % COLORS.length],
-                              boxShadow: `0 0 8px ${COLORS[index % COLORS.length]}`
+                              boxShadow: `0 0 8px ${
+                                COLORS[index % COLORS.length]
+                              }`,
                             }}
                           />
                           <span className="text-sm font-medium text-white truncate flex-1 mr-2">
                             {entry.name}
                           </span>
-                          <span 
+                          <span
                             className="text-base font-bold transition-all duration-300 group-hover:scale-110"
                             style={{ color: COLORS[index % COLORS.length] }}
                           >
@@ -428,7 +434,17 @@ export default function Analytics() {
                   <Link
                     key={category.name}
                     to="/subcategories"
-                    state={{ category: category.name, group }}
+                    state={{
+                      category: category.name,
+                      group,
+                      // timeframe handoff
+                      // timeframe,
+                      // startDate,
+                      // endDate
+                      timeframe: timeframe,
+                      startDate: startDate,
+                      endDate: endDate,
+                    }}
                     className="group relative overflow-hidden bg-gradient-to-r from-gray-900/60 to-blue-900/20 backdrop-blur-md rounded-2xl p-5 border-2 border-blue-500/20 hover:border-blue-400/50 hover:scale-[1.02] transition-all duration-300 shadow-lg hover:shadow-blue-500/20"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-blue-600/5 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
