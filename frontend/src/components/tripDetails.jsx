@@ -36,6 +36,34 @@ const TripDetails = () => {
         );
 
         setExpenses(sortedExpenses);
+
+        // Refresh expenses to get updated categories/subcategories
+        (async () => {
+          try {
+            const refreshed = await Promise.all(
+              sortedExpenses.map(async (exp) => {
+                // If category is missing or equals title (uncategorized), fetch fresh expense
+                if (!exp.category || exp.category === exp.title) {
+                  try {
+                    const res = await axios.get(
+                      `${API_BASE}/group/expense/${exp._id}`
+                    );
+                    if (res.data && res.data.expense) {
+                      return { ...exp, ...res.data.expense };
+                    }
+                  } catch (e) {
+                    // ignore per-expense fetch errors
+                    return exp;
+                  }
+                }
+                return exp;
+              })
+            );
+            setExpenses(refreshed);
+          } catch (err) {
+            console.error("Error refreshing trip expenses:", err);
+          }
+        })();
         // Set directly to localStorage (no merge)
         localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
         setMembers(groupMembers);
@@ -56,6 +84,34 @@ const TripDetails = () => {
             (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
           );
           setExpenses(sortedExpenses);
+
+          // Refresh expenses to get updated categories/subcategories
+          (async () => {
+            try {
+              const refreshed = await Promise.all(
+                sortedExpenses.map(async (exp) => {
+                  // If category is missing or equals title (uncategorized), fetch fresh expense
+                  if (!exp.category || exp.category === exp.title) {
+                    try {
+                      const res = await axios.get(
+                        `${API_BASE}/group/expense/${exp._id}`
+                      );
+                      if (res.data && res.data.expense) {
+                        return { ...exp, ...res.data.expense };
+                      }
+                    } catch (e) {
+                      // ignore per-expense fetch errors
+                      return exp;
+                    }
+                  }
+                  return exp;
+                })
+              );
+              setExpenses(refreshed);
+            } catch (err) {
+              console.error("Error refreshing trip expenses:", err);
+            }
+          })();
 
           // Extract only the usernames from group members
           const groupMembers = group.members.map((m) => {
@@ -257,9 +313,9 @@ const TripDetails = () => {
                     <div className="flex-shrink-0">
                       <button
                         className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2
-                  bg-[#0d1117] border border-gray-700 rounded-md shadow-md
+                  bg-[#0d1117] border border-[#00FFA3] rounded-md shadow-md
                   text-sm font-medium text-white
-                  hover:bg-[#1a1f29] border-[#00FFA3]
+                  hover:bg-[#1a1f29] 
                   transition relative overflow-hidden group"
                         onClick={() =>
                           navigate("/analytics", {
@@ -267,7 +323,7 @@ const TripDetails = () => {
                           })
                         }
                       >
-                        <FaChartBar/>
+                        <FaChartBar />
                         {/* Shiny effect */}
                         <span
                           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
@@ -369,7 +425,9 @@ const TripDetails = () => {
                   <ExpenseCard
                     key={idx}
                     _id={expense._id}
-                    category={expense.title}
+                    title={expense.title}
+                    category={expense.category}
+                    subcategory={expense.subcategory}
                     time={expense.createdAt}
                     description={""}
                     amount={expense.amount}
