@@ -22,36 +22,6 @@ const RecentExpenses = (user) => {
           // Take the top 4 expenses after sorting.
           const topExpenses = sortedExpenses.slice(0, 3);
           setRecentExpenses(topExpenses);
-          // After setting initial recent expenses, try to refresh each expense from backend
-          // to pick up any category/subcategory the backend categorizer may have added later.
-          (async () => {
-            try {
-              const API_BASE = import.meta.env.VITE_API_BASE_URL;
-              const refreshed = await Promise.all(
-                topExpenses.map(async (exp) => {
-                  // If category is missing or equals title (uncategorized), fetch fresh expense
-                  if (!exp.category || exp.category === exp.title) {
-                    try {
-                      // expense details are available under group routes
-                      const res = await axios.get(
-                        `${API_BASE}/group/expense/${exp._id}`
-                      );
-                      if (res.data && res.data.expense) {
-                        return { ...exp, ...res.data.expense };
-                      }
-                    } catch (e) {
-                      // ignore per-expense fetch errors
-                      return exp;
-                    }
-                  }
-                  return exp;
-                })
-              );
-              setRecentExpenses(refreshed);
-            } catch (err) {
-              console.error("Error refreshing recent expenses:", err);
-            }
-          })();
         }
       } catch (error) {
         console.error("Error parsing user from localStorage:", error);

@@ -446,7 +446,7 @@ const userDetails = async (req, res) => {
       .populate({
         path: "recentExpense",
         options: { sort: { createdAt: -1 } }, // 👈 only latest 3
-        select: "title amount paidBy owedBy createdAt",
+        select: "title amount paidBy owedBy createdAt category subcategory",
         populate: [
           { path: "paidBy", select: "username email" },
           { path: "owedBy.user", select: "username email" },
@@ -1009,7 +1009,7 @@ const updateFriendBalance = async (req, res) => {
     // Push expense to payer's recentExpense
     await User.updateOne(
       { _id: payer._id },
-      { $push: { recentExpense: expense } }
+      { $push: { recentExpense: expense._id } }
     );
 
     // ✅ Send notifications
