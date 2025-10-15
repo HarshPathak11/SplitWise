@@ -102,13 +102,11 @@ const ProfileEnhanced = () => {
         )}`;
         const res = await axios.get(url, { signal: controller.signal });
         const users = res.data?.users ?? res.data ?? [];
-        console.log("Fetched users:", users);
 
         // 👇 Check if current username is already taken
         const usernameTaken = users.some(
           (u) => u.username === debouncedQuery && u._id !== userId
         );
-        console.log("Username taken:", usernameTaken);
         setIsUsernameAvailable(!usernameTaken);
       } catch (err) {
         if (!axios.isCancel(err) && err.name !== "CanceledError") {

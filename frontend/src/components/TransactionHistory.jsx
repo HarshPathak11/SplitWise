@@ -93,12 +93,12 @@ const TransactionHistory = () => {
         setCurrentUserId(user._id);
       }
 
-      const friend = user.friends?.find((f) => f.friend._id === friendId);
+      const friend = user?.friends?.find((f) => f.friend?._id === friendId);
 
       setFriendName(friend?.friend || "Unknown");
 
       const txRes = await axios.get(
-        `${API_BASE}/expenses/${user?._id}/${friendId}`
+        `${API_BASE}/expenses/${userId}/${friendId}`
       );
 
       // Sort the transactions by createdAt (latest first)
