@@ -157,7 +157,7 @@ const AddFriend = () => {
 
     setFriends((prev) => [
       ...prev,
-      { email: userObj.email, name: userObj.username },
+      { email: userObj.email, name: userObj.username, profilePhotoUrl: userObj.profilePhotoUrl },
     ]);
     // Clear search and suggestions after selection
     setSearch("");
@@ -352,15 +352,23 @@ const AddFriend = () => {
         </h3>
         <ul className="space-y-2">
           {friends.map((friend, index) => (
+            console.log(friend),
             <li
               key={index}
               className="p-2 rounded-lg bg-gray-700/50 border border-gray-600/30 text-white shadow-sm text-sm sm:text-base flex justify-between items-center"
             >
-              <div>
-                <p className="font-semibold">{friend.name ?? friend.email}</p>
-                <p className="text-xs sm:text-sm text-gray-400">
-                  {friend.email}
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <img
+                  src={friend.profilePhotoUrl}
+                  alt={friend.username}
+                  className="w-8 h-8 rounded-full object-cover border border-gray-600"
+                />
+                <div className="flex flex-col">
+                  <p className="font-semibold">{friend.name ?? friend.email}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">
+                    {friend.email}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => handleDeleteFriend(index)}
