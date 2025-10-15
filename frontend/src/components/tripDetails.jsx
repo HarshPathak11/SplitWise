@@ -11,13 +11,13 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const TripDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // console.log(location.state+"state")
 
   const { tripId } = useParams(); // Now you get tripId directly from URL
   const [members, setMembers] = useState([]);
   const [tripDetails, setTripDetails] = useState(null); // Store trip details
   const [loading, setLoading] = useState(true); // Loading state for the GET request
   const [expenses, setExpenses] = useState([]);
+  const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
 
   useEffect(() => {
     const fetchTripDetails = async () => {
@@ -282,10 +282,37 @@ const TripDetails = () => {
         {/* Leave Button */}
         <button
           className="flex items-center text-white hover:text-gray-300 backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5  p-2 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300"
-          onClick={HandleLeaveGroup}
+          onClick={() => setShowLeaveConfirmation(true)}
         >
           Leave Group
         </button>
+        
+        {/* Leave Group Confirmation Popup */}
+        {showLeaveConfirmation && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-900 p-6 rounded-lg border border-gray-700 max-w-md w-full">
+              <h3 className="text-xl font-semibold mb-4">Leave Group</h3>
+              <p className="mb-6">Are you sure you want to leave this group? You will no longer have access to the group's expenses.</p>
+              <div className="flex justify-end gap-4">
+                <button 
+                  className="px-4 py-2 rounded-md bg-gray-800 text-white hover:bg-gray-700 transition"
+                  onClick={() => setShowLeaveConfirmation(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+                  onClick={() => {
+                    setShowLeaveConfirmation(false);
+                    HandleLeaveGroup();
+                  }}
+                >
+                  Leave Group
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Card Container */}
