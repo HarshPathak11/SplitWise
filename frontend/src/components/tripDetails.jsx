@@ -36,96 +36,10 @@ const TripDetails = () => {
         );
 
         setExpenses(sortedExpenses);
-
-        // Refresh expenses to get updated categories/subcategories
-        (async () => {
-          try {
-            const refreshed = await Promise.all(
-              sortedExpenses.map(async (exp) => {
-                // If category is missing or equals title (uncategorized), fetch fresh expense
-                if (!exp.category || exp.category === exp.title) {
-                  try {
-                    const res = await axios.get(
-                      `${API_BASE}/group/expense/${exp._id}`
-                    );
-                    if (res.data && res.data.expense) {
-                      return { ...exp, ...res.data.expense };
-                    }
-                  } catch (e) {
-                    // ignore per-expense fetch errors
-                    return exp;
-                  }
-                }
-                return exp;
-              })
-            );
-            setExpenses(refreshed);
-          } catch (err) {
-            console.error("Error refreshing trip expenses:", err);
-          }
-        })();
-        // Set directly to localStorage (no merge)
         localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
         setMembers(groupMembers);
         setLoading(false);
         return;
-      }
-      try {
-        const response = await axios.get(
-          `${API_BASE}/group/get-group/${tripId}`
-          // `//http://localhost:8000/group/get-group/${tripId}` // Use your local or production URL
-        );
-        if (response.status === 200) {
-          const group = response.data;
-
-          setTripDetails(group);
-          setLoading(false);
-          const sortedExpenses = group.expenses.sort(
-            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-          );
-          setExpenses(sortedExpenses);
-
-          // Refresh expenses to get updated categories/subcategories
-          (async () => {
-            try {
-              const refreshed = await Promise.all(
-                sortedExpenses.map(async (exp) => {
-                  // If category is missing or equals title (uncategorized), fetch fresh expense
-                  if (!exp.category || exp.category === exp.title) {
-                    try {
-                      const res = await axios.get(
-                        `${API_BASE}/group/expense/${exp._id}`
-                      );
-                      if (res.data && res.data.expense) {
-                        return { ...exp, ...res.data.expense };
-                      }
-                    } catch (e) {
-                      // ignore per-expense fetch errors
-                      return exp;
-                    }
-                  }
-                  return exp;
-                })
-              );
-              setExpenses(refreshed);
-            } catch (err) {
-              console.error("Error refreshing trip expenses:", err);
-            }
-          })();
-
-          // Extract only the usernames from group members
-          const groupMembers = group.members.map((m) => {
-            return { _id: m._id, username: m.username };
-          });
-
-          // Set directly to localStorage (no merge)
-          localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
-          localStorage.setItem("currentGroup", JSON.stringify(group));
-          setMembers(groupMembers);
-        }
-      } catch (error) {
-        console.error("Error fetching trip details:", error);
-        setLoading(false);
       }
     };
 
@@ -286,21 +200,24 @@ const TripDetails = () => {
         >
           Leave Group
         </button>
-        
+
         {/* Leave Group Confirmation Popup */}
         {showLeaveConfirmation && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-gray-900 p-6 rounded-lg border border-gray-700 max-w-md w-full">
               <h3 className="text-xl font-semibold mb-4">Leave Group</h3>
-              <p className="mb-6">Are you sure you want to leave this group? You will no longer have access to the group's expenses.</p>
+              <p className="mb-6">
+                Are you sure you want to leave this group? You will no longer
+                have access to the group's expenses.
+              </p>
               <div className="flex justify-end gap-4">
-                <button 
+                <button
                   className="px-4 py-2 rounded-md bg-gray-800 text-white hover:bg-gray-700 transition"
                   onClick={() => setShowLeaveConfirmation(false)}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition"
                   onClick={() => {
                     setShowLeaveConfirmation(false);

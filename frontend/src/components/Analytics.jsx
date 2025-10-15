@@ -437,10 +437,6 @@ export default function Analytics() {
                     state={{
                       category: category.name,
                       group,
-                      // timeframe handoff
-                      // timeframe,
-                      // startDate,
-                      // endDate
                       timeframe: timeframe,
                       startDate: startDate,
                       endDate: endDate,
