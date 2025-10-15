@@ -72,7 +72,7 @@ const FriendsSection = ({ user }) => {
   };
 
   const filteredFriends = friends.filter((f) =>
-    f.friend.username.toLowerCase().includes(searchQuery.toLowerCase())
+    f.friend?.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleUpdateFriendBalance = (email, newBalance) => {
@@ -103,9 +103,9 @@ const FriendsSection = ({ user }) => {
       .filter((f) => f.balance === 0)
       .sort((a, b) => {
         const nameA =
-          a.friend && a.friend.username ? a.friend.username.toLowerCase() : "";
+          a.friend && a.friend?.username ? a.friend?.username.toLowerCase() : "";
         const nameB =
-          b.friend && b.friend.username ? b.friend.username.toLowerCase() : "";
+          b.friend && b.friend?.username ? b.friend?.username.toLowerCase() : "";
 
         return nameA.localeCompare(nameB);
       }),
