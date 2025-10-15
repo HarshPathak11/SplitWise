@@ -356,7 +356,7 @@ const AddFriend = () => {
               key={index}
               className="p-2 rounded-lg bg-gray-700/50 border border-gray-600/30 text-white shadow-sm text-sm sm:text-base flex justify-between items-center"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex flex-row items-center gap-3">
                 <img
                   src={friend.profilePhotoUrl}
                   alt={friend.username}
