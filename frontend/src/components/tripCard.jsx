@@ -28,16 +28,16 @@ export default function TripCard({ trip, onClick, amount }) {
     </div>
   );
 }
-TripCard.propTypes = {
-  trip: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    name: PropTypes.string.isRequired,
-    date: PropTypes.string.isRequired,
-    participants: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
-      .isRequired,
-    totalAmount: PropTypes.number.isRequired,
-    members: PropTypes.arrayOf(PropTypes.object),
-  }).isRequired,
-  onClick: PropTypes.func.isRequired,
-  amount: PropTypes.number.isRequired,
-};
+// TripCard.propTypes = {
+//   trip: PropTypes.shape({
+//     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+//     name: PropTypes.string.isRequired,
+//     date: PropTypes.string.isRequired,
+//     participants: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+//       .isRequired,
+//     totalAmount: PropTypes.number.isRequired,
+//     members: PropTypes.arrayOf(PropTypes.object),
+//   }).isRequired,
+//   onClick: PropTypes.func.isRequired,
+//   amount: PropTypes.number.isRequired,
+// };

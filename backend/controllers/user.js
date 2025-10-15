@@ -1204,7 +1204,7 @@ const getUpdatedFriendBalances = async (req, res) => {
 
   try {
     // Fetch the user by ID
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).populate({path:"friends.friend", select: "username profilePhotoUrl"});
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -1213,6 +1213,8 @@ const getUpdatedFriendBalances = async (req, res) => {
     const updatedData = user.friends.map((f) => ({
       friendId: f.friend._id, // friend ID
       balance: f.balance, // balance
+      username: f.friend.username, // friend's username
+      profilePhotoUrl: f.friend.profilePhotoUrl, // friend's profile photo URL
     }));
 
     // Send the updated data as response

@@ -391,17 +391,5 @@ const FriendCard = ({
   );
 };
 
-FriendCard.propTypes = {
-  friend: PropTypes.shape({
-    username: PropTypes.string.isRequired,
-    balance: PropTypes.number.isRequired,
-    upiId: PropTypes.string,
-    email: PropTypes.string.isRequired,
-  }).isRequired,
-  index: PropTypes.number.isRequired,
-  balance: PropTypes.number.isRequired,
-  handleDeleteFriend: PropTypes.func.isRequired,
-  updateFriendBalance: PropTypes.func.isRequired,
-};
 
 export default FriendCard;
