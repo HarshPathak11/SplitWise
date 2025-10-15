@@ -72,7 +72,7 @@ const FriendsSection = ({ user }) => {
   };
 
   const filteredFriends = friends.filter((f) =>
-    f.friend?.username.toLowerCase().includes(searchQuery.toLowerCase())
+    f.friend?.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleUpdateFriendBalance = (email, newBalance) => {
