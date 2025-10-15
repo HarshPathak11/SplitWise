@@ -193,27 +193,27 @@ const ExpenseCard = ({
   );
 };
 
-ExpenseCard.propTypes = {
-  _id: PropTypes.string.isRequired,
-  category: PropTypes.string,
-  subcategory: PropTypes.string,
-  time: PropTypes.string.isRequired,
-  description: PropTypes.string,
-  amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  iconColor: PropTypes.string.isRequired,
-  paidBy: PropTypes.shape({
-    _id: PropTypes.string,
-    username: PropTypes.string,
-  }).isRequired,
-  beneficiaries: PropTypes.arrayOf(
-    PropTypes.shape({
-      user: PropTypes.shape({
-        _id: PropTypes.string,
-        username: PropTypes.string,
-      }),
-      amount: PropTypes.number,
-    })
-  ).isRequired,
-};
+// ExpenseCard.propTypes = {
+//   _id: PropTypes.string.isRequired,
+//   category: PropTypes.string,
+//   subcategory: PropTypes.string,
+//   time: PropTypes.string.isRequired,
+//   description: PropTypes.string,
+//   amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+//   iconColor: PropTypes.string.isRequired,
+//   paidBy: PropTypes.shape({
+//     _id: PropTypes.string,
+//     username: PropTypes.string,
+//   }).isRequired,
+//   beneficiaries: PropTypes.arrayOf(
+//     PropTypes.shape({
+//       user: PropTypes.shape({
+//         _id: PropTypes.string,
+//         username: PropTypes.string,
+//       }),
+//       amount: PropTypes.number,
+//     })
+//   ).isRequired,
+// };
 
 export default ExpenseCard;
