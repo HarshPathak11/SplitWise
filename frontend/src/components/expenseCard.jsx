@@ -154,7 +154,7 @@ const ExpenseCard = ({
           <ul className="text-gray-400">
             {beneficiaries.map((person, index) => (
               <li key={index} className="ml-4 list-disc">
-                {person.user.username} has a share of ₹{person.amount}
+                {person.user?.username} has a share of ₹{person.amount}
               </li>
             ))}
           </ul>
