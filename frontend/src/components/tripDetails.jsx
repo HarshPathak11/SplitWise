@@ -24,22 +24,51 @@ const TripDetails = () => {
       if (!tripId) return;
       const getCurrentGroup = localStorage.getItem("currentGroup");
 
-      if (getCurrentGroup) {
-        const parsedGroup = JSON.parse(getCurrentGroup); // Parse the string into an object
-        setTripDetails(parsedGroup);
-        // Extract only the usernames from group members
-        const groupMembers = parsedGroup.members.map((m) => {
-          return { _id: m._id, username: m.username };
-        });
-        const sortedExpenses = parsedGroup.expenses.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
+      try {
+        // If we have a cached group but for another trip, ignore it
+        if (getCurrentGroup) {
+          const parsedGroup = JSON.parse(getCurrentGroup);
+          if (parsedGroup && parsedGroup._id === tripId) {
+            setTripDetails(parsedGroup);
+            const groupMembers = (parsedGroup.members || []).map((m) => ({
+              _id: m._id,
+              username: m.username,
+            }));
+            const sortedExpenses = (parsedGroup.expenses || [])
+              .slice()
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        setExpenses(sortedExpenses);
-        localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
-        setMembers(groupMembers);
+            setExpenses(sortedExpenses);
+            localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
+            setMembers(groupMembers);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Fallback: fetch from server
+        const response = await axios.get(`${API_BASE}/group/get-group/${tripId}`);
+        if (response.status === 200) {
+          const group = response.data;
+          setTripDetails(group);
+          const groupMembers = (group.members || []).map((m) => ({
+            _id: m._id,
+            username: m.username,
+          }));
+          const sortedExpenses = (group.expenses || [])
+            .slice()
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+          setExpenses(sortedExpenses);
+          localStorage.setItem("currentGroup", JSON.stringify(group));
+          localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
+          setMembers(groupMembers);
+        }
+      } catch (err) {
+        console.error("Failed to load trip details:", err);
+        toast.error("Could not load trip details. Please try again.");
+      } finally {
         setLoading(false);
-        return;
       }
     };
 
