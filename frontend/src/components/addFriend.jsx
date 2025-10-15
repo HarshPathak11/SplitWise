@@ -352,7 +352,6 @@ const AddFriend = () => {
         </h3>
         <ul className="space-y-2">
           {friends.map((friend, index) => (
-            console.log(friend),
             <li
               key={index}
               className="p-2 rounded-lg bg-gray-700/50 border border-gray-600/30 text-white shadow-sm text-sm sm:text-base flex justify-between items-center"
