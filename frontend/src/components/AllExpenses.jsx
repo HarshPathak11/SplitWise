@@ -50,7 +50,7 @@ const AllExpensesPage = () => {
       {/* Back Button */}
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
         <button
-          onClick={() => navigate("/dash")}
+          onClick={() => navigate(-1)}
           className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
           title="Back to Dashboard"
         >
@@ -81,7 +81,9 @@ const AllExpensesPage = () => {
             {expenses.map((expense) => (
               <ExpenseCard
                 key={expense._id}
-                category={expense.title}
+                title={expense.title}
+                category={expense.category}
+                subcategory={expense.subcategory}
                 time={expense.createdAt}
                 description={""}
                 amount={expense.amount}
