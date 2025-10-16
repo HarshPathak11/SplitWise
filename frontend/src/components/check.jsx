@@ -1,7 +1,9 @@
 import React from 'react';
 import { Check, X, Star, Sparkles } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const ComparisonTable = () => {
+  const navigate = useNavigate();
   const features = [
     { name: 'Expense Tracking', fairfare: true, splitwise: true },
     { name: 'Unlimited Events', fairfare: true, splitwise: false },
@@ -111,7 +113,7 @@ const ComparisonTable = () => {
 
         {/* Call to Action */}
         <div className="text-center mt-12">
-          <button className="group inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-blue-500/25">
+          <button onClick={() => navigate('/signup')} className="group inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-blue-500/25">
             <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
             Get Started with FairFare
           </button>
