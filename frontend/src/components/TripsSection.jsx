@@ -20,6 +20,7 @@ const TripsSection = (user) => {
         }
 
         const response = user?.user?.groups || [];
+        // console.log("Fetched trips data:", response);
 
         if (Array.isArray(response)) {
           // Sort expenses by updatedAt in descending order (most recent first)

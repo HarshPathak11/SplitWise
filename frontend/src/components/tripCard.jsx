@@ -22,22 +22,22 @@ export default function TripCard({ trip, onClick, amount }) {
         <p className="text-xs text-gray-400">
           Participants: {trip.members?.length || 0}
         </p>
-        <div className="text-lg font-semibold">₹{amount.toFixed(2)}</div>
+        <div className="text-lg font-semibold">₹{amount?.toFixed(2)}</div>
       </div>
       
     </div>
   );
 }
-TripCard.propTypes = {
-  trip: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    name: PropTypes.string.isRequired,
-    date: PropTypes.string.isRequired,
-    participants: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
-      .isRequired,
-    totalAmount: PropTypes.number.isRequired,
-    members: PropTypes.arrayOf(PropTypes.object),
-  }).isRequired,
-  onClick: PropTypes.func.isRequired,
-  amount: PropTypes.number.isRequired,
-};
+// TripCard.propTypes = {
+//   trip: PropTypes.shape({
+//     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+//     name: PropTypes.string.isRequired,
+//     date: PropTypes.string.isRequired,
+//     participants: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+//       .isRequired,
+//     totalAmount: PropTypes.number.isRequired,
+//     members: PropTypes.arrayOf(PropTypes.object),
+//   }).isRequired,
+//   onClick: PropTypes.func.isRequired,
+//   amount: PropTypes.number.isRequired,
+// };

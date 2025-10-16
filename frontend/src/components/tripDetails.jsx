@@ -11,64 +11,63 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const TripDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // console.log(location.state+"state")
 
   const { tripId } = useParams(); // Now you get tripId directly from URL
   const [members, setMembers] = useState([]);
   const [tripDetails, setTripDetails] = useState(null); // Store trip details
   const [loading, setLoading] = useState(true); // Loading state for the GET request
   const [expenses, setExpenses] = useState([]);
+  const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
 
   useEffect(() => {
     const fetchTripDetails = async () => {
       if (!tripId) return;
       const getCurrentGroup = localStorage.getItem("currentGroup");
 
-      if (getCurrentGroup) {
-        const parsedGroup = JSON.parse(getCurrentGroup); // Parse the string into an object
-        setTripDetails(parsedGroup);
-        // Extract only the usernames from group members
-        const groupMembers = parsedGroup.members.map((m) => {
-          return { _id: m._id, username: m.username };
-        });
-        const sortedExpenses = parsedGroup.expenses.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
-
-        setExpenses(sortedExpenses);
-        // Set directly to localStorage (no merge)
-        localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
-        setMembers(groupMembers);
-        setLoading(false);
-        return;
-      }
       try {
-        const response = await axios.get(
-          `${API_BASE}/group/get-group/${tripId}`
-          // `//http://localhost:8000/group/get-group/${tripId}` // Use your local or production URL
-        );
+        // If we have a cached group but for another trip, ignore it
+        if (getCurrentGroup) {
+          const parsedGroup = JSON.parse(getCurrentGroup);
+          if (parsedGroup && parsedGroup._id === tripId) {
+            setTripDetails(parsedGroup);
+            const groupMembers = (parsedGroup.members || []).map((m) => ({
+              _id: m._id,
+              username: m.username,
+            }));
+            const sortedExpenses = (parsedGroup.expenses || [])
+              .slice()
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            setExpenses(sortedExpenses);
+            localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
+            setMembers(groupMembers);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Fallback: fetch from backend
+        const response = await axios.get(`${API_BASE}/group/get-group/${tripId}`);
         if (response.status === 200) {
           const group = response.data;
-
           setTripDetails(group);
-          setLoading(false);
-          const sortedExpenses = group.expenses.sort(
-            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-          );
+          const groupMembers = (group.members || []).map((m) => ({
+            _id: m._id,
+            username: m.username,
+          }));
+          const sortedExpenses = (group.expenses || [])
+            .slice()
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
           setExpenses(sortedExpenses);
-
-          // Extract only the usernames from group members
-          const groupMembers = group.members.map((m) => {
-            return { _id: m._id, username: m.username };
-          });
-
-          // Set directly to localStorage (no merge)
-          localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
           localStorage.setItem("currentGroup", JSON.stringify(group));
+          localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
           setMembers(groupMembers);
         }
-      } catch (error) {
-        console.error("Error fetching trip details:", error);
+      } catch (err) {
+        console.error("Failed to load trip details:", err);
+        toast.error("Could not load trip details. Please try again.");
+      } finally {
         setLoading(false);
       }
     };
@@ -226,10 +225,40 @@ const TripDetails = () => {
         {/* Leave Button */}
         <button
           className="flex items-center text-white hover:text-gray-300 backdrop-blur-lg bg-[rgba(255,255,255,0.1)] mt-5  p-2 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300"
-          onClick={HandleLeaveGroup}
+          onClick={() => setShowLeaveConfirmation(true)}
         >
           Leave Group
         </button>
+
+        {/* Leave Group Confirmation Popup */}
+        {showLeaveConfirmation && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-900 p-6 rounded-lg border border-gray-700 max-w-md w-full">
+              <h3 className="text-xl font-semibold mb-4">Leave Group</h3>
+              <p className="mb-6">
+                Are you sure you want to leave this group? You will no longer
+                have access to the group's expenses.
+              </p>
+              <div className="flex justify-end gap-4">
+                <button
+                  className="px-4 py-2 rounded-md bg-gray-800 text-white hover:bg-gray-700 transition"
+                  onClick={() => setShowLeaveConfirmation(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+                  onClick={() => {
+                    setShowLeaveConfirmation(false);
+                    HandleLeaveGroup();
+                  }}
+                >
+                  Leave Group
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Card Container */}
@@ -257,9 +286,9 @@ const TripDetails = () => {
                     <div className="flex-shrink-0">
                       <button
                         className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2
-                  bg-[#0d1117] border border-gray-700 rounded-md shadow-md
+                  bg-[#0d1117] border border-[#00FFA3] rounded-md shadow-md
                   text-sm font-medium text-white
-                  hover:bg-[#1a1f29] border-[#00FFA3]
+                  hover:bg-[#1a1f29] 
                   transition relative overflow-hidden group"
                         onClick={() =>
                           navigate("/analytics", {
@@ -267,7 +296,7 @@ const TripDetails = () => {
                           })
                         }
                       >
-                        <FaChartBar/>
+                        <FaChartBar />
                         {/* Shiny effect */}
                         <span
                           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
@@ -369,7 +398,9 @@ const TripDetails = () => {
                   <ExpenseCard
                     key={idx}
                     _id={expense._id}
-                    category={expense.title}
+                    title={expense.title}
+                    category={expense.category}
+                    subcategory={expense.subcategory}
                     time={expense.createdAt}
                     description={""}
                     amount={expense.amount}

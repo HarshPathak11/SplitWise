@@ -99,8 +99,8 @@ const TopNavbar = () => {
     </div>
   );
 };
-TopNavbar.propTypes = {
-  handleSignOut: PropTypes.func.isRequired,
-};
+// TopNavbar.propTypes = {
+//   handleSignOut: PropTypes.func.isRequired,
+// };
 
 export default TopNavbar;

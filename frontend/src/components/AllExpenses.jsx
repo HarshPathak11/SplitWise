@@ -9,7 +9,7 @@ const AllExpensesPage = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
-    const API_BASE = import.meta.env.VITE_API_BASE_URL;
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const userId = Cookies.get("id"); // Get userId from cookies
@@ -18,7 +18,9 @@ const AllExpensesPage = () => {
     const fetchExpenses = async () => {
       try {
         setLoading(true);
-        const response = await axios.post(`${API_BASE}/user/all-expenses`, { userId });
+        const response = await axios.post(`${API_BASE}/user/all-expenses`, {
+          userId,
+        });
         if (response.data?.expenses) {
           // Sort by createdAt descending (latest first)
           const sortedExpenses = response.data.expenses.sort(
@@ -50,7 +52,7 @@ const AllExpensesPage = () => {
       {/* Back Button */}
       <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
         <button
-          onClick={() => navigate("/dash")}
+          onClick={() => navigate(-1)}
           className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
           title="Back to Dashboard"
         >
@@ -81,7 +83,9 @@ const AllExpensesPage = () => {
             {expenses.map((expense) => (
               <ExpenseCard
                 key={expense._id}
-                category={expense.title}
+                title={expense.title}
+                category={expense.category}
+                subcategory={expense.subcategory}
                 time={expense.createdAt}
                 description={""}
                 amount={expense.amount}

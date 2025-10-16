@@ -146,7 +146,7 @@ const ExpenseCard = ({
       {isExpanded && (
         <div className="mt-4 bg-gray-900 p-4 rounded-lg">
           <p className="text-gray-300 mb-2">
-            <strong>Paid by:</strong> {paidBy.username}
+            <strong>Paid by:</strong> {paidBy?.username}
           </p>
           <p className="text-gray-300 mb-2">
             <strong>Beneficiaries:</strong>
@@ -154,7 +154,7 @@ const ExpenseCard = ({
           <ul className="text-gray-400">
             {beneficiaries.map((person, index) => (
               <li key={index} className="ml-4 list-disc">
-                {person.user.username} has a share of ₹{person.amount}
+                {person.user?.username} has a share of ₹{person.amount}
               </li>
             ))}
           </ul>
@@ -193,27 +193,27 @@ const ExpenseCard = ({
   );
 };
 
-ExpenseCard.propTypes = {
-  _id: PropTypes.string.isRequired,
-  category: PropTypes.string,
-  subcategory: PropTypes.string,
-  time: PropTypes.string.isRequired,
-  description: PropTypes.string,
-  amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  iconColor: PropTypes.string.isRequired,
-  paidBy: PropTypes.shape({
-    _id: PropTypes.string,
-    username: PropTypes.string,
-  }).isRequired,
-  beneficiaries: PropTypes.arrayOf(
-    PropTypes.shape({
-      user: PropTypes.shape({
-        _id: PropTypes.string,
-        username: PropTypes.string,
-      }),
-      amount: PropTypes.number,
-    })
-  ).isRequired,
-};
+// ExpenseCard.propTypes = {
+//   _id: PropTypes.string.isRequired,
+//   category: PropTypes.string,
+//   subcategory: PropTypes.string,
+//   time: PropTypes.string.isRequired,
+//   description: PropTypes.string,
+//   amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+//   iconColor: PropTypes.string.isRequired,
+//   paidBy: PropTypes.shape({
+//     _id: PropTypes.string,
+//     username: PropTypes.string,
+//   }).isRequired,
+//   beneficiaries: PropTypes.arrayOf(
+//     PropTypes.shape({
+//       user: PropTypes.shape({
+//         _id: PropTypes.string,
+//         username: PropTypes.string,
+//       }),
+//       amount: PropTypes.number,
+//     })
+//   ).isRequired,
+// };
 
 export default ExpenseCard;

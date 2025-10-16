@@ -12,7 +12,7 @@ const RecentExpenses = (user) => {
         const parsedUser = user?.user;
 
         if (
-          parsedUser.recentExpense &&
+          parsedUser?.recentExpense &&
           Array.isArray(parsedUser.recentExpense)
         ) {
           // Sort expenses by createdAt in descending order (most recent first)
@@ -50,18 +50,18 @@ const RecentExpenses = (user) => {
         {recentExpenses && recentExpenses.length > 0 ? (
           recentExpenses.map((expense, index) => (
             <ExpenseCard
-              key={expense.id || expense._id || index}
+              key={expense?.id || expense?._id || index}
               // Pass explicit title separately so the card header shows the actual expense title
-              title={expense.title}
+              title={expense?.title}
               // Use backend category/subcategory directly (don't fall back to title here)
-              category={expense.category}
-              subcategory={expense.subcategory}
-              time={expense.createdAt}
+              category={expense?.category}
+              subcategory={expense?.subcategory}
+              time={expense?.createdAt}
               description={""}
-              amount={expense.amount}
+              amount={expense?.amount}
               iconColor={"bg-blue-500"}
-              paidBy={expense.paidBy}
-              beneficiaries={expense.owedBy}
+              paidBy={expense?.paidBy}
+              beneficiaries={expense?.owedBy}
             />
           ))
         ) : (

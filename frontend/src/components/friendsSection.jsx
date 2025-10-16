@@ -28,14 +28,27 @@ const FriendsSection = ({ user }) => {
         const updatedData = res.data; // [{ friendId, balance }]
         // Assuming `setFriends` updates the friends list with the new balances
         setFriends((prevFriends) => {
-          return prevFriends.map((friend) => {
-            const updatedBalance = updatedData.find(
-              (balance) =>
-                balance.friendId.toString() === friend.friend?._id.toString()
+          return prevFriends?.map((friend) => {
+            // Find matching friend in updated data
+            const updatedFriend = updatedData.find(
+              (data) =>
+                data?.friendId?.toString() === friend?.friend?._id?.toString()
             );
-            return updatedBalance
-              ? { ...friend, balance: updatedBalance.balance }
-              : friend;
+
+            if (!updatedFriend) return friend;
+
+            // Update balance, username, and profile photo safely
+            return {
+              ...friend,
+              balance: updatedFriend.balance ?? friend.balance,
+              friend: {
+                ...friend.friend,
+                username: updatedFriend.username ?? friend.friend.username,
+                profilePhotoUrl:
+                  updatedFriend.profilePhotoUrl ??
+                  friend.friend.profilePhotoUrl,
+              },
+            };
           });
         });
       } catch (err) {
@@ -72,7 +85,7 @@ const FriendsSection = ({ user }) => {
   };
 
   const filteredFriends = friends.filter((f) =>
-    f.friend.username.toLowerCase().includes(searchQuery.toLowerCase())
+    f.friend?.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleUpdateFriendBalance = (email, newBalance) => {
@@ -103,9 +116,13 @@ const FriendsSection = ({ user }) => {
       .filter((f) => f.balance === 0)
       .sort((a, b) => {
         const nameA =
-          a.friend && a.friend.username ? a.friend.username.toLowerCase() : "";
+          a.friend && a.friend?.username
+            ? a.friend?.username.toLowerCase()
+            : "";
         const nameB =
-          b.friend && b.friend.username ? b.friend.username.toLowerCase() : "";
+          b.friend && b.friend?.username
+            ? b.friend?.username.toLowerCase()
+            : "";
 
         return nameA.localeCompare(nameB);
       }),
@@ -182,22 +199,6 @@ const FriendsSection = ({ user }) => {
       </div>
     </div>
   );
-};
-
-FriendsSection.propTypes = {
-  user: PropTypes.shape({
-    _id: PropTypes.string.isRequired,
-    friends: PropTypes.arrayOf(
-      PropTypes.shape({
-        friend: PropTypes.shape({
-          _id: PropTypes.string.isRequired,
-          username: PropTypes.string.isRequired,
-          email: PropTypes.string,
-        }),
-        balance: PropTypes.number,
-      })
-    ),
-  }).isRequired,
 };
 
 export default FriendsSection;

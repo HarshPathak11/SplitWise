@@ -16,13 +16,13 @@ const AddTrip = () => {
   const [selectAll, setSelectAll] = useState(false);
 
   // Filtered (visible) friends according to search
-  const filteredFriends = friends.filter((f) =>
-    f.friend.username.toLowerCase().includes(search.toLowerCase())
-  );
+const filteredFriends = friends.filter(
+  (f) => f.friend?.username?.toLowerCase().includes(search.toLowerCase())
+);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-    if (user && user.friends) {
+    if (user && user?.friends) {
       setFriends(user.friends); // assuming user.friends is an array of friend objects
     }
   }, []);

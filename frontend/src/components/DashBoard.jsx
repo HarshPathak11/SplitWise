@@ -9,15 +9,19 @@ import TopNavbar from "./TopNavbar";
 import { requestNotificationPermission } from "../../notifications";
 
 const Dashboard = () => {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem("user");
-      return stored ? JSON.parse(stored) : null;
-    } catch (e) {
-      console.error("Failed to parse user from localStorage:", e);
-      return null;
+const [user, setUser] = useState(null);
+
+//Setting user from localStorage if available
+useEffect(() => {
+  try {
+    const stored = localStorage.getItem("user");
+    if (stored) {
+      setUser(JSON.parse(stored));
     }
-  });
+  } catch (e) {
+    console.error("Failed to parse user from localStorage:", e);
+  }
+}, []);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -33,9 +37,9 @@ const Dashboard = () => {
           const lastUpdatedAtUser = await axios.get(
             `${API_BASE}/user/last-updated-at/${userId}`
           );
-          if (lastUpdatedAtUser.data.lastUpdatedAt > user.updatedAt) {
+          if (new Date(lastUpdatedAtUser.data.lastUpdatedAt).getTime() !== new Date(user.updatedAt).getTime()) {
             const response = await axios.get(`${API_BASE}/user/${userId}`);
-
+            
             if (response.status === 200) {
               setUser(response.data.user); // Update state with fetched user data
 
