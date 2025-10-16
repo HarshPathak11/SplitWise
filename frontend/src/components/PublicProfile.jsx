@@ -7,6 +7,7 @@ import logo from "../../public/newIcon-192x192.png";
 import { FaCopy } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import userIcon from "../../public/userIcon.png";
+import Swal from "sweetalert2";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PublicProfile = () => {
@@ -69,52 +70,168 @@ const PublicProfile = () => {
     });
   };
 
+  // const handleTopRightClick = async () => {
+  //   if (!currentUserId) {
+  //     // Save current location path
+  //     const currentPath = window.location.pathname;
+  //     navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+  //   } else {
+  //     // frontend-only placeholder for adding friend
+  //     if (!isFriend) {
+  //       const response = await axios.post(`${API_BASE}/user/add-friends`, {
+  //         email: email,
+  //         autoAdd: true,
+  //         friendsArray: [currentUserId],
+  //       });
+  //       if (response.status === 200) {
+  //         setIsFriend(true);
+  //         toast.success("Friend Added!", {
+  //           duration: 2000,
+  //           position: "top-center",
+  //           style: {
+  //             background: "#333",
+  //             color: "#fff",
+  //           },
+  //         });
+  //       }
+  //     } else {
+  //       // Unfriend: remove both sides from friends list
+  //       try {
+  //         const res = await axios.post(`${API_BASE}/user/remove-friend`, {
+  //           friendId: userId,
+  //           userId: currentUserId,
+  //         });
+  //         if (res.status === 200) {
+  //           setIsFriend(false);
+  //           toast.success("Unfriended successfully!", {
+  //             duration: 2000,
+  //             position: "top-center",
+  //             style: {
+  //               background: "#333",
+  //               color: "#fff",
+  //             },
+  //           });
+  //         }
+  //       } catch (error) {
+  //         console.error("Failed to unfriend:", error);
+  //         toast.error("Failed to unfriend. Please try again.");
+  //       }
+  //     }
+  //   }
+  // };
+
   const handleTopRightClick = async () => {
     if (!currentUserId) {
-      // Save current location path
       const currentPath = window.location.pathname;
       navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
-    } else {
-      // frontend-only placeholder for adding friend
-      if (!isFriend) {
+      return;
+    }
+
+    if (!isFriend) {
+      // Add Friend Confirmation
+      const result = await Swal.fire({
+        title: `Add ${username || "this user"} as a friend?`,
+        text: "They’ll be able to share and split expenses with you.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Yes, add friend",
+        cancelButtonText: "Cancel",
+        background: "#0b0b0b",
+        color: "#fff",
+        confirmButtonColor: "#00f5ff",
+        cancelButtonColor: "#555",
+        customClass: {
+          popup:
+            "rounded-2xl shadow-lg backdrop-blur-md border border-white/10",
+        },
+      });
+
+      if (!result.isConfirmed) return;
+
+      try {
         const response = await axios.post(`${API_BASE}/user/add-friends`, {
           email: email,
           autoAdd: true,
           friendsArray: [currentUserId],
         });
+
         if (response.status === 200) {
           setIsFriend(true);
-          toast.success("Friend Added!", {
-            duration: 2000,
-            position: "top-center",
-            style: {
-              background: "#333",
-              color: "#fff",
+          Swal.fire({
+            title: "Friend Added!",
+            text: `${username} has been added successfully.`,
+            icon: "success",
+            background: "#0b0b0b",
+            color: "#fff",
+            confirmButtonColor: "#00f5ff",
+            customClass: {
+              popup:
+                "rounded-2xl shadow-lg backdrop-blur-md border border-white/10",
             },
           });
         }
-      } else {
-        // Unfriend: remove both sides from friends list
-        try {
-          const res = await axios.post(`${API_BASE}/user/remove-friend`, {
-            friendId: userId,
-            userId: currentUserId,
+      } catch (error) {
+        Swal.fire({
+          title: "Failed!",
+          text: "Something went wrong while adding friend.",
+          icon: "error",
+          background: "#0b0b0b",
+          color: "#fff",
+          confirmButtonColor: "#ff4b4b",
+        });
+        console.error("Add friend failed:", error);
+      }
+    } else {
+      // Remove Friend Confirmation
+      const result = await Swal.fire({
+        title: `Remove ${username || "this user"}?`,
+        text: "You will no longer be friends or share expenses.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, remove friend",
+        cancelButtonText: "Cancel",
+        background: "#0b0b0b",
+        color: "#fff",
+        confirmButtonColor: "#ff4b4b",
+        cancelButtonColor: "#555",
+        customClass: {
+          popup:
+            "rounded-2xl shadow-lg backdrop-blur-md border border-white/10",
+        },
+      });
+
+      if (!result.isConfirmed) return;
+
+      try {
+        const res = await axios.post(`${API_BASE}/user/remove-friend`, {
+          friendId: userId,
+          userId: currentUserId,
+        });
+        if (res.status === 200) {
+          setIsFriend(false);
+          Swal.fire({
+            title: "Removed!",
+            text: `${username} has been removed from your friends.`,
+            icon: "success",
+            background: "#0b0b0b",
+            color: "#fff",
+            confirmButtonColor: "#00f5ff",
+            customClass: {
+              popup:
+                "rounded-2xl shadow-lg backdrop-blur-md border border-white/10",
+            },
           });
-          if (res.status === 200) {
-            setIsFriend(false);
-            toast.success("Unfriended successfully!", {
-              duration: 2000,
-              position: "top-center",
-              style: {
-                background: "#333",
-                color: "#fff",
-              },
-            });
-          }
-        } catch (error) {
-          console.error("Failed to unfriend:", error);
-          toast.error("Failed to unfriend. Please try again.");
         }
+      } catch (error) {
+        Swal.fire({
+          title: "Failed!",
+          text: "Could not remove friend. Please try again.",
+          icon: "error",
+          background: "#0b0b0b",
+          color: "#fff",
+          confirmButtonColor: "#ff4b4b",
+        });
+        console.error("Failed to unfriend:", error);
       }
     }
   };
