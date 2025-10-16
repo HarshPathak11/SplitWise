@@ -1210,7 +1210,9 @@ const getUpdatedFriendBalances = async (req, res) => {
     }
 
     // Create an array of friend balances in the desired format
-    const updatedData = user.friends.map((f) => ({
+    const updatedData = user.friends
+    .filter(f => f && f.friend) // remove null or broken entries
+    .map((f) => ({
       friendId: f.friend._id, // friend ID
       balance: f.balance, // balance
       username: f.friend.username, // friend's username
