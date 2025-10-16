@@ -299,26 +299,6 @@ const LandingPage = () => {
           <div className="absolute -bottom-8 right-20 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
         </div>
       </div>
-
-      {/* Navbar */}
-      {/* <nav className="w-full flex justify-between items-center px-10 py-5 backdrop-blur-lg bg-black/20 border-b border-white/10 z-50">
-        <div className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-400 hover:animate-pulse">
-          FairFare
-        </div>
-        <div className="flex space-x-6">
-          <Link to="/features">
-            <button className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 hover:scale-105 border border-blue-400/30">
-              Features
-            </button>
-          </Link>
-
-          <Link to="/signup">
-            <button className="bg-blue-600/80 backdrop-blur-sm text-white py-2 px-4 rounded-lg hover:bg-blue-700/80 transition-all duration-300 hover:scale-105 border border-blue-400/30">
-              SignUp
-            </button>
-          </Link>
-        </div>
-      </nav> */}
       <Navbar/>
 
       {/* Main Content */}

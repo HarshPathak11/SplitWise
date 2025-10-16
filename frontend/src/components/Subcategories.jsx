@@ -19,7 +19,22 @@ export default function Subcategories() {
   const [endDate, setEndDate] = useState("");
   const group = location?.state?.group;
 
-  
+  // Initialize filters from navigation state if provided
+  useEffect(() => {
+    const incomingTimeframe = location?.state?.timeframe;
+    const incomingStart = location?.state?.startDate;
+    const incomingEnd = location?.state?.endDate;
+    if (incomingTimeframe) {
+      setTimeframe(incomingTimeframe);
+      if (incomingTimeframe === "custom") {
+        setShowCustomDatePicker(true);
+        if (incomingStart) setStartDate(incomingStart);
+        if (incomingEnd) setEndDate(incomingEnd);
+      } else {
+        setShowCustomDatePicker(false);
+      }
+    }
+  }, []);
 
   const GRADIENT_COLORS = [
     "from-blue-500/40 to-cyan-500/20",
@@ -72,11 +87,14 @@ export default function Subcategories() {
       try {
         if (group && Array.isArray(group.expenses)) {
           const apiStartDate = getDateFilterForAPI();
-          const response = await axios.post(`${API_BASE}/group/sub-categories`, {
-            category: category,
-            groupId: group._id,
-            ...(apiStartDate && { startDate: apiStartDate, endDate }),
-          });
+          const response = await axios.post(
+            `${API_BASE}/group/sub-categories`,
+            {
+              category: category,
+              groupId: group._id,
+              ...(apiStartDate && { startDate: apiStartDate, endDate }),
+            }
+          );
           if (response.data?.subcategories) {
             setSubcategories(response.data.subcategories);
           }
@@ -85,7 +103,7 @@ export default function Subcategories() {
         }
 
         const apiStartDate = getDateFilterForAPI();
-       
+
         const response = await axios.post(`${API_BASE}/user/subcategories`, {
           category: category,
           userId: userId,
@@ -115,14 +133,11 @@ export default function Subcategories() {
 
   const totalSpent = subcategories.reduce((sum, s) => sum + s.total, 0);
   const maxAmount = Math.max(...subcategories.map((s) => s.total), 1);
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-900 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <Header
-          title={category || "Select Category"}
-          backPath="/analytics"
-        />
+        <Header title={category || "Select Category"} backPath="/analytics" />
 
         <div className="mt-6 mb-8 space-y-4">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -193,9 +208,7 @@ export default function Subcategories() {
           <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-800/20 backdrop-blur-md rounded-2xl p-6 border-2 border-cyan-500/30 shadow-2xl">
             <div className="flex items-center gap-3 mb-2">
               <Package className="text-cyan-400" size={24} />
-              <p className="text-cyan-300 text-sm font-medium">
-                Subcategories
-              </p>
+              <p className="text-cyan-300 text-sm font-medium">Subcategories</p>
             </div>
             <p className="text-white text-3xl font-bold">
               {subcategories.length}
