@@ -369,7 +369,9 @@ const TripDetails = () => {
                   <ExpenseCard
                     key={idx}
                     _id={expense._id}
-                    category={expense.title}
+                    title={expense.title}
+                    category={expense.category}
+                    subcategory={expense.subcategory}
                     time={expense.createdAt}
                     description={""}
                     amount={expense.amount}
