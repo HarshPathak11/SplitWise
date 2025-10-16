@@ -46,7 +46,7 @@ const TripDetails = () => {
           }
         }
 
-        // Fallback: fetch from server
+        // Fallback: fetch from backend
         const response = await axios.get(`${API_BASE}/group/get-group/${tripId}`);
         if (response.status === 200) {
           const group = response.data;
