@@ -17,7 +17,7 @@ export default function Analytics() {
   const location = useLocation();
   const group = location?.state?.group;
   const [isLarge, setIsLarge] = useState(false);
-  const [timeframe, setTimeframe] = useState(group?.name !== null ? "all" : "month");
+  const [timeframe, setTimeframe] = useState(group?.name ? "all" : "month");
 
   useEffect(() => {
     const handleResize = () => setIsLarge(window.innerWidth >= 768);
