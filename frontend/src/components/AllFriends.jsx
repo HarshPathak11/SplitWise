@@ -20,6 +20,11 @@ const AllFriendsPage = () => {
     }
   }, []);
 
+  // Scroll to top on page load
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
+
   // Poll for updated balances every 2s
   useEffect(() => {
     if (!user?._id) return;
