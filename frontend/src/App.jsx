@@ -31,6 +31,7 @@ import Expenses from "./components/Expenses";
 import AdminDashboard from "./admin/AdminDashboard";
 import MarketingCampaigns from "./admin/MarketingCampaigns";
 import NotificationCampaign from "./admin/NotificationCampaign";
+import AllFriends from "./components/AllFriends";
 
 const router = createBrowserRouter([
   {
@@ -162,6 +163,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <AddTrip />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "friends",
+        element: (
+          <ProtectedRoute>
+            <AllFriends />
           </ProtectedRoute>
         ),
       },
