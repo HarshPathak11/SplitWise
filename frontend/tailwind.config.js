@@ -38,6 +38,15 @@ module.exports = {
         swipeOut: "swipeOut 100ms ease-out",
       },
     },
+    keyframes: {
+      swipeShimmer: {
+        "0%": { backgroundPosition: "-200% 0" },
+        "100%": { backgroundPosition: "200% 0" },
+      },
+    },
+    animation: {
+      swipeShimmer: "swipeShimmer 2s linear infinite",
+    },
   },
   plugins: [],
 };

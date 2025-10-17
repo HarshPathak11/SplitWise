@@ -6,24 +6,35 @@ import FairFareCard from "./FairFareCard";
 import FriendsSection from "./friendsSection";
 import RecentExpenses from "./RecentExpenses";
 import TopNavbar from "./TopNavbar";
+import SwipeToFriends from "./SwipeToFriends";
 import { requestNotificationPermission } from "../../notifications";
 
 const Dashboard = () => {
-const [user, setUser] = useState(null);
-
-//Setting user from localStorage if available
-useEffect(() => {
-  try {
-    const stored = localStorage.getItem("user");
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
-  } catch (e) {
-    console.error("Failed to parse user from localStorage:", e);
-  }
-}, []);
-
+  const [user, setUser] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+  //Handle window resize to set isMobile
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    handleResize(); // run initially
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  //Setting user from localStorage if available
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error("Failed to parse user from localStorage:", e);
+    }
+  }, []);
 
   useEffect(() => {
     async function getDetails() {
@@ -37,9 +48,12 @@ useEffect(() => {
           const lastUpdatedAtUser = await axios.get(
             `${API_BASE}/user/last-updated-at/${userId}`
           );
-          if (new Date(lastUpdatedAtUser.data.lastUpdatedAt).getTime() !== new Date(user.updatedAt).getTime()) {
+          if (
+            new Date(lastUpdatedAtUser.data.lastUpdatedAt).getTime() !==
+            new Date(user.updatedAt).getTime()
+          ) {
             const response = await axios.get(`${API_BASE}/user/${userId}`);
-            
+
             if (response.status === 200) {
               setUser(response.data.user); // Update state with fetched user data
 
@@ -101,6 +115,9 @@ useEffect(() => {
         <div className="space-y-4 h-full flex flex-col">
           {/* Today's expenses */}
           <RecentExpenses user={user} />
+
+          {/* Swipe hint for mobile */}
+          {isMobile && <SwipeToFriends />}
 
           {/* Friends Section */}
           <FriendsSection user={user} />
