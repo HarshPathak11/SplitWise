@@ -148,7 +148,7 @@ const addMembers = async (req, res) => {
       }
     }
 
-    const updatedGroup = await Group.findById(groupId).populate("members");
+    const updatedGroup = await Group.findById(groupId).populate("members").populate("expenses");
     res.status(200).json(updatedGroup);
   } catch (err) {
     console.error("Add Members Error:", err);
@@ -202,8 +202,9 @@ const removeMembers = async (req, res) => {
     // ✅ Return updated group
     const updatedGroup = await Group.findById(groupId).populate(
       "members",
-      "username"
-    );
+      "username",
+    )
+    .populate("expenses");
     return res.status(200).json(updatedGroup);
   } catch (err) {
     console.error("Remove Members Error:", err);
