@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FriendCard from "./FriendCard"; // ✅ adjust path as needed
 import { FaArrowLeft } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { FixedSizeList as List } from "react-window";
 
 const AllFriendsPage = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [friends, setFriends] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -105,6 +107,12 @@ const AllFriendsPage = () => {
     }
   };
 
+  const handleBack = () => {
+    const from = location.state?.from;
+    if (from) navigate(from);
+    else navigate(-1);
+  };
+
   const filteredFriends = friends.filter((f) =>
     f.friend?.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -128,7 +136,7 @@ const AllFriendsPage = () => {
         {/* Back Button */}
         <div className="absolute left-4 mb-3 cursor-pointer mt-3.5 z-50">
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
             title="Back to Dashboard"
           >
@@ -185,15 +193,30 @@ const AllFriendsPage = () => {
             No friends found 😢
           </p>
         ) : (
-          sortedFriends.map((f, index) => (
-            <FriendCard
-              key={f.friend?._id || index}
-              friend={f.friend}
-              balance={f.balance}
-              index={index}
-              handleDeleteFriend={() => handleDeleteFriend(f.friend?._id)}
-            />
-          ))
+          <List
+            height={window.innerHeight} // adjust to available space
+            itemCount={sortedFriends.length}
+            itemSize={70} // height of one FriendCard in px
+            width="100%"
+            className="custom-scrollbar"
+            innerElementType="div"
+            style={{ padding: "0.5rem 0" }}
+          >
+            {({ index, style }) => {
+              const f = sortedFriends[index];
+              return (
+                <div style={style}>
+                  <FriendCard
+                    key={f.friend?._id || index}
+                    friend={f.friend}
+                    balance={f.balance}
+                    index={index}
+                    handleDeleteFriend={() => handleDeleteFriend(f.friend?._id)}
+                  />
+                </div>
+              );
+            }}
+          </List>
         )}
       </div>
     </div>
