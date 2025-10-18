@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
 
 const SwipeToFriends = () => {
   const [startX, setStartX] = useState(0);
@@ -43,7 +44,7 @@ const SwipeToFriends = () => {
         className="flex-1 flex items-center justify-center text-gray-400 text-sm pointer-events-none"
         style={{ opacity: 1 - offset / 200 }}
       >
-        ← Swipe to see friends
+        <FaArrowLeft /> Swipe to see friends
       </div>
 
       {/* Draggable Arrow Ball */}
@@ -53,7 +54,7 @@ const SwipeToFriends = () => {
           transform: `translateX(-${offset}px)`,
         }}
       >
-        ←
+        <FaArrowLeft />
       </div>
     </div>
   );
