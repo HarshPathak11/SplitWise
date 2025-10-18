@@ -32,7 +32,6 @@ import AdminDashboard from "./admin/AdminDashboard";
 import MarketingCampaigns from "./admin/MarketingCampaigns";
 import NotificationCampaign from "./admin/NotificationCampaign";
 import AllFriends from "./components/AllFriends";
-import ExitConfirmation from "./components/ExitConfirmation";
 
 const router = createBrowserRouter([
   {

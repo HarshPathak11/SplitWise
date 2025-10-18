@@ -16,8 +16,7 @@ const SwipeToFriends = () => {
     const diff = startX - moveX; // right → left swipe
 
     if (diff >= 0 && containerRef.current) {
-      const maxOffset =
-        containerRef.current.offsetWidth - 40; // arrow width = 40px
+      const maxOffset = containerRef.current.offsetWidth - 40; // arrow width = 40px
       setOffset(Math.min(diff, maxOffset)); // arrow moves with finger
     }
   };
@@ -25,7 +24,7 @@ const SwipeToFriends = () => {
   const handleTouchEnd = () => {
     const threshold = 120; // swipe threshold to trigger navigation
     if (offset > threshold) {
-      navigate("/friends");
+      navigate("/friends", { state: { from: "/dash" } });
     }
     // Animate back to initial position
     setOffset(0);
