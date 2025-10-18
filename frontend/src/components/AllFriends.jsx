@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FriendCard from "./FriendCard"; // ✅ adjust path as needed
+import { FaArrowLeft } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 const AllFriendsPage = () => {
+    const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [friends, setFriends] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -122,12 +125,16 @@ const AllFriendsPage = () => {
       {/* Header */}
 
       <div className="relative flex items-center justify-center mb-4">
-        {/* Back Button - left aligned absolutely */}
-        <Link to="/dash" className="absolute left-0">
-          <button className="text-sm px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-lg">
-            ← Back
+        {/* Back Button */}
+        <div className="absolute left-4 mb-3 cursor-pointer mt-3.5 z-50">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
+            title="Back to Dashboard"
+          >
+            <FaArrowLeft className="text-white text-xl" />
           </button>
-        </Link>
+        </div>
 
         {/* Centered Heading */}
         <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] text-center">

@@ -108,6 +108,9 @@ const Dashboard = () => {
           {/* Flippable Card */}
           <FairFareCard />
 
+          {/* Swipe hint for mobile */}
+          {isMobile && <SwipeToFriends />}
+
           {/* Trips Section */}
           <TripsSection user={user} />
         </div>
@@ -116,11 +119,9 @@ const Dashboard = () => {
           {/* Today's expenses */}
           <RecentExpenses user={user} />
 
-          {/* Swipe hint for mobile */}
-          {isMobile && <SwipeToFriends />}
 
           {/* Friends Section */}
-          <FriendsSection user={user} />
+          {!isMobile && <FriendsSection user={user} />}
         </div>
       </div>
     </div>
