@@ -3,6 +3,7 @@ import ErrorBoundary from "./ErrorBoundary";
 import { Toaster } from "react-hot-toast";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import ExitConfirmation from "./components/ExitConfirmation";
 
 const usePageTracking = () => {
   const location = useLocation();
@@ -33,6 +34,7 @@ const AppLayout = () => {
           },
         }}
       />
+      <ExitConfirmation />
       <Outlet />
       {/* </ErrorBoundary> */}
     </div>
