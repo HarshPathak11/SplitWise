@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { FaArrowLeft } from "react-icons/fa";
+import toast from "react-hot-toast";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ForgotPassword = () => {
@@ -27,7 +28,7 @@ const ForgotPassword = () => {
         setOtpGenerated(response.data.otp);
       }
     } catch (error) {
-      alert("Failed to send OTP.");
+      toast.error("Failed to send OTP.");
       // console.log("error is ", error);
     } finally {
       setLoading(false);
@@ -53,7 +54,7 @@ const ForgotPassword = () => {
         navigate("/profile");
       }
     } catch (error) {
-      alert("OTP verification failed.");
+      toast.error("OTP verification failed.");
       // console.log("error is ", error);
     } finally {
       setLoading(false);
