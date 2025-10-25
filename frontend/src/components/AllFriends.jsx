@@ -108,9 +108,19 @@ const AllFriendsPage = () => {
   };
 
   const handleBack = () => {
+    // Always prefer actual browser history if there is one
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    // If no browser history, do a replace to avoid pushing duplicate entries
     const from = location.state?.from;
-    if (from) navigate(from);
-    else navigate(-1);
+    if (from) {
+      navigate(from, { replace: true });
+    } else {
+      navigate("/dash", { replace: true });
+    }
   };
 
   const filteredFriends = friends.filter((f) =>
