@@ -18,12 +18,9 @@ const SwipeToFriends = () => {
   const THRESHOLD = 120; // pixels to trigger navigation
   const KNOB_SIZE = 40; // sizes used for bounds (match your CSS)
 
-  useEffect(() => {
-    // reset navigated guard when pathname changes back to /dash
-    return () => {
-      // cleanup if component unmounts
-    };
-  }, []);
+useEffect(() => {
+  return () => setNavigated(false);
+}, []);
 
   // pointer down
   const onPointerDown = (e) => {
