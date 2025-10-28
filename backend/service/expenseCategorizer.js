@@ -23,6 +23,7 @@ function startExpenseStream() {
   const changeStream = Expense.watch();
 
   changeStream.on("change", (change) => {
+    console.log("change", change);
     if (change.operationType === "insert") {
       const doc = change.fullDocument;
 
@@ -39,14 +40,17 @@ function startExpenseStream() {
 
 // Init categorizer
 async function initExpenseCategorizer() {
+  console.log("inside initExpenseCategorizer");
   const exists = await Expense.exists({
     $or: [{ category: null }, { subcategory: null }],
   });
+  console.log("exists", exists);
 
   if (exists) {
+    console.log("Processing existing expenses...");
     await processExistingExpenses();
   }
-
+  console.log("Starting expense stream...");
   startExpenseStream();
 }
 
