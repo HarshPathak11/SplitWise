@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import TripCard from "./tripCard"; // Ensure this component is styled properly
+import OptimizedList from "./OptimizedList";
 import { FaArrowLeft } from "react-icons/fa";
 import Cookies from "js-cookie"; // Import Cookies library
 import axios from "axios";
@@ -46,14 +47,22 @@ const AllTripsPage = () => {
     fetchTrips();
   }, []);
 
-  const handleTripClick = (trip) => {
+  // Memoized trip click handler
+  const handleTripClick = useCallback((trip) => {
     navigate(`/tripDetails/${trip._id}`);
-  };
+  }, [navigate]);
 
-  // Filtered trips based on search
-  const filteredTrips = trips.filter((trip) =>
-    trip.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Memoized render function for trip cards
+  const renderTripCard = useCallback((trip) => (
+    <TripCard
+      amount={trip.tripTotal}
+      trip={trip}
+      onClick={() => handleTripClick(trip)}
+    />
+  ), [handleTripClick]);
+
+  // Key extractor for better performance
+  const keyExtractor = useCallback((trip) => trip._id, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white overflow-hidden relative">
@@ -97,24 +106,23 @@ const AllTripsPage = () => {
         />
       </div>
 
-      {/* Trips and Events List */}
-      <div className="flex-1 max-w-4xl cursor-pointer space-y-2 mx-auto w-full p-4 overflow-y-auto z-10 relative">
-        {loading ? (
-          <p className="text-blue-400 text-center">Loading trips...</p>
-        ) : trips.length === 0 ? (
-          <p className="text-red-500 text-center font-semibold">
-            No trips found.
-          </p>
-        ) : (
-          filteredTrips.map((trip) => (
-            <TripCard
-              key={trip._id}
-              amount={trip.tripTotal}
-              trip={trip}
-              onClick={() => handleTripClick(trip)}
-            />
-          ))
-        )}
+      {/* Optimized Trips and Events List */}
+      <div className="flex-1 max-w-4xl mx-auto w-full p-4 overflow-y-auto z-10 relative">
+        <OptimizedList
+          items={trips}
+          renderItem={renderTripCard}
+          keyExtractor={keyExtractor}
+          loading={loading}
+          loadingMessage="Loading trips..."
+          emptyMessage="No trips found."
+          searchQuery={searchQuery}
+          searchFields={['name']}
+          sortBy="createdAt"
+          sortOrder="desc"
+          onItemClick={handleTripClick}
+          className="cursor-pointer"
+          spacing="space-y-2"
+        />
       </div>
     </div>
   );

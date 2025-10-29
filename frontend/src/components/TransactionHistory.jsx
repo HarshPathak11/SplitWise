@@ -265,7 +265,7 @@ const TransactionHistory = () => {
       {loading && (
         <div className="flex flex-1 items-center justify-center bg-gray-900 absolute inset-0 z-50">
           <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-b-4 border-gray-800 mb-6"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-x-4 border-blue-500 mb-6"></div>
             <span className="text-lg text-blue-400 font-semibold">
               Loading transactions...
             </span>
