@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import FriendCard from "./FriendCard";
+import OptimizedList from "./OptimizedList";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -63,7 +64,7 @@ const FriendsSection = ({ user }) => {
     return () => clearInterval(interval); // Cleanup
   }, [user?._id]);
 
-  const handleDeleteFriend = async (friendIdToDelete) => {
+  const handleDeleteFriend = useCallback(async (friendIdToDelete) => {
     try {
       const res = await axios.delete(`${API_BASE}/user/remove-friend`, {
         data: {
@@ -82,13 +83,9 @@ const FriendsSection = ({ user }) => {
       console.error("Failed to delete friend:", error);
       toast.error("Could not delete friend. Try again.");
     }
-  };
+  }, [API_BASE, user?._id]);
 
-  const filteredFriends = friends.filter((f) =>
-    f.friend?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleUpdateFriendBalance = (email, newBalance) => {
+  const handleUpdateFriendBalance = useCallback((email, newBalance) => {
     setFriends((prev) =>
       prev.map((f) =>
         f.friend.email === email ? { ...f, balance: newBalance } : f
@@ -102,31 +99,50 @@ const FriendsSection = ({ user }) => {
       updatedUser.friends[friendIndex].balance = newBalance;
       localStorage.setItem("user", JSON.stringify(updatedUser));
     }
-  };
+  }, [user]);
 
-  // Split and sort
-  const sortedFriends = [
-    // 1. Friends with non-zero balance, sorted alphabetically by name
-    ...filteredFriends
-      .filter((f) => f.balance !== 0)
+  // Memoized sorted friends with custom sorting logic
+  const sortedFriends = useMemo(() => {
+    const filtered = friends.filter((f) =>
+      f.friend?.username?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    return [
       // 1. Friends with non-zero balance, sorted by descending balance
-      .sort((a, b) => b.balance - a.balance),
-    // 2. Friends with zero balance, sorted alphabetically by name
-    ...filteredFriends
-      .filter((f) => f.balance === 0)
-      .sort((a, b) => {
-        const nameA =
-          a.friend && a.friend?.username
-            ? a.friend?.username.toLowerCase()
-            : "";
-        const nameB =
-          b.friend && b.friend?.username
-            ? b.friend?.username.toLowerCase()
-            : "";
+      ...filtered
+        .filter((f) => f.balance !== 0)
+        .sort((a, b) => b.balance - a.balance),
+      // 2. Friends with zero balance, sorted alphabetically by name
+      ...filtered
+        .filter((f) => f.balance === 0)
+        .sort((a, b) => {
+          const nameA =
+            a.friend && a.friend?.username
+              ? a.friend?.username.toLowerCase()
+              : "";
+          const nameB =
+            b.friend && b.friend?.username
+              ? b.friend?.username.toLowerCase()
+              : "";
 
-        return nameA.localeCompare(nameB);
-      }),
-  ];
+          return nameA.localeCompare(nameB);
+        }),
+    ];
+  }, [friends, searchQuery]);
+
+  // Memoized render function for friend cards
+  const renderFriendCard = useCallback((f, index) => (
+    <FriendCard
+      friend={f.friend}
+      balance={f.balance}
+      index={index}
+      handleDeleteFriend={() => handleDeleteFriend(f.friend?._id)}
+      updateFriendBalance={handleUpdateFriendBalance}
+    />
+  ), [handleDeleteFriend, handleUpdateFriendBalance]);
+
+  // Key extractor for better performance
+  const keyExtractor = useCallback((f) => f.friend?._id, []);
 
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1 p-2 mb-auto">
@@ -172,30 +188,21 @@ const FriendsSection = ({ user }) => {
         </div>
       </div>
 
-      {/* Scrollable Friends List */}
+      {/* Optimized Scrollable Friends List */}
       <div
-        className={`space-y-2 ${
-          filteredFriends.length > 4
+        className={`${
+          sortedFriends.length > 4
             ? "overflow-y-auto max-h-[331px] pr-1 custom-scrollbar"
             : ""
         }`}
       >
-        {sortedFriends.length === 0 ? (
-          <p className="text-red-500 text-center font-semibold">
-            You have no friends as always.
-          </p>
-        ) : (
-          sortedFriends.map((f, index) => (
-            <FriendCard
-              key={f.friend?._id || index}
-              friend={f.friend}
-              balance={f.balance}
-              index={index}
-              handleDeleteFriend={() => handleDeleteFriend(f.friend?._id)}
-              updateFriendBalance={handleUpdateFriendBalance}
-            />
-          ))
-        )}
+        <OptimizedList
+          items={sortedFriends}
+          renderItem={renderFriendCard}
+          keyExtractor={keyExtractor}
+          emptyMessage="You have no friends as always."
+          spacing="space-y-2"
+        />
       </div>
     </div>
   );

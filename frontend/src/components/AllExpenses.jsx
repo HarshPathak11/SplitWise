@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ExpenseCard from "./expenseCard"; // Ensure this component is styled properly
+import OptimizedList from "./OptimizedList";
 import { FaArrowLeft } from "react-icons/fa";
 import Cookies from "js-cookie";
 import axios from "axios";
@@ -22,11 +23,7 @@ const AllExpensesPage = () => {
           userId,
         });
         if (response.data?.expenses) {
-          // Sort by createdAt descending (latest first)
-          const sortedExpenses = response.data.expenses.sort(
-            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-          );
-          setExpenses(sortedExpenses);
+          setExpenses(response.data.expenses);
         }
       } catch (error) {
         console.error("Error fetching expenses:", error);
@@ -36,7 +33,25 @@ const AllExpensesPage = () => {
     };
 
     fetchExpenses();
-  }, []);
+  }, [API_BASE]);
+
+  // Memoized render function for expense cards
+  const renderExpenseCard = useCallback((expense) => (
+    <ExpenseCard
+      title={expense.title}
+      category={expense.category}
+      subcategory={expense.subcategory}
+      time={expense.createdAt}
+      description=""
+      amount={expense.amount}
+      iconColor="bg-blue-500"
+      paidBy={expense.paidBy}
+      beneficiaries={expense.owedBy}
+    />
+  ), []);
+
+  // Key extractor for better performance
+  const keyExtractor = useCallback((expense) => expense._id, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#000000] text-white overflow-hidden relative">
@@ -70,32 +85,19 @@ const AllExpensesPage = () => {
         </p>
       </div>
 
-      {/* Expenses List */}
+      {/* Optimized Expenses List */}
       <div className="flex-1 max-w-4xl mx-auto w-full p-4 overflow-y-auto z-10 relative">
-        {loading ? (
-          <p className="text-center text-white font-semibold">Loading...</p>
-        ) : expenses.length === 0 ? (
-          <p className="text-red-500 text-center font-semibold">
-            No expenses found.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {expenses.map((expense) => (
-              <ExpenseCard
-                key={expense._id}
-                title={expense.title}
-                category={expense.category}
-                subcategory={expense.subcategory}
-                time={expense.createdAt}
-                description={""}
-                amount={expense.amount}
-                iconColor={"bg-blue-500"}
-                paidBy={expense.paidBy}
-                beneficiaries={expense.owedBy}
-              />
-            ))}
-          </div>
-        )}
+        <OptimizedList
+          items={expenses}
+          renderItem={renderExpenseCard}
+          keyExtractor={keyExtractor}
+          loading={loading}
+          loadingMessage="Loading..."
+          emptyMessage="No expenses found."
+          sortBy="createdAt"
+          sortOrder="desc"
+          spacing="space-y-4"
+        />
       </div>
     </div>
   );
