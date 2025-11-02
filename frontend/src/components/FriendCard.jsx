@@ -44,13 +44,13 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
     try {
       await axios.post(`${API_BASE}/user/update-friend-balance`, {
-        userEmail: currentUser.email,
-        friendEmail: friend.email,
+        userEmail: currentUser?.email,
+        friendEmail: friend?.email,
         amount,
         action: "paid",
       });
       balance = parseFloat((Number(balance) + amount).toFixed(2));
-      updateFriendBalance(friend.email, balance);
+      updateFriendBalance(friend?.email, balance);
       setSettleAmount(balance);
       setShowDropdown(false);
       setShowQRCode(false);
@@ -64,13 +64,13 @@ const FriendCard = ({
     const amount = Math.abs(settleAmount);
     try {
       await axios.post(`${API_BASE}/user/update-friend-balance`, {
-        userEmail: currentUser.email,
-        friendEmail: friend.email,
+        userEmail: currentUser?.email,
+        friendEmail: friend?.email,
         amount,
         action: "received",
       });
       balance = parseFloat((Number(balance) - amount).toFixed(2));
-      updateFriendBalance(friend.email, balance);
+      updateFriendBalance(friend?.email, balance);
       setSettleAmount(balance);
       setShowDropdown(false);
       setShowQRCode(false);
@@ -92,8 +92,8 @@ const FriendCard = ({
           `${API_BASE}/user/update-friend-balance`,
           // "//http://localhost:8000/user/update-friend-balance",
           {
-            userEmail: currentUser.email,
-            friendEmail: friend.email,
+            userEmail: currentUser?.email,
+            friendEmail: friend?.email,
             amount: currentBalance,
             action: "received",
             note: "Cleared Everything",
@@ -104,8 +104,8 @@ const FriendCard = ({
           `${API_BASE}/user/update-friend-balance`,
           // "//http://localhost:8000/user/update-friend-balance",
           {
-            userEmail: currentUser.email,
-            friendEmail: friend.email,
+            userEmail: currentUser?.email,
+            friendEmail: friend?.email,
             amount: Math.abs(currentBalance),
             action: "paid",
             note: "Cleared Everything",
