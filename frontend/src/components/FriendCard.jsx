@@ -113,7 +113,7 @@ const FriendCard = ({
         );
       }
       balance = 0;
-      updateFriendBalance(friend.email, balance);
+      updateFriendBalance(friend?.email, balance);
       setSettleAmount(0);
     } catch (error) {
       toast.error("Please refresh the page first!");
