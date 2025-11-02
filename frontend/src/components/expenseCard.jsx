@@ -138,7 +138,7 @@ const ExpenseCard = ({
               <Trash2 size={18} />
             </button>
           )}
-          <div className="text-lg font-semibold">₹{amount}</div>
+          <div className="text-lg font-semibold">₹{amount.toFixed(2)}</div>
         </div>
       </div>
 
@@ -154,7 +154,7 @@ const ExpenseCard = ({
           <ul className="text-gray-400">
             {beneficiaries.map((person, index) => (
               <li key={index} className="ml-4 list-disc">
-                {person.user?.username} has a share of ₹{person.amount}
+                {person.user?.username} has a share of ₹{person.amount.toFixed(2)}
               </li>
             ))}
           </ul>
