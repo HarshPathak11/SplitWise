@@ -91,12 +91,12 @@ const FriendsSection = ({ user }) => {
   const handleUpdateFriendBalance = (email, newBalance) => {
     setFriends((prev) =>
       prev.map((f) =>
-        f.friend.email === email ? { ...f, balance: newBalance } : f
+        f?.friend?.email === email ? { ...f, balance: newBalance } : f
       )
     );
     const updatedUser = { ...user };
     const friendIndex = updatedUser.friends.findIndex(
-      (f) => f.friend.email === email
+      (f) => f?.friend?.email === email
     );
     if (friendIndex !== -1) {
       updatedUser.friends[friendIndex].balance = newBalance;
