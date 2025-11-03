@@ -1,46 +1,33 @@
 import ExpenseCard from "./expenseCard"; // Make sure this path is correct based on your folder structure
-import OptimizedList from "./OptimizedList";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 
 const RecentExpenses = (user) => {
   const [recentExpenses, setRecentExpenses] = useState([]);
 
-  // Memoized recent expenses processing
-  const processedExpenses = useMemo(() => {
-    if (!user?.user?.recentExpense || !Array.isArray(user.user.recentExpense)) {
-      return [];
-    }
-
-    // Sort expenses by createdAt in descending order and take top 3
-    const sortedExpenses = [...user.user.recentExpense].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-    return sortedExpenses.slice(0, 3);
-  }, [user?.user?.recentExpense]);
-
   useEffect(() => {
-    setRecentExpenses(processedExpenses);
-  }, [processedExpenses]);
+    if (user) {
+      try {
+        const parsedUser = user?.user;
 
-  // Memoized render function for expense cards
-  const renderExpenseCard = useCallback((expense, index) => (
-    <ExpenseCard
-      title={expense?.title}
-      category={expense?.category}
-      subcategory={expense?.subcategory}
-      time={expense?.createdAt}
-      description=""
-      amount={expense?.amount}
-      iconColor="bg-blue-500"
-      paidBy={expense?.paidBy}
-      beneficiaries={expense?.owedBy}
-    />
-  ), []);
-
-  // Key extractor for better performance
-  const keyExtractor = useCallback((expense) => expense?.id || expense?._id, []);
+        if (
+          parsedUser?.recentExpense &&
+          Array.isArray(parsedUser.recentExpense)
+        ) {
+          // Sort expenses by createdAt in descending order (most recent first)
+          const sortedExpenses = [...parsedUser.recentExpense].sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          // Take the top 4 expenses after sorting.
+          const topExpenses = sortedExpenses.slice(0, 3);
+          setRecentExpenses(topExpenses);
+        }
+      } catch (error) {
+        console.error("Error parsing user from localStorage:", error);
+      }
+    }
+  }, [user]);
 
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
@@ -59,13 +46,28 @@ const RecentExpenses = (user) => {
         </Link>
       </div>
 
-      <OptimizedList
-        items={recentExpenses}
-        renderItem={renderExpenseCard}
-        keyExtractor={keyExtractor}
-        emptyMessage="No Expenses Yet"
-        spacing="space-y-3 sm:space-y-4"
-      />
+      <div className="space-y-3 sm:space-y-4">
+        {recentExpenses && recentExpenses.length > 0 ? (
+          recentExpenses.map((expense, index) => (
+            <ExpenseCard
+              key={expense?.id || expense?._id || index}
+              // Pass explicit title separately so the card header shows the actual expense title
+              title={expense?.title}
+              // Use backend category/subcategory directly (don't fall back to title here)
+              category={expense?.category}
+              subcategory={expense?.subcategory}
+              time={expense?.createdAt}
+              description={""}
+              amount={expense?.amount}
+              iconColor={"bg-blue-500"}
+              paidBy={expense?.paidBy}
+              beneficiaries={expense?.owedBy}
+            />
+          ))
+        ) : (
+          <div className="text-center text-gray-300">No Expenses Yet</div>
+        )}
+      </div>
     </div>
   );
 };

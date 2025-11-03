@@ -1,50 +1,48 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import TripCard from "./tripCard"; // adjust path as needed
-import OptimizedList from "./OptimizedList";
 
 const TripsSection = (user) => {
   const navigate = useNavigate();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Memoized trips processing
-  const processedTrips = useMemo(() => {
-    const response = user?.user?.groups || [];
-    
-    if (Array.isArray(response)) {
-      // Sort by updatedAt in descending order and take top 3
-      const sortedTrips = [...response].sort(
-        (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
-      );
-      return sortedTrips.slice(0, 3);
-    }
-    return [];
-  }, [user?.user?.groups]);
-
-  // Update trips when processed data changes
+  // // Fetch trips for the current user
   useEffect(() => {
-    setTrips(processedTrips);
-    setLoading(false);
-  }, [processedTrips]);
+    const fetchTrips = async () => {
+      try {
+        const userId = Cookies.get("id"); // user ID stored in cookies as "id"
 
-  // Memoized trip click handler
-  const handleTripClick = useCallback((trip) => {
+        if (!userId) {
+          console.error("User ID not found in cookies.");
+          return;
+        }
+
+        const response = user?.user?.groups || [];
+        // console.log("Fetched trips data:", response);
+
+        if (Array.isArray(response)) {
+          // Sort expenses by updatedAt in descending order (most recent first)
+          const sortedTrips = [...response].sort(
+            (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+          );
+          // Take the top 4 expenses after sorting.
+          const topTrips = sortedTrips.slice(0, 3);
+          setTrips(topTrips);
+        }
+      } catch (error) {
+        console.error("Error fetching trips:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTrips();
+  }, [user]);
+
+  const handleTripClick = (trip) => {
     navigate(`/tripDetails/${trip._id}`);
-  }, [navigate]);
-
-  // Memoized render function for trip cards
-  const renderTripCard = useCallback((trip) => (
-    <TripCard
-      amount={trip.tripTotal}
-      trip={trip}
-      onClick={() => handleTripClick(trip)}
-    />
-  ), [handleTripClick]);
-
-  // Key extractor for better performance
-  const keyExtractor = useCallback((trip) => trip._id, []);
+  };
 
   return (
     <div className="backdrop-blur-lg bg-gray-800/30 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 flex-1">
@@ -89,17 +87,25 @@ const TripsSection = (user) => {
         </div>
       </div>
 
-      <div className="cursor-pointer overflow-y-auto">
-        <OptimizedList
-          items={trips}
-          renderItem={renderTripCard}
-          keyExtractor={keyExtractor}
-          loading={loading}
-          loadingMessage="Loading trips..."
-          emptyMessage="Get a life add some trips."
-          onItemClick={handleTripClick}
-          spacing="space-y-2"
-        />
+      <div className="space-y-2 cursor-pointer overflow-y-auto">
+        {
+        // loading ? (
+        //   <p className="text-blue-400 text-center">Loading trips...</p>
+        // ) : 
+        trips && trips.length > 0 ? (
+          trips.map((trip) => (
+            <TripCard
+              key={trip._id}
+              amount={trip.tripTotal}
+              trip={trip}
+              onClick={() => handleTripClick(trip)}
+            />
+          ))) : (
+          <p className="text-red-500 text-center font-semibold">
+            Get a life add some trips.
+          </p>
+        )
+        }
       </div>
 
       {/* {!loading && trips.length > 0 && (
