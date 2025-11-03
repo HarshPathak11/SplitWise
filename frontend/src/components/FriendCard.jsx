@@ -136,6 +136,7 @@ const FriendCard = ({
 
   return (
     <div
+    key={index}
       className="bg-gray-700/50 backdrop-blur-sm cursor-pointer rounded-lg border border-gray-600/30 p-2 sm:p-3 mb-2"
     >
       <div
