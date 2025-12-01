@@ -13,13 +13,15 @@ import {
     getExpenseController,
     getTopCategoriesForGroupExpense,
     getSubCategoriesForGroup,
-    getAllExpensesForASubcategoryInGroup
+    getAllExpensesForASubcategoryInGroup,
+    getGroupExpenses
 } from '../controllers/groups.js';
 
 const router = express.Router();
 
 //GET requests
 router.get('/get-group/:id', getGroupDetails);
+router.get("/:id/expenses", getGroupExpenses);
 router.get('/user-groups/:id', getAllGroupsOfAUser);
 router.get('/user/:userId/trips', getUserTrips);
 router.get('/user/:userId/recent-expenses', getRecentExpenses);

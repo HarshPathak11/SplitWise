@@ -201,8 +201,8 @@ const FriendCard = ({
             className="text-yellow-400 hover:text-yellow-300 transition"
           >
             <MdOutlineCurrencyExchange className="w-5 h-5" />
-          </button>
-          <button
+          </button> */}
+          {/* <button
             onClick={() => {
               setShowDropdown(true);
               setShowConfirmDelete(true);

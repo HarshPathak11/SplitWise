@@ -72,56 +72,6 @@ const PublicProfile = () => {
     });
   };
 
-  // const handleTopRightClick = async () => {
-  //   if (!currentUserId) {
-  //     // Save current location path
-  //     const currentPath = window.location.pathname;
-  //     navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
-  //   } else {
-  //     // frontend-only placeholder for adding friend
-  //     if (!isFriend) {
-  //       const response = await axios.post(`${API_BASE}/user/add-friends`, {
-  //         email: email,
-  //         autoAdd: true,
-  //         friendsArray: [currentUserId],
-  //       });
-  //       if (response.status === 200) {
-  //         setIsFriend(true);
-  //         toast.success("Friend Added!", {
-  //           duration: 2000,
-  //           position: "top-center",
-  //           style: {
-  //             background: "#333",
-  //             color: "#fff",
-  //           },
-  //         });
-  //       }
-  //     } else {
-  //       // Unfriend: remove both sides from friends list
-  //       try {
-  //         const res = await axios.post(`${API_BASE}/user/remove-friend`, {
-  //           friendId: userId,
-  //           userId: currentUserId,
-  //         });
-  //         if (res.status === 200) {
-  //           setIsFriend(false);
-  //           toast.success("Unfriended successfully!", {
-  //             duration: 2000,
-  //             position: "top-center",
-  //             style: {
-  //               background: "#333",
-  //               color: "#fff",
-  //             },
-  //           });
-  //         }
-  //       } catch (error) {
-  //         console.error("Failed to unfriend:", error);
-  //         toast.error("Failed to unfriend. Please try again.");
-  //       }
-  //     }
-  //   }
-  // };
-
   const handleTopRightClick = async () => {
     if (!currentUserId) {
       const currentPath = window.location.pathname;

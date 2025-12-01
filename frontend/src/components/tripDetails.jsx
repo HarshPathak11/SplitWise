@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
@@ -10,7 +10,6 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TripDetails = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const { tripId } = useParams(); // Now you get tripId directly from URL
   const [members, setMembers] = useState([]);
@@ -18,105 +17,195 @@ const TripDetails = () => {
   const [loading, setLoading] = useState(true); // Loading state for the GET request
   const [expenses, setExpenses] = useState([]);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
+  const [cursor, setCursor] = useState(null);
+  const [loadingExpenses, setLoadingExpenses] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const loaderRef = useRef(null);
 
+  //Fetching group Meta Data
   useEffect(() => {
-    const fetchTripDetails = async () => {
-      if (!tripId) return;
-      const getCurrentGroup = localStorage.getItem("currentGroup");
-
+    const fetchMeta = async () => {
+      setLoading(true);
       try {
-        // If we have a cached group but for another trip, ignore it
-        if (getCurrentGroup) {
-          const parsedGroup = JSON.parse(getCurrentGroup);
-          if (parsedGroup && parsedGroup._id === tripId) {
-            setTripDetails(parsedGroup);
-            const groupMembers = (parsedGroup.members || []).map((m) => ({
-              _id: m._id,
-              username: m.username,
-            }));
-            const sortedExpenses = (parsedGroup.expenses || [])
-              .slice()
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const res = await axios.get(`${API_BASE}/group/get-group/${tripId}`);
+        setTripDetails(res.data);
 
-            setExpenses(sortedExpenses);
-            localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
-            setMembers(groupMembers);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // Fallback: fetch from backend
-        const response = await axios.get(`${API_BASE}/group/get-group/${tripId}`);
-        if (response.status === 200) {
-          const group = response.data;
-          setTripDetails(group);
-          const groupMembers = (group.members || []).map((m) => ({
-            _id: m._id,
-            username: m.username,
-          }));
-          const sortedExpenses = (group.expenses || [])
-            .slice()
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-          setExpenses(sortedExpenses);
-          localStorage.setItem("currentGroup", JSON.stringify(group));
-          localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
-          setMembers(groupMembers);
-        }
-      } catch (err) {
-        console.error("Failed to load trip details:", err);
-        toast.error("Could not load trip details. Please try again.");
+        const groupMembers = (res.data.members || []).map((m) => ({
+          _id: m._id,
+          username: m.username,
+        }));
+        setMembers(groupMembers);
+      } catch (e) {
+        toast.error("Failed to load trip");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTripDetails();
+    fetchMeta();
   }, [tripId]);
-  // 2) Re-fetch only the expenses if `expenseEdited` is true
+
+  //Fetching Group Expenses
   useEffect(() => {
-    // console.log(location.state?.expenseEdited)
-    if (location.state?.expenseEdited) {
-      // Clear the flag so we don't loop
-      navigate(location.pathname, { replace: true, state: {} });
+    if (loadingExpenses || !hasMore) return;
 
-      // Re-fetch just the group (or just the expenses part)
-      const reloadExpenses = async () => {
-        try {
-          const response = await axios.get(
-            `${API_BASE}/group/get-group/${tripId}`
-            // `//http://localhost:8000/group/get-group/${tripId}`
-          );
-          if (response.status === 200) {
-            const group = response.data;
-            // Only update the `expenses` list (you could also update members/tripDetails if needed)
-            const sortedExpenses = group.expenses
-              .slice()
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            setExpenses(sortedExpenses);
-
-            // Keep localStorage in sync
-            const rawCurrentGroup = localStorage.getItem("currentGroup");
-            if (rawCurrentGroup) {
-              try {
-                const cg = JSON.parse(rawCurrentGroup);
-                cg.expenses = group.expenses;
-                localStorage.setItem("currentGroup", JSON.stringify(cg));
-              } catch (e) {
-                console.error("Failed to patch localStorage after edit:", e);
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Error reloading expenses:", err);
-          toast.error("Could not refresh expenses after edit");
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadExpenses();
         }
-      };
+      },
+      { threshold: 1 }
+    );
 
-      reloadExpenses();
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
     }
-  }, [location.state?.expenseEdited, tripId, navigate]);
+
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
+    };
+  }, [loaderRef.current, hasMore, loadingExpenses]);
+
+  // useEffect(() => {
+  //   const fetchTripDetails = async () => {
+  //     if (!tripId) return;
+  //     const getCurrentGroup = localStorage.getItem("currentGroup");
+
+  //     try {
+  //       // If we have a cached group but for another trip, ignore it
+  //       if (getCurrentGroup) {
+  //         const parsedGroup = JSON.parse(getCurrentGroup);
+  //         if (parsedGroup && parsedGroup._id === tripId) {
+  //           setTripDetails(parsedGroup);
+  //           const groupMembers = (parsedGroup.members || []).map((m) => ({
+  //             _id: m._id,
+  //             username: m.username,
+  //           }));
+  //           const sortedExpenses = (parsedGroup.expenses || [])
+  //             .slice()
+  //             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  //           setExpenses(sortedExpenses);
+  //           localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
+  //           setMembers(groupMembers);
+  //           setLoading(false);
+  //           return;
+  //         }
+  //       }
+
+  //       // Fallback: fetch from backend
+  //       const response = await axios.get(
+  //         `${API_BASE}/group/get-group/${tripId}`
+  //       );
+  //       if (response.status === 200) {
+  //         const group = response.data;
+  //         setTripDetails(group);
+  //         const groupMembers = (group.members || []).map((m) => ({
+  //           _id: m._id,
+  //           username: m.username,
+  //         }));
+  //         const sortedExpenses = (group.expenses || [])
+  //           .slice()
+  //           .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  //         setExpenses(sortedExpenses);
+  //         localStorage.setItem("currentGroup", JSON.stringify(group));
+  //         localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
+  //         setMembers(groupMembers);
+  //       }
+  //     } catch (err) {
+  //       console.error("Failed to load trip details:", err);
+  //       toast.error("Could not load trip details. Please try again.");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchTripDetails();
+  // }, [tripId]);
+  // 2) Re-fetch only the expenses if `expenseEdited` is true
+
+  // useEffect(() => {
+  //   // console.log(location.state?.expenseEdited)
+  //   if (location.state?.expenseEdited) {
+  //     // Clear the flag so we don't loop
+  //     navigate(location.pathname, { replace: true, state: {} });
+
+  //     // Re-fetch just the group (or just the expenses part)
+  //     const reloadExpenses = async () => {
+  //       try {
+  //         const response = await axios.get(
+  //           `${API_BASE}/group/get-group/${tripId}`
+  //           // `//http://localhost:8000/group/get-group/${tripId}`
+  //         );
+  //         if (response.status === 200) {
+  //           const group = response.data;
+  //           // Only update the `expenses` list (you could also update members/tripDetails if needed)
+  //           const sortedExpenses = group.expenses
+  //             .slice()
+  //             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  //           setExpenses(sortedExpenses);
+
+  //           // Keep localStorage in sync
+  //           const rawCurrentGroup = localStorage.getItem("currentGroup");
+  //           if (rawCurrentGroup) {
+  //             try {
+  //               const cg = JSON.parse(rawCurrentGroup);
+  //               cg.expenses = group.expenses;
+  //               localStorage.setItem("currentGroup", JSON.stringify(cg));
+  //             } catch (e) {
+  //               console.error("Failed to patch localStorage after edit:", e);
+  //             }
+  //           }
+  //         }
+  //       } catch (err) {
+  //         console.error("Error reloading expenses:", err);
+  //         toast.error("Could not refresh expenses after edit");
+  //       }
+  //     };
+
+  //     reloadExpenses();
+  //   }
+  // }, [location.state?.expenseEdited, tripId, navigate]);
+
+  //Adding an infinite scroll listener
+
+  useEffect(() => {
+    const onScroll = () => {
+      const bottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
+
+      if (bottom) {
+        loadExpenses();
+      }
+    };
+
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [cursor, hasMore, loadingExpenses]);
+
+  const loadExpenses = async () => {
+    if (!hasMore || loadingExpenses) return;
+
+    setLoadingExpenses(true);
+
+    try {
+      const res = await axios.get(`${API_BASE}/group/${tripId}/expenses`, {
+        params: { limit: 20, cursor },
+      });
+
+      setExpenses([...expenses, ...res.data.expenses]);
+      setCursor(res.data.nextCursor);
+      setHasMore(Boolean(res.data.nextCursor));
+    } catch (err) {
+      toast.error("Failed to load expenses");
+    } finally {
+      setLoadingExpenses(false);
+    }
+  };
 
   // Handle adding new members (avoid adding existing ones)
   const handleAddMember = () => {
@@ -376,6 +465,10 @@ const TripDetails = () => {
           )}
         </div>
         {/* Expenses Section */}
+        {loadingExpenses && (
+          <p className="text-center text-gray-400">Loading...</p>
+        )}
+
         <div>
           <div className="flex justify-between items-center mb-4 mt-4">
             <h2 className="text-xl sm:text-2xl font-semibold">Expenses</h2>
@@ -413,6 +506,7 @@ const TripDetails = () => {
               })
             )}
           </div>
+          <div ref={loaderRef} className="h-1"></div>
         </div>
       </div>
     </div>
