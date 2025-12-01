@@ -192,7 +192,7 @@ const FriendCard = ({
           >
             <FaHistory className="w-5 h-5" />
           </Link>
-          <button
+          {/* <button
             title="Settle Up"
             onClick={() => {
               setShowConfirmSettle(true);
@@ -211,7 +211,7 @@ const FriendCard = ({
             title="Remove Friend"
           >
             <FaTrash className="h-5 w-5" />
-          </button>
+          </button> */}
         </div>
       </div>
 
