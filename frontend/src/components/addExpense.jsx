@@ -176,7 +176,10 @@ const AddExpense = () => {
       customAmounts: splitMode === "unequally" ? amounts : {},
     };
 
-    if(totalEntered > 50000){ toast.error("Amount must be smaller than 50k"); return;}
+    if (totalEntered > 50000) {
+      toast.error("Amount must be smaller than 50k");
+      return;
+    }
 
     try {
       setIsLoading(true); // ✅ Start loading
@@ -219,6 +222,11 @@ const AddExpense = () => {
       setIsLoading(false); // ✅ Stop loading
     }
   };
+
+  const equalSplitAmount =
+    splitMode === "equally" && selected.length > 0
+      ? (parseFloat(mainAmount || 0) / selected.length).toFixed(2)
+      : 0;
 
   return (
     <div className="min-h-screen bg-black text-white p-4 sm:p-6 md:p-10 font-sans">
@@ -342,6 +350,12 @@ const AddExpense = () => {
                   className="px-3 py-2 bg-black border border-gray-600 text-white rounded-lg w-full sm:w-40 focus:outline-none focus:ring-2 focus:ring-white"
                 />
               )}
+
+              {splitMode === "equally" && selected.includes(member._id) && (
+                <span className="ml-auto text-green-400 font-semibold">
+                  ₹{equalSplitAmount}
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -380,7 +394,7 @@ const AddExpense = () => {
           </button>
         </div>
         {/* Simple Calculator - always visible above amount input */}
-        <div className="w-full bg-[#0b0b0b] border border-gray-700 rounded-2xl p-4 shadow-2xl mb-4">
+        {/* <div className="w-full bg-[#0b0b0b] border border-gray-700 rounded-2xl p-4 shadow-2xl mb-4">
           <div className="flex justify-between items-center mb-3">
             <div className="text-lg font-semibold">Calculator</div>
             <button
@@ -454,7 +468,7 @@ const AddExpense = () => {
           <div className="text-sm text-gray-400 mt-3">
             Tip: Use your keyboard / numpad. Press Enter to calculate
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
