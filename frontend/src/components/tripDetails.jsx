@@ -30,10 +30,14 @@ const TripDetails = () => {
         const res = await axios.get(`${API_BASE}/group/get-group/${tripId}`);
         setTripDetails(res.data);
 
+        localStorage.setItem("currentGroup", JSON.stringify(res.data));
+
         const groupMembers = (res.data.members || []).map((m) => ({
           _id: m._id,
           username: m.username,
         }));
+
+        localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
         setMembers(groupMembers);
       } catch (e) {
         toast.error("Failed to load trip");
@@ -215,7 +219,7 @@ const TripDetails = () => {
 
   const handleRemoveMember = () => {
     if (members.length <= 1) {
-      toast.error("You must have at least one member in the group.");
+      toast.error("You must have at least one more member in the group.");
       return;
     }
     navigate(`/remove-members/${tripId}`);
