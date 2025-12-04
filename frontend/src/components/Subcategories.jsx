@@ -85,7 +85,7 @@ export default function Subcategories() {
     const fetchSubcategories = async () => {
       setLoading(true);
       try {
-        if (group && Array.isArray(group.expenses)) {
+        if (group && group._id) {
           const apiStartDate = getDateFilterForAPI();
           const response = await axios.post(
             `${API_BASE}/group/sub-categories`,

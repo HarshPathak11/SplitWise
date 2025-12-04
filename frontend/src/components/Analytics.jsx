@@ -75,7 +75,7 @@ export default function Analytics() {
       try {
         setLoading(true);
 
-        if (group && Array.isArray(group.expenses)) {
+        if (group && group._id) {
           const apiStartDate = getDateFilterForAPI();
           const response = await axios.get(
             `${API_BASE}/group/${group._id}/top-categories`,

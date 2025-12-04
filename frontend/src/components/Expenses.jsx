@@ -124,7 +124,7 @@ export default function Expenses() {
           <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 backdrop-blur-md rounded-2xl p-5 border-2 border-blue-500/30 shadow-2xl">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="text-blue-400" size={20} />
-              <p className="text-blue-300 text-sm font-medium">Total</p>
+              <p className="text-blue-300 text-sm font-medium">Your Total Share</p>
             </div>
             <p className="text-white text-2xl font-bold">
               ₹{totalAmount.toLocaleString()}
