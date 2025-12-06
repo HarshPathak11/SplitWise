@@ -139,95 +139,139 @@ const AllFriendsPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col p-4 sm:p-6">
-      {/* Header */}
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col relative font-sans selection:bg-indigo-500/30">
+      {/* Background Texture (Consistent with Dashboard) */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
 
-      <div className="relative flex items-center justify-center mb-4">
-        {/* Back Button */}
-        <div className="absolute left-4 mb-3 cursor-pointer mt-3.5 z-50">
-          <button
-            onClick={handleBack}
-            className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
-            title="Back to Dashboard"
-          >
-            <FaArrowLeft className="text-white text-xl" />
-          </button>
+      <div className="relative z-10 flex flex-col h-full max-w-2xl mx-auto w-full p-4 sm:p-6">
+        {/* --- Header --- */}
+        <div className="relative flex items-center justify-center mb-8">
+          {/* Back Button */}
+          <div className="absolute left-0">
+            <button
+              onClick={handleBack}
+              className="p-2.5 rounded-full bg-zinc-900 border border-white/10 hover:bg-zinc-800 hover:border-white/20 text-zinc-400 hover:text-white transition-all duration-300 shadow-lg shadow-black/20"
+              title="Back to Dashboard"
+            >
+              <FaArrowLeft className="text-sm" />
+            </button>
+          </div>
+
+          {/* Centered Heading */}
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+            Your Contacts
+          </h1>
         </div>
 
-        {/* Centered Heading */}
-        <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00F5FF] to-[#00FFA3] text-center">
-          Your Friends
-        </h1>
-      </div>
-
-      {/* Search Bar */}
-      <div className="flex items-center gap-3 mb-4">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search friend..."
-          className="flex-1 bg-gray-800/60 text-white px-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00FFA3]"
-        />
-        <Link to="/addFriend">
-          <button
-            className="p-2 rounded-full bg-blue-600 hover:bg-blue-900 text-white relative"
-            title="Add Friend"
-          >
+        {/* --- Search & Add --- */}
+        <div className="flex items-center gap-3 mb-6 bg-zinc-900/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md">
+          <div className="flex-1 flex items-center px-3">
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
+              className="w-4 h-4 text-zinc-500 mr-2"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
-              strokeWidth={2}
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M12 4v16m8-8H4"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-          </button>
-        </Link>
-      </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search friend..."
+              className="w-full bg-transparent text-white text-sm placeholder-zinc-500 focus:outline-none"
+            />
+          </div>
+          <Link to="/addFriend">
+            <button
+              className="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition-all shadow-lg shadow-indigo-900/20 active:scale-95"
+              title="Add New Friend"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </button>
+          </Link>
+        </div>
 
-      {/* Friends List */}
-      <div
-        className={`flex-1 overflow-y-auto space-y-3 pb-4 ${
-          sortedFriends.length > 0 ? "custom-scrollbar" : ""
-        }`}
-      >
-        {sortedFriends.length === 0 ? (
-          <p className="text-center text-red-400 font-semibold mt-8">
-            No friends found 😢
-          </p>
-        ) : (
-          <List
-            height={window.innerHeight} // adjust to available space
-            itemCount={sortedFriends.length}
-            itemSize={70} // height of one FriendCard in px
-            width="100%"
-            className="custom-scrollbar"
-            innerElementType="div"
-            style={{ padding: "0.5rem 0" }}
-          >
-            {({ index, style }) => {
-              const f = sortedFriends[index];
-              return (
-                <div style={style}>
-                  <FriendCard
-                    key={f.friend?._id || index}
-                    friend={f.friend}
-                    balance={f.balance}
-                    index={index}
-                    handleDeleteFriend={() => handleDeleteFriend(f.friend?._id)}
+        {/* --- Friends List --- */}
+        <div className="flex-1 bg-zinc-900/30 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm relative">
+          {sortedFriends.length === 0 ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-16 h-16 bg-zinc-800/50 rounded-full flex items-center justify-center mb-4">
+                <svg
+                  className="w-8 h-8 text-zinc-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                   />
-                </div>
-              );
-            }}
-          </List>
-        )}
+                </svg>
+              </div>
+              <p className="text-zinc-400 font-medium">No friends found</p>
+              <p className="text-zinc-600 text-sm mt-1">
+                Try a different search or add a new contact.
+              </p>
+            </div>
+          ) : (
+            <div className="h-full w-full">
+              <List
+                height={window.innerHeight - 200} // Dynamic height calculation (adjust based on header size)
+                itemCount={sortedFriends.length}
+                itemSize={90} // Increased height for the new expanded card design
+                width="100%"
+                className="custom-scrollbar px-2"
+                innerElementType="div"
+              >
+                {({ index, style }) => {
+                  const f = sortedFriends[index];
+                  return (
+                    <div
+                      style={{
+                        ...style,
+                        paddingBottom: "8px",
+                        paddingTop: "8px",
+                        paddingLeft: "8px",
+                        paddingRight: "8px",
+                      }}
+                    >
+                      <FriendCard
+                        key={f.friend?._id || index}
+                        friend={f.friend}
+                        balance={f.balance}
+                        index={index}
+                        handleDeleteFriend={() =>
+                          handleDeleteFriend(f.friend?._id)
+                        }
+                      />
+                    </div>
+                  );
+                }}
+              </List>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
