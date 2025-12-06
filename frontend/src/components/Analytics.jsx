@@ -9,7 +9,6 @@ import { Calendar, ChevronDown } from "lucide-react";
 export default function Analytics() {
   const [topCategories, setTopCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [timeframe, setTimeframe] = useState("all");
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -18,6 +17,7 @@ export default function Analytics() {
   const location = useLocation();
   const group = location?.state?.group;
   const [isLarge, setIsLarge] = useState(false);
+  const [timeframe, setTimeframe] = useState(group?.name ? "all" : "month");
 
   useEffect(() => {
     const handleResize = () => setIsLarge(window.innerWidth >= 768);
@@ -75,7 +75,7 @@ export default function Analytics() {
       try {
         setLoading(true);
 
-        if (group && Array.isArray(group.expenses)) {
+        if (group && group._id) {
           const apiStartDate = getDateFilterForAPI();
           const response = await axios.get(
             `${API_BASE}/group/${group._id}/top-categories`,

@@ -17,6 +17,7 @@ const PublicProfile = () => {
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
   const [hasError, setHasError] = React.useState(false);
+  const [friendId, setFriendId] = useState(null);
 
   const navigate = useNavigate();
   const { userId } = useParams();
@@ -29,6 +30,7 @@ const PublicProfile = () => {
         const res = await axios.get(`${API_BASE}/user/${userId}`); // Adjust this endpoint based on your backend
         setLoading(false);
         if (res.status === 200) {
+          setFriendId(res.data.user._id);
           setEmail(res.data.user.email);
           setUsername(res.data.user.username);
           setProfilePhotoUrl(res.data.user.profilePhotoUrl);
@@ -69,56 +71,6 @@ const PublicProfile = () => {
       },
     });
   };
-
-  // const handleTopRightClick = async () => {
-  //   if (!currentUserId) {
-  //     // Save current location path
-  //     const currentPath = window.location.pathname;
-  //     navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
-  //   } else {
-  //     // frontend-only placeholder for adding friend
-  //     if (!isFriend) {
-  //       const response = await axios.post(`${API_BASE}/user/add-friends`, {
-  //         email: email,
-  //         autoAdd: true,
-  //         friendsArray: [currentUserId],
-  //       });
-  //       if (response.status === 200) {
-  //         setIsFriend(true);
-  //         toast.success("Friend Added!", {
-  //           duration: 2000,
-  //           position: "top-center",
-  //           style: {
-  //             background: "#333",
-  //             color: "#fff",
-  //           },
-  //         });
-  //       }
-  //     } else {
-  //       // Unfriend: remove both sides from friends list
-  //       try {
-  //         const res = await axios.post(`${API_BASE}/user/remove-friend`, {
-  //           friendId: userId,
-  //           userId: currentUserId,
-  //         });
-  //         if (res.status === 200) {
-  //           setIsFriend(false);
-  //           toast.success("Unfriended successfully!", {
-  //             duration: 2000,
-  //             position: "top-center",
-  //             style: {
-  //               background: "#333",
-  //               color: "#fff",
-  //             },
-  //           });
-  //         }
-  //       } catch (error) {
-  //         console.error("Failed to unfriend:", error);
-  //         toast.error("Failed to unfriend. Please try again.");
-  //       }
-  //     }
-  //   }
-  // };
 
   const handleTopRightClick = async () => {
     if (!currentUserId) {
@@ -272,8 +224,7 @@ const PublicProfile = () => {
             <div className="absolute cursor-pointer mt-3.5 z-50 top-4 right-4">
               <button
                 onClick={async () => {
-                  const userId = Cookies.get("id");
-                  const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
+                  const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${friendId}`;
                   // const profileLink = `http://localhost:8000/public-profile/${userId}`;
                   const message = `Hey! 👋
             

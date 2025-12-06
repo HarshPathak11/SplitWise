@@ -110,12 +110,15 @@ const verifyOtp = async (req, res) => {
   }
 
   try {
-    // 1️⃣ Clean the password
+    // Clean the password
     const cleanPassword = String(password).trim();
 
-    // 4️⃣ Create user in MongoDB
+    // Clean the username
+    const cleanUsername = String(username).trim();
+
+    // Create user in MongoDB
     const newUser = await User.create({
-      username,
+      username: cleanUsername,
       email,
       password: cleanPassword, // schema middleware handles hashing
     });

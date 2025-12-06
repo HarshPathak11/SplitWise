@@ -135,12 +135,12 @@ const TransactionHistory = () => {
     try {
       setLoading(true);
       await axios.post(`${API_BASE}/user/update-friend-balance`, {
-        userEmail: storedUser.email,
-        friendEmail: friendName.email,
+        userEmail: storedUser?.email,
+        friendEmail: friendName?.email,
         amount: paidAmount,
         action: "paid",
         note: text,
-        friendFcmToken: friendName.fcmToken,
+        friendFcmToken: friendName?.fcmToken,
       });
       toast.success("Paid transaction added!");
       setAmount(0);
@@ -170,12 +170,12 @@ const TransactionHistory = () => {
     try {
       setLoading(true);
       await axios.post(`${API_BASE}/user/update-friend-balance`, {
-        userEmail: storedUser.email,
-        friendEmail: friendName.email,
+        userEmail: storedUser?.email,
+        friendEmail: friendName?.email,
         amount: receivedAmount,
         action: "received",
         note: text,
-        friendFcmToken: friendName.fcmToken,
+        friendFcmToken: friendName?.fcmToken,
       });
       toast.success("Received transaction added!");
       setAmount(0);
@@ -222,21 +222,21 @@ const TransactionHistory = () => {
     try {
       if (currentBalance > 0) {
         await axios.post(`${API_BASE}/user/update-friend-balance`, {
-          userEmail: storedUser.email,
-          friendEmail: friendName.email,
+          userEmail: storedUser?.email,
+          friendEmail: friendName?.email,
           amount: currentBalance,
           action: "received",
           note: "Cleared Everything",
-          friendFcmToken: friendName.fcmToken,
+          friendFcmToken: friendName?.fcmToken,
         });
       } else {
         await axios.post(`${API_BASE}/user/update-friend-balance`, {
-          userEmail: storedUser.email,
-          friendEmail: friendName.email,
+          userEmail: storedUser?.email,
+          friendEmail: friendName?.email,
           amount: Math.abs(currentBalance),
           action: "paid",
           note: "Cleared Everything",
-          friendFcmToken: friendName.fcmToken,
+          friendFcmToken: friendName?.fcmToken,
         });
       }
       fetchUser();
