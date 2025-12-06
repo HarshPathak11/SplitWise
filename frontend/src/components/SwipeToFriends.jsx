@@ -87,33 +87,36 @@ const SwipeToFriends = () => {
   return (
     <div
       ref={containerRef}
-      // important: allow horizontal pan but prevent default back-swipe by ensuring pan-x behavior
+      // important: allow horizontal pan but prevent default back-swipe
       style={{
         touchAction: "pan-x",
       }}
-      className="relative mx-auto my-4 w-[90%] max-w-md h-12 bg-gray-800/60 backdrop-blur-md rounded-full flex items-center overflow-hidden text-center"
+      className="relative mx-auto w-full max-w-sm h-14 bg-zinc-950 border border-white/5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] rounded-full flex items-center overflow-hidden select-none"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onPointerLeave={onPointerUp}
     >
+      {/* Background Text Label */}
       <div
-        className="flex-1 flex items-center justify-center text-gray-400 text-sm pointer-events-none"
+        className="flex-1 flex items-center justify-center text-zinc-500 text-sm font-medium tracking-wide pointer-events-none"
         style={{
           // fade label as knob moves
           opacity: 1 - Math.min(1, offset / (THRESHOLD * 1.2)),
           transition: dragging ? "none" : "opacity 180ms ease",
         }}
       >
-        <FaArrowLeft style={{ marginRight: 6 }} />
-        Swipe to see friends
+        <span className="mr-2 text-indigo-500 animate-pulse">
+          <FaArrowLeft />
+        </span>
+        Swipe for Contacts
       </div>
 
-      {/* knob */}
+      {/* Premium Knob */}
       <div
         ref={knobRef}
-        className="absolute top-1 right-1 w-10 h-10 bg-gradient-to-br from-[#00FFA3] to-[#9e27ff] rounded-full flex items-center justify-center shadow-lg text-white text-lg font-bold"
+        className="absolute top-1.5 right-1.5 w-11 h-11 bg-indigo-600 hover:bg-indigo-500 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(79,70,229,0.4)] text-white z-10 cursor-grab active:cursor-grabbing border border-indigo-400/30 transition-colors"
         style={{
           transform: `translateX(-${offset}px)`,
           transition: dragging
@@ -124,7 +127,7 @@ const SwipeToFriends = () => {
         role="button"
         aria-label="Swipe to friends"
       >
-        <FaArrowLeft />
+        <FaArrowLeft className="w-4 h-4" />
       </div>
     </div>
   );
