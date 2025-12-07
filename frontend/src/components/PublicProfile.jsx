@@ -2,12 +2,20 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { FaArrowLeft } from "react-icons/fa";
 import logo from "../../public/newIcon-192x192.png";
-import { FaCopy } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import userIcon from "../../public/userIcon.png";
 import Swal from "sweetalert2";
+import {
+  ArrowLeft,
+  Share2,
+  Copy,
+  User,
+  ShieldCheck,
+  UserPlus,
+  UserMinus,
+  LogIn,
+} from "lucide-react";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PublicProfile = () => {
@@ -30,7 +38,7 @@ const PublicProfile = () => {
         const res = await axios.get(`${API_BASE}/user/${userId}`); // Adjust this endpoint based on your backend
         setLoading(false);
         if (res.status === 200) {
-          setFriendId(res.data.user._id);
+          setFriendId(res?.data?.user?._id);
           setEmail(res.data.user.email);
           setUsername(res.data.user.username);
           setProfilePhotoUrl(res.data.user.profilePhotoUrl);
@@ -40,7 +48,7 @@ const PublicProfile = () => {
             setIsFriend(true);
           } else if (currentUserId !== userId) {
             res.data.user.friends.forEach((friend) => {
-              if (friend.friend._id === currentUserId) {
+              if (friend?.friend?._id === currentUserId) {
                 setIsFriend(true);
               }
             });
@@ -187,187 +195,236 @@ const PublicProfile = () => {
       }
     }
   };
-
   return (
     <>
       {loading ? (
-        <div className="min-h-screen flex items-center justify-center bg-black text-white text-2xl font-semibold">
-          Loading...
+        // --- PREMIUM LOADING STATE ---
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-slate-800 rounded-full"></div>
+            <div className="w-16 h-16 border-4 border-cyan-500 rounded-full animate-spin border-t-transparent absolute inset-0"></div>
+          </div>
+          <div className="text-xs tracking-[0.3em] uppercase text-slate-500 font-medium animate-pulse">
+            Verifying Identity...
+          </div>
         </div>
       ) : hasError ? (
-        <div className="text-center">
-          <h1 className="text-white text-3xl font-bold mb-4">
-            Cannot find any such user
-          </h1>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-[#00f5ff] text-black font-semibold rounded hover:scale-105 transition duration-300"
-          >
-            Back to Home
-          </button>
+        // --- PREMIUM ERROR STATE ---
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 p-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
+          <div className="relative bg-slate-900/50 backdrop-blur-xl border border-red-500/20 p-10 rounded-3xl text-center max-w-md shadow-2xl">
+            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+              <UserMinus className="w-8 h-8 text-red-500" />
+            </div>
+            <h1 className="text-white text-2xl font-bold mb-3 tracking-tight">
+              User Not Found
+            </h1>
+            <p className="text-slate-400 mb-8 text-sm leading-relaxed">
+              The digital identity you are looking for does not exist or has
+              been made private.
+            </p>
+            <button
+              onClick={() => navigate(-1)}
+              className="px-8 py-3 bg-white text-slate-950 font-bold rounded-xl hover:bg-slate-200 transition-all duration-300 shadow-lg shadow-white/5"
+            >
+              Return to Dashboard
+            </button>
+          </div>
         </div>
       ) : (
-        <>
-          <div className="relative bg-black flex items-center justify-center min-h-screen overflow-hidden">
+        // --- MAIN PREMIUM PROFILE ---
+        <div className="relative bg-slate-950 flex items-center justify-center min-h-screen overflow-hidden font-sans selection:bg-cyan-500/30">
+          {/* ATMOSPHERIC BACKGROUND */}
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[100px] animate-pulse"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[100px] animate-pulse delay-1000"></div>
+            <div className="absolute top-[20%] right-[50%] w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px]"></div>
+            <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+          </div>
+
+          {/* TOP NAVIGATION */}
+          <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-50">
             {/* Back Button */}
-            <div className="absolute top-4 left-4 z-50">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-2 mt-3.5 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
-                title="Back to Landing Page"
-              >
-                <FaArrowLeft className="text-white text-xl" />
-              </button>
-            </div>
+            <button
+              onClick={() => navigate(-1)}
+              className="group flex items-center justify-center w-12 h-12 rounded-full bg-slate-900/40 backdrop-blur-md border border-white/10 text-slate-400 hover:text-white hover:border-white/30 transition-all duration-300 shadow-xl"
+            >
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            </button>
 
-            {/* Share Profile Button */}
-            <div className="absolute cursor-pointer mt-3.5 z-50 top-4 right-4">
-              <button
-                onClick={async () => {
-                  const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${friendId}`;
-                  // const profileLink = `http://localhost:8000/public-profile/${userId}`;
-                  const message = `Hey! 👋
-            
-Check out my FairFare profile:
-            
-🔗 Add me as a friend using this link:
-${profileLink}
-            
-📧 Or use my email to add me manually:
-https://fair-fare-phi.vercel.app/addFriend
-            
-Email: ${email}
-            
-            Let’s split and share smarter with FairFare! 💸`;
+            {/* Share Button (Preserving your logic) */}
+            <button
+              onClick={async () => {
+                const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${friendId}`;
+                const message = `Hey! 👋\n\nCheck out my FairFare profile:\n\n🔗 Add me as a friend using this link:\n${profileLink}\n\n📧 Or use my email to add me manually:\nhttps://fair-fare-phi.vercel.app/addFriend\n\nEmail: ${email}\n\nLet’s split and share smarter with FairFare! 💸`;
 
-                  if (navigator.share) {
-                    try {
-                      await navigator.clipboard.writeText(email);
-                      await navigator.share({
-                        title: "Check out my FairFare profile!",
-                        text: message,
-                      });
-                    } catch (error) {
-                      console.error("Sharing failed:", error);
-                    }
-                  } else {
-                    // Fallback to copy to clipboard
-                    try {
-                      await navigator.clipboard.writeText(profileLink);
-                      alert("Link copied to clipboard!");
-                    } catch (err) {
-                      const textarea = document.createElement("textarea");
-                      textarea.value = profileLink;
-                      textarea.setAttribute("readonly", "");
-                      textarea.style.position = "absolute";
-                      textarea.style.left = "-9999px";
-                      document.body.appendChild(textarea);
-                      textarea.select();
-                      document.execCommand("copy");
-                      document.body.removeChild(textarea);
-                      toast.success("Link copied to clipboard!");
-                    }
+                if (navigator.share) {
+                  try {
+                    await navigator.clipboard.writeText(email);
+                    await navigator.share({
+                      title: "Check out my FairFare profile!",
+                      text: message,
+                    });
+                  } catch (error) {
+                    console.error("Sharing failed:", error);
                   }
-                }}
-                className="p-3 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-110 transition-transform duration-300 ease-in-out"
-                title="Share Profile"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M18 8a3 3 0 1 0-2.83-2h-.34l-7.9 4.58a3 3 0 1 0 0 2.84l7.9 4.58h.34A3 3 0 1 0 18 16a2.98 2.98 0 0 0-1.85-.68L9.25 12.5a3.02 3.02 0 0 0 0-.99l6.9-4.02A3 3 0 0 0 18 8z" />
-                </svg>
-              </button>
-            </div>
+                } else {
+                  try {
+                    await navigator.clipboard.writeText(profileLink);
+                    alert("Link copied to clipboard!");
+                  } catch (err) {
+                    const textarea = document.createElement("textarea");
+                    textarea.value = profileLink;
+                    textarea.setAttribute("readonly", "");
+                    textarea.style.position = "absolute";
+                    textarea.style.left = "-9999px";
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(textarea);
+                    alert("Link copied to clipboard!"); // Replaced toast with alert if toast not available in scope
+                  }
+                }
+              }}
+              className="group flex items-center justify-center w-12 h-12 rounded-full bg-slate-900/40 backdrop-blur-md border border-white/10 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-all duration-300 shadow-xl"
+            >
+              <Share2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            </button>
+          </div>
 
-            {/* Background Effects */}
-            <div className="absolute inset-0 z-0">
-              <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
-              <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
-              <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
-              <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
-              <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
-            </div>
+          {/* MAIN CARD */}
+          <div className="relative z-10 w-full max-w-sm mx-4 perspective-1000">
+            <div className="relative bg-gradient-to-b from-slate-800/40 to-slate-950/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden group hover:border-white/20 transition-colors duration-500">
+              {/* Decorative Top Highlight */}
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-50"></div>
 
-            {/* Profile Card */}
-            <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
-              <div className="relative z-10">
-                <div className="flex items-center mb-6">
-                  <img src={logo} alt="Icon" className="w-8 h-8 mr-2" />
-                  <span className="text-4xl text-center font-bold text-white">
+              <div className="flex flex-col items-center pt-12 pb-10 px-8">
+                {/* Brand Badge */}
+                <div className="mb-8 flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+                  <img
+                    src={logo}
+                    alt="FairFare"
+                    className="w-4 h-4 opacity-80"
+                  />
+                  <span className="text-[10px] font-bold tracking-[0.25em] text-slate-300 uppercase">
                     FairFare
                   </span>
                 </div>
 
-                <div className="space-y-4">
-                  {/* Profile Photo */}
-                  <div className="w-full flex items-center justify-center mb-2">
-                    {/* Purana code hata nahi rahe, naya image add kiya gaya */}
+                {/* Profile Photo */}
+                <div className="relative mb-6">
+                  {/* Glowing Effect */}
+                  <div className="absolute -inset-4 bg-gradient-to-br from-cyan-500/20 to-indigo-600/20 rounded-full blur-xl opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
+
+                  <div className="relative w-28 h-28 p-[3px] rounded-full bg-gradient-to-br from-slate-700 to-slate-900 border border-white/10 shadow-2xl">
                     <img
                       src={profilePhotoUrl || userIcon}
                       alt="Profile"
-                      className="w-24 h-24 rounded-full object-cover border border-white/30 shadow-md"
+                      className="w-full h-full rounded-full object-cover grayscale contrast-125 hover:grayscale-0 transition-all duration-500"
                     />
                   </div>
-                  <div className="flex items-center">
-                    <input
-                      type="text"
-                      value={username}
-                      readOnly
-                      placeholder="Username"
-                      className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
-                    />
-                    <button
-                      onClick={() => handleCopy(username)}
-                      title="Copy Username"
-                    >
-                      <FaCopy className="text-white ml-2" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      type="text"
-                      value={email}
-                      readOnly
-                      placeholder="Email"
-                      className="w-full px-3 py-2 border rounded-lg text-white bg-transparent placeholder-gray-400"
-                    />
-                    <button
-                      onClick={() => handleCopy(email)}
-                      title="Copy Email"
-                    >
-                      <FaCopy className="text-white ml-2" />
-                    </button>
+                  {/* Verified Tick */}
+                  <div className="absolute bottom-1 right-1 bg-cyan-500 text-slate-950 p-1.5 rounded-full border-[3px] border-slate-900 shadow-lg">
+                    <ShieldCheck className="w-3.5 h-3.5" />
                   </div>
                 </div>
-              </div>
-              <div className="relative z-10 flex items-center justify-center mt-6">
+
+                {/* Username & Title */}
+                <h2 className="text-2xl font-bold text-white mb-1 text-center tracking-tight">
+                  {username || "Unknown"}
+                </h2>
+                <p className="text-[10px] font-bold text-slate-500 tracking-[0.2em] uppercase mb-8">
+                  Verified Member
+                </p>
+
+                {/* Interactive Fields */}
+                <div className="w-full space-y-3 mb-8">
+                  {/* Username Field */}
+                  <button
+                    onClick={() => handleCopy(username)}
+                    className="w-full group relative flex items-center justify-between p-4 rounded-xl bg-slate-900/50 border border-white/5 hover:border-white/10 hover:bg-slate-800/50 transition-all duration-300"
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="p-2 rounded-lg bg-white/5 text-slate-400 group-hover:text-cyan-400 transition-colors">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">
+                          Username
+                        </span>
+                        <span className="text-sm text-slate-200 font-mono">
+                          {username}
+                        </span>
+                      </div>
+                    </div>
+                    <Copy className="w-4 h-4 text-slate-600 group-hover:text-white transition-colors" />
+                  </button>
+
+                  {/* Email Field */}
+                  <button
+                    onClick={() => handleCopy(email)}
+                    className="w-full group relative flex items-center justify-between p-4 rounded-xl bg-slate-900/50 border border-white/5 hover:border-white/10 hover:bg-slate-800/50 transition-all duration-300"
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden mr-2">
+                      {/* Using generic icon if mail icon not available, or standard div */}
+                      <div className="p-2 rounded-lg bg-white/5 text-slate-400 group-hover:text-emerald-400 transition-colors">
+                        <span className="font-bold text-xs">@</span>
+                      </div>
+                      <div className="flex flex-col items-start overflow-hidden w-full">
+                        <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">
+                          Email ID
+                        </span>
+                        <span className="text-sm text-slate-200 font-mono truncate w-[160px] text-left">
+                          {email}
+                        </span>
+                      </div>
+                    </div>
+                    <Copy className="w-4 h-4 text-slate-600 group-hover:text-white transition-colors shrink-0" />
+                  </button>
+                </div>
+
+                {/* Action Button */}
                 <button
                   onClick={handleTopRightClick}
-                  className={`px-4 py-2 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/30 backdrop-blur rounded-lg shadow-md transition-all duration-200${
-                    !currentUserId
-                      ? "bg-blue-500"
-                      : isFriend
-                      ? // "bg-green-500 cursor-not-allowed"
-                        " bg-red-500 hover:bg-red-600"
-                      : "bg-yellow-500 hover:bg-yellow-600"
-                  }`}
+                  className={`
+                    w-full py-4 rounded-xl font-bold tracking-wide text-sm flex items-center justify-center gap-2 transition-all duration-300 shadow-lg transform active:scale-[0.98]
+                    ${
+                      !currentUserId
+                        ? "bg-white text-black hover:bg-slate-200 shadow-white/10"
+                        : isFriend
+                        ? "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+                        : "bg-gradient-to-r from-cyan-600 to-emerald-600 text-white hover:shadow-cyan-500/25"
+                    }
+                  `}
                 >
-                  {!currentUserId
-                    ? "Login"
-                    : isFriend
-                    ? // ? "Friend Added"
-                      "Remove Friend"
-                    : "Add Friend"}
+                  {!currentUserId ? (
+                    <>
+                      {" "}
+                      <LogIn className="w-4 h-4" /> Login to Connect{" "}
+                    </>
+                  ) : isFriend ? (
+                    <>
+                      {" "}
+                      <UserMinus className="w-4 h-4" /> Remove Connection{" "}
+                    </>
+                  ) : (
+                    <>
+                      {" "}
+                      <UserPlus className="w-4 h-4" /> Add to Network{" "}
+                    </>
+                  )}
                 </button>
               </div>
             </div>
+
+            {/* Trust Footer */}
+            <div className="mt-8 text-center opacity-30">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-white font-light">
+                Secured by FairFare
+              </p>
+            </div>
           </div>
-        </>
+        </div>
       )}
     </>
   );

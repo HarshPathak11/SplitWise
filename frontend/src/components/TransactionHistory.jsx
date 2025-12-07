@@ -110,8 +110,9 @@ const TransactionHistory = () => {
       setTransactions(sortedTransactions.reverse());
       setNetBalance(friend.balance || 0);
     } catch (err) {
-      toast.error("Error fetching transaction history");
+      toast.error("No longer friends!");
       console.error(err);
+      navigate('/dash');
     } finally {
       setLoading(false);
     }
@@ -498,7 +499,7 @@ const TransactionHistory = () => {
       {!isAtBottom && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-24 right-6 z-20 p-3 rounded-full bg-zinc-800 text-indigo-400 shadow-lg border border-white/10 hover:bg-zinc-700 transition-all animate-bounce"
+          className="absolute bottom-36 right-6 z-20 p-3 rounded-full bg-zinc-800 text-indigo-400 shadow-lg border border-white/10 hover:bg-zinc-700 transition-all"
         >
           <FaArrowDown size={14} />
         </button>
