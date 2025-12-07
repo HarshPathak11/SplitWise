@@ -50,6 +50,7 @@ const ExpenseCard = ({
   };
 
   const handleDeleteClick = () => {
+    handleToggle();
     setShowDeleteModal(true);
   };
 
@@ -158,7 +159,7 @@ const ExpenseCard = ({
         {/* Right: Amount & Actions */}
         <div className="flex items-center gap-4">
           {/* Actions - Fade in on hover for cleaner look */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 translate-x-2 group-hover:translate-x-0">
+          <div className="flex items-center gap-1 transition-opacity duration-200 translate-x-2 group-hover:translate-x-0">
             {allowEdit && (
               <button
                 onClick={handleEdit}
@@ -185,7 +186,7 @@ const ExpenseCard = ({
           {/* Amount Display */}
           <div className="text-right">
             <div className="text-lg font-mono font-medium text-white tracking-tight">
-              ₹{amount.toFixed(2)}
+              ₹{amount?.toFixed(2)}
             </div>
           </div>
         </div>
@@ -222,7 +223,7 @@ const ExpenseCard = ({
               Split Breakdown
             </p>
             <div className="space-y-2">
-              {beneficiaries.map((person, index) => (
+              {beneficiaries?.map((person, index) => (
                 <div
                   key={index}
                   className="flex items-center justify-between group/row"

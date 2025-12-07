@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import { FaArrowLeft } from "react-icons/fa";
+import { ArrowLeft, Mail, KeyRound, ShieldCheck, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -17,12 +17,9 @@ const ForgotPassword = () => {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(
-        `${API_BASE}/user/forgot-password`,
-        {
-          email,
-        }
-      );
+      const response = await axios.post(`${API_BASE}/user/forgot-password`, {
+        email,
+      });
       if (response.status === 200) {
         setOtpSent(true);
         setOtpGenerated(response.data.otp);
@@ -62,66 +59,110 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
-        <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
-        <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
-        <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
-        <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans relative flex items-center justify-center overflow-hidden p-4">
+      {/* --- BACKGROUND FX --- */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px]"></div>
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
       </div>
-      <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
-        <button
-          onClick={() => navigate("/login")} // Navigate to the landing page route
-          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
-          title="Back to Landing Page"
-        >
-          <FaArrowLeft className="text-white text-xl" />
-        </button>
-      </div>{" "}
-      <div className="max-w-md w-full p-8 bg-glass rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-[#00f5ff] ">
-          Forgot Password
-        </h2>
-        <p className="mb-4 text-white">
-          Please enter your email address to verify OTP
-        </p>
-        <input
-          type="email"
-          placeholder="Email Address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-transparent placeholder-gray-400"
-        />
-        {!otpSent && (
-          <button
-            onClick={handleSendOtp}
-            className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            disabled={loading}
-          >
-            {loading ? "Sending..." : "Send OTP"}
-          </button>
-        )}
 
-        {otpSent && (
-          <>
-            <input
-              type="text"
-              placeholder="Enter OTP"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg mb-4 text-white bg-transparent placeholder-gray-400"
-            />
-            <button
-              onClick={handleVerifyOtp}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              disabled={loading}
-            >
-              {loading ? "Verifying..." : "Verify OTP"}
-            </button>
-          </>
-        )}
+      {/* --- BACK BUTTON --- */}
+      <div className="absolute top-6 left-6 z-50">
+        <button
+          onClick={() => navigate("/login")}
+          className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg"
+          title="Abort Recovery"
+        >
+          <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+        </button>
+      </div>
+
+      {/* --- MAIN CARD --- */}
+      <div className="relative z-10 w-full max-w-md bg-zinc-900/60 border border-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl shadow-black/50 animate-in fade-in zoom-in duration-300">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-zinc-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5 shadow-inner">
+            <ShieldCheck size={32} className="text-indigo-400" />
+          </div>
+          <h2 className="text-2xl font-black text-white tracking-tight uppercase">
+            Recovery Protocol
+          </h2>
+          <p className="text-sm text-zinc-500 font-mono mt-2">
+            {otpSent ? "ENTER VERIFICATION CODE" : "AUTHENTICATE IDENTITY"}
+          </p>
+        </div>
+
+        {/* Form Area */}
+        <div className="space-y-4">
+          {/* Email Input */}
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
+              Email Address
+            </label>
+            <div className="relative group">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors">
+                <Mail size={18} />
+              </div>
+              <input
+                type="email"
+                placeholder="user@domain.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={otpSent} // Disable if OTP sent to prevent changing email mid-flow
+                className={`w-full bg-zinc-950/50 border text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all font-mono text-sm ${
+                  otpSent
+                    ? "border-zinc-800 text-zinc-500 cursor-not-allowed"
+                    : "border-white/10 focus:border-indigo-500"
+                }`}
+              />
+            </div>
+          </div>
+
+          {/* OTP Input (Conditionally Rendered) */}
+          {otpSent && (
+            <div className="space-y-1 animate-in slide-in-from-bottom-2 fade-in">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
+                One-Time Password
+              </label>
+              <div className="relative group">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-cyan-400 transition-colors">
+                  <KeyRound size={18} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="######"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full bg-zinc-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-mono text-sm tracking-widest"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="pt-4">
+            {!otpSent ? (
+              <button
+                onClick={handleSendOtp}
+                disabled={loading}
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
+              >
+                {loading && <Loader2 size={16} className="animate-spin" />}
+                {loading ? "Transmitting..." : "Send Secure OTP"}
+              </button>
+            ) : (
+              <button
+                onClick={handleVerifyOtp}
+                disabled={loading}
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
+              >
+                {loading && <Loader2 size={16} className="animate-spin" />}
+                {loading ? "Verifying..." : "Confirm & Reset"}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

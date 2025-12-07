@@ -187,14 +187,21 @@ const AllFriendsPage = () => {
               className="w-full bg-transparent text-white text-sm placeholder-zinc-500 focus:outline-none"
             />
           </div>
-          <Link to="/addFriend">
+          <Link to="/addFriend" className="relative group">
             <button
-              className="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition-all shadow-lg shadow-indigo-900/20 active:scale-95"
+              type="button"
+              className="w-9 h-9 md:w-8 md:h-8 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition-all shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95"
               title="Add New Friend"
             >
+              {/* Notification Badge */}
+              {user?.requests > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-zinc-900 z-10 animate-pulse">
+                  {user?.requests}
+                </span>
+              )}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
+                className="h-5 w-5 md:h-4 md:w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
