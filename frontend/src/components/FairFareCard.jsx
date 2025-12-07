@@ -82,7 +82,7 @@ const FairFareCard = () => {
 
   return (
     <div
-      className="relative cursor-pointer group perspective-1000 w-full max-w-sm sm:max-w-md md:max-w-full min-h-[10px] sm:min-h-[20px] md:min-h-[20px]"
+      className="relative cursor-pointer group perspective-1000 w-full max-w-sm sm:max-w-full md:max-w-full min-h-[10px] sm:min-h-[20px] md:min-h-[20px]"
       onClick={() => setIsFlipped(!isFlipped)}
     >
       <div
