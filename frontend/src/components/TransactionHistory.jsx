@@ -112,7 +112,7 @@ const TransactionHistory = () => {
     } catch (err) {
       toast.error("No longer friends!");
       console.error(err);
-      navigate('/dash');
+      navigate("/dash");
     } finally {
       setLoading(false);
     }
@@ -499,7 +499,7 @@ const TransactionHistory = () => {
       {!isAtBottom && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-36 right-6 z-20 p-3 rounded-full bg-zinc-800 text-indigo-400 shadow-lg border border-white/10 hover:bg-zinc-700 transition-all"
+          className="absolute bottom-36 left-1/2 -translate-x-1/2 z-50 p-3 rounded-full bg-zinc-800 text-indigo-400 shadow-lg border border-white/10 hover:bg-zinc-700 transition-all"
         >
           <FaArrowDown size={14} />
         </button>
