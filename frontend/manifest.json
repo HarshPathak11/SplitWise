@@ -3,7 +3,7 @@
   "name": "FairFare - Simplify Expenses",
   "icons": [
     {
-      "src": "/newIconV4-512x512.png",
+      "src": "/newIconV3-512x512.png",
       "sizes": "192x192",
       "type": "image/png"
     },
