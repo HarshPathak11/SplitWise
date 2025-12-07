@@ -294,7 +294,7 @@ const PublicProfile = () => {
 
           {/* MAIN CARD */}
           <div className="relative z-10 w-full max-w-sm mx-4 perspective-1000">
-            <div className="relative bg-gradient-to-b from-slate-800/40 to-slate-950/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden group hover:border-white/20 transition-colors duration-500">
+            <div className="relative bg-gradient-to-b from-slate-800/40 to-slate-950/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl mb-2 overflow-hidden group hover:border-white/20 transition-colors duration-500">
               {/* Decorative Top Highlight */}
               <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-50"></div>
 
@@ -418,7 +418,7 @@ const PublicProfile = () => {
             </div>
 
             {/* Trust Footer */}
-            <div className="mt-8 text-center opacity-30">
+            <div className="text-center opacity-30">
               <p className="text-[10px] uppercase tracking-[0.3em] text-white font-light">
                 Secured by FairFare
               </p>
