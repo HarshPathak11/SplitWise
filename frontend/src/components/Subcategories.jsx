@@ -1,9 +1,16 @@
-import Header from "../components/Header";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookie from "js-cookie";
-import { Calendar, ChevronDown, TrendingUp, Package } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  TrendingUp,
+  Package,
+  ArrowLeft, // New
+  Target, // New
+  Zap, // New
+} from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -18,6 +25,16 @@ export default function Subcategories() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const group = location?.state?.group;
+
+  // Replace your old GRADIENT_COLORS with this palette for the neon effects
+  const CYBER_COLORS = [
+    "#6366f1", // Indigo
+    "#d946ef", // Fuchsia
+    "#06b6d4", // Cyan
+    "#10b981", // Emerald
+    "#8b5cf6", // Violet
+    "#f43f5e", // Rose
+  ];
 
   // Initialize filters from navigation state if provided
   useEffect(() => {
@@ -35,21 +52,6 @@ export default function Subcategories() {
       }
     }
   }, []);
-
-  const GRADIENT_COLORS = [
-    "from-blue-500/40 to-cyan-500/20",
-    "from-cyan-500/40 to-teal-500/20",
-    "from-teal-500/40 to-emerald-500/20",
-    "from-emerald-500/40 to-green-500/20",
-    "from-green-500/40 to-lime-500/20",
-    "from-lime-500/40 to-yellow-500/20",
-    "from-yellow-500/40 to-amber-500/20",
-    "from-amber-500/40 to-orange-500/20",
-    "from-orange-500/40 to-red-500/20",
-    "from-red-500/40 to-pink-500/20",
-    "from-pink-500/40 to-purple-500/20",
-    "from-purple-500/40 to-indigo-500/20",
-  ];
 
   const getDateFilterForAPI = () => {
     if (timeframe === "custom" && startDate) {
@@ -135,114 +137,165 @@ export default function Subcategories() {
   const maxAmount = Math.max(...subcategories.map((s) => s.total), 1);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-900 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <Header title={category || "Select Category"} backPath="/analytics" />
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 relative overflow-hidden p-4 sm:p-6 lg:p-8">
+      {/* --- BACKGROUND FX: Deep Space Atmosphere --- */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-20%] left-[20%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-fuchsia-600/10 rounded-full blur-[100px]"></div>
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
+      </div>
 
-        <div className="mt-6 mb-8 space-y-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="flex items-center gap-2 text-blue-300 font-medium">
-              <Calendar size={20} />
-              <span className="text-sm">Time Period:</span>
+      <div className="relative z-10 max-w-7xl mx-auto">
+        {/* --- HEADER: Sector Analysis Style --- */}
+        <div className="flex items-center gap-4 mb-8">
+          <Link to="/analytics">
+            <button className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg shadow-black/20">
+              <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+            </button>
+          </Link>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase flex items-center gap-3">
+              {category || "Unknown Sector"}
+              {loading && (
+                <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-ping"></span>
+              )}
+            </h1>
+            <p className="text-xs text-zinc-500 font-mono tracking-wider uppercase mt-1">
+              SECTOR BREAKDOWN // DETAILED ANALYSIS
+            </p>
+          </div>
+        </div>
+
+        {/* --- CONTROL DECK (Filters) --- */}
+        <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-2 mb-8 backdrop-blur-sm flex flex-col sm:flex-row gap-4 items-center justify-between shadow-lg">
+          {/* Timeframe Dial */}
+          <div className="relative group w-full sm:w-auto">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-indigo-400">
+              <Calendar size={16} />
             </div>
-            <div className="relative flex-1 sm:flex-initial">
-              <select
-                value={timeframe}
-                onChange={(e) => handleTimeframeChange(e.target.value)}
-                className="w-full sm:w-auto appearance-none bg-gray-900/60 backdrop-blur-sm text-white px-4 py-3 pr-10 rounded-xl border-2 border-blue-500/30 hover:border-blue-400/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 cursor-pointer font-medium"
-              >
-                <option value="all">All Time</option>
-                <option value="day">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-                <option value="custom">Custom Range</option>
-              </select>
-              <ChevronDown
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 pointer-events-none"
-                size={20}
-              />
-            </div>
+            <select
+              value={timeframe}
+              onChange={(e) => handleTimeframeChange(e.target.value)}
+              className="w-full sm:w-56 appearance-none bg-zinc-900 border border-white/10 text-white pl-10 pr-10 py-3 rounded-xl focus:outline-none focus:border-indigo-500/50 hover:bg-zinc-800 transition-colors cursor-pointer text-sm font-bold uppercase tracking-wide"
+            >
+              <option value="all">All Time Records</option>
+              <option value="day">Daily Cycle</option>
+              <option value="week">Weekly Cycle</option>
+              <option value="month">Monthly Cycle</option>
+              <option value="custom">Custom Parameters</option>
+            </select>
+            <ChevronDown
+              size={16}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+            />
           </div>
 
+          {/* Date Range Inputs (Holographic Slide Down) */}
           {showCustomDatePicker && (
-            <div className="bg-gray-900/40 backdrop-blur-sm border-2 border-blue-500/30 rounded-xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1">
-                  <label className="block text-blue-300 text-sm font-medium mb-2">
-                    From Date
-                  </label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-gray-800/60 text-white px-4 py-2.5 rounded-lg border-2 border-blue-500/30 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-blue-300 text-sm font-medium mb-2">
-                    To Date
-                  </label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    min={startDate}
-                    className="w-full bg-gray-800/60 text-white px-4 py-2.5 rounded-lg border-2 border-blue-500/30 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  />
-                </div>
-              </div>
+            <div className="flex gap-2 w-full sm:w-auto animate-in fade-in slide-in-from-top-2">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-zinc-900 border border-white/10 text-zinc-300 px-3 py-2.5 rounded-xl text-xs focus:outline-none focus:border-indigo-500 w-full font-mono"
+              />
+              <span className="text-zinc-600 self-center font-bold">-</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate}
+                className="bg-zinc-900 border border-white/10 text-zinc-300 px-3 py-2.5 rounded-xl text-xs focus:outline-none focus:border-indigo-500 w-full font-mono"
+              />
             </div>
           )}
         </div>
 
+        {/* --- HUD STATS (Overview) --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 backdrop-blur-md rounded-2xl p-6 border-2 border-blue-500/30 shadow-2xl">
-            <div className="flex items-center gap-3 mb-2">
-              <TrendingUp className="text-blue-400" size={24} />
-              <p className="text-blue-300 text-sm font-medium">Total Spent</p>
+          {/* Total Spent Card */}
+          <div className="relative overflow-hidden bg-gradient-to-br from-indigo-950/30 to-zinc-900/50 border border-indigo-500/20 rounded-2xl p-6 shadow-2xl group">
+            {/* Shimmer Effect */}
+            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(99,102,241,0.05)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%,100%_100%] animate-shimmer pointer-events-none" />
+
+            <div className="relative z-10 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2 text-indigo-400">
+                  <TrendingUp size={20} />
+                  <p className="text-xs font-bold uppercase tracking-widest">
+                    Sector Volume
+                  </p>
+                </div>
+                <p className="text-4xl sm:text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] font-mono">
+                  ₹{totalSpent.toLocaleString()}
+                </p>
+              </div>
+              <div className="opacity-20 group-hover:opacity-40 transition-opacity transform group-hover:scale-110 duration-700">
+                <Target size={80} className="text-indigo-500" />
+              </div>
             </div>
-            <p className="text-white text-3xl font-bold">
-              ₹{totalSpent.toLocaleString()}
-            </p>
           </div>
-          <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-800/20 backdrop-blur-md rounded-2xl p-6 border-2 border-cyan-500/30 shadow-2xl">
-            <div className="flex items-center gap-3 mb-2">
-              <Package className="text-cyan-400" size={24} />
-              <p className="text-cyan-300 text-sm font-medium">Subcategories</p>
+
+          {/* Subcategories Count Card */}
+          <div className="relative overflow-hidden bg-zinc-900/40 border border-white/5 rounded-2xl p-6 shadow-xl hover:bg-zinc-800/40 transition-colors">
+            <div className="flex items-center justify-between h-full">
+              <div>
+                <div className="flex items-center gap-2 mb-2 text-cyan-400">
+                  <Package size={20} />
+                  <p className="text-xs font-bold uppercase tracking-widest">
+                    Active Nodes
+                  </p>
+                </div>
+                <p className="text-4xl sm:text-5xl font-black text-white tracking-tighter font-mono">
+                  {subcategories.length}
+                </p>
+                <p className="text-xs text-zinc-500 mt-2 font-mono">
+                  UNIQUE SPENDING POINTS
+                </p>
+              </div>
+
+              {/* Decorative Visual Bars */}
+              <div className="flex gap-1 items-end h-16 opacity-50">
+                {[40, 70, 50, 90, 30, 60].map((h, i) => (
+                  <div
+                    key={i}
+                    className="w-2 bg-cyan-900/50 border border-cyan-500/30 rounded-sm transition-all duration-500 hover:bg-cyan-500/50"
+                    style={{ height: `${h}%` }}
+                  ></div>
+                ))}
+              </div>
             </div>
-            <p className="text-white text-3xl font-bold">
-              {subcategories.length}
-            </p>
           </div>
         </div>
 
+        {/* --- MAIN GRID (Data Blocks) --- */}
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
-              <p className="text-white/80 font-medium">
-                Loading subcategories...
-              </p>
-            </div>
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-16 h-16 border-4 border-zinc-800 border-t-indigo-500 rounded-full animate-spin"></div>
+            <span className="text-xs font-mono text-zinc-500 animate-pulse">
+              DECRYPTING SECTOR DATA...
+            </span>
           </div>
         ) : (
           <div className="space-y-3">
             {subcategories.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Package size={40} className="text-blue-400" />
+              <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl bg-zinc-900/20">
+                <div className="w-20 h-20 bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Package size={40} className="text-zinc-600" />
                 </div>
-                <p className="text-blue-300 font-semibold text-lg">
-                  No subcategories found
+                <p className="text-zinc-300 font-bold text-lg uppercase tracking-wide">
+                  No Data Signatures Found
                 </p>
-                <p className="text-gray-400 text-sm mt-2">
-                  Start adding expenses to see breakdown
+                <p className="text-zinc-500 text-sm mt-2 font-mono">
+                  INITIATE TRANSACTIONS TO POPULATE GRID
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {subcategories.map((sub, idx) => {
                   const percentage = (sub.total / maxAmount) * 100;
+                  const color = CYBER_COLORS[idx % CYBER_COLORS.length];
+
                   return (
                     <Link
                       key={idx}
@@ -256,44 +309,58 @@ export default function Subcategories() {
                         startDate: getDateFilterForAPI(),
                         endDate: endDate,
                       }}
-                      className="group"
+                      className="group relative block"
                     >
-                      <div
-                        className={`relative overflow-hidden h-full flex flex-col justify-between p-6 rounded-2xl backdrop-blur-md bg-gradient-to-br ${
-                          GRADIENT_COLORS[idx % GRADIENT_COLORS.length]
-                        } border-2 border-white/20 hover:border-white/40 hover:scale-[1.02] transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-blue-500/20 min-h-[140px]`}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="relative h-full flex flex-col justify-between p-6 rounded-2xl bg-zinc-900/40 backdrop-blur-sm border border-white/5 hover:border-indigo-500/30 transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] hover:-translate-y-1 overflow-hidden">
+                        {/* Glowing accent line on top */}
+                        <div
+                          className="absolute top-0 left-0 h-[2px] w-full transition-all duration-500 opacity-0 group-hover:opacity-100"
+                          style={{
+                            backgroundColor: color,
+                            boxShadow: `0 0 10px ${color}`,
+                          }}
+                        ></div>
 
+                        {/* Content */}
                         <div className="relative z-10">
-                          <span className="text-white font-bold text-lg block mb-3">
-                            {sub.name}
-                          </span>
+                          <div className="flex justify-between items-start mb-4">
+                            <span className="text-white font-bold text-lg block tracking-tight group-hover:text-indigo-200 transition-colors">
+                              {sub.name}
+                            </span>
+                            <div className="bg-black/30 p-1.5 rounded-lg text-zinc-400 group-hover:text-white transition-colors">
+                              <Zap size={14} />
+                            </div>
+                          </div>
 
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             <div className="flex justify-between items-baseline">
-                              <span className="text-white/70 text-sm">
-                                Amount
+                              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
+                                Value
                               </span>
-                              <span className="text-white font-bold text-2xl">
+                              <span className="text-white font-bold text-2xl font-mono">
                                 ₹{sub.total.toLocaleString()}
                               </span>
                             </div>
 
-                            <div className="w-full h-2 bg-black/20 rounded-full overflow-hidden">
+                            {/* Cyber Progress Bar */}
+                            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-white/60 rounded-full transition-all duration-500"
-                                style={{ width: `${percentage}%` }}
+                                className="h-full rounded-full transition-all duration-700 ease-out group-hover:animate-pulse"
+                                style={{
+                                  width: `${percentage}%`,
+                                  backgroundColor: color,
+                                  boxShadow: `0 0 8px ${color}`,
+                                }}
                               ></div>
                             </div>
 
-                            <div className="flex justify-between items-center">
-                              <span className="text-white/60 text-xs">
+                            <div className="flex justify-between items-center pt-2 border-t border-white/5">
+                              <span className="text-zinc-500 text-xs font-mono">
                                 {((sub.total / totalSpent) * 100).toFixed(1)}%
-                                of total
+                                SHARE
                               </span>
-                              <span className="text-white/80 text-xs group-hover:text-white transition-colors">
-                                View details →
+                              <span className="text-indigo-400 text-xs font-bold uppercase opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+                                Access Logs →
                               </span>
                             </div>
                           </div>
