@@ -82,7 +82,7 @@ const FairFareCard = () => {
 
   return (
     <div
-      className="relative cursor-pointer group perspective-1000 w-full max-w-full sm:max-w-full md:max-w-full min-h-[10px] sm:min-h-[20px] md:min-h-[20px]"
+      className="relative cursor-pointer group perspective-1000 w-full max-w-full sm:max-w-full md:max-w-full min-h-[1px] sm:min-h-[10px] md:min-h-[10px]"
       onClick={() => setIsFlipped(!isFlipped)}
     >
       <div
@@ -132,7 +132,7 @@ const FairFareCard = () => {
           </div>
 
           {/* USER INFO */}
-          <div className="absolute top-16 p-3 sm:top-20 md:top-24 w-full px-5 sm:px-7 md:px-8 flex items-center justify-between">
+          <div className="absolute top-20 p-3 sm:top-20 md:top-24 w-full px-5 sm:px-7 md:px-8 flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="size-16 sm:size-15 md:size-20 rounded-full bg-zinc-800 p-0.5 shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                 {user?.profilePhotoUrl ? (
