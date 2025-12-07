@@ -102,7 +102,7 @@ const SignUp = () => {
       </div>
 
       {/* --- MAIN CARD --- */}
-      <div className="relative z-10 w-full max-w-md p-4">
+      <div className="relative z-10 w-full max-w-md px-4">
         {/* Glow behind card */}
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent rounded-3xl blur-xl opacity-50 pointer-events-none"></div>
 
