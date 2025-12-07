@@ -261,11 +261,14 @@ const PublicProfile = () => {
           </div>
 
           {/* MAIN CARD */}
-          <div className="w-full max-w-sm relative z-10">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
-              {/* Header / Cover Area */}
-              <div className="h-32 bg-gradient-to-r from-slate-800 to-slate-900 relative border-b border-slate-800">
-                <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1 rounded-full bg-black/20 border border-white/5 backdrop-blur-sm">
+          <div className="relative z-10 w-full max-w-sm mx-4 perspective-1000">
+            <div className="relative bg-gradient-to-b from-slate-800/40 to-slate-950/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl mb-2 overflow-hidden group hover:border-white/20 transition-colors duration-500">
+              {/* Decorative Top Highlight */}
+              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent opacity-50"></div>
+
+              <div className="flex flex-col items-center pt-12 pb-10 px-8">
+                {/* Brand Badge */}
+                <div className="mb-8 flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
                   <img
                     src={logo}
                     alt="FairFare"
@@ -382,10 +385,10 @@ const PublicProfile = () => {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="mt-6 text-center">
-              <p className="text-[10px] text-slate-600">
-                Secured by FairFare Ecosystem
+            {/* Trust Footer */}
+            <div className="text-center opacity-30">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-white font-light">
+                Secured by FairFare
               </p>
             </div>
           </div>
