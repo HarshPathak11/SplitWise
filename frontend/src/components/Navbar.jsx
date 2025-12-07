@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Menu, X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Sparkles, Menu, X, Zap, ChevronRight, Lock } from "lucide-react";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -17,124 +17,148 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="w-full relative z-50">
-      {/* Background with blur effect */}
-      {/* <div className="absolute inset-0  bg-black/40 border-b border-gray-700/50"></div> */}
-      
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-3 lg:px-4">
-        <div className="flex justify-between items-center py-2">
-          {/* Logo */}
-          <div className="flex items-center gap-2 group cursor-pointer">
-            {/* <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 group-hover:scale-110 transition-all duration-300">
-              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 group-hover:rotate-12 transition-transform duration-300" /> 
-            </div> */}
-            <span className="font-bold text-xl sm:text-2xl lg:text-3xl bg-gradient-to-r from-white via-blue-200 to-blue-400 bg-clip-text text-transparent group-hover:from-blue-300 group-hover:to-purple-400 transition-all duration-300">
-              FairFare
-            </span>
-          </div>
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl transition-all duration-300">
+      {/* --- Ambient Noise Overlay --- */}
+      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none"></div>
 
-          {/* Desktop Navigation */}
-          {isLarge && <div className="md:flex items-center space-x-1 lg:space-x-1">
-            <a
-              href="/features"
-              className="group relative px-4 lg:px-6 py-2 lg:py-3 text-gray-300 hover:text-white font-medium text-sm lg:text-base transition-all duration-300 rounded-lg hover:bg-white/5"
-            >
-              <span className="relative z-10">Features</span>
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/0 to-purple-500/0 group-hover:from-blue-500/10 group-hover:to-purple-500/10 transition-all duration-300"></div>
-            </a>
-            
-            <a
-              href="/#doc"
-              className="group relative px-4 lg:px-6 py-2 lg:py-3 text-gray-300 hover:text-white font-medium text-sm lg:text-base transition-all duration-300 rounded-lg hover:bg-white/5"
-            >
-              <span className="relative z-10">Docs</span>
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/0 to-purple-500/0 group-hover:from-blue-500/10 group-hover:to-purple-500/10 transition-all duration-300"></div>
-            </a>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20">
+          {/* --- LOGO SECTOR --- */}
+          <a href="/" className="flex items-center gap-3 group">
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-zinc-900 border border-white/10 group-hover:border-indigo-500/50 shadow-inner overflow-hidden transition-all duration-300 group-hover:shadow-[0_0_15px_rgba(99,102,241,0.3)]">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <Zap
+                className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors"
+                fill="currentColor"
+                fillOpacity={0.2}
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-xl tracking-tight text-white group-hover:text-indigo-100 transition-colors">
+                FairFare
+              </span>
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest group-hover:text-indigo-400 transition-colors">
+                System v1.0
+              </span>
+            </div>
+          </a>
 
-            {/* CTA Buttons */}
-            <div className="flex items-center space-x-2 lg:space-x-3 ml-4 lg:ml-6">
+          {/* --- DESKTOP COMMAND CENTER --- */}
+          <div className="hidden md:flex items-center gap-8">
+            {/* Links */}
+            <div className="flex items-center gap-6">
               <a
-                href="/login"
-                className="px-4 lg:px-5 py-2 lg:py-2.5 text-gray-300 hover:text-white font-medium text-sm lg:text-base transition-all duration-300 rounded-lg hover:bg-white/5 border border-transparent hover:border-gray-600/50"
+                href="/features"
+                className="text-sm font-medium text-zinc-400 hover:text-white transition-colors relative group"
               >
-                Login
+                Features
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-500 transition-all duration-300 group-hover:w-full shadow-[0_0_8px_rgba(99,102,241,0.8)]"></span>
               </a>
-              
               <a
-                href="/signup"
-                className="group relative px-4 lg:px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold text-sm lg:text-base rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-blue-500/25 border border-blue-500/30"
+                href="/#doc"
+                className="text-sm font-medium text-zinc-400 hover:text-white transition-colors relative group"
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  Get Started
-                  <Sparkles className="w-3 h-3 lg:w-4 lg:h-4 group-hover:rotate-12 transition-transform duration-300" />
-                </span>
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400/20 to-purple-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                Documentation
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-fuchsia-500 transition-all duration-300 group-hover:w-full shadow-[0_0_8px_rgba(217,70,239,0.8)]"></span>
               </a>
             </div>
-          </div>}
 
-          {/* Mobile Menu Button */}
+            {/* Separator */}
+            <div className="h-6 w-px bg-white/10"></div>
+
+            {/* Auth Buttons */}
+            <div className="flex items-center gap-3">
+              <a
+                href="/login"
+                className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors flex items-center gap-2 group"
+              >
+                <Lock
+                  size={14}
+                  className="group-hover:text-indigo-400 transition-colors"
+                />
+                Login
+              </a>
+
+              <a
+                href="/signup"
+                className="group relative px-5 py-2.5 bg-zinc-100 text-zinc-950 font-bold text-sm rounded-full overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 via-fuchsia-400 to-indigo-400 opacity-0 group-hover:opacity-20 transition-opacity duration-500 bg-[length:200%_auto] animate-gradient"></div>
+                <span className="relative z-10 flex items-center gap-2">
+                  Get Started
+                  <ChevronRight
+                    size={14}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </span>
+              </a>
+            </div>
+          </div>
+
+          {/* --- MOBILE MENU TRIGGER --- */}
           <div className="md:hidden">
             <button
               onClick={toggleMobileMenu}
-              className="p-2 rounded-lg bg-white/5 border border-gray-700/50 text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-300"
+              className={`p-2 rounded-lg border transition-all duration-300 ${
+                isMobileMenuOpen
+                  ? "bg-zinc-900 border-indigo-500/50 text-white"
+                  : "bg-transparent border-white/10 text-zinc-400 hover:text-white hover:bg-white/5"
+              }`}
             >
-              {isMobileMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        <div className={`md:hidden transition-all duration-300 ease-in-out ${
-          isMobileMenuOpen 
-            ? 'max-h-96 opacity-100 pb-6' 
-            : 'max-h-0 opacity-0 overflow-hidden'
-        }`}>
-          <div className="space-y-2 pt-4 border-t border-gray-700/50">
-            <a
-              href="/features"
-              className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-300 font-medium"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Features
-            </a>
-            
-
-            <a
-              href="/#doc"
-              className="block px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-300 font-medium"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Docs
-            </a>
-
-            <div className="pt-4 space-y-3 border-t border-gray-700/30">
-              <a
-                href="/login"
-                className="block px-4 py-3 text-center text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-300 font-medium border border-gray-600/50"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Login
-              </a>
-              
-              <a
-                href="/signup"
-                className="block px-4 py-3 text-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-300 border border-blue-500/30"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Get Started
-              </a>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Subtle glow effect */}
-      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
+      {/* --- MOBILE MENU DRAWER --- */}
+      <div
+        className={`md:hidden absolute top-full left-0 right-0 bg-zinc-950/95 border-b border-white/10 backdrop-blur-xl transition-all duration-300 overflow-hidden ${
+          isMobileMenuOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="p-4 space-y-2">
+          <a
+            href="/features"
+            className="block px-4 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/5 transition-all font-medium"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Features
+          </a>
+          <a
+            href="/#doc"
+            className="block px-4 py-3 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/5 transition-all font-medium"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Documentation
+          </a>
+
+          <div className="my-2 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <a
+              href="/login"
+              className="px-4 py-3 rounded-xl text-center text-sm font-bold text-zinc-300 bg-zinc-900/50 border border-white/5 hover:border-white/20 transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Login
+            </a>
+            <a
+              href="/signup"
+              className="px-4 py-3 rounded-xl text-center text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-fuchsia-600 hover:from-indigo-500 hover:to-fuchsia-500 shadow-lg shadow-indigo-900/20 transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Get Started
+            </a>
+          </div>
+        </div>
+
+        {/* Decorative bottom line for mobile menu */}
+        <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+      </div>
+
+      {/* --- DECORATIVE BOTTOM GLOW --- */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/3 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent opacity-50"></div>
     </nav>
   );
 };

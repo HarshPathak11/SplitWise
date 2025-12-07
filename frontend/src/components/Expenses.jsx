@@ -1,9 +1,19 @@
-import Header from "../components/Header";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookie from "js-cookie";
-import { Search, Calendar, Receipt, TrendingUp, Filter } from "lucide-react";
+import {
+  Calendar,
+  TrendingUp,
+  Receipt,
+  Search,
+  Filter,
+  ArrowLeft,
+  Clock,
+  CreditCard,
+  Users,
+  Layers,
+} from "lucide-react";
 
 export default function Expenses() {
   const location = useLocation();
@@ -107,115 +117,166 @@ export default function Expenses() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-900 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto">
-        <Header title={subcategory || "Expenses"} backPath="/subcategories" />
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 relative overflow-hidden p-4 sm:p-6 lg:p-8">
+      {/* --- BACKGROUND FX: Deep Space Atmosphere --- */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-20%] right-[20%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-cyan-600/10 rounded-full blur-[100px]"></div>
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
+      </div>
 
+      <div className="relative z-10 max-w-5xl mx-auto">
+        {/* --- HEADER --- */}
+        <div className="flex items-center gap-4 mb-6">
+          <Link
+            to="/subcategories"
+            state={{
+              category: category, // Crucial: This tells the previous page which slice to show
+              group: group,
+              timeframe: timeframe,
+              startDate: startDate,
+              endDate: endDate,
+            }}
+          >
+            <button className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg">
+              <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+            </button>
+          </Link>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase flex items-center gap-3">
+              {subcategory || "Expenses Protocol"}
+            </h1>
+            <p className="text-xs text-zinc-500 font-mono tracking-wider uppercase mt-1">
+              TRANSACTION LOGS // DETAILED VIEW
+            </p>
+          </div>
+        </div>
+
+        {/* --- TIMEFRAME BADGE --- */}
         {timeframe && timeframe !== "all" && (
-          <div className="mt-4 mb-6 flex items-center gap-2 bg-blue-900/30 backdrop-blur-sm border border-blue-500/30 rounded-xl px-4 py-3">
-            <Calendar size={18} className="text-blue-400" />
-            <span className="text-blue-300 text-sm font-medium">
-              Showing expenses for: {getTimePeriodLabel()}
+          <div className="mb-8 flex items-center gap-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-3 w-fit animate-in fade-in slide-in-from-left-4">
+            <Calendar size={16} className="text-indigo-400" />
+            <span className="text-indigo-200 text-xs font-mono font-bold uppercase tracking-wide">
+              Temporal Filter Active:{" "}
+              <span className="text-white">{getTimePeriodLabel()}</span>
             </span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 mb-8">
-          <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 backdrop-blur-md rounded-2xl p-5 border-2 border-blue-500/30 shadow-2xl">
+        {/* --- TELEMETRY GRID (Stats) --- */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* Total Share */}
+          <div className="relative overflow-hidden bg-zinc-900/40 border border-white/5 rounded-2xl p-5 hover:border-indigo-500/30 transition-colors group">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="text-blue-400" size={20} />
-              <p className="text-blue-300 text-sm font-medium">Your Total Share</p>
+              <TrendingUp className="text-indigo-400" size={18} />
+              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                Total Share
+              </p>
             </div>
-            <p className="text-white text-2xl font-bold">
+            <p className="text-white text-2xl sm:text-3xl font-black font-mono tracking-tight">
               ₹{totalAmount.toLocaleString()}
             </p>
           </div>
-          <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-800/20 backdrop-blur-md rounded-2xl p-5 border-2 border-cyan-500/30 shadow-2xl">
+
+          {/* Count */}
+          <div className="relative overflow-hidden bg-zinc-900/40 border border-white/5 rounded-2xl p-5 hover:border-fuchsia-500/30 transition-colors group">
+            <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center gap-2 mb-2">
-              <Receipt className="text-cyan-400" size={20} />
-              <p className="text-cyan-300 text-sm font-medium">Count</p>
+              <Receipt className="text-fuchsia-400" size={18} />
+              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                Entries
+              </p>
             </div>
-            <p className="text-white text-2xl font-bold">
+            <p className="text-white text-2xl sm:text-3xl font-black font-mono tracking-tight">
               {filteredExpenses.length}
             </p>
           </div>
-          <div className="bg-gradient-to-br from-sky-900/40 to-sky-800/20 backdrop-blur-md rounded-2xl p-5 border-2 border-sky-500/30 shadow-2xl">
+
+          {/* Average */}
+          <div className="relative overflow-hidden bg-zinc-900/40 border border-white/5 rounded-2xl p-5 hover:border-cyan-500/30 transition-colors group">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="text-sky-400" size={20} />
-              <p className="text-sky-300 text-sm font-medium">Average</p>
+              <TrendingUp className="text-cyan-400" size={18} />
+              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                Mean Value
+              </p>
             </div>
-            <p className="text-white text-2xl font-bold">
+            <p className="text-white text-2xl sm:text-3xl font-black font-mono tracking-tight">
               ₹{Math.round(averageAmount).toLocaleString()}
             </p>
           </div>
         </div>
 
+        {/* --- QUERY CONTROLS (Search & Filter) --- */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
+          <div className="relative flex-1 group">
             <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400"
-              size={20}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors"
+              size={18}
             />
             <input
               type="text"
-              placeholder="Search expenses..."
+              placeholder="QUERY DATABASE..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-xl backdrop-blur-md bg-gray-900/60 border-2 border-blue-500/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all"
+              className="w-full pl-12 pr-4 py-3 rounded-xl bg-zinc-900/60 border border-white/10 text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono text-sm"
             />
           </div>
-          <div className="relative sm:w-48">
+          <div className="relative sm:w-56 group">
             <Filter
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400 z-50 pointer-events-none"
-              size={20}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors z-10 pointer-events-none"
+              size={18}
             />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full appearance-none pl-12 pr-10 py-3 rounded-xl backdrop-blur-md bg-gray-900/60 border-2 border-blue-500/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all cursor-pointer"
+              className="w-full appearance-none pl-12 pr-10 py-3 rounded-xl bg-zinc-900/60 border border-white/10 text-white focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all cursor-pointer font-mono text-sm uppercase"
             >
-              <option value="date">Latest First</option>
-              <option value="amount-high">Highest Amount</option>
-              <option value="amount-low">Lowest Amount</option>
+              <option value="date">Latest Sequence</option>
+              <option value="amount-high">Value (High-Low)</option>
+              <option value="amount-low">Value (Low-High)</option>
             </select>
-            <svg
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white pointer-events-none"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M4 6L8 10L12 6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M1 3L5 7L9 3"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
           </div>
         </div>
 
+        {/* --- DATA STREAM (List) --- */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
-              <p className="text-white/80 font-medium">Loading expenses...</p>
+              <div className="w-12 h-12 border-2 border-zinc-800 border-t-indigo-500 rounded-full animate-spin mx-auto"></div>
+              <p className="text-zinc-500 font-mono text-xs animate-pulse">
+                FETCHING RECORDS...
+              </p>
             </div>
           </div>
         ) : filteredExpenses.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Receipt size={40} className="text-blue-400" />
+          <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl bg-zinc-900/20">
+            <div className="w-16 h-16 bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search size={32} className="text-zinc-600" />
             </div>
-            <p className="text-blue-300 font-semibold text-lg">
-              No expenses found
+            <p className="text-zinc-300 font-bold text-lg uppercase tracking-wide">
+              No Matches Found
             </p>
-            <p className="text-gray-400 text-sm mt-2">
-              {searchTerm
-                ? "Try adjusting your search"
-                : "Start adding expenses to track your spending"}
+            <p className="text-zinc-600 text-sm mt-2 font-mono">
+              {searchTerm ? "ADJUST QUERY PARAMETERS" : "AWAITING NEW INPUTS"}
             </p>
           </div>
         ) : (
@@ -224,113 +285,152 @@ export default function Expenses() {
               const isRecent =
                 new Date().getTime() - new Date(exp.createdAt).getTime() <
                 86400000;
-
               const isExpanded = expandedExpenseId === exp._id;
 
               return (
                 <div
                   key={exp._id}
-                  className="group relative overflow-hidden bg-gradient-to-r from-gray-900/60 to-blue-900/20 backdrop-blur-md rounded-2xl p-5 border-2 border-blue-500/20 hover:border-blue-400/50 hover:scale-[1.01] transition-all duration-300 shadow-lg hover:shadow-blue-500/20 cursor-pointer"
                   onClick={() =>
                     setExpandedExpenseId((prev) =>
                       prev === exp._id ? null : exp._id
                     )
                   }
+                  className={`group relative overflow-hidden rounded-xl border transition-all duration-300 cursor-pointer ${
+                    isExpanded
+                      ? "bg-zinc-900/80 border-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.1)]"
+                      : "bg-zinc-900/40 border-white/5 hover:border-indigo-500/20 hover:bg-zinc-900/60"
+                  }`}
                 >
-                  {/* Hover gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-blue-600/5 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  {/* Glowing accent bar on left */}
+                  <div
+                    className={`absolute left-0 top-0 bottom-0 w-1 transition-colors duration-300 ${
+                      isExpanded
+                        ? "bg-indigo-500"
+                        : "bg-transparent group-hover:bg-indigo-500/50"
+                    }`}
+                  />
 
-                  {/* Main expense row */}
-                  <div className="relative flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
-                          <Receipt className="text-blue-400" size={18} />
+                  <div className="p-4 sm:p-5">
+                    {/* Main expense row */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0 flex items-center gap-4">
+                        {/* Icon Box */}
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-colors ${
+                            isExpanded
+                              ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-400"
+                              : "bg-zinc-800/50 border-white/5 text-zinc-500 group-hover:text-zinc-300"
+                          }`}
+                        >
+                          <Receipt size={18} />
                         </div>
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-white font-semibold text-base truncate">
+                            <span className="text-white font-bold text-base truncate tracking-tight">
                               {exp.title}
                             </span>
                             {isRecent && (
-                              <span className="px-2 py-0.5 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 text-xs font-medium">
+                              <span className="px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded text-emerald-400 text-[10px] font-mono font-bold uppercase">
                                 New
                               </span>
                             )}
                           </div>
-                          <span className="text-white/60 text-sm block">
-                            {new Date(exp.createdAt).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              }
-                            )}
-                          </span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Clock size={12} className="text-zinc-600" />
+                            <span className="text-zinc-500 text-xs font-mono">
+                              {new Date(exp.createdAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )}
+                            </span>
+                          </div>
                         </div>
                       </div>
+
+                      <div className="text-right ml-4">
+                        <span className="text-white font-bold text-xl block font-mono">
+                          ₹{exp.amount.toLocaleString()}
+                        </span>
+                        <span className="text-zinc-600 text-xs font-mono group-hover:text-indigo-400 transition-colors">
+                          {((exp.amount / totalAmount) * 100).toFixed(1)}% SHARE
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="text-right ml-4">
-                      <span className="text-white font-bold text-xl block">
-                        ₹{exp.amount.toLocaleString()}
-                      </span>
-                      <span className="text-blue-400 text-xs">
-                        {((exp.amount / totalAmount) * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Extra info shown only when this expense is expanded */}
-                  <div
-                    className={`transition-all duration-300 overflow-hidden ${
-                      isExpanded
-                        ? "max-h-40 mt-3 border-t border-blue-500/20 pt-3"
-                        : "max-h-0"
-                    }`}
-                  >
-                    {isExpanded && (
-                      <div className="space-y-1 animate-fade-in">
+                    {/* Expanded Details Panel */}
+                    <div
+                      className={`grid transition-all duration-300 ease-in-out overflow-hidden ${
+                        isExpanded
+                          ? "grid-rows-[1fr] opacity-100 mt-4 pt-4 border-t border-white/5"
+                          : "grid-rows-[0fr] opacity-0"
+                      }`}
+                    >
+                      <div className="min-h-0 space-y-3">
+                        {/* Paid By */}
                         {exp.paidBy && (
-                          <p className="text-xs text-blue-300">
-                            <span className="font-medium text-blue-400">
-                              Paid by:
-                            </span>{" "}
-                            {exp.paidBy.username ||
-                              exp.paidBy.name ||
-                              "Unknown"}
-                          </p>
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2 text-zinc-400">
+                              <CreditCard size={14} />
+                              <span className="text-xs uppercase tracking-wider font-bold">
+                                Paid By
+                              </span>
+                            </div>
+                            <span className="text-indigo-300 font-mono">
+                              {exp.paidBy.username ||
+                                exp.paidBy.name ||
+                                "Unknown Entity"}
+                            </span>
+                          </div>
                         )}
 
+                        {/* Beneficiaries */}
                         {exp.owedBy?.length > 0 && (
-                          <p className="text-xs text-cyan-300">
-                            <span className="font-medium text-cyan-400">
-                              Beneficiaries:
-                            </span>{" "}
-                            {exp.owedBy
-                              .map(
-                                (o) =>
-                                  `${
-                                    o.user?.username ||
+                          <div className="flex flex-col gap-2 text-sm">
+                            <div className="flex items-center gap-2 text-zinc-400">
+                              <Users size={14} />
+                              <span className="text-xs uppercase tracking-wider font-bold">
+                                Split Targets
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-2 pl-6">
+                              {exp.owedBy.map((o, idx) => (
+                                <span
+                                  key={idx}
+                                  className="bg-zinc-950 border border-white/10 rounded px-2 py-1 text-xs text-zinc-300 font-mono"
+                                >
+                                  {o.user?.username ||
                                     o.user?.name ||
-                                    "Unknown"
-                                  } (₹${o.amount})`
-                              )
-                              .join(", ")}
-                          </p>
+                                    "Unknown"}
+                                  <span className="text-zinc-600 ml-1">
+                                    ₹{o.amount}
+                                  </span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         )}
 
+                        {/* Group */}
                         {exp?.group && (
-                          <p className="text-xs text-sky-300">
-                            <span className="font-medium text-sky-400">
-                              Group:
-                            </span>{" "}
-                            {exp.group?.name || "Unnamed Group"}
-                          </p>
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2 text-zinc-400">
+                              <Layers size={14} />
+                              <span className="text-xs uppercase tracking-wider font-bold">
+                                Group Link
+                              </span>
+                            </div>
+                            <span className="text-cyan-300 font-mono">
+                              {exp.group?.name || "Unassigned"}
+                            </span>
+                          </div>
                         )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               );
