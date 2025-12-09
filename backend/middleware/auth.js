@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 export const auth = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || "";
+    const id = req?.headers.id;
 
     if (!authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Authentication required" });
@@ -21,6 +22,7 @@ export const auth = (req, res, next) => {
       audience: process.env.JWT_AUDIENCE,
       clockTolerance: 5, // small leeway in seconds
     });
+    if(String(id) !== String(payload?.sub)) return res.status(401).json({message: "Unauthorised"});
 
     // minimal info attached to request
     req.user = {

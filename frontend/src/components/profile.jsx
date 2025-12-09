@@ -42,16 +42,8 @@ const ProfileEnhanced = () => {
   const navigate = useNavigate();
   const userId = Cookies.get("id");
 
-
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift();
-  };
-
   useEffect(() => {
-    const userId = getCookie("id");
-    
+    console.log("userId",userId);
 
     async function getDetails() {
       if (!user && userId) {

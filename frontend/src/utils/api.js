@@ -14,10 +14,12 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = Cookies.get("authToken");
+    const id = Cookies.get("id");
 
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
+      config.headers.id = String(id);
     }
 
     return config;

@@ -43,8 +43,16 @@ const ForgotPassword = () => {
           email,
         }
       );
+      console.log("response.data:",response.data);
       if (response.status === 200) {
-        const user = response.data.user;
+        const { user, token } = response.data;
+        if (token) {
+          Cookies.set("authToken", token, {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        }
         Cookies.set("id", user._id, { expires: 7 });
         localStorage.setItem("user", JSON.stringify({ user: user }));
         // Redirect to profile page
@@ -140,11 +148,14 @@ const ForgotPassword = () => {
                   </label>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30">
-                        <KeyRound size={18} />
+                      <KeyRound size={18} />
                     </div>
                     <input
                       value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, ""); // remove non-digits
+                        if (val.length <= 6) setOtp(val);
+                      }}
                       type="text"
                       placeholder="• • • • • •"
                       className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white tracking-[0.2em] font-mono text-lg placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-indigo-500/50 transition-all"
