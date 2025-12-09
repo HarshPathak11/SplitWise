@@ -11,6 +11,7 @@ import {
   Target, // New
   Zap, // New
 } from "lucide-react";
+import api from "../utils/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -89,7 +90,7 @@ export default function Subcategories() {
       try {
         if (group && group._id) {
           const apiStartDate = getDateFilterForAPI();
-          const response = await axios.post(
+          const response = await api.post(
             `${API_BASE}/group/sub-categories`,
             {
               category: category,
@@ -106,7 +107,7 @@ export default function Subcategories() {
 
         const apiStartDate = getDateFilterForAPI();
 
-        const response = await axios.post(`${API_BASE}/user/subcategories`, {
+        const response = await api.post(`${API_BASE}/user/subcategories`, {
           category: category,
           userId: userId,
           ...(apiStartDate && { startDate: apiStartDate, endDate }),

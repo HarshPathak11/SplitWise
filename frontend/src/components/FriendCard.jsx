@@ -9,6 +9,7 @@ import { FaHistory } from "react-icons/fa"; // history icon
 import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const FriendCard = ({
@@ -43,7 +44,7 @@ const FriendCard = ({
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
     try {
-      await axios.post(`${API_BASE}/user/update-friend-balance`, {
+      await api.post(`${API_BASE}/user/update-friend-balance`, {
         userEmail: currentUser?.email,
         friendEmail: friend?.email,
         amount,
@@ -63,7 +64,7 @@ const FriendCard = ({
     if (settleAmount === "" || settleAmount === 0) return;
     const amount = Math.abs(settleAmount);
     try {
-      await axios.post(`${API_BASE}/user/update-friend-balance`, {
+      await api.post(`${API_BASE}/user/update-friend-balance`, {
         userEmail: currentUser?.email,
         friendEmail: friend?.email,
         amount,
@@ -88,7 +89,7 @@ const FriendCard = ({
 
     try {
       if (currentBalance > 0) {
-        await axios.post(
+        await api.post(
           `${API_BASE}/user/update-friend-balance`,
           // "//http://localhost:8000/user/update-friend-balance",
           {
@@ -100,7 +101,7 @@ const FriendCard = ({
           }
         );
       } else {
-        await axios.post(
+        await api.post(
           `${API_BASE}/user/update-friend-balance`,
           // "//http://localhost:8000/user/update-friend-balance",
           {

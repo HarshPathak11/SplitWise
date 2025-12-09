@@ -6,6 +6,7 @@ import { FaChartBar } from "react-icons/fa";
 import axios from "axios";
 import { useParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TripDetails = () => {
@@ -27,7 +28,7 @@ const TripDetails = () => {
     const fetchMeta = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`${API_BASE}/group/get-group/${tripId}`);
+        const res = await api.get(`${API_BASE}/group/get-group/${tripId}`);
         setTripDetails(res.data);
 
         localStorage.setItem("currentGroup", JSON.stringify(res.data));
@@ -93,7 +94,7 @@ const TripDetails = () => {
     setLoadingExpenses(true);
 
     try {
-      const res = await axios.get(`${API_BASE}/group/${tripId}/expenses`, {
+      const res = await api.get(`${API_BASE}/group/${tripId}/expenses`, {
         params: { limit: 20, cursor },
       });
 
@@ -149,7 +150,7 @@ const TripDetails = () => {
       const storedUser = localStorage.getItem("user");
       const user = JSON.parse(storedUser);
       const currentUserId = user._id;
-      const res = await axios.post(
+      const res = await api.post(
         `${API_BASE}/group/remove-members/${tripId}`,
         // `//http://localhost:8000/group/remove-members/${tripId}`,
         {

@@ -4,6 +4,7 @@ import { Trash2, Edit3 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ExpenseCard = ({
@@ -56,7 +57,7 @@ const ExpenseCard = ({
 
   const confirmDelete = async () => {
     try {
-      await axios.delete(
+      await api.delete(
         `${API_BASE}/group/del-expense/${_id}`
         // `//http://localhost:8000/group/del-expense/${_id}`
       );

@@ -16,6 +16,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
+import { authFetch } from "../utils/authFetch";
+import api from "../utils/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -40,19 +42,13 @@ const ProfileEnhanced = () => {
   const navigate = useNavigate();
   const userId = Cookies.get("id");
 
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift();
-  };
-
   useEffect(() => {
-    const userId = getCookie("id");
+    console.log("userId",userId);
 
     async function getDetails() {
       if (!user && userId) {
         try {
-          const response = await fetch(`${API_BASE}/user/${userId}`);
+          const response = await authFetch(`${API_BASE}/user/${userId}`);
           if (response.ok) {
             const data = await response.json();
             const fetchedUser = data.user;
@@ -103,7 +99,7 @@ const ProfileEnhanced = () => {
         const url = `${API_BASE}/user/search?username=${encodeURIComponent(
           debouncedQuery
         )}`;
-        const res = await axios.get(url, { signal: controller.signal });
+        const res = await api.get(url, { signal: controller.signal });
         const users = res.data?.users ?? res.data ?? [];
 
         // 👇 Check if current username is already taken
@@ -158,7 +154,7 @@ const ProfileEnhanced = () => {
       toast.error("Username cannot be empty");
       return;
     }
-    return fetch(`${API_BASE}/user/${userId}`, {
+    return authFetch(`${API_BASE}/user/${userId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -174,7 +170,7 @@ const ProfileEnhanced = () => {
     try {
       const formData = new FormData();
       formData.append("profilePhoto", file);
-      const resp = await fetch(`${API_BASE}/user/${userId}/photo`, {
+      const resp = await authFetch(`${API_BASE}/user/${userId}/photo`, {
         method: "PUT",
         body: formData,
       });

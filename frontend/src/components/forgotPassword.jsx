@@ -1,9 +1,9 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { ArrowLeft, Mail, KeyRound, ShieldCheck, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ForgotPassword = () => {
@@ -17,7 +17,7 @@ const ForgotPassword = () => {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE}/user/forgot-password`, {
+      const response = await api.post(`${API_BASE}/user/forgot-password`, {
         email,
       });
       if (response.status === 200) {
@@ -35,7 +35,7 @@ const ForgotPassword = () => {
   const handleVerifyOtp = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(
+      const response = await api.post(
         `${API_BASE}/user/verify-forgot-password`,
         {
           otpGenerated,
@@ -43,8 +43,16 @@ const ForgotPassword = () => {
           email,
         }
       );
+      console.log("response.data:",response.data);
       if (response.status === 200) {
-        const user = response.data.user;
+        const { user, token } = response.data;
+        if (token) {
+          Cookies.set("authToken", token, {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        }
         Cookies.set("id", user._id, { expires: 7 });
         localStorage.setItem("user", JSON.stringify({ user: user }));
         // Redirect to profile page
@@ -59,111 +67,155 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans relative flex items-center justify-center overflow-hidden p-4">
-      {/* --- BACKGROUND FX --- */}
+    <div className="relative min-h-screen w-full bg-[#0a0a0a] overflow-hidden flex items-center justify-center selection:bg-indigo-500/30 selection:text-indigo-200">
+      {/* --- BACKGROUND: The Digital Aurora (Matched to SignUp) --- */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px]"></div>
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
+        <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-indigo-900/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-20%] left-[-10%] w-[70%] h-[70%] bg-fuchsia-900/20 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+        {/* Noise overlay */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05]"></div>
       </div>
 
-      {/* --- BACK BUTTON --- */}
-      <div className="absolute top-6 left-6 z-50">
+      {/* --- NAVIGATION: Back Button --- */}
+      <div className="absolute top-8 left-8 z-50">
         <button
           onClick={() => navigate("/login")}
-          className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg"
-          title="Abort Recovery"
+          className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-md"
         >
-          <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+          <ArrowLeft className="w-4 h-4 text-white/70 group-hover:text-white transition-colors" />
+          <span className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">
+            Back to Login
+          </span>
         </button>
       </div>
 
       {/* --- MAIN CARD --- */}
-      <div className="relative z-10 w-full max-w-md bg-zinc-900/60 border border-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl shadow-black/50 animate-in fade-in zoom-in duration-300">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-zinc-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5 shadow-inner">
-            <ShieldCheck size={32} className="text-indigo-400" />
-          </div>
-          <h2 className="text-2xl font-black text-white tracking-tight uppercase">
-            Recovery Protocol
-          </h2>
-          <p className="text-sm text-zinc-500 font-mono mt-2">
-            {otpSent ? "ENTER VERIFICATION CODE" : "AUTHENTICATE IDENTITY"}
-          </p>
-        </div>
+      <div className="relative z-10 w-full max-w-md px-4">
+        {/* Glow behind card */}
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent rounded-3xl blur-xl opacity-50 pointer-events-none"></div>
 
-        {/* Form Area */}
-        <div className="space-y-4">
-          {/* Email Input */}
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
-              Email Address
-            </label>
-            <div className="relative group">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors">
-                <Mail size={18} />
-              </div>
-              <input
-                type="email"
-                placeholder="user@domain.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={otpSent} // Disable if OTP sent to prevent changing email mid-flow
-                className={`w-full bg-zinc-950/50 border text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all font-mono text-sm ${
-                  otpSent
-                    ? "border-zinc-800 text-zinc-500 cursor-not-allowed"
-                    : "border-white/10 focus:border-indigo-500"
-                }`}
-              />
+        <div className="relative bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl ring-1 ring-white/5">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-white/10 to-transparent border border-white/10 mb-4 shadow-lg">
+              <ShieldCheck className="w-6 h-6 text-white" />
             </div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">
+              Recovery Protocol
+            </h1>
+            <p className="text-white/40 text-sm mt-2">
+              {otpSent
+                ? "Enter the verification code sent to your email."
+                : "Authenticate your identity to reset password."}
+            </p>
           </div>
 
-          {/* OTP Input (Conditionally Rendered) */}
-          {otpSent && (
-            <div className="space-y-1 animate-in slide-in-from-bottom-2 fade-in">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
-                One-Time Password
+          <div className="space-y-5">
+            {/* Step 1: Email Input */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-white/50 uppercase tracking-wider ml-1">
+                Email Address
               </label>
               <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-cyan-400 transition-colors">
-                  <KeyRound size={18} />
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/70 transition-colors">
+                  <Mail size={18} />
                 </div>
                 <input
-                  type="text"
-                  placeholder="######"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="w-full bg-zinc-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all font-mono text-sm tracking-widest"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  disabled={otpSent}
+                  placeholder="name@example.com"
+                  className={`w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all ${
+                    otpSent ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 />
               </div>
             </div>
-          )}
 
-          {/* Actions */}
-          <div className="pt-4">
-            {!otpSent ? (
-              <button
-                onClick={handleSendOtp}
-                disabled={loading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
-              >
-                {loading && <Loader2 size={16} className="animate-spin" />}
-                {loading ? "Transmitting..." : "Send Secure OTP"}
-              </button>
-            ) : (
-              <button
-                onClick={handleVerifyOtp}
-                disabled={loading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/40 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
-              >
-                {loading && <Loader2 size={16} className="animate-spin" />}
-                {loading ? "Verifying..." : "Confirm & Reset"}
-              </button>
+            {/* Step 2: OTP Input (Slide in) */}
+            {otpSent && (
+              <div className="animate-in slide-in-from-bottom-4 fade-in duration-500 pt-4 border-t border-white/10">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span className="text-sm font-medium text-emerald-400">
+                    Verification Code Sent
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-white/50 uppercase tracking-wider ml-1">
+                    One-Time Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30">
+                      <KeyRound size={18} />
+                    </div>
+                    <input
+                      value={otp}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, ""); // remove non-digits
+                        if (val.length <= 6) setOtp(val);
+                      }}
+                      type="text"
+                      placeholder="• • • • • •"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white tracking-[0.2em] font-mono text-lg placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-indigo-500/50 transition-all"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+              </div>
             )}
+
+            {/* Actions */}
+            <div className="pt-2">
+              {!otpSent ? (
+                <button
+                  onClick={handleSendOtp}
+                  disabled={loading}
+                  className={`relative w-full overflow-hidden rounded-xl py-4 font-semibold text-sm tracking-wide transition-all duration-300
+                    ${
+                      loading
+                        ? "bg-white/10 text-white/30 cursor-wait"
+                        : "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                    }`}
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {loading && <Loader2 size={16} className="animate-spin" />}
+                    {loading ? "Transmitting..." : "Send Secure OTP"}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleVerifyOtp}
+                  disabled={loading}
+                  className={`relative w-full overflow-hidden rounded-xl py-4 font-semibold text-sm tracking-wide transition-all duration-300
+                     ${
+                       loading
+                         ? "bg-white/10 text-white/30 cursor-wait"
+                         : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)]"
+                     }`}
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    {loading && <Loader2 size={16} className="animate-spin" />}
+                    {loading ? "Verifying..." : "Confirm & Reset"}
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Styles for animation (Matched to SignUp) */}
+      <style>{`
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.2; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 8s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

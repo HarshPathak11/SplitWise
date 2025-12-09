@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { FixedSizeList as List } from "react-window";
+import api from "../utils/api";
 
 const AllFriendsPage = () => {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ const AllFriendsPage = () => {
 
     const fetchUpdatedBalances = async () => {
       try {
-        const res = await axios.post(
+        const res = await api.post(
           `${API_BASE}/user/get-updated-friend-balances`,
           {
             userId: user._id,
@@ -77,7 +78,7 @@ const AllFriendsPage = () => {
 
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
-      const res = await axios.delete(`${API_BASE}/user/remove-friend`, {
+      const res = await api.delete(`${API_BASE}/user/remove-friend`, {
         data: {
           userId: user?._id,
           friendId: friendIdToDelete,

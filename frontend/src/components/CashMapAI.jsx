@@ -3,6 +3,7 @@ import { ArrowLeft, Bot, Send, ArrowDown, Zap, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import userIcon from "../../public/userIcon.png";
+import api from "../utils/api";
 
 function CashMapAI() {
   const chatContainerRef = React.useRef(null);
@@ -130,7 +131,7 @@ function CashMapAI() {
       const user = storedUser ? JSON.parse(storedUser) : {};
       const userId = user?._id || "";
 
-      const response = await axios.post("https://fair-ai.onrender.com/assist", {
+      const response = await api.post("https://fair-ai.onrender.com/assist", {
         userId,
         query: input,
       });

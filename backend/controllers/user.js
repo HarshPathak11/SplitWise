@@ -6,11 +6,13 @@ import {
   sendOneNotification,
   sendMultipleNotifications,
 } from "../controllers/Notifications.js";
-import sgMail from "@sendgrid/mail";
+
 import dotenv from "dotenv";
 dotenv.config();
 import streamifier from "streamifier";
 import cloudinary from "../config/cloudinary.js";
+import { signAccessToken } from "../utils/jwt.js";
+import { sendMail } from "../utils/mailService.js";
 
 /**
  * Helper: upload buffer to Cloudinary
@@ -48,50 +50,28 @@ const sendOtp = async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-
-  // Ensure API key is set
-  if (!process.env.SENDGRID_API_KEY) {
-    console.error("SENDGRID_API_KEY not set in env");
-    return res.status(500).json({ message: "Email service not configured" });
-  }
-  if (!process.env.SENDING_EMAIL) {
-    console.error("SENDING_EMAIL not set in env");
-    return res.status(500).json({ message: "Sender email not configured" });
-  }
-
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-  const msg = {
-    to: email,
-    from: process.env.SENDING_EMAIL,
-    subject: `Welcome Onboard ${username}`,
-    html: `<h1>Hi ${username},</h1>
-           <p>Your OTP for signup is:</p>
-           <h2><strong>${otp}</strong></h2>
-           <p>This code is valid for 5 minutes.</p>
-           <p>Thanks, Fair Fare Team</p>`,
-  };
+  const hashedOtp = await bcrypt.hash(String(otp), 10);
 
   try {
-    const hashedOtp = await bcrypt.hash(String(otp), 10);
+    // 🔥 Send email via our Next.js mail microservice
+    await sendMail({
+      to: email,
+      subject: `Welcome Onboard ${username}`,
+      html: `
+        <h1>Hi ${username},</h1>
+        <p>Your OTP for signup is:</p>
+        <h2><strong>${otp}</strong></h2>
+        <p>This code is valid for 5 minutes.</p>
+        <p>Thanks, FairFare Team</p>
+      `,
+    });
 
-    // send the email
-    await sgMail.send(msg);
-
-    // console.log("otp sent via SendGrid");
-
-    // Optionally store hashedOtp + expiry in DB here so you can validate later
-    // e.g. await OtpModel.create({ email, otp: hashedOtp, expiresAt: Date.now() + 5*60*1000 });
-
-    return res
-      .status(200)
-      .json({ message: "OTP sent to email", otp: hashedOtp });
+    return res.status(200).json({
+      message: "OTP sent to email",
+      otp: hashedOtp, // you were already returning this (same output)
+    });
   } catch (error) {
-    // SendGrid errors may include response body with details
-    console.error("SendGrid error:", error);
-    if (error.response && error.response.body) {
-      console.error("SendGrid response body:", error.response.body);
-    }
+    console.error("Mail service error:", error);
     return res.status(500).json({ message: "Failed to send OTP email" });
   }
 };
@@ -139,8 +119,9 @@ const verifyOtp = async (req, res) => {
         { $push: { friends: { friend: referId, balance: 0 } } }
       );
     }
+    const token = signAccessToken(newUser._id);
 
-    return res.status(200).json(newUser);
+    return res.status(200).json(newUser._id,token);
   } catch (error) {
     console.error("Error during user creation:", error);
     return res
@@ -180,10 +161,12 @@ const userLogin = async (req, res) => {
     // Remove password from user object before sending response
     const userWithoutPassword = { ...user.toObject() };
     delete userWithoutPassword.password;
+    const token = signAccessToken(user._id);
 
     return res.status(200).json({
       message: "Access Granted",
       user: userWithoutPassword,
+      token
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -616,13 +599,6 @@ const addFriends = async (req, res) => {
     return res.status(400).json({ message: "Incomplete data received" });
   }
 
-  // Ensure SendGrid config available (used only for invitation emails)
-  if (!process.env.SENDGRID_API_KEY || !process.env.SENDING_EMAIL) {
-    console.warn("SendGrid config missing - invitation emails won't be sent");
-  } else {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  }
-
   if (autoAdd) {
     const user = await User.findOne({ email });
     const friend = await User.findOne({ _id: friendsArray[0] });
@@ -707,7 +683,7 @@ const addFriends = async (req, res) => {
           username: friend.username,
         });
 
-        //Send FCM Notification
+        // Send FCM Notification
         if (friend.fcmToken) {
           const tokens = [friend.fcmToken];
           const title = "New Friend Added";
@@ -715,38 +691,26 @@ const addFriends = async (req, res) => {
           await sendMultipleNotifications(tokens, title, body);
         }
       } else {
-        // Friend does not exist — send invitation email via SendGrid (if configured)
-        if (!process.env.SENDGRID_API_KEY || !process.env.SENDING_EMAIL) {
-          console.warn(
-            `Skipping invite email to ${friendEmail} — SendGrid not configured`
-          );
-          continue;
-        }
-
+        // Friend does not exist — send invitation email via our mail microservice
         const inviteLink = `https://fair-fare-phi.vercel.app/signup/${user._id}`;
-        const msg = {
-          to: friendEmail,
-          from: process.env.SENDING_EMAIL,
-          subject: `Heartfelt invitation from ${user.username}`,
-          text: `${user.username} has invited you to join Fair Fare. Join here: ${inviteLink}`,
-          html: `
-            <h1>Hi,</h1>
-            <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
-            <p>Please click on the link below to join:</p>
-            <p><a href="${inviteLink}">Join Fair Fare</a></p>
-            <p>Thanks,<br/>Fair Fare Team</p>
-          `,
-        };
 
         try {
-          await sgMail.send(msg);
+          await sendMail({
+            to: friendEmail,
+            subject: `Heartfelt invitation from ${user.username}`,
+            text: `${user.username} has invited you to join Fair Fare. Join here: ${inviteLink}`,
+            html: `
+              <h1>Hi,</h1>
+              <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
+              <p>Please click on the link below to join:</p>
+              <p><a href="${inviteLink}">Join Fair Fare</a></p>
+              <p>Thanks,<br/>Fair Fare Team</p>
+            `,
+          });
           // Optionally log or track successful invite sends
         } catch (err) {
-          // Log the SendGrid error but continue processing other friends
+          // Log the mail error but continue processing other friends
           console.error(`Failed to send invite email to ${friendEmail}:`, err);
-          if (err.response && err.response.body) {
-            console.error("SendGrid response body:", err.response.body);
-          }
         }
       }
     }
@@ -760,6 +724,7 @@ const addFriends = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 // Friend Requests: send, list, approve, deny
 const sendFriendRequest = async (req, res) => {
@@ -825,7 +790,7 @@ const sendFriendRequest = async (req, res) => {
       });
 
       if (existingRequest1) {
-        console.log("Found existing friend request:", existingRequest1);
+        // console.log("Found existing friend request:", existingRequest1);
         results.push({
           email,
           reason: `You have a friend request from ${toUser.username}. Please respond to it.`,
@@ -1111,45 +1076,28 @@ const forgotPassword = async (req, res) => {
     return res.status(404).json({ message: "User not found" });
   }
 
-  // Generate a 6-digit OTP
+  // Generate OTP
   const otp = Math.floor(100000 + Math.random() * 900000);
   console.log("Password reset OTP generated:", otp);
-
-  // Check SendGrid config
-  if (!process.env.SENDGRID_API_KEY) {
-    console.error("SENDGRID_API_KEY not set in environment");
-    return res.status(500).json({ message: "Email service not configured" });
-  }
-
-  if (!process.env.SENDING_EMAIL) {
-    console.error("SENDING_EMAIL not set in environment");
-    return res.status(500).json({ message: "Sender email not configured" });
-  }
-
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-  const msg = {
-    to: email,
-    from: process.env.SENDING_EMAIL, // must be a verified sender in SendGrid
-    subject: "Account Recovery - Fair Fare",
-    html: `
-      <h1>Password Reset Requested</h1>
-      <p>Hi ${user.username || "User"},</p>
-      <p>Your OTP for account recovery is:</p>
-      <h2><strong>${otp}</strong></h2>
-      <p>This code is valid for 5 minutes.</p>
-      <p>If you did not request this, please ignore this email.</p>
-      <br/>
-      <p>Thanks,</p>
-      <p><strong>Fair Fare Team</strong></p>
-    `,
-  };
 
   try {
     const hashedOtp = await bcrypt.hash(String(otp), 10);
 
-    // Send email via SendGrid
-    await sgMail.send(msg);
+    // 🔥 Send OTP email using our mail microservice
+    await sendMail({
+      to: email,
+      subject: "Account Recovery - Fair Fare",
+      html: `
+        <h1>Password Reset Requested</h1>
+        <p>Hi ${user.username || "User"},</p>
+        <p>Your OTP for account recovery is:</p>
+        <h2><strong>${otp}</strong></h2>
+        <p>This code is valid for 5 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+        <br/>
+        <p>Thanks,<br/><strong>Fair Fare Team</strong></p>
+      `,
+    });
 
     console.log(`OTP email sent successfully to ${email}`);
 
@@ -1159,11 +1107,6 @@ const forgotPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("Failed to send password reset email:", error);
-
-    if (error.response && error.response.body) {
-      console.error("SendGrid error details:", error.response.body);
-    }
-
     return res.status(500).json({
       message: "Failed to send OTP email",
     });
@@ -1181,8 +1124,8 @@ const verifyForgotPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
     const user = await User.findOne({ email: email });
-
-    return res.status(200).json({ user });
+    const token = signAccessToken(user._id);
+    return res.status(200).json({ user, token });
   } catch (error) {
     console.error("Error during user creation:", error);
     return res
@@ -1193,7 +1136,6 @@ const verifyForgotPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
   const { userId, newPassword } = req.body;
-  // console.log(userId,newPassword)
 
   // Validate required fields
   if (!userId || !newPassword) {
