@@ -71,6 +71,7 @@ function startExpenseStream() {
     isStarting = false;
   });
   isStarting = false;
+  console.log("✅ Change Stream started perfectly!!!");
 }
 
 let retryTimeout;
