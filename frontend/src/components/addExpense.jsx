@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+import api from "../utils/api";
 
 // Accepts an optional groupId prop so that it can be passed directly if available
 const AddExpense = () => {
@@ -184,7 +185,7 @@ const AddExpense = () => {
     try {
       setIsLoading(true); // ✅ Start loading
       // Replace with your backend endpoint
-      const response = await axios.post(
+      const response = await api.post(
         `${API_BASE}/group/add-expense`,
         // '//http://localhost:8000/group/add-expense',
         payload

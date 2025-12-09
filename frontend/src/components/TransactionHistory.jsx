@@ -8,6 +8,7 @@ import Cookies from "js-cookie";
 import { Link } from "react-router-dom";
 import { FaCopy } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TransactionHistory = () => {
@@ -69,7 +70,7 @@ const TransactionHistory = () => {
         navigate("/login");
         return;
       }
-      const res = await axios.get(`${API_BASE}/user/${userId}`);
+      const res = await api.get(`${API_BASE}/user/${userId}`);
       fetchData(res.data.user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -97,7 +98,7 @@ const TransactionHistory = () => {
 
       setFriendName(friend?.friend || "Unknown");
 
-      const txRes = await axios.get(
+      const txRes = await api.get(
         `${API_BASE}/expenses/${userId}/${friendId}`
       );
 
@@ -138,7 +139,7 @@ const TransactionHistory = () => {
     }
     try {
       setLoading(true);
-      await axios.post(`${API_BASE}/user/update-friend-balance`, {
+      await api.post(`${API_BASE}/user/update-friend-balance`, {
         userEmail: storedUser?.email,
         friendEmail: friendName?.email,
         amount: paidAmount,
@@ -176,7 +177,7 @@ const TransactionHistory = () => {
     }
     try {
       setLoading(true);
-      await axios.post(`${API_BASE}/user/update-friend-balance`, {
+      await api.post(`${API_BASE}/user/update-friend-balance`, {
         userEmail: storedUser?.email,
         friendEmail: friendName?.email,
         amount: receivedAmount,
@@ -208,7 +209,7 @@ const TransactionHistory = () => {
       return;
     }
     try {
-      await axios.post(`${API_BASE}/user/notify`, {
+      await api.post(`${API_BASE}/user/notify`, {
         userId: userId,
         friendId: friendId,
       });
@@ -228,7 +229,7 @@ const TransactionHistory = () => {
 
     try {
       if (currentBalance > 0) {
-        await axios.post(`${API_BASE}/user/update-friend-balance`, {
+        await api.post(`${API_BASE}/user/update-friend-balance`, {
           userEmail: storedUser?.email,
           friendEmail: friendName?.email,
           amount: currentBalance,
@@ -237,7 +238,7 @@ const TransactionHistory = () => {
           friendFcmToken: friendName?.fcmToken,
         });
       } else {
-        await axios.post(`${API_BASE}/user/update-friend-balance`, {
+        await api.post(`${API_BASE}/user/update-friend-balance`, {
           userEmail: storedUser?.email,
           friendEmail: friendName?.email,
           amount: Math.abs(currentBalance),

@@ -16,6 +16,7 @@ import {
   UserMinus,
   LogIn,
 } from "lucide-react";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PublicProfile = () => {
@@ -35,7 +36,7 @@ const PublicProfile = () => {
     async function fetchUser() {
       try {
         setLoading(true);
-        const res = await axios.get(`${API_BASE}/user/${userId}`); // Adjust this endpoint based on your backend
+        const res = await api.get(`${API_BASE}/user/${userId}`); // Adjust this endpoint based on your backend
         setLoading(false);
         if (res.status === 200) {
           setFriendId(res?.data?.user?._id);
@@ -109,7 +110,7 @@ const PublicProfile = () => {
       if (!result.isConfirmed) return;
 
       try {
-        const response = await axios.post(`${API_BASE}/user/add-friends`, {
+        const response = await api.post(`${API_BASE}/user/add-friends`, {
           email: email,
           autoAdd: true,
           friendsArray: [currentUserId],
@@ -163,7 +164,7 @@ const PublicProfile = () => {
       if (!result.isConfirmed) return;
 
       try {
-        const res = await axios.post(`${API_BASE}/user/remove-friend`, {
+        const res = await api.post(`${API_BASE}/user/remove-friend`, {
           friendId: userId,
           userId: currentUserId,
         });

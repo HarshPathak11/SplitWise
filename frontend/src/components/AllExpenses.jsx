@@ -4,6 +4,7 @@ import ExpenseCard from "./expenseCard"; // Ensure this component is styled prop
 import { FaArrowLeft } from "react-icons/fa";
 import Cookies from "js-cookie";
 import axios from "axios";
+import api from "../utils/api";
 
 const AllExpensesPage = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const AllExpensesPage = () => {
     const fetchExpenses = async () => {
       try {
         setLoading(true);
-        const response = await axios.post(`${API_BASE}/user/all-expenses`, {
+        const response = await api.post(`${API_BASE}/user/all-expenses`, {
           userId,
         });
         if (response.data?.expenses) {

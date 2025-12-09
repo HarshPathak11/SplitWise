@@ -4,6 +4,7 @@ import TripCard from "./tripCard"; // Ensure this component is styled properly
 import Cookies from "js-cookie"; // Import Cookies library
 import axios from "axios";
 import { ArrowLeft, Search, Map, Layers } from "lucide-react";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AllTripsPage = () => {
@@ -25,7 +26,7 @@ const AllTripsPage = () => {
           return;
         }
 
-        const response = await axios.get(
+        const response = await api.get(
           `${API_BASE}/group/user-groups/${userId}`
         );
 
