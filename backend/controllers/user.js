@@ -458,7 +458,8 @@ const userDetails = async (req, res) => {
       })
       .populate({
         path: "groups",
-        select: "name description tripTotal from to createdAt updatedAt members",
+        select:
+          "name description tripTotal from to createdAt updatedAt members",
         options: { sort: { updatedAt: -1 }, limit: 3 }, // 👈 most recently updated groups first
       })
       .select({
@@ -630,15 +631,29 @@ const addFriends = async (req, res) => {
       return res.status(404).json({ message: "User or Friend not found" });
     }
 
-    await User.updateOne(
-      { _id: friend._id },
-      { $addToSet: { friends: { friend: user._id, balance: 0 } } }
-    );
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    await User.updateOne(
-      { _id: user._id, "friends.friend": { $ne: friend._id } }, // prevent duplicates
-      { $push: { friends: { friend: friend._id, balance: 0 } } }
-    );
+    try {
+      await User.updateOne(
+        { _id: friend._id },
+        { $addToSet: { friends: { friend: user._id, balance: 0 } } },
+        { session }
+      );
+
+      await User.updateOne(
+        { _id: user._id },
+        { $addToSet: { friends: { friend: friend._id, balance: 0 } } },
+        { session }
+      );
+
+      await session.commitTransaction();
+    } catch (err) {
+      await session.abortTransaction();
+      throw err;
+    } finally {
+      session.endSession();
+    }
 
     // Send FCM notification if available
     if (friend.fcmToken) {
@@ -772,13 +787,20 @@ const sendFriendRequest = async (req, res) => {
         continue;
       }
 
-      // Skip if already friends
-      const alreadyFriends = toUser.friends?.some(
+      // Check friendship in both directions
+      const userHasFriend = fromUser.friends?.some(
+        (f) => String(f.friend) === String(toUser._id)
+      );
+      const otherHasFriend = toUser.friends?.some(
         (f) => String(f.friend) === String(fromUser._id)
       );
 
-      if (alreadyFriends) {
-        results.push({ email, status: "skipped", reason: "Already friends" });
+      if (userHasFriend || otherHasFriend) {
+        results.push({
+          email,
+          status: "skipped",
+          reason: "Already friends or partially friends",
+        });
         continue;
       }
 
@@ -866,47 +888,65 @@ const listFriendRequests = async (req, res) => {
 };
 
 const respondToFriendRequest = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const { userId, fromUserId, action, requestId } = req.body; // action: 'approve' | 'deny'
+    const { userId, fromUserId, action, requestId } = req.body;
     if (!userId || !fromUserId || !action) {
       return res.status(400).json({ message: "Incomplete data received" });
     }
 
-    const user = await User.findById(userId);
-    const fromUser = await User.findById(fromUserId);
+    const user = await User.findById(userId).session(session);
+    const fromUser = await User.findById(fromUserId).session(session);
+
     if (!user || !fromUser) {
-      return res.status(404).json({ message: "Users not found" });
+      throw new Error("User not found");
     }
 
-    // Find the friend request. If requestId provided use it, otherwise find by from/to/status
-    let friendRequest = null;
+    let friendRequest;
     if (requestId) {
-      friendRequest = await FriendRequest.findById(requestId);
+      friendRequest = await FriendRequest.findById(requestId).session(session);
     } else {
       friendRequest = await FriendRequest.findOne({
         from: fromUserId,
         to: userId,
-      });
+      }).session(session);
     }
 
     if (!friendRequest) {
-      return res.status(404).json({ message: "Friend request not found" });
+      throw new Error("Friend request not found");
     }
 
-    // Decrease requests count
-    await User.updateOne({ _id: userId }, { $inc: { requests: -1 } });
+    // decrease request count
+    await User.updateOne(
+      { _id: userId },
+      { $inc: { requests: -1 } },
+      { session }
+    );
 
     if (action === "approve") {
-      // Add to both friends lists if not already present
+      // Add mutual friendship safely
       await User.updateOne(
-        { _id: user._id, "friends.friend": { $ne: fromUser._id } },
-        { $push: { friends: { friend: fromUser._id, balance: 0 } } }
-      );
-      await User.updateOne(
-        { _id: fromUser._id, "friends.friend": { $ne: user._id } },
-        { $push: { friends: { friend: user._id, balance: 0 } } }
+        { _id: userId, "friends.friend": { $ne: fromUserId } },
+        { $push: { friends: { friend: fromUserId, balance: 0 } } },
+        { session }
       );
 
+      await User.updateOne(
+        { _id: fromUserId, "friends.friend": { $ne: userId } },
+        { $push: { friends: { friend: userId, balance: 0 } } },
+        { session }
+      );
+    }
+
+    // delete request inside transaction
+    await FriendRequest.deleteOne({ _id: friendRequest._id }, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    if (action === "approve") {
       if (fromUser.fcmToken) {
         await sendOneNotification(
           fromUser.fcmToken,
@@ -914,19 +954,17 @@ const respondToFriendRequest = async (req, res) => {
           `${user.username} accepted your friend request`
         );
       }
-    }
-
-    // Finally, delete the friend request document to free storage
-    await FriendRequest.deleteOne({ _id: friendRequest._id });
-
-    if (action === "approve") {
       return res.status(200).json({ message: "Friend request approved" });
+    } else {
+      return res.status(200).json({ message: "Friend request denied" });
     }
-
-    return res.status(200).json({ message: "Friend request denied" });
   } catch (error) {
-    console.error("Error responding to friend request:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Transaction failed:", error);
+    return res
+      .status(500)
+      .json({ message: error.message || "Internal Server Error" });
   }
 };
 
@@ -1131,6 +1169,7 @@ const forgotPassword = async (req, res) => {
     });
   }
 };
+
 const verifyForgotPassword = async (req, res) => {
   const { otpGenerated, otp, email } = req.body;
   if (!otp || !otpGenerated)
@@ -1207,20 +1246,23 @@ const getUpdatedFriendBalances = async (req, res) => {
 
   try {
     // Fetch the user by ID
-    const user = await User.findById(userId).populate({path:"friends.friend", select: "username profilePhotoUrl"});
+    const user = await User.findById(userId).populate({
+      path: "friends.friend",
+      select: "username profilePhotoUrl",
+    });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Create an array of friend balances in the desired format
     const updatedData = user.friends
-    .filter(f => f && f.friend) // remove null or broken entries
-    .map((f) => ({
-      friendId: f.friend._id, // friend ID
-      balance: f.balance, // balance
-      username: f.friend.username, // friend's username
-      profilePhotoUrl: f.friend.profilePhotoUrl, // friend's profile photo URL
-    }));
+      .filter((f) => f && f.friend) // remove null or broken entries
+      .map((f) => ({
+        friendId: f.friend._id, // friend ID
+        balance: f.balance, // balance
+        username: f.friend.username, // friend's username
+        profilePhotoUrl: f.friend.profilePhotoUrl, // friend's profile photo URL
+      }));
 
     // Send the updated data as response
     return res.status(200).json(updatedData);
@@ -1333,7 +1375,10 @@ const uploadProfilePhoto = async (req, res) => {
       try {
         await cloudinary.uploader.destroy(user.profilePhotoId);
       } catch (err) {
-        console.warn("Failed to delete previous Cloudinary image:", err.message);
+        console.warn(
+          "Failed to delete previous Cloudinary image:",
+          err.message
+        );
       }
     }
 
