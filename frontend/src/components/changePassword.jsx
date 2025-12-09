@@ -111,8 +111,8 @@ const ChangePassword = () => {
         navigate("/login"); // Redirect to login page after successful password change
       }
     } catch (error) {
-      setMessage("Error changing password. Please try again.");
-      // console.log("Error changing password:", error);
+      toast.error(error.response.data.message);
+      setMessage(error.response.data.message);
     } finally {
       setLoading(false);
     }
@@ -150,10 +150,21 @@ const ChangePassword = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-white/10 to-transparent border border-white/10 mb-4 shadow-lg">
-               {/* Using FaLock as a generic secure icon if not available, simply text will show */}
-               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+              {/* Using FaLock as a generic secure icon if not available, simply text will show */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-6 h-6 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
               Change Password
@@ -164,7 +175,6 @@ const ChangePassword = () => {
           </div>
 
           <div className="space-y-5">
-            
             {/* STAGE 1: Email Input */}
             {!otpSent && !isOtpVerified && (
               <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -181,14 +191,15 @@ const ChangePassword = () => {
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all"
                   />
                 </div>
-                
+
                 <button
                   onClick={handleSendOtp}
                   disabled={loading}
                   className={`relative w-full overflow-hidden rounded-xl py-4 font-semibold text-sm tracking-wide transition-all duration-300
-                    ${loading 
-                      ? "bg-white/10 text-white/30 cursor-wait" 
-                      : "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                    ${
+                      loading
+                        ? "bg-white/10 text-white/30 cursor-wait"
+                        : "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                     }`}
                 >
                   {loading ? "Sending..." : "Send Verification Code"}
@@ -214,7 +225,10 @@ const ChangePassword = () => {
                     type="text"
                     placeholder="• • • • • •"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, ""); // remove non-digits
+                      if (val.length <= 6) setOtp(val);
+                    }}
                     required
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-center tracking-[0.5em] font-mono text-lg placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-indigo-500/50 transition-all"
                   />
@@ -224,9 +238,10 @@ const ChangePassword = () => {
                   onClick={handleVerifyOtp}
                   disabled={loading}
                   className={`relative w-full overflow-hidden rounded-xl py-4 font-semibold text-sm tracking-wide transition-all duration-300
-                    ${loading 
-                      ? "bg-white/10 text-white/30 cursor-wait" 
-                      : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)]"
+                    ${
+                      loading
+                        ? "bg-white/10 text-white/30 cursor-wait"
+                        : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)]"
                     }`}
                 >
                   {loading ? "Verifying..." : "Verify Code"}
@@ -237,7 +252,7 @@ const ChangePassword = () => {
             {/* STAGE 3: New Password */}
             {isOtpVerified && (
               <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                 <div className="flex items-center gap-2 mb-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center gap-2 mb-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                   <span className="text-xs font-medium text-emerald-400">
                     Identity Verified
@@ -296,9 +311,10 @@ const ChangePassword = () => {
                   onClick={handleChangePassword}
                   disabled={loading}
                   className={`relative w-full overflow-hidden rounded-xl py-4 font-semibold text-sm tracking-wide transition-all duration-300 mt-2
-                    ${loading 
-                      ? "bg-white/10 text-white/30 cursor-wait" 
-                      : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                    ${
+                      loading
+                        ? "bg-white/10 text-white/30 cursor-wait"
+                        : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
                     }`}
                 >
                   {loading ? "Updating..." : "Update Password"}
@@ -308,11 +324,13 @@ const ChangePassword = () => {
 
             {/* Status Messages */}
             {message && (
-              <div className={`mt-4 p-3 rounded-lg text-xs font-medium text-center border animate-in fade-in duration-300 ${
-                message.includes("Error") || message.includes("not match")
-                  ? "bg-red-500/10 border-red-500/20 text-red-200" 
-                  : "bg-blue-500/10 border-blue-500/20 text-blue-200"
-              }`}>
+              <div
+                className={`mt-4 p-3 rounded-lg text-xs font-medium text-center border animate-in fade-in duration-300 ${
+                  message.includes("Error") || message.includes("not match")
+                    ? "bg-red-500/10 border-red-500/20 text-red-200"
+                    : "bg-blue-500/10 border-blue-500/20 text-blue-200"
+                }`}
+              >
                 {message}
               </div>
             )}

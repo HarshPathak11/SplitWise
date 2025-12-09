@@ -768,7 +768,7 @@ const sendFriendRequest = async (req, res) => {
       });
 
       if (existingRequest1) {
-        console.log("Found existing friend request:", existingRequest1);
+        // console.log("Found existing friend request:", existingRequest1);
         results.push({
           email,
           reason: `You have a friend request from ${toUser.username}. Please respond to it.`,
@@ -1086,8 +1086,8 @@ const verifyForgotPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
     const user = await User.findOne({ email: email });
-
-    return res.status(200).json({ user });
+    const token = signAccessToken(user._id);
+    return res.status(200).json({ user, token });
   } catch (error) {
     console.error("Error during user creation:", error);
     return res
@@ -1098,7 +1098,6 @@ const verifyForgotPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
   const { userId, newPassword } = req.body;
-  console.log(userId,newPassword)
 
   // Validate required fields
   if (!userId || !newPassword) {

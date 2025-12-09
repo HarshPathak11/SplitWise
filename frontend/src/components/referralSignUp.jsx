@@ -64,7 +64,15 @@ const ReferralSignUp = () => {
       });
 
       if (response.status === 200) {
-        Cookies.set("id", response.data._id, { expires: 7 });
+        const { id, token } = response.data;
+        Cookies.set("id", id, { expires: 7 });
+        if (token) {
+          Cookies.set("authToken", token, {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        }
         navigate("/profile");
       }
     } catch (error) {
