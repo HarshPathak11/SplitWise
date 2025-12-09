@@ -68,8 +68,21 @@ const SignUp = () => {
         }
       );
 
-      if (response.status === 200) {
-        Cookies.set("id", response.data._id, { expires: 7 });
+       if (response.status === 200) {
+        const { _id, token } = response.data; // ✅ token expected from backend
+
+        // existing behaviour: keep this
+        Cookies.set("id", _id, { expires: 7 });
+
+        // ✅ NEW: store JWT in a secure cookie (frontend-readable)
+        if (token) {
+          Cookies.set("authToken", token, {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        }
+
         navigate("/profile");
       }
     } catch (error) {

@@ -6,6 +6,7 @@ import logo from "../../public/newIcon-192x192.png";
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ReferralSignUp = () => {
@@ -29,7 +30,7 @@ const ReferralSignUp = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE}/user/send-otp`, {
+      const response = await api.post(`${API_BASE}/user/send-otp`, {
         email,
         username,
       });
@@ -53,7 +54,7 @@ const ReferralSignUp = () => {
 
   const handleOtpVerify = async () => {
     try {
-      const response = await axios.post(`${API_BASE}/user/verify-otp`, {
+      const response = await api.post(`${API_BASE}/user/verify-otp`, {
         email,
         otp,
         otpGenerated,

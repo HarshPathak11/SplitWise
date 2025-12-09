@@ -17,7 +17,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-
+import api from "../utils/api";
 const AddFriend = () => {
   const navigate = useNavigate();
 
@@ -39,7 +39,7 @@ const AddFriend = () => {
   const fetchRequests = async () => {
     try {
       if (!userId) return;
-      const res = await axios.get(`${API_BASE}/user/friend-requests/${userId}`);
+      const res = await api.get(`${API_BASE}/user/friend-requests/${userId}`);
       setRequests(res.data || []);
     } catch (e) {
       // console.error(e);
@@ -62,7 +62,7 @@ const AddFriend = () => {
 
   const respond = async (fromUserId, action) => {
     try {
-      await axios.post(`${API_BASE}/user/friend-requests/respond`, {
+      await api.post(`${API_BASE}/user/friend-requests/respond`, {
         userId,
         fromUserId,
         action,
@@ -114,7 +114,7 @@ const AddFriend = () => {
           debouncedQuery
         )}`;
 
-        const res = await axios.get(url, { signal: controller.signal });
+        const res = await api.get(url, { signal: controller.signal });
 
         // support either { users: [...] } or just [...]
         const users = res.data?.users ?? res.data ?? [];
@@ -198,7 +198,7 @@ const AddFriend = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post(
+      const response = await api.post(
         `${API_BASE}/user/friend-requests/send`,
         {
           fromUserId: userId,

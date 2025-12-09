@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { ArrowLeft, Mail, KeyRound, ShieldCheck, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ForgotPassword = () => {
@@ -17,7 +18,7 @@ const ForgotPassword = () => {
   const handleSendOtp = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE}/user/forgot-password`, {
+      const response = await api.post(`${API_BASE}/user/forgot-password`, {
         email,
       });
       if (response.status === 200) {
@@ -35,7 +36,7 @@ const ForgotPassword = () => {
   const handleVerifyOtp = async () => {
     setLoading(true);
     try {
-      const response = await axios.post(
+      const response = await api.post(
         `${API_BASE}/user/verify-forgot-password`,
         {
           otpGenerated,

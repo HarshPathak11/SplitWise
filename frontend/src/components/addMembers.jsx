@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AddMembers = () => {
@@ -63,7 +64,7 @@ const AddMembers = () => {
 
       const selectedUsernames = selectedFriends.map((f) => f._id);
 
-      const res = await axios.post(
+      const res = await api.post(
         `${API_BASE}/group/add-members/${groupId}`,
         // `//http://localhost:8000/group/add-members/${groupId}`,
         {

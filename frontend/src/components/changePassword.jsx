@@ -1,19 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  Mail,
-  KeyRound,
-  Lock,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  Loader2,
-  Save,
-} from "lucide-react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Cookies from "js-cookie";
+import { FaArrowLeft } from "react-icons/fa";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ChangePassword = () => {
@@ -42,7 +34,7 @@ const ChangePassword = () => {
     }
     try {
       // Send OTP request to the backend
-      const response = await axios.post(`${API_BASE}/user/forgot-password`, {
+      const response = await api.post(`${API_BASE}/user/forgot-password`, {
         email,
       });
       if (response.status === 200) {
@@ -67,7 +59,7 @@ const ChangePassword = () => {
     setMessage("");
     try {
       // Verify OTP entered by the user
-      const response = await axios.post(
+      const response = await api.post(
         `${API_BASE}/user/verify-forgot-password`,
         { email, otp, otpGenerated }
       );
@@ -104,7 +96,7 @@ const ChangePassword = () => {
     }
 
     try {
-      const response = await axios.post(`${API_BASE}/user/change-password`, {
+      const response = await api.post(`${API_BASE}/user/change-password`, {
         userId,
         newPassword,
       });
@@ -128,194 +120,121 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans relative flex items-center justify-center overflow-hidden p-4">
-      {/* --- BACKGROUND FX --- */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-        <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-emerald-600/10 rounded-full blur-[120px]"></div>
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
+    <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 z-0">
+        <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
+        <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
+        <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
+        <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
+        <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
       </div>
-
-      {/* --- BACK BUTTON --- */}
-      <div className="absolute top-6 left-6 z-50">
+      <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
         <button
           onClick={() => navigate("/profile")}
-          className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg"
-          title="Return to Profile"
+          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
+          title="Back to Profile Page"
         >
-          <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+          <FaArrowLeft className="text-white text-xl" />
         </button>
       </div>
+      <div className="max-w-md w-full p-8 bg-glass rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold mb-6 text-[#00F5FF]">
+          Change Password
+        </h2>
 
-      {/* --- MAIN CARD --- */}
-      <div className="relative z-10 w-full max-w-md bg-zinc-900/60 border border-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl shadow-black/50 animate-in fade-in zoom-in duration-300">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-zinc-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5 shadow-inner">
-            <ShieldCheck size={32} className="text-indigo-400" />
-          </div>
-          <h2 className="text-2xl font-black text-white tracking-tight uppercase">
-            Security Update
-          </h2>
-          <p className="text-sm text-zinc-500 font-mono mt-2 uppercase tracking-wide">
-            {!otpSent && !isOtpVerified
-              ? "Phase 1: Verification"
-              : !isOtpVerified
-              ? "Phase 2: Authentication"
-              : "Phase 3: New Credentials"}
-          </p>
-        </div>
+        {!otpSent && !isOtpVerified && (
+          <>
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400 mb-5"
+              required
+            />
+            <button
+              onClick={handleSendOtp}
+              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              disabled={loading}
+            >
+              {loading ? "Sending OTP..." : "Send OTP"}
+            </button>
+          </>
+        )}
 
-        <div className="space-y-4">
-          {/* STEP 1: Email Input */}
-          {!otpSent && !isOtpVerified && (
-            <div className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
-                  Email Address
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors">
-                    <Mail size={18} />
-                  </div>
-                  <input
-                    type="email"
-                    placeholder="user@domain.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-zinc-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono text-sm"
-                    required
-                  />
-                </div>
-              </div>
-              <button
-                onClick={handleSendOtp}
-                disabled={loading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
+        {otpSent && !isOtpVerified && (
+          <>
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg mb-4 bg-transparent text-white bg-gray-700"
+              required
+            />
+            <button
+              onClick={handleVerifyOtp}
+              className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              disabled={loading}
+            >
+              {loading ? "Verifying OTP..." : "Verify OTP"}
+            </button>
+          </>
+        )}
+
+        {isOtpVerified && (
+          <>
+            <div className="relative mb-4">
+              <input
+                type={showPassword1 ? "text" : "password"}
+                placeholder="New Password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400"
+                required
+              />
+              <span
+                onClick={() => setShowPassword1(!showPassword1)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
               >
-                {loading && <Loader2 size={16} className="animate-spin" />}
-                {loading ? "Transmitting..." : "Send Verification Code"}
-              </button>
+                {showPassword1 ? <FaEyeSlash /> : <FaEye />}
+              </span>
             </div>
-          )}
-
-          {/* STEP 2: OTP Input */}
-          {otpSent && !isOtpVerified && (
-            <div className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
-                  One-Time Password
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-cyan-400 transition-colors">
-                    <KeyRound size={18} />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="######"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    className="w-full bg-zinc-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm tracking-widest"
-                    required
-                  />
-                </div>
-              </div>
-              <button
-                onClick={handleVerifyOtp}
-                disabled={loading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
+            <div className="relative mb-4">
+              <input
+                type={showPassword2 ? "text" : "password"}
+                placeholder="Confirm New Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400"
+                required
+              />
+              <span
+                onClick={() => setShowPassword2(!showPassword2)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
               >
-                {loading && <Loader2 size={16} className="animate-spin" />}
-                {loading ? "Verifying..." : "Verify Identity"}
-              </button>
+                {showPassword2 ? <FaEyeSlash /> : <FaEye />}
+              </span>
             </div>
-          )}
+            <button
+              onClick={handleChangePassword}
+              className="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              disabled={loading}
+            >
+              {loading ? "Changing..." : "Change Password"}
+            </button>
+          </>
+        )}
 
-          {/* STEP 3: New Password */}
-          {isOtpVerified && (
-            <div className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
-              {/* New Password */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
-                  New Password
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                    <Lock size={18} />
-                  </div>
-                  <input
-                    type={showPassword1 ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full bg-zinc-950/50 border border-white/10 text-white pl-10 pr-10 py-3 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono text-sm"
-                    required
-                  />
-                  <button
-                    onClick={() => setShowPassword1(!showPassword1)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
-                  >
-                    {showPassword1 ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Confirm Password */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
-                  Confirm Password
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                    <Lock size={18} />
-                  </div>
-                  <input
-                    type={showPassword2 ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-zinc-950/50 border border-white/10 text-white pl-10 pr-10 py-3 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono text-sm"
-                    required
-                  />
-                  <button
-                    onClick={() => setShowPassword2(!showPassword2)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
-                  >
-                    {showPassword2 ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                onClick={handleChangePassword}
-                disabled={loading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" /> Processing...
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} /> Update Credentials
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* --- STATUS MESSAGE --- */}
         {message && (
-          <div
-            className={`mt-6 p-3 rounded-xl text-center text-sm font-medium border animate-in slide-in-from-bottom-2 ${
-              message.includes("Error")
-                ? "bg-red-500/10 border-red-500/20 text-red-400"
-                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+          <p
+            className={`mt-4 ${
+              message.includes("Error") ? "text-red-500" : "text-white"
             }`}
           >
             {message}
-          </div>
+          </p>
         )}
       </div>
     </div>

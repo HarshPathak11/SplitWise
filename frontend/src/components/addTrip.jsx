@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom"; // Import useNavigate and Link for navigation
 import axios from "axios"; // Import axios for HTTP requests
 import { toast } from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AddTrip = () => {
@@ -108,7 +109,7 @@ const AddTrip = () => {
         return;
       }
 
-      const res = await axios.post(`${API_BASE}/group/create-group`, tripData);
+      const res = await api.post(`${API_BASE}/group/create-group`, tripData);
       // console.log("Response:", res.data); // Log the response for debugging
 
       if (res.status !== 200 && res.status !== 201) {

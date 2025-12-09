@@ -8,6 +8,7 @@ import RecentExpenses from "./RecentExpenses";
 import TopNavbar from "./TopNavbar";
 import SwipeToFriends from "./SwipeToFriends";
 import { requestNotificationPermission } from "../../notifications";
+import api from "../utils/api";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
@@ -44,14 +45,14 @@ const Dashboard = () => {
 
       try {
         if (user) {
-          const lastUpdatedAtUser = await axios.get(
+          const lastUpdatedAtUser = await api.get(
             `${API_BASE}/user/last-updated-at/${userId}`
           );
           if (
             new Date(lastUpdatedAtUser.data.lastUpdatedAt).getTime() !==
             new Date(user.updatedAt).getTime()
           ) {
-            const response = await axios.get(`${API_BASE}/user/${userId}`);
+            const response = await api.get(`${API_BASE}/user/${userId}`);
             if (response.status === 200) {
               setUser(response.data.user);
               localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -59,7 +60,7 @@ const Dashboard = () => {
             }
           }
         } else {
-          const response = await axios.get(`${API_BASE}/user/${userId}`);
+          const response = await api.get(`${API_BASE}/user/${userId}`);
           if (response.status === 200) {
             setUser(response.data.user);
             localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -69,7 +70,7 @@ const Dashboard = () => {
 
         const fcmToken = await requestNotificationPermission();
         if (fcmToken && (!fcmTokens.includes(fcmToken) || fcmTokens === null)) {
-          await axios.post(`${API_BASE}/user/set-fcm-token`, {
+          await api.post(`${API_BASE}/user/set-fcm-token`, {
             fcmToken,
             userId,
           });
