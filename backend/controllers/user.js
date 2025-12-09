@@ -11,6 +11,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import streamifier from "streamifier";
 import cloudinary from "../config/cloudinary.js";
+import { signAccessToken } from "../utils/jwt.js";
 
 /**
  * Helper: upload buffer to Cloudinary
@@ -139,8 +140,9 @@ const verifyOtp = async (req, res) => {
         { $push: { friends: { friend: referId, balance: 0 } } }
       );
     }
+    const token = signAccessToken(newUser._id);
 
-    return res.status(200).json(newUser);
+    return res.status(200).json(newUser._id,token);
   } catch (error) {
     console.error("Error during user creation:", error);
     return res
@@ -180,10 +182,12 @@ const userLogin = async (req, res) => {
     // Remove password from user object before sending response
     const userWithoutPassword = { ...user.toObject() };
     delete userWithoutPassword.password;
+    const token = signAccessToken(user._id);
 
     return res.status(200).json({
       message: "Access Granted",
       user: userWithoutPassword,
+      token
     });
   } catch (error) {
     console.error("Login error:", error);

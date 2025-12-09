@@ -7,6 +7,7 @@ import logo from "../../public/newIcon-192x192.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 import { toast } from "react-hot-toast";
+import api from "../utils/api";
 
 const LogIn = () => {
   const [email, setEmail] = React.useState("");
@@ -50,7 +51,20 @@ const LogIn = () => {
       });
 
       if (response.data.user) {
-        Cookies.set("id", response.data.user._id, { expires: 7 });
+        const { user, token } = response.data; // ✅ token expected from backend
+
+        // existing behaviour
+        Cookies.set("id", user._id, { expires: 7 });
+
+        // ✅ NEW: store JWT securely
+        if (token) {
+          Cookies.set("authToken", token, {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        }
+
         navigate(redirectPath);
       }
     } catch (error) {

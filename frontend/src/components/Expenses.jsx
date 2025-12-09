@@ -14,6 +14,7 @@ import {
   Users,
   Layers,
 } from "lucide-react";
+import api from "../utils/api";
 
 export default function Expenses() {
   const location = useLocation();
@@ -36,7 +37,7 @@ export default function Expenses() {
       setLoading(true);
       try {
         if (group && Array.isArray(group.expenses)) {
-          const response = await axios.post(
+          const response = await api.post(
             `${API_BASE}/group/expenses-by-subcategory`,
             {
               category: category,
@@ -52,7 +53,7 @@ export default function Expenses() {
           return;
         }
 
-        const response = await axios.post(
+        const response = await api.post(
           `${API_BASE}/user/expenses-by-subcategory`,
           {
             userId,
