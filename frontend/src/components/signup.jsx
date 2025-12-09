@@ -69,10 +69,10 @@ const SignUp = () => {
       );
 
        if (response.status === 200) {
-        const { _id, token } = response.data; // ✅ token expected from backend
+        const { id, token } = response.data; // ✅ token expected from backend
 
         // existing behaviour: keep this
-        Cookies.set("id", _id, { expires: 7 });
+        Cookies.set("id", id, { expires: 7 });
 
         // ✅ NEW: store JWT in a secure cookie (frontend-readable)
         if (token) {
