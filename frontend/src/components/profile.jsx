@@ -42,6 +42,7 @@ const ProfileEnhanced = () => {
   const navigate = useNavigate();
   const userId = Cookies.get("id");
 
+
   const getCookie = (name) => {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -50,6 +51,7 @@ const ProfileEnhanced = () => {
 
   useEffect(() => {
     const userId = getCookie("id");
+    
 
     async function getDetails() {
       if (!user && userId) {
@@ -160,7 +162,7 @@ const ProfileEnhanced = () => {
       toast.error("Username cannot be empty");
       return;
     }
-    return fetch(`${API_BASE}/user/${userId}`, {
+    return authFetch(`${API_BASE}/user/${userId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
