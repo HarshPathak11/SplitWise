@@ -1,6 +1,5 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { FaArrowDown, FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -98,9 +97,7 @@ const TransactionHistory = () => {
 
       setFriendName(friend?.friend || "Unknown");
 
-      const txRes = await api.get(
-        `${API_BASE}/expenses/${userId}/${friendId}`
-      );
+      const txRes = await api.get(`${API_BASE}/expenses/${userId}/${friendId}`);
 
       // Sort the transactions by createdAt (latest first)
       const sortedTransactions = txRes.data.expenses.sort(
@@ -451,17 +448,19 @@ const TransactionHistory = () => {
                         >
                           {tx.title || "Untitled Transaction"}
                         </span>
-                        <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
-                          {new Date(tx.createdAt).toLocaleDateString([], {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
+                        <div className="flex justify-between iterms-start gap-1">
+                          <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
+                            {new Date(tx.createdAt).toLocaleDateString([])}
+                          </span>
+                          <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
+                            {new Date(tx.createdAt).toLocaleTimeString([])}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Content: Amount & Who Paid */}
                       <div className="flex justify-between items-end">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col mr-2">
                           <span className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
                             {isUser ? "You Paid" : "They Paid"}
                           </span>

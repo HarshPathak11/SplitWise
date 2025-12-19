@@ -1,6 +1,5 @@
 import { User, Expense, FriendRequest } from "../models/schema.js";
 import mongoose from "mongoose";
-import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import {
   sendOneNotification,
@@ -121,7 +120,7 @@ const verifyOtp = async (req, res) => {
     }
     const token = signAccessToken(newUser._id);
 
-    return res.status(200).json(newUser._id,token);
+    return res.status(200).json(newUser._id, token);
   } catch (error) {
     console.error("Error during user creation:", error);
     return res
@@ -166,7 +165,7 @@ const userLogin = async (req, res) => {
     return res.status(200).json({
       message: "Access Granted",
       user: userWithoutPassword,
-      token
+      token,
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -289,6 +288,8 @@ const getTopCategoriesForUser = async (req, res) => {
 //   }
 // };
 const getSubCategoriesForUser = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { userId, category, startDate, endDate } = req.body;
 
@@ -332,17 +333,24 @@ const getSubCategoriesForUser = async (req, res) => {
         },
       },
       { $sort: { total: -1 } },
-    ]);
+    ]).session(session);
 
     const formattedSubcategories = subcategories.map((sub) => ({
       name: sub._id,
       total: sub.total,
     }));
 
+    await session.commitTransaction();
+
     res.status(200).json({ subcategories: formattedSubcategories });
   } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     console.error("Error fetching subcategories:", error);
     res.status(500).json({ message: "Server error" });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -592,139 +600,51 @@ const updateUserProfile = async (req, res) => {
 
 //Adding the friends
 
-const addFriends = async (req, res) => {
-  const { email, friendsArray, autoAdd } = req.body;
+const inviteFriend = async (req, res) => {
+  const { email, userId } = req.body;
 
-  if (!email || !Array.isArray(friendsArray) || friendsArray.length === 0) {
+  if (!email) {
     return res.status(400).json({ message: "Incomplete data received" });
   }
 
-  if (autoAdd) {
-    const user = await User.findOne({ email });
-    const friend = await User.findOne({ _id: friendsArray[0] });
-
-    if (!user || !friend) {
-      return res.status(404).json({ message: "User or Friend not found" });
-    }
-
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      await User.updateOne(
-        { _id: friend._id },
-        { $addToSet: { friends: { friend: user._id, balance: 0 } } },
-        { session }
-      );
-
-      await User.updateOne(
-        { _id: user._id },
-        { $addToSet: { friends: { friend: friend._id, balance: 0 } } },
-        { session }
-      );
-
-      await session.commitTransaction();
-    } catch (err) {
-      await session.abortTransaction();
-      throw err;
-    } finally {
-      session.endSession();
-    }
-
-    // Send FCM notification if available
-    if (friend.fcmToken) {
-      const tokens = [friend.fcmToken];
-      const title = "New Friend Added";
-      const body = `${user.username} has added you as a friend!`;
-
-      await sendMultipleNotifications(tokens, title, body);
-    }
-
-    return res.status(200).json({
-      message: "Friend added successfully",
-      friend,
-    });
-  }
-
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
+    const user = await User.findOne({ _id: userId });
+
+    if (!user || user.email === email) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const addedFriends = [];
+    // Friend does not exist — send invitation email via our mail microservice
+    // In your inviteFriend controller
+    const encodedEmail = encodeURIComponent(email);
+    const inviteLink = `https://fair-fare-phi.vercel.app/signup/${user._id}?email=${encodedEmail}`;
 
-    for (const friendEmail of friendsArray) {
-      // Skip adding self
-      if (friendEmail === email) continue;
-
-      const friend = await User.findOne({ email: friendEmail });
-
-      if (friend) {
-        // Add friend to user's list if not present
-        if (!user.friends.some((f) => f.friend.equals(friend._id))) {
-          await User.updateOne(
-            { _id: user._id, "friends.friend": { $ne: friend._id } }, // prevent duplicates
-            { $push: { friends: { friend: friend._id, balance: 0 } } }
-          );
-        }
-
-        // Ensure friendship is mutual
-        if (!friend.friends.some((f) => f.friend?.equals(user._id))) {
-          await User.updateOne(
-            { _id: friend._id },
-            { $addToSet: { friends: { friend: user._id, balance: 0 } } }
-          );
-        }
-
-        addedFriends.push({
-          _id: friend._id,
-          email: friend.email,
-          username: friend.username,
-        });
-
-        // Send FCM Notification
-        if (friend.fcmToken) {
-          const tokens = [friend.fcmToken];
-          const title = "New Friend Added";
-          const body = `${user.username} has added you as a friend!`;
-          await sendMultipleNotifications(tokens, title, body);
-        }
-      } else {
-        // Friend does not exist — send invitation email via our mail microservice
-        const inviteLink = `https://fair-fare-phi.vercel.app/signup/${user._id}`;
-
-        try {
-          await sendMail({
-            to: friendEmail,
-            subject: `Heartfelt invitation from ${user.username}`,
-            text: `${user.username} has invited you to join Fair Fare. Join here: ${inviteLink}`,
-            html: `
+    try {
+      await sendMail({
+        to: email,
+        subject: `Heartfelt invitation from ${user.username}`,
+        text: `${user.username} has invited you to join Fair Fare. Join here: ${inviteLink}`,
+        html: `
               <h1>Hi,</h1>
               <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
               <p>Please click on the link below to join:</p>
               <p><a href="${inviteLink}">Join Fair Fare</a></p>
               <p>Thanks,<br/>Fair Fare Team</p>
             `,
-          });
-          // Optionally log or track successful invite sends
-        } catch (err) {
-          // Log the mail error but continue processing other friends
-          console.error(`Failed to send invite email to ${friendEmail}:`, err);
-        }
-      }
+      });
+      // Optionally log or track successful invite sends
+    } catch (err) {
+      // Log the mail error but continue processing other friends
+      console.error(`Failed to send invite email to ${friendEmail}:`, err);
     }
-
     return res.status(200).json({
       message: "Friends processed",
-      addedFriends,
     });
   } catch (error) {
     console.error("Error in addFriends:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 // Friend Requests: send, list, approve, deny
 const sendFriendRequest = async (req, res) => {
@@ -1357,7 +1277,7 @@ const getUserLastUpdatedAt = async (req, res) => {
 export {
   sendOtp,
   userLogin,
-  addFriends,
+  inviteFriend,
   verifyForgotPassword,
   forgotPassword,
   updateUserProfile,
