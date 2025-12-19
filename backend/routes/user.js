@@ -4,7 +4,7 @@ import {
   verifyOtp,
   userDetails,
   userLogin,
-  addFriends,
+  inviteFriend,
   updateUserProfile,
   removeFriend,
   forgotPassword,
@@ -38,7 +38,7 @@ router.post("/verify-otp", verifyOtp);
 router.post("/login", userLogin);
 router.post("/forgot-password", forgotPassword);
 router.post("/verify-forgot-password", verifyForgotPassword);
-router.post("/add-friends", auth, addFriends);
+router.post("/invite", auth, inviteFriend);
 router.post("/remove-friend",auth, removeFriend);
 router.post("/friend-requests/send", auth, sendFriendRequest);
 router.post("/friend-requests/respond", auth, respondToFriendRequest);
