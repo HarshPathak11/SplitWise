@@ -609,6 +609,9 @@ const inviteFriend = async (req, res) => {
 
   try {
     const user = await User.findOne({ _id: userId });
+    const emailExists = await User.findOne({ email });
+    
+    if(emailExists){ return res.status(403).json({message: "email already exists."});}
 
     if (!user || user.email === email) {
       return res.status(404).json({ message: "User not found" });
