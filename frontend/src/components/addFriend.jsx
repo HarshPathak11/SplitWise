@@ -278,11 +278,12 @@ const AddFriend = () => {
     try {
       await api.post(`${API_BASE}/user/invite`, {
         email: inviteEmail,
-        userId: userId
+        userId: userId,
       });
-      setInviteSent(true); // Trigger the success UI (Checkmark)
+      setInviteSent(true);
     } catch (e) {
-      toast.error("Some error occurred!");
+      if (e.status === 403) toast.error("Email already exists!");
+      else toast.error("Some error occurred!");
     } finally {
       setLoadingInvite(false); // Stop the spinner
     }
@@ -685,13 +686,25 @@ const AddFriend = () => {
                         placeholder="friend@example.com"
                         value={inviteEmail}
                         onChange={(e) => setInviteEmail(e.target.value)}
-                        className={`w-full bg-slate-950 border rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none transition-all ${
+                        className={`w-full bg-slate-950 border rounded-xl py-4 pl-12 pr-12 text-white focus:outline-none transition-all ${
                           inviteEmail &&
                           !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)
                             ? "border-red-500/50 focus:border-red-500"
                             : "border-white/10 focus:border-cyan-500/50"
                         }`}
                       />
+
+                      {/* --- CLEAR (X) OPTION --- */}
+                      {inviteEmail && (
+                        <button
+                          onClick={() => setInviteEmail("")}
+                          className="absolute right-4 top-5 p-0.5 rounded-full bg-white/5 hover:bg-white/20 text-slate-500 hover:text-white transition-all duration-200"
+                          title="Clear input"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+
                       {/* Validation Message */}
                       {inviteEmail &&
                         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail) && (
