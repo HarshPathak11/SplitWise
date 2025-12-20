@@ -96,6 +96,68 @@ const LabelCategorySchema = new mongoose.Schema({
 },
 { timestamps: true });
 
+
+const UserFinancialSnapshotSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    unique: true,
+    index: true,
+    required: true
+  },
+
+  profile: {
+    username: String,
+    groupsCount: Number,
+    upiLinked: Boolean
+  },
+
+  friends: [
+    {
+      friendId: mongoose.Schema.Types.ObjectId,
+      friendName: String,
+      netBalance: { type: Number, default: 0 }
+    }
+  ],
+
+  groups: [
+    {
+      groupId: mongoose.Schema.Types.ObjectId,
+      yourTotalSpend: { type: Number, default: 0 },
+      groupTotal: { type: Number, default: 0 },
+      topCategory: String,
+      groupName: String,
+
+      // Optional but powerful
+      categoryTotals: {
+        type: Map,
+        of: Number,
+        default: {}
+      }
+    }
+  ],
+
+  spending: {
+    totalSpend: { type: Number, default: 0 },
+    categoryTotals: {
+      type: Map,
+      of: Number,
+      default: {}
+    }
+  },
+
+  trends: {
+    monthlyTotal: { type: Number, default: 0 },
+    lastMonthTotal: { type: Number, default: 0 }
+  },
+
+  version: { type: Number, default: 1 },
+  lastUpdated: { type: Date, default: Date.now }
+
+}, { timestamps: true });
+
+
+
+
 // Password hashing middleware
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -124,5 +186,9 @@ const User = mongoose.model("User", userSchema);
 const Group = mongoose.model("Group", groupSchema);
 const FriendRequest = mongoose.model("FriendRequest", friendRequestSchema);
 const LabelCategory = mongoose.model("LabelCategory", LabelCategorySchema);
+const UserFinancialSnapshot = mongoose.model(
+  "UserFinancialSnapshot",
+  UserFinancialSnapshotSchema
+);
 
-export { User, Group, Expense, FriendRequest, LabelCategory };
+export { User, Group, Expense, FriendRequest, LabelCategory, UserFinancialSnapshot };

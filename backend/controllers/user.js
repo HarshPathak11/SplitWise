@@ -1,4 +1,4 @@
-import { User, Expense, FriendRequest } from "../models/schema.js";
+import { User, Expense, FriendRequest,UserFinancialSnapshot } from "../models/schema.js";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
@@ -13,6 +13,7 @@ import streamifier from "streamifier";
 import cloudinary from "../config/cloudinary.js";
 import { signAccessToken } from "../utils/jwt.js";
 import { sendMail } from "../utils/mailService.js";
+import { createSnapshot, applyExpenseCreate } from "./snapshots.js";
 
 /**
  * Helper: upload buffer to Cloudinary
@@ -103,6 +104,16 @@ const verifyOtp = async (req, res) => {
       password: cleanPassword, // schema middleware handles hashing
     });
 
+        /* ================= SNAPSHOT: CREATE USER SNAPSHOT ================= */
+    try {
+      await createSnapshot(newUser._id);
+      console.log("Snapshot created successfully");
+    } catch (snapshotErr) {
+      console.error("Snapshot creation failed:", snapshotErr);
+      // ❗ DO NOT fail signup — snapshot can be rebuilt later
+    }
+    /* ================================================================= */
+
     if (referId) {
       const referUser = await User.findById(referId);
       if (!referUser) {
@@ -157,6 +168,21 @@ const userLogin = async (req, res) => {
         message: "Password is not correct",
       });
     }
+
+    /* ================= SNAPSHOT: ENSURE SNAPSHOT EXISTS ================= */
+    try {
+      const snapshotExists = await UserFinancialSnapshot.exists({
+        userId: user._id
+      });
+
+      if (!snapshotExists) {
+        await createSnapshot(user._id);
+      }
+    } catch (snapshotErr) {
+      console.error("Snapshot check/create failed:", snapshotErr);
+      // ❗ DO NOT block login
+    }
+    /* =================================================================== */
 
     // Remove password from user object before sending response
     const userWithoutPassword = { ...user.toObject() };
@@ -631,6 +657,30 @@ const addFriends = async (req, res) => {
       session.endSession();
     }
 
+     /* ================= SNAPSHOT: ADD FRIEND (AUTO ADD) ================= */
+    try {
+      await UserFinancialSnapshot.updateOne(
+        { userId: user._id },
+        {
+          $addToSet: {
+            friends: { friendId: friend._id, friendName: friend.username, netBalance: 0 }
+          }
+        }
+      );
+
+      await UserFinancialSnapshot.updateOne(
+        { userId: friend._id },
+        {
+          $addToSet: {
+            friends: { friendId: user._id, friendName: user.username, netBalance: 0 }
+          }
+        }
+      );
+    } catch (snapshotErr) {
+      console.error("Snapshot update (autoAdd) failed:", snapshotErr);
+    }
+    /* =================================================================== */
+
     // Send FCM notification if available
     if (friend.fcmToken) {
       const tokens = [friend.fcmToken];
@@ -682,6 +732,30 @@ const addFriends = async (req, res) => {
           email: friend.email,
           username: friend.username,
         });
+
+        /* ================= SNAPSHOT: ADD FRIEND ================= */
+        try {
+          await UserFinancialSnapshot.updateOne(
+            { userId: user._id },
+            {
+              $addToSet: {
+                friends: { friendId: friend._id,friendName: friend.username, netBalance: 0 }
+              }
+            }
+          );
+
+          await UserFinancialSnapshot.updateOne(
+            { userId: friend._id },
+            {
+              $addToSet: {
+                friends: { friendId: user._id, friendName: user.username, netBalance: 0 }
+              }
+            }
+          );
+        } catch (snapshotErr) {
+          console.error("Snapshot update failed:", snapshotErr);
+        }
+        /* ======================================================= */
 
         // Send FCM Notification
         if (friend.fcmToken) {
@@ -1018,6 +1092,30 @@ const updateFriendBalance = async (req, res) => {
       { $push: { recentExpense: expense._id } }
     );
 
+     /* ================= SNAPSHOT: FRIEND BALANCE UPDATE ================= */
+    try {
+      await UserFinancialSnapshot.updateOne(
+        { userId: user._id, "friends.friendId": friend._id },
+        { $inc: { "friends.$.netBalance": userIncrement } }
+      );
+
+      await UserFinancialSnapshot.updateOne(
+        { userId: friend._id, "friends.friendId": user._id },
+        { $inc: { "friends.$.netBalance": friendIncrement } }
+      );
+    } catch (snapshotErr) {
+      console.error("Snapshot friend balance update failed:", snapshotErr);
+    }
+    /* =================================================================== */
+
+    /* ================= SNAPSHOT: EXPENSE APPLY ================= */
+    try {
+      await applyExpenseCreate(expense);
+    } catch (snapshotErr) {
+      console.error("Snapshot expense apply failed:", snapshotErr);
+    }
+    /* =========================================================== */
+
     // ✅ Send notifications
     if (friend.fcmToken) {
       sendOneNotification(
@@ -1056,6 +1154,27 @@ const removeFriend = async (req, res) => {
     await User.findByIdAndUpdate(friendId, {
       $pull: { friends: { friend: userId } },
     });
+
+     /* ================= SNAPSHOT: REMOVE FRIEND ================= */
+    try {
+      await UserFinancialSnapshot.updateOne(
+        { userId },
+        {
+          $pull: { friends: { friendId } }
+        }
+      );
+
+      await UserFinancialSnapshot.updateOne(
+        { userId: friendId },
+        {
+          $pull: { friends: { friendId: userId } }
+        }
+      );
+    } catch (snapshotErr) {
+      console.error("Snapshot friend removal failed:", snapshotErr);
+      // ❗ Do NOT fail the main operation
+    }
+    /* =========================================================== */
 
     return res.status(200).json({ message: "Friend removed successfully." });
   } catch (error) {

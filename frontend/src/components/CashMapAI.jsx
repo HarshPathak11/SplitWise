@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import userIcon from "../../public/userIcon.png";
 import api from "../utils/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 function CashMapAI() {
   const chatContainerRef = React.useRef(null);
@@ -40,10 +41,12 @@ function CashMapAI() {
     if (parsedStored?.aiChatUsage?.count) {
       count = parseInt(parsedStored.aiChatUsage.count);
     }
+    // count=0;
 
     localStorage.setItem("dailyAIQueryCounter", count.toString());
 
-    return parseInt(localStorage.getItem("dailyAIQueryCounter")) || 0;
+    // return parseInt(localStorage.getItem("dailyAIQueryCounter")) || 0;
+    return 0;
   });
 
   useEffect(() => {
@@ -131,7 +134,7 @@ function CashMapAI() {
       const user = storedUser ? JSON.parse(storedUser) : {};
       const userId = user?._id || "";
 
-      const response = await api.post("https://fair-ai.onrender.com/assist", {
+      const response = await api.post(`${API_BASE}/user/ai`, {
         userId,
         query: input,
       });
@@ -146,8 +149,9 @@ function CashMapAI() {
         updated.pop(); // Remove analyzing message
         return [...updated, { type: "bot", content: answer }];
       });
+      localStorage.setItem("dailyAIQueryCounter", response?.data?.usageCount);
 
-      setDailyCount(response?.data?.updatedCount);
+      setDailyCount(response?.data?.usageCount);
     } catch (error) {
       console.error("Error:", error);
       clearTimeout(timeoutRef.current);
@@ -207,7 +211,7 @@ function CashMapAI() {
 
       {/* --- Query Limit Status Bar --- */}
       <div className="px-4 py-2 text-center text-sm z-10 max-w-4xl mx-auto w-full">
-        {dailyCount >= 10 ? (
+        {dailyCount >= 12 ? (
           <div className="text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg py-2">
             <Zap className="inline-block w-4 h-4 mr-2" />
             You've reached your **10 query limit** for today! 🚫
@@ -294,17 +298,17 @@ function CashMapAI() {
                 }
               }}
               placeholder={
-                dailyCount >= 10
+                dailyCount >= 12
                   ? "Query limit reached for today!"
                   : isWaitingForResponse
                   ? "Waiting for AI response..."
                   : "Ask about your finances, balances, or insights..."
               }
               className={`w-full bg-slate-800/80 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-inner placeholder-slate-500 text-sm ${
-                (dailyCount >= 10 || isWaitingForResponse) &&
+                (dailyCount >= 12 || isWaitingForResponse) &&
                 "opacity-60 cursor-not-allowed"
               }`}
-              disabled={dailyCount >= 10 || isWaitingForResponse}
+              disabled={dailyCount >= 12 || isWaitingForResponse}
             />
           </div>
 

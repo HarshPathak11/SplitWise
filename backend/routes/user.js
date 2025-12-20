@@ -28,6 +28,7 @@ import {
 } from "../controllers/user.js";
 import upload from "../middleware/multer.js";
 import {auth} from "../middleware/auth.js";
+import { askFairFareAI } from "../controllers/ai.js";
 const router = express.Router();
 
 // Define routes
@@ -52,6 +53,7 @@ router.post("/top-categories",auth, getTopCategoriesForUser);
 router.post("/subcategories",auth, getSubCategoriesForUser);
 router.post("/expenses-by-subcategory", auth,getAllExpensesForASubcategory);
 router.post("/notify", notifyFriend);
+router.post("/ai",auth, askFairFareAI );
 
 //PUT routes
 router.put("/:id", auth,updateUserProfile);

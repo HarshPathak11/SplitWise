@@ -1,6 +1,6 @@
 import { Group } from "../models/schema.js";
 import { User } from "../models/schema.js";
-import { Expense } from "../models/schema.js";
+import { Expense, UserFinancialSnapshot } from "../models/schema.js";
 import {
   sendOneNotification,
   sendMultipleNotifications,
@@ -8,6 +8,8 @@ import {
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
+import { applyExpenseCreate, applyExpenseDelete } from "./snapshots.js";
+// import { app } from "firebase-admin";
 
 const createGroup = async (req, res) => {
   const { name, description, from, to, members } = req.body;
@@ -54,6 +56,34 @@ const createGroup = async (req, res) => {
         );
       }
     }
+
+     /* ================= SNAPSHOT: GROUP CREATE ================= */
+    try {
+      await Promise.all(
+        members.map(async (userId) => {
+          await UserFinancialSnapshot.updateOne(
+            { userId },
+            {
+              $addToSet: {
+                groups: {
+                  groupId: group._id,
+                  groupName: group.name,
+                  yourTotalSpend: 0,
+                  groupTotal: 0,
+                  categoryTotals: {},
+                  topCategory: null
+                }
+              },
+              $inc: { "profile.groupsCount": 1 }
+            }
+          );
+        })
+      );
+    } catch (snapshotErr) {
+      console.error("Snapshot update (group create) failed:", snapshotErr);
+      // ❗ Do NOT affect group creation
+    }
+    /* ========================================================== */
 
     res.status(201).json({
       message: "Group created and friendships updated successfully",
@@ -131,6 +161,33 @@ const addMembers = async (req, res) => {
 
     await group.save();
 
+      /* ================= SNAPSHOT: ADD MEMBERS ================= */
+    try {
+      await Promise.all(
+        newMembers.map(async (userId) => {
+          await UserFinancialSnapshot.updateOne(
+            { userId },
+            {
+              $addToSet: {
+                groups: {
+                  groupId,
+                  groupName: group.name,
+                  yourTotalSpend: 0,
+                  groupTotal: 0,
+                  categoryTotals: {},
+                  topCategory: null
+                }
+              },
+              $inc: { "profile.groupsCount": 1 }
+            }
+          );
+        })
+      );
+    } catch (snapshotErr) {
+      console.error("Snapshot update (add members) failed:", snapshotErr);
+    }
+    /* ========================================================= */
+
     // Step 3: 🔔 Notify newly added members
     if (newMembers.length > 0) {
       const users = await User.find(
@@ -186,6 +243,24 @@ const removeMembers = async (req, res) => {
       { _id: { $in: members } },
       { $pull: { groups: groupId } }
     );
+
+     /* ================= SNAPSHOT: REMOVE MEMBERS ================= */
+    try {
+      await Promise.all(
+        members.map(async (userId) => {
+          await UserFinancialSnapshot.updateOne(
+            { userId },
+            {
+              $pull: { groups: { groupId } },
+              $inc: { "profile.groupsCount": -1 }
+            }
+          );
+        })
+      );
+    } catch (snapshotErr) {
+      console.error("Snapshot update (remove members) failed:", snapshotErr);
+    }
+    /* ============================================================ */
 
     // Step 3: 🔔 Notify removed members
     const removedUsers = await User.find(
@@ -497,6 +572,8 @@ const addExpenseController = async (req, res) => {
     // Commit transaction if all operations succeed
     await session.commitTransaction();
     session.endSession();
+    
+     await applyExpenseCreate(newExpense);
 
     return res.status(200).json({ success: true, expense: newExpense });
   } catch (error) {
@@ -688,6 +765,7 @@ const addafterDeleteExpenseController = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
+    await applyExpenseCreate(newExpense);
 
     // ✅ Send notifications after successful edit
     try {
@@ -748,6 +826,7 @@ const deleteExpenseController = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Expense not found" });
     }
+    
 
     const { paidBy, owedBy, amount, group: groupId } = expense;
 
@@ -813,6 +892,8 @@ const deleteExpenseController = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
+
+    await applyExpenseDelete(expense);
     return res.status(200).json({ success: true, message: "Expense deleted" });
   } catch (error) {
     await session.abortTransaction();
