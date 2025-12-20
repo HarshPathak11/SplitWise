@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import { FaChartBar } from "react-icons/fa";
-import axios from "axios";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -298,14 +297,18 @@ const TripDetails = () => {
                       key={index}
                       className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-xl hover:bg-white/5 transition-colors group"
                     >
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-indigo-400 font-bold text-xs sm:text-sm shadow-inner group-hover:border-indigo-500/50 transition-colors">
-                        {typeof member === "string"
-                          ? member.charAt(0)
-                          : member?.username?.charAt(0) || "?"}
-                      </div>
-                      <span className="text-xs sm:text-sm text-zinc-300 font-medium truncate flex-1">
-                        {typeof member === "string" ? member : member?.username}
-                      </span>
+                      <Link to={`/transaction-history/${member._id}`}>
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-indigo-400 font-bold text-xs sm:text-sm shadow-inner group-hover:border-indigo-500/50 transition-colors">
+                          {typeof member === "string"
+                            ? member.charAt(0)
+                            : member?.username?.charAt(0) || "?"}
+                        </div>
+                        <span className="text-xs sm:text-sm text-zinc-300 font-medium truncate flex-1">
+                          {typeof member === "string"
+                            ? member
+                            : member?.username}
+                        </span>
+                      </Link>
                     </div>
                   ))
                 ) : (
