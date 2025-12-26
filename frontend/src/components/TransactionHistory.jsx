@@ -50,64 +50,65 @@ const TransactionHistory = () => {
     const element = document.getElementById(`tx-card-${txId}`);
     if (!element) return;
 
-    // Custom Message & Link
-    const shareLink = `https://fair-fare-phi.vercel.app/transaction-history/${userId}`;
+    const shareLink = `https://your-app-link.com/transaction/${txId}`;
     const shareText = `Hey! Just a friendly reminder about the transaction of ₹${amount}. You can check the details here: ${shareLink}`;
 
     try {
       const canvas = await html2canvas(element, {
         backgroundColor: "#0a0a0a",
-        scale: 2,
+        scale: 3, // Increased scale for better text clarity
         useCORS: true,
-        ignoreElements: (el) => el.tagName === "BUTTON", // Hides the share button in the image
+        logging: false,
+        ignoreElements: (el) => el.tagName === "BUTTON",
+        // FIX FOR CUT OFF TEXT: Add padding during the clone phase
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById(`tx-card-${txId}`);
+          if (clonedElement) {
+            // Add extra padding to the bottom of the container to prevent clipping
+            clonedElement.style.paddingBottom = "10px";
+            // Ensure all text has enough line-height
+            const titles = clonedElement.querySelectorAll("h4, span");
+            titles.forEach((el) => (el.style.lineHeight = "1.4"));
+          }
+        },
       });
 
       const dataUrl = canvas.toDataURL("image/png");
       const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], "receipt.png", { type: "image/png" });
 
-      // MOBILE: Share Image + Text + Link
+      // MOBILE SHARE LOGIC
       if (
         navigator.share &&
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
       ) {
-        const file = new File([blob], "transaction.png", { type: "image/png" });
-
-        await navigator.share({
-          files: [file],
-          title: "Transaction Receipt",
-          text: shareText, // This includes your message and link
-        });
-      }
-      // DESKTOP/LAPTOP: Copy Image & Notify to Copy Link
-      else {
         try {
-          const item = new ClipboardItem({ "image/png": blob });
-          await navigator.clipboard.write([item]);
-
-          // On desktop, we prompt them to paste the image, then we can
-          // automatically copy the link for them next
-          toast.success(
-            "Receipt copied! Paste in WhatsApp, then copy the link."
-          );
-
-          // Optional: Automatically copy the text to clipboard after a delay
-          setTimeout(() => {
-            navigator.clipboard.writeText(shareText);
-            toast("Reminder message & link copied to clipboard!", {
-              icon: "🔗",
-            });
-          }, 2000);
-        } catch (err) {
-          // Fallback: Download
-          const link = document.createElement("a");
-          link.href = dataUrl;
-          link.download = `receipt-${txId}.png`;
-          link.click();
+          await navigator.share({
+            files: [file],
+            title: "Transaction Receipt",
+            text: shareText, // WhatsApp usually prefers text + file on Android
+          });
+        } catch (shareError) {
+          // If sharing both fails, share text first then file
+          console.log("Dual share failed, trying text-only fallback");
+          navigator.clipboard.writeText(shareText);
+          toast.success("Reminder text copied! Now share the image.");
         }
+      } else {
+        // DESKTOP FALLBACK
+        const item = new ClipboardItem({ "image/png": blob });
+        await navigator.clipboard.write([item]);
+        toast.success("Image copied! Paste in WhatsApp.");
+
+        // Copy text to clipboard after a short delay
+        setTimeout(() => {
+          navigator.clipboard.writeText(shareText);
+          toast("Reminder link copied!", { icon: "🔗" });
+        }, 1500);
       }
     } catch (error) {
       console.error("Error sharing:", error);
-      toast.error("Failed to generate shareable receipt");
     }
   };
 
