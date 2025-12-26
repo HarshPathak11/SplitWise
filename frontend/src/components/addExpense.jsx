@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, DeleteIcon } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+import api from "../utils/api";
 
 // Accepts an optional groupId prop so that it can be passed directly if available
 const AddExpense = () => {
@@ -176,10 +177,15 @@ const AddExpense = () => {
       customAmounts: splitMode === "unequally" ? amounts : {},
     };
 
+    if (totalEntered > 50000) {
+      toast.error("Amount must be smaller than 50k");
+      return;
+    }
+
     try {
       setIsLoading(true); // ✅ Start loading
       // Replace with your backend endpoint
-      const response = await axios.post(
+      const response = await api.post(
         `${API_BASE}/group/add-expense`,
         // '//http://localhost:8000/group/add-expense',
         payload
@@ -218,240 +224,299 @@ const AddExpense = () => {
     }
   };
 
+  const equalSplitAmount =
+    splitMode === "equally" && selected.length > 0
+      ? (parseFloat(mainAmount || 0) / selected.length).toFixed(2)
+      : 0;
+
   return (
-    <div className="min-h-screen bg-black text-white p-4 sm:p-6 md:p-10 font-sans">
-      <button
-        className="flex items-center text-white mb-6 hover:text-gray-300 transition"
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft className="w-5 h-5 mr-2" />
-        Back
-      </button>
-      <div className="max-w-3xl mx-auto bg-black p-4 sm:p-6 md:p-10 rounded-2xl shadow-2xl space-y-8">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-center sm:text-left">
-            Add Expense
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 flex flex-col relative">
+      {/* --- BACKGROUND FX --- */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] right-[20%] w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-fuchsia-900/10 rounded-full blur-[100px]"></div>
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
+      </div>
+
+      <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col h-full flex-1 p-4 sm:p-6">
+        {/* --- HEADER --- */}
+        <div className="flex items-center gap-4 mb-8">
+          <button
+            onClick={() => navigate(-1)}
+            className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg"
+          >
+            <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+          </button>
+          <h1 className="text-xl font-bold text-white tracking-tight uppercase">
+            New Transaction
           </h1>
         </div>
 
-        {/* Title and Amount inputs */}
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="bg-[#121212] border border-gray-600 text-white w-full px-4 py-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white"
-          />
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Amount"
-              inputMode="decimal"
-              value={mainAmount}
-              onChange={(e) => setMainAmount(e.target.value)}
-              pattern="^\d*(\.\d{0,2})?$"
-              className="bg-[#121212] border border-gray-600 text-white w-full px-4 py-3 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white"
-            />
+        {/* --- MAIN FORM --- */}
+        <div className="flex-1 space-y-6">
+          {/* 1. AMOUNT INPUT (Hero) */}
+          <div className="flex flex-col items-center justify-center py-8">
+            <span className="text-zinc-500 text-sm font-medium uppercase tracking-widest mb-2">
+              Total Amount
+            </span>
+            <div className="relative flex items-center justify-center">
+              <span className="text-4xl sm:text-6xl text-zinc-600 font-mono font-light mr-2">
+                ₹
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={mainAmount}
+                onChange={(e) => setMainAmount(e.target.value)}
+                placeholder="0"
+                className="bg-transparent text-5xl sm:text-7xl font-mono font-bold text-white placeholder-zinc-800 text-center focus:outline-none w-full max-w-[300px]"
+                autoFocus
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Paid By dropdown (includes the logged-in user and friends) */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-          <label className="text-lg font-medium whitespace-nowrap">
-            Paid By:
-          </label>
-          <select
-            className="bg-[#121212] border border-gray-600 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-white"
-            value={paidBy}
-            onChange={(e) => setPaidBy(e.target.value)}
-          >
-            <option value="">Select Payer</option>
-            {members.map((member) => (
-              <option key={member._id} value={member._id}>
-                {member.username}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* 2. DETAILS CARD (Title & Payer) */}
+          <div className="bg-zinc-900/40 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm">
+            {/* Title Input */}
+            <div className="border-b border-white/5 p-1">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="What is this for? (e.g. Dinner, Uber)"
+                className="w-full bg-transparent px-4 py-4 text-lg text-white placeholder-zinc-600 focus:outline-none focus:bg-white/5 transition-colors rounded-xl"
+              />
+            </div>
 
-        {/* Split Mode Selector */}
-        <div className="space-y-2">
-          <p className="text-lg font-medium">Split:</p>
-          <div className="flex flex-wrap gap-4">
-            <button
-              className={`px-6 py-2 rounded-lg ${
-                splitMode === "equally"
-                  ? "bg-white text-black font-semibold"
-                  : "bg-[#121212] border border-gray-600 hover:bg-gray-800"
-              } transition`}
-              onClick={() => setSplitMode("equally")}
-            >
-              Equally
-            </button>
-            <button
-              className={`px-6 py-2 rounded-lg ${
-                splitMode === "unequally"
-                  ? "bg-white text-black font-semibold"
-                  : "bg-[#121212] border border-gray-600 hover:bg-gray-800"
-              } transition`}
-              onClick={() => setSplitMode("unequally")}
-            >
-              Unequally
-            </button>
+            {/* Payer Selector */}
+            <div className="flex items-center justify-between px-4 py-3 bg-zinc-900/60">
+              <span className="text-sm text-zinc-400 font-medium">Paid by</span>
+              <div className="relative">
+                <select
+                  value={paidBy}
+                  onChange={(e) => setPaidBy(e.target.value)}
+                  className="appearance-none bg-indigo-600/10 border border-indigo-500/30 text-indigo-300 py-1.5 pl-3 pr-8 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer hover:bg-indigo-600/20 transition-colors"
+                >
+                  <option value="" disabled>
+                    Select
+                  </option>
+                  {members.map((member) => (
+                    <option
+                      key={member._id}
+                      value={member._id}
+                      className="bg-zinc-900 text-white"
+                    >
+                      {member.username}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-indigo-400">
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Involved Members Selection (Paid For / Owed By) */}
-        <div className="space-y-3">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={selectAll}
-              onChange={handleSelectAll}
-              className="w-4 h-4"
-            />
-            <span className="text-sm">Select All</span>
-          </label>
-          {members.map((member) => (
-            <div
-              key={member._id}
-              className="flex flex-col sm:flex-row sm:items-center cursor-pointer gap-2 sm:gap-4 bg-[#121212] p-3 rounded-lg"
-            >
-              <div
-                className="flex items-center gap-3"
-                onClick={() => handleCheckboxChange(member._id)}
+          {/* 3. SPLIT ENGINE */}
+          <div className="space-y-4">
+            {/* Split Toggle */}
+            <div className="bg-zinc-900 border border-white/10 p-1 rounded-xl flex relative">
+              <button
+                onClick={() => setSplitMode("equally")}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-300 relative z-10 ${
+                  splitMode === "equally"
+                    ? "text-white shadow-lg bg-zinc-800"
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
               >
+                Split Equally
+              </button>
+              <button
+                onClick={() => setSplitMode("unequally")}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-300 relative z-10 ${
+                  splitMode === "unequally"
+                    ? "text-white shadow-lg bg-zinc-800"
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                Split Unequally
+              </button>
+            </div>
+
+            {/* Select All Toggle */}
+            <div className="flex justify-end px-2">
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <div
+                  className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                    selectAll
+                      ? "bg-indigo-600 border-indigo-600"
+                      : "border-zinc-600 group-hover:border-zinc-400"
+                  }`}
+                >
+                  {selectAll && (
+                    <svg
+                      className="w-3 h-3 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </div>
                 <input
                   type="checkbox"
-                  checked={selected.includes(member._id)}
-                  className="w-4 h-4"
+                  checked={selectAll}
+                  onChange={handleSelectAll}
+                  className="hidden"
                 />
-                <span className="max-w-3xl">{member.username}</span>
-              </div>
-              {splitMode === "unequally" && selected.includes(member._id) && (
-                <input
-                  type="text"
-                  placeholder="Amount"
-                  inputMode="decimal"
-                  pattern="^\d*(\.\d{0,2})?$"
-                  value={amounts[member._id] || ""}
-                  onChange={(e) => handleAmountChange(e, member._id)}
-                  className="px-3 py-2 bg-black border border-gray-600 text-white rounded-lg w-full sm:w-40 focus:outline-none focus:ring-2 focus:ring-white"
-                />
-              )}
+                <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                  Select All
+                </span>
+              </label>
             </div>
-          ))}
+
+            {/* Members List */}
+            <div className="space-y-2">
+              {members.map((member) => {
+                const isSelected = selected.includes(member._id);
+                return (
+                  <div
+                    key={member._id}
+                    onClick={() => handleCheckboxChange(member._id)}
+                    className={`group flex items-center justify-between p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
+                      isSelected
+                        ? "bg-indigo-900/10 border-indigo-500/30 shadow-[0_0_15px_-5px_rgba(99,102,241,0.1)]"
+                        : "bg-zinc-900/20 border-white/5 hover:border-white/10"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Checkbox Visual */}
+                      <div
+                        className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                          isSelected
+                            ? "bg-indigo-500 border-indigo-500"
+                            : "border-zinc-700 bg-zinc-900"
+                        }`}
+                      >
+                        {isSelected && (
+                          <svg
+                            className="w-3.5 h-3.5 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                      <span
+                        className={`text-sm font-medium ${
+                          isSelected
+                            ? "text-white"
+                            : "text-zinc-500 group-hover:text-zinc-300"
+                        }`}
+                      >
+                        {member.username}
+                      </span>
+                    </div>
+
+                    {/* Amount Input/Display */}
+                    {isSelected && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        {splitMode === "equally" ? (
+                          <span className="text-emerald-400 font-mono font-medium text-sm">
+                            ₹{equalSplitAmount}
+                          </span>
+                        ) : (
+                          <div className="relative w-24">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">
+                              ₹
+                            </span>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={amounts[member._id] || ""}
+                              onChange={(e) =>
+                                handleAmountChange(e, member._id)
+                              }
+                              placeholder="0"
+                              className="w-full bg-zinc-950 border border-zinc-700 rounded-lg py-1.5 pl-5 pr-2 text-right text-white font-mono text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        {/* Total Difference for Unequal Splitting */}
-        {splitMode === "unequally" && (
-          <div className="text-center text-lg font-semibold">
-            Total Difference:{" "}
-            <span
-              className={
-                (parseFloat(mainAmount) - calculateCustomTotal()).toFixed(2) !==
-                "0.00"
-                  ? "text-red-500"
-                  : "text-green-500"
-              }
+        {/* --- FOOTER ACTIONS --- */}
+        <div className="mt-8 sticky bottom-4 z-20">
+          {/* Unequal Split Validator Bar */}
+          {splitMode === "unequally" && (
+            <div
+              className={`mb-3 px-4 py-2 rounded-lg border flex justify-between items-center text-xs font-bold uppercase tracking-wide backdrop-blur-md ${
+                (parseFloat(mainAmount || 0) - calculateCustomTotal()).toFixed(
+                  2
+                ) === "0.00"
+                  ? "bg-emerald-900/30 border-emerald-500/30 text-emerald-400"
+                  : "bg-red-900/30 border-red-500/30 text-red-400"
+              }`}
             >
-              {(-1 * (parseFloat(mainAmount) - calculateCustomTotal())).toFixed(
-                2
-              )}
-            </span>
-          </div>
-        )}
+              <span>Amount Remaining</span>
+              <span className="font-mono text-sm">
+                ₹
+                {Math.abs(
+                  parseFloat(mainAmount || 0) - calculateCustomTotal()
+                ).toFixed(2)}
+              </span>
+            </div>
+          )}
 
-        {/* Add Expense Button */}
-        <div className="text-center pt-6">
           <button
             onClick={handleAddExpense}
             disabled={!mainAmount || !title || !paidBy || isLoading}
-            className={`font-semibold px-10 py-3 rounded-xl transition text-lg ${
+            className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 transform active:scale-[0.98] ${
               !mainAmount || !title || !paidBy || isLoading
-                ? "bg-gray-400 text-gray-700 cursor-not-allowed"
-                : "bg-white text-black hover:bg-gray-200"
+                ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-white/5"
+                : "bg-white text-black hover:bg-zinc-200 hover:shadow-white/10"
             }`}
           >
-            {isLoading ? "Adding..." : "Add"}
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-zinc-400 border-t-zinc-800 rounded-full animate-spin"></span>
+                Processing...
+              </span>
+            ) : (
+              "Confirm Transaction"
+            )}
           </button>
-        </div>
-        {/* Simple Calculator - always visible above amount input */}
-        <div className="w-full bg-[#0b0b0b] border border-gray-700 rounded-2xl p-4 shadow-2xl mb-4">
-          <div className="flex justify-between items-center mb-3">
-            <div className="text-lg font-semibold">Calculator</div>
-            <button
-              className="p-2 rounded hover:bg-gray-800"
-              onClick={() => {
-                setShowCalculator(false);
-                setCalcExpr("");
-              }}
-              aria-label="Close calculator"
-            ></button>
-          </div>
-
-          <div className="mb-3">
-            <input
-              className="w-full bg-black border border-gray-600 text-white px-3 py-2 rounded-lg text-right text-xl"
-              inputMode="decimal"
-              pattern="^\d*(\.\d{0,2})?$"
-              value={calcExpr}
-              onChange={(e) => setCalcExpr(e.target.value)}
-              placeholder="0"
-            />
-          </div>
-
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              "7",
-              "8",
-              "9",
-              "/",
-              "4",
-              "5",
-              "6",
-              "*",
-              "1",
-              "2",
-              "3",
-              "-",
-              "(",
-              "0",
-              ")",
-              "+",
-            ].map((k) => (
-              <button
-                key={k}
-                onClick={() => appendToCalc(k)}
-                className="px-3 py-2 bg-[#121212] rounded-lg text-white text-lg hover:bg-gray-800"
-              >
-                {k}
-              </button>
-            ))}
-
-            <button
-              onClick={handleCalcClear}
-              className="col-span-2 px-3 py-2 bg-red-600 rounded-lg text-white text-lg hover:bg-red-700"
-            >
-              C
-            </button>
-            <button
-              onClick={handleCalcBackspace}
-              className="flex justify-center items-center px-3 py-2 bg-yellow-600 rounded-lg text-white text-lg hover:bg-yellow-700"
-            >
-              <DeleteIcon className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleCalcEqual}
-              className="px-3 py-2 bg-green-500 rounded-lg text-white text-lg hover:bg-green-600"
-            >
-              =
-            </button>
-          </div>
-          <div className="text-sm text-gray-400 mt-3">
-            Tip: Use your keyboard / numpad. Press Enter to calculate
-          </div>
         </div>
       </div>
     </div>

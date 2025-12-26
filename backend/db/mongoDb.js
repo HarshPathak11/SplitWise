@@ -7,11 +7,10 @@ const mongoDB = async () => {
 
     console.log(`✅ Connected to MongoDB: ${conn.connection.name}`);
 
-    // Initialize expense categorizer
-    initExpenseCategorizer();
   } catch (error) {
     console.error("❌ MongoDB connection error:", error.message);
   }
 };
+
 
 export default mongoDB;

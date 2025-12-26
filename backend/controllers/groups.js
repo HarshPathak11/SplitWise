@@ -148,7 +148,9 @@ const addMembers = async (req, res) => {
       }
     }
 
-    const updatedGroup = await Group.findById(groupId).populate("members");
+    const updatedGroup = await Group.findById(groupId)
+      .populate("members")
+      .populate("expenses");
     res.status(200).json(updatedGroup);
   } catch (err) {
     console.error("Add Members Error:", err);
@@ -200,10 +202,9 @@ const removeMembers = async (req, res) => {
     }
 
     // ✅ Return updated group
-    const updatedGroup = await Group.findById(groupId).populate(
-      "members",
-      "username"
-    );
+    const updatedGroup = await Group.findById(groupId)
+      .populate("members", "username")
+      .populate("expenses");
     return res.status(200).json(updatedGroup);
   } catch (err) {
     console.error("Remove Members Error:", err);
@@ -211,25 +212,72 @@ const removeMembers = async (req, res) => {
   }
 };
 
+// const getGroupDetails = async (req, res) => {
+//   const groupId = req.params.id; // Assuming you have the group ID from the request
+//   try {
+//     const group = await Group.findById(groupId)
+//       .populate("members", "username email")
+//       .populate({
+//         path: "expenses",
+//         populate: [
+//           { path: "paidBy", select: "username email" },
+//           { path: "owedBy.user", select: "username email" },
+//         ],
+//       });
+
+//     if (!group) {
+//       return res.status(404).json({ message: "Group not found" });
+//     }
+//     res.status(200).json(group);
+//   } catch (error) {
+//     console.error("Error fetching group details:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 const getGroupDetails = async (req, res) => {
-  const groupId = req.params.id; // Assuming you have the group ID from the request
   try {
+    const groupId = req.params.id;
+
     const group = await Group.findById(groupId)
-      .populate("members", "username email")
-      .populate({
-        path: "expenses",
-        populate: [
-          { path: "paidBy", select: "username email" },
-          { path: "owedBy.user", select: "username email" },
-        ],
-      });
+      .select("name description members createdAt updatedAt")
+      .populate("members", "username")
+      .lean();
 
     if (!group) {
       return res.status(404).json({ message: "Group not found" });
     }
+
     res.status(200).json(group);
   } catch (error) {
-    console.error("Error fetching group details:", error);
+    console.error("getGroupMeta error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const getGroupExpenses = async (req, res) => {
+  try {
+    const groupId = req.params.id;
+    const limit = Math.min(parseInt(req.query.limit || "20", 10), 50);
+    const cursor = req.query.cursor ? new Date(req.query.cursor) : null;
+
+    const query = { group: groupId };
+    if (cursor) query.createdAt = { $lt: cursor };
+
+    const expenses = await Expense.find(query)
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .select("title amount createdAt category subcategory paidBy owedBy")
+      .populate("paidBy", "username")
+      .populate("owedBy.user", "username")
+      .lean();
+
+    const hasMore = expenses.length === limit;
+    const nextCursor = hasMore ? expenses[expenses.length - 1].createdAt : null;
+
+    res.status(200).json({ expenses, nextCursor });
+  } catch (error) {
+    console.error("getGroupExpenses error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -295,7 +343,7 @@ const addExpenseController = async (req, res) => {
   }
 
   const friendIds = payer.friends.map((f) => f.friend.toString());
-    
+
   // Find all non-friends from involvedMembers (skip self)
   const notFriends = involvedMembers.filter(
     (memberId) =>
@@ -303,7 +351,7 @@ const addExpenseController = async (req, res) => {
       !friendIds.includes(memberId.toString())
   );
 
-  console.log("Not friends with:", notFriends);
+  // console.log("Not friends with:", notFriends);
 
   if (notFriends.length > 0) {
     // Fetch names of non-friends
@@ -382,7 +430,7 @@ const addExpenseController = async (req, res) => {
       await Group.findByIdAndUpdate(
         groupId,
         {
-          $push: { expenses: newExpense.toObject() },
+          $push: { expenses: newExpense._id },
           $inc: { tripTotal: newExpense.amount }, // 👈 increment tripTotal
         },
         { session }
@@ -391,7 +439,7 @@ const addExpenseController = async (req, res) => {
 
     await User.findByIdAndUpdate(
       paidBy,
-      { $push: { recentExpense: newExpense.toObject() } },
+      { $push: { recentExpense: newExpense._id } },
       { session }
     );
 
@@ -607,7 +655,7 @@ const addafterDeleteExpenseController = async (req, res) => {
       await Group.findByIdAndUpdate(
         groupId,
         {
-          $push: { expenses: newExpense.toObject() },
+          $push: { expenses: newExpense._id },
           $inc: { tripTotal: newExpense.amount },
         },
         { session }
@@ -617,7 +665,7 @@ const addafterDeleteExpenseController = async (req, res) => {
     // 2) Update payer's recentExpense
     await User.findByIdAndUpdate(
       paidBy,
-      { $push: { recentExpense: newExpense.toObject() } },
+      { $push: { recentExpense: newExpense._id } },
       { session, select: false }
     );
 
@@ -872,7 +920,6 @@ const getTopCategoriesForGroupExpense = async (req, res) => {
   }
 };
 
-
 // //Get subcategories for a user within a category
 // const getSubCategoriesForGroup = async (req, res) => {
 //   try {
@@ -1013,6 +1060,7 @@ const getAllExpensesForASubcategoryInGroup = async (req, res) => {
     const expenses = await Expense.find(query)
       .populate({ path: "paidBy", select: "username" })
       .populate({ path: "owedBy.user", select: "username" })
+      .populate({ path: "group", select: "name" })
       .sort({ updatedAt: -1 });
 
     res.status(200).json({ expenses });
@@ -1021,7 +1069,6 @@ const getAllExpensesForASubcategoryInGroup = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 export {
   createGroup,
@@ -1038,4 +1085,5 @@ export {
   getTopCategoriesForGroupExpense,
   getSubCategoriesForGroup,
   getAllExpensesForASubcategoryInGroup,
+  getGroupExpenses,
 };

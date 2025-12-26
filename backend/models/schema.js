@@ -37,7 +37,7 @@ const groupSchema = new mongoose.Schema(
     to: { type: Date },
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     tripTotal: { type: Number, default: 0 },
-    expenses: [expenseSchema],
+    expenses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Expense" }],
   },
   { timestamps: true }
 );
@@ -67,7 +67,7 @@ const userSchema = new mongoose.Schema(
     username: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true, select: false },
-    fcmToken: { type: String, default: null, required: true },
+    fcmToken: { type: String, default: null },
     friends: [
       {
         friend: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
@@ -76,7 +76,7 @@ const userSchema = new mongoose.Schema(
     ],
     requests: { type: Number, default: 0 },
     groups: [{ type: mongoose.Schema.Types.ObjectId, ref: "Group" }],
-    recentExpense: [expenseSchema],
+    recentExpense: [{ type: mongoose.Schema.Types.ObjectId, ref: "Expense" }],
     upiId: { type: String },
     aiChatUsage: {
       count: { type: Number, default: 0 },

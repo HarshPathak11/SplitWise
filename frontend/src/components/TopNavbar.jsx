@@ -1,12 +1,12 @@
 import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
-import { FaUser, FaChartBar } from "react-icons/fa";
+import { FaUser, FaChartBar, FaRobot, FaSignOutAlt } from "react-icons/fa";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
-import { FaRobot } from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
-import dashboardLogo from "../../public/dashboardLogo.png";
+import dashboardLogoNew from "../../public/dashboardLogoNew.png";
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TopNavbar = () => {
@@ -14,93 +14,89 @@ const TopNavbar = () => {
 
   const handleSignOut = async () => {
     const userId = Cookies.get("id");
-    const response = await axios.post(`${API_BASE}/user/remove-fcm-token`, {
-      userId: userId,
-    });
+    try {
+      const response = await axios.post(`${API_BASE}/user/remove-fcm-token`, {
+        userId: userId,
+      });
 
-    if (response.status === 200) {
-      Cookies.remove("id");
-      Cookies.remove("last4");
-      localStorage.clear();
-      navigate("/");
-    } else {
+      if (response.status === 200) {
+        Cookies.remove("id");
+        Cookies.remove("last4");
+        localStorage.clear();
+        navigate("/");
+        toast.success("Signed out successfully");
+      }
+    } catch (error) {
+      console.error("Sign out error", error);
       toast.error("Error signing out. Please try again.");
     }
   };
 
   return (
-    <div className="backdrop-blur-lg bg-gray-800/30 p-3 sm:p-4 rounded-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300">
-      <div className="flex justify-between items-center">
-        <div>
-          <Link to="/">
-            <img
-              src={dashboardLogo}
-              alt="Fair Fare Dashboard"
-              className="rounded-xl"
-            />
-          </Link>
-        </div>
-        <div className="flex items-center gap-3">
+    <nav className="w-full bg-zinc-900/80 backdrop-blur-xl border border-white/5 rounded-2xl px-4 py-3 flex justify-between items-center shadow-lg shadow-black/20">
+      {/* --- Brand Logo --- */}
+      <div className="flex-shrink-0">
+        <Link to="/" className="block relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg blur opacity-0 group-hover:opacity-20 transition duration-500"></div>
+          <img
+            src={dashboardLogoNew}
+            alt="Fair Fare Dashboard"
+            className="relative h-10 w-auto object-contain rounded-lg"
+          />
+        </Link>
+      </div>
+
+      {/* --- Action Center --- */}
+      <div className="flex items-center gap-3 md:gap-4">
+        {/* 1. App Tools Group */}
+        <div className="flex items-center gap-2">
           <Link to="/analytics">
             <button
-              className=" p-2 shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 
-             rounded-lg flex items-center justify-center
-              hover:scale-105 transition-transform duration-300 ease-in-out"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 transition-all duration-300 group"
               title="Analytics Dashboard"
             >
-              Analytics
-              <FaChartBar className="text-white text-2xl pl-2" />
+              <span className="hidden md:block text-sm font-medium">
+                Analytics
+              </span>
+              <FaChartBar className="text-lg group-hover:scale-110 transition-transform" />
             </button>
           </Link>
-          <div className="flex space-x-8">
-            <Link to="/FairAI">
-              <button
-                className="p-2 shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 
-             rounded-lg flex items-center justify-center 
-             hover:scale-105 transition-transform duration-300 ease-in-out"
-                title="AI ChatBot"
-              >
-                <FaRobot className="text-white text-2xl ml-1 mr-1" />
-              </button>
-            </Link>
-          </div>
-          <div className="flex space-x-8">
-            <Link to="/profile">
-              <button
-                className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
-                title="Edit Profile"
-              >
-                <FaUser className="text-white text-xl" />
-              </button>
-            </Link>
-          </div>
 
-          {/* Sign Out Button */}
-          <div
-            onClick={handleSignOut}
-            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
-          >
-            <svg
-              className="w-5 h-5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <Link to="/FairAI">
+            <button
+              className="p-2.5 rounded-xl bg-zinc-800/50 border border-white/5 text-zinc-400 hover:text-white hover:bg-gradient-to-br hover:from-purple-500/20 hover:to-pink-500/20 hover:border-purple-500/30 transition-all duration-300 group relative overflow-hidden"
+              title="FairAI Assistant"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-          </div>
+              <FaRobot className="text-xl group-hover:animate-pulse" />
+            </button>
+          </Link>
+        </div>
+
+        {/* Divider */}
+        <div className="h-6 w-px bg-white/10 mx-1"></div>
+
+        {/* 2. User Actions Group */}
+        <div className="flex items-center gap-2">
+          <Link to="/profile">
+            <button
+              className="p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
+              title="Edit Profile"
+            >
+              <FaUser className="text-lg" />
+            </button>
+          </Link>
+
+          <button
+            onClick={handleSignOut}
+            className="p-2.5 rounded-xl bg-transparent hover:bg-red-500/10 text-zinc-400 hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all duration-200"
+            title="Sign Out"
+          >
+            <FaSignOutAlt className="text-lg" />
+          </button>
         </div>
       </div>
-    </div>
+    </nav>
   );
-};
-TopNavbar.propTypes = {
-  handleSignOut: PropTypes.func.isRequired,
 };
 
 export default TopNavbar;

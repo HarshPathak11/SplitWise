@@ -5,6 +5,7 @@
     "star": "cd frontend && npm run dev"
   },
   "devDependencies": {
+    "baseline-browser-mapping": "^2.9.7",
     "concurrently": "^9.2.1"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
     "gapi-script": "^1.2.0",
     "lucide-react": "^0.545.0",
     "react-router-dom": "^7.9.4",
+    "sweetalert2": "^11.26.2",
     "tailwindcss": "^4.1.14"
   }
 }
