@@ -5,7 +5,7 @@ import { FaArrowDown, FaBell, FaCopy } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { Link } from "react-router-dom";
-import { Share2 } from "lucide-react";
+import { Forward } from "lucide-react";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
 import html2canvas from "html2canvas";
 import api from "../utils/api";
@@ -450,91 +450,84 @@ const TransactionHistory = () => {
                   key={tx._id}
                   className={`flex w-full ${
                     isUser ? "justify-end" : "justify-start"
-                  } animate-in slide-in-from-bottom-2 duration-500`}
+                  } mb-4 px-2`}
                 >
-                  <div
-                    id={`tx-card-${tx._id}`} // ID for html2canvas to find
-                    className={`relative max-w-[85%] sm:max-w-xs group`}
-                  >
-                    <div
-                      className={`relative p-4 rounded-xl border backdrop-blur-md ...`}
+                  {/* 1. RELATIVE WRAPPER: Centers the button and the bubble as one unit */}
+                  <div className="relative group flex items-center max-w-[85%] sm:max-w-sm">
+                    {/* 2. ABSOLUTE FORWARD BUTTON: Must be outside the bubble's DOM flow */}
+                    <button
+                      onClick={() => handleShareTransaction(tx._id)}
+                      className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center 
+          w-9 h-9 rounded-full bg-zinc-900/90 border border-white/10 
+          text-zinc-400 hover:text-white hover:bg-zinc-800 
+          transition-all duration-300 shadow-2xl z-30
+          ${isUser ? "-left-14" : "-right-14"}`}
                     >
-                      {/* Share Button: Positioned on the "Inner" side */}
-                      <button
-                        onClick={() => handleShareTransaction(tx._id)}
-                        className={`absolute top-2 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/30 hover:text-white transition-all opacity-0 group-hover:opacity-100 
-            ${isUser ? "-left-10" : "-right-10"}`}
-                        title="Share Receipt"
+                      <Forward size={18} className="ml-0.5" />
+                    </button>
+
+                    {/* 3. THE BUBBLE: Added 'flex-1' and 'w-full' to prevent compression */}
+                    <div
+                      id={`tx-card-${tx._id}`}
+                      className="relative w-full flex-1"
+                    >
+                      {/* Connector Line */}
+                      <div
+                        className={`absolute top-4 w-2 h-[1px] ${
+                          isUser
+                            ? "-right-2 bg-indigo-500/50"
+                            : "-left-2 bg-zinc-600/50"
+                        }`}
+                      />
+
+                      <div
+                        className={`relative p-4 rounded-xl border backdrop-blur-md shadow-lg 
+            ${
+              isUser
+                ? "bg-indigo-950/30 border-indigo-500/30"
+                : "bg-zinc-900/60 border-white/10"
+            }`}
                       >
-                        <Share2 size={14} />
-                      </button>
-                      {/* Digital Receipt Bubble */}
-                      <div className={`relative max-w-[85%] sm:max-w-xs group`}>
-                        {/* Visual Connector Line to Side */}
-                        <div
-                          className={`absolute top-4 w-2 h-[1px] ${
-                            isUser
-                              ? "-right-2 bg-indigo-500/50"
-                              : "-left-2 bg-zinc-600/50"
-                          }`}
-                        ></div>
-
-                        <div
-                          className={`
-                      relative p-4 rounded-xl border backdrop-blur-md shadow-lg transition-all duration-300
-                      ${
-                        isUser
-                          ? "bg-indigo-950/30 border-indigo-500/30 rounded-tr-sm hover:border-indigo-500/50"
-                          : "bg-zinc-900/60 border-white/10 rounded-tl-sm hover:border-white/20"
-                      }
-                    `}
-                        >
-                          {/* Header: Title & Date */}
-                          <div className="flex justify-between items-start gap-4 mb-2 border-b border-white/5 pb-2">
-                            <span
-                              className={`text-sm font-bold truncate ${
-                                isUser ? "text-indigo-200" : "text-zinc-200"
-                              }`}
-                            >
-                              {tx.title || "Untitled Transaction"}
-                            </span>
-                            <div className="flex justify-between iterms-start gap-1">
-                              <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
-                                {new Date(tx.createdAt).toLocaleDateString([])}
-                              </span>
-                              <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
-                                {new Date(tx.createdAt).toLocaleTimeString([])}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Content: Amount & Who Paid */}
-                          <div className="flex justify-between items-end">
-                            <div className="flex flex-col mr-2">
-                              <span className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
-                                {isUser ? "You Paid" : "They Paid"}
-                              </span>
-                              <span className="text-[10px] text-zinc-400 bg-black/20 px-1.5 py-0.5 rounded">
-                                {tx.groupName}
-                              </span>
-                            </div>
-                            <div
-                              className={`text-2xl font-mono font-medium tracking-tight ${
-                                isUser ? "text-indigo-400" : "text-white"
-                              }`}
-                            >
-                              ₹{amount.toFixed(2)}
-                            </div>
-                          </div>
-
-                          {/* Corner Decoration */}
-                          <div
-                            className={`absolute bottom-0 w-3 h-3 border-b border-l ${
-                              isUser
-                                ? "right-0 border-indigo-500/30 rounded-bl-lg"
-                                : "left-0 border-zinc-500/30 rounded-br-lg"
+                        {/* Header Section */}
+                        <div className="mb-2 border-b border-white/5 pb-2">
+                          {/* Title: whitespace-nowrap ensures it doesn't wrap or compress unless it hits max width */}
+                          <span
+                            className={`text-sm font-bold truncate ${
+                              isUser ? "text-indigo-200" : "text-zinc-200"
                             }`}
-                          ></div>
+                          >
+                            {tx.title || "Untitled"}
+                          </span>
+                          <div className="flex items-center mt-2 shrink-0">
+                            <span className="text-[9px] font-mono text-zinc-500">
+                              {new Date(tx.createdAt).toLocaleDateString()}
+                            </span>
+                            <span className="text-[9px] font-mono text-zinc-500">
+                              {new Date(tx.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Amount Section */}
+                        <div className="flex justify-between items-end mt-4">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                              {isUser ? "You Paid" : "They Paid"}
+                            </span>
+                            <span className="text-[10px] text-zinc-400 bg-black/20 px-1.5 py-0.5 rounded mt-1">
+                              {tx.groupName}
+                            </span>
+                          </div>
+                          <div
+                            className={`text-2xl font-mono font-medium ${
+                              isUser ? "text-indigo-400" : "text-white"
+                            }`}
+                          >
+                            ₹{amount.toFixed(2)}
+                          </div>
                         </div>
                       </div>
                     </div>
