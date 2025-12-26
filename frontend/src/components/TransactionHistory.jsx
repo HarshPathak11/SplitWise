@@ -46,36 +46,68 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleShareTransaction = async (txId) => {
+  const handleShareTransaction = async (txId, amount, friendName) => {
     const element = document.getElementById(`tx-card-${txId}`);
     if (!element) return;
+
+    // Custom Message & Link
+    const shareLink = `https://fair-fare-phi.vercel.app/transaction-history/${userId}`;
+    const shareText = `Hey! Just a friendly reminder about the transaction of ₹${amount}. You can check the details here: ${shareLink}`;
 
     try {
       const canvas = await html2canvas(element, {
         backgroundColor: "#0a0a0a",
         scale: 2,
         useCORS: true,
+        ignoreElements: (el) => el.tagName === "BUTTON", // Hides the share button in the image
       });
 
       const dataUrl = canvas.toDataURL("image/png");
       const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], "transaction.png", { type: "image/png" });
 
-      if (navigator.share) {
+      // MOBILE: Share Image + Text + Link
+      if (
+        navigator.share &&
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+      ) {
+        const file = new File([blob], "transaction.png", { type: "image/png" });
+
         await navigator.share({
           files: [file],
           title: "Transaction Receipt",
-          text: "Sent via Fair Fare",
+          text: shareText, // This includes your message and link
         });
-      } else {
-        // Fallback: Download the image if Web Share isn't supported (e.g., Desktop)
-        const link = document.createElement("a");
-        link.href = dataUrl;
-        link.download = `transaction-${txId}.png`;
-        link.click();
+      }
+      // DESKTOP/LAPTOP: Copy Image & Notify to Copy Link
+      else {
+        try {
+          const item = new ClipboardItem({ "image/png": blob });
+          await navigator.clipboard.write([item]);
+
+          // On desktop, we prompt them to paste the image, then we can
+          // automatically copy the link for them next
+          toast.success(
+            "Receipt copied! Paste in WhatsApp, then copy the link."
+          );
+
+          // Optional: Automatically copy the text to clipboard after a delay
+          setTimeout(() => {
+            navigator.clipboard.writeText(shareText);
+            toast("Reminder message & link copied to clipboard!", {
+              icon: "🔗",
+            });
+          }, 2000);
+        } catch (err) {
+          // Fallback: Download
+          const link = document.createElement("a");
+          link.href = dataUrl;
+          link.download = `receipt-${txId}.png`;
+          link.click();
+        }
       }
     } catch (error) {
       console.error("Error sharing:", error);
+      toast.error("Failed to generate shareable receipt");
     }
   };
 
@@ -489,16 +521,16 @@ const TransactionHistory = () => {
             }`}
                       >
                         {/* Header Section */}
-                        <div className="mb-2 border-b border-white/5 pb-2">
+                        <div className="flex justify-between items-center gap-4 mb-2 border-b border-white/5 pb-2">
                           {/* Title: whitespace-nowrap ensures it doesn't wrap or compress unless it hits max width */}
                           <span
-                            className={`text-sm font-bold truncate ${
+                            className={`text-sm font-bold whitespace-nowrap truncate ${
                               isUser ? "text-indigo-200" : "text-zinc-200"
                             }`}
                           >
                             {tx.title || "Untitled"}
                           </span>
-                          <div className="flex items-center mt-2 shrink-0">
+                          <div className="flex flex-row gap-1">
                             <span className="text-[9px] font-mono text-zinc-500">
                               {new Date(tx.createdAt).toLocaleDateString()}
                             </span>
