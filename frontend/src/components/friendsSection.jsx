@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import FriendCard from "./FriendCard";
 import axios from "axios";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 
 const FriendsSection = ({ user }) => {
   const [friends, setFriends] = useState([]);
@@ -20,7 +21,7 @@ const FriendsSection = ({ user }) => {
   useEffect(() => {
     const fetchUpdatedBalances = async () => {
       try {
-        const res = await axios.post(
+        const res = await api.post(
           `${API_BASE}/user/get-updated-friend-balances`,
           { userId: user?._id }
         );
@@ -65,7 +66,7 @@ const FriendsSection = ({ user }) => {
 
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
-      const res = await axios.delete(`${API_BASE}/user/remove-friend`, {
+      const res = await api.delete(`${API_BASE}/user/remove-friend`, {
         data: {
           userId: user?._id,
           friendId: friendIdToDelete,

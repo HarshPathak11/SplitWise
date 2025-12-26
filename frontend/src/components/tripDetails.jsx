@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import { FaChartBar } from "react-icons/fa";
-import axios from "axios";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TripDetails = () => {
@@ -27,7 +27,7 @@ const TripDetails = () => {
     const fetchMeta = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`${API_BASE}/group/get-group/${tripId}`);
+        const res = await api.get(`${API_BASE}/group/get-group/${tripId}`);
         setTripDetails(res.data);
 
         localStorage.setItem("currentGroup", JSON.stringify(res.data));
@@ -93,7 +93,7 @@ const TripDetails = () => {
     setLoadingExpenses(true);
 
     try {
-      const res = await axios.get(`${API_BASE}/group/${tripId}/expenses`, {
+      const res = await api.get(`${API_BASE}/group/${tripId}/expenses`, {
         params: { limit: 20, cursor },
       });
 
@@ -149,7 +149,7 @@ const TripDetails = () => {
       const storedUser = localStorage.getItem("user");
       const user = JSON.parse(storedUser);
       const currentUserId = user._id;
-      const res = await axios.post(
+      const res = await api.post(
         `${API_BASE}/group/remove-members/${tripId}`,
         // `//http://localhost:8000/group/remove-members/${tripId}`,
         {
@@ -293,18 +293,21 @@ const TripDetails = () => {
               <div className="space-y-2 sm:space-y-3 max-h-[180px] sm:max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
                 {members.length > 0 ? (
                   members.map((member, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-xl hover:bg-white/5 transition-colors group"
-                    >
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-indigo-400 font-bold text-xs sm:text-sm shadow-inner group-hover:border-indigo-500/50 transition-colors">
-                        {typeof member === "string"
-                          ? member.charAt(0)
-                          : member?.username?.charAt(0) || "?"}
-                      </div>
-                      <span className="text-xs sm:text-sm text-zinc-300 font-medium truncate flex-1">
-                        {typeof member === "string" ? member : member?.username}
-                      </span>
+                    <div key={index}>
+                      <Link to={`/transaction-history/${member._id}`}>
+                        <div className="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-xl hover:bg-white/5 transition-colors group">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-indigo-400 font-bold text-xs sm:text-sm shadow-inner group-hover:border-indigo-500/50 transition-colors">
+                            {typeof member === "string"
+                              ? member.charAt(0)
+                              : member?.username?.charAt(0) || "?"}
+                          </div>
+                          <span className="text-xs sm:text-sm text-zinc-300 font-medium truncate flex-1">
+                            {typeof member === "string"
+                              ? member
+                              : member?.username}
+                          </span>
+                        </div>
+                      </Link>
                     </div>
                   ))
                 ) : (

@@ -16,6 +16,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
+import { authFetch } from "../utils/authFetch";
+import api from "../utils/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -40,19 +42,13 @@ const ProfileEnhanced = () => {
   const navigate = useNavigate();
   const userId = Cookies.get("id");
 
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift();
-  };
-
   useEffect(() => {
-    const userId = getCookie("id");
+    console.log("userId",userId);
 
     async function getDetails() {
       if (!user && userId) {
         try {
-          const response = await fetch(`${API_BASE}/user/${userId}`);
+          const response = await authFetch(`${API_BASE}/user/${userId}`);
           if (response.ok) {
             const data = await response.json();
             const fetchedUser = data.user;
@@ -103,7 +99,7 @@ const ProfileEnhanced = () => {
         const url = `${API_BASE}/user/search?username=${encodeURIComponent(
           debouncedQuery
         )}`;
-        const res = await axios.get(url, { signal: controller.signal });
+        const res = await api.get(url, { signal: controller.signal });
         const users = res.data?.users ?? res.data ?? [];
 
         // 👇 Check if current username is already taken
@@ -158,7 +154,7 @@ const ProfileEnhanced = () => {
       toast.error("Username cannot be empty");
       return;
     }
-    return fetch(`${API_BASE}/user/${userId}`, {
+    return authFetch(`${API_BASE}/user/${userId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -174,7 +170,7 @@ const ProfileEnhanced = () => {
     try {
       const formData = new FormData();
       formData.append("profilePhoto", file);
-      const resp = await fetch(`${API_BASE}/user/${userId}/photo`, {
+      const resp = await authFetch(`${API_BASE}/user/${userId}/photo`, {
         method: "PUT",
         body: formData,
       });
@@ -233,7 +229,6 @@ const ProfileEnhanced = () => {
   };
 
   const handleShareProfile = async () => {
-    const userId = getCookie("id");
     const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
     const message = `Hey! 👋
 
@@ -279,13 +274,11 @@ Let's split and share smarter with FairFare! 💸`;
   };
 
   return (
-    <div className="relative bg-slate-950 flex items-center justify-center min-h-screen overflow-hidden p-2 font-sans selection:bg-amber-500/30">
-      {/* --- PREMIUM BACKGROUND ATMOSPHERE --- */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-cyan-600/20 rounded-full blur-[120px] animate-pulse delay-1000"></div>
-        {/* Gold Glow for VIP feel */}
-        <div className="absolute top-[20%] right-[20%] w-[300px] h-[300px] bg-amber-500/10 rounded-full blur-[100px]"></div>
+    <div className="relative bg-zinc-950 flex items-center justify-center min-h-screen overflow-hidden p-2 font-sans selection:bg-indigo-500/30 text-zinc-100">
+      {/* --- BACKGROUND FX --- */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] right-[20%] w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-fuchsia-900/10 rounded-full blur-[100px]"></div>
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
       </div>
 
@@ -294,8 +287,8 @@ Let's split and share smarter with FairFare! 💸`;
         onClick={() => navigate("/dash")}
         className="fixed top-6 left-6 z-50 group"
       >
-        <div className="relative p-3 rounded-full bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-2xl hover:border-amber-500/50 transition-all duration-300 group-hover:scale-110">
-          <ArrowLeft className="h-5 w-5 text-slate-400 group-hover:text-amber-400 transition-colors" />
+        <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
+          <ArrowLeft className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
         </div>
       </button>
 
@@ -303,23 +296,20 @@ Let's split and share smarter with FairFare! 💸`;
         onClick={handleShareProfile}
         className="fixed top-6 right-6 z-50 group"
       >
-        <div className="relative p-3 rounded-full bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-2xl hover:border-cyan-500/50 transition-all duration-300 group-hover:scale-110">
-          <Share2 className="h-5 w-5 text-slate-400 group-hover:text-cyan-400 transition-colors" />
+        <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
+          <Share2 className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
         </div>
       </button>
 
       {/* --- MAIN CARD --- */}
-      <div className="relative z-10 w-full max-w-2xl">
-        <div className="bg-slate-900/60 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden relative">
-          {/* Top Decorative Line */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500/50 to-transparent opacity-50"></div>
-
+      <div className="relative pt-6 px-2 z-10 w-full max-w-2xl">
+        <div className="bg-zinc-900/40 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/5 overflow-hidden relative">
           {/* --- BANNER --- */}
           <div className="relative h-40 bg-gradient-to-br from-slate-800 via-slate-900 to-black overflow-hidden group">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
 
-            {/* Abstract Premium Shapes */}
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br from-amber-500 to-purple-600 rounded-full blur-3xl opacity-20 group-hover:opacity-30 transition-opacity duration-700"></div>
+            {/* Subtle Industrial Gradient instead of Gold */}
+            <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 to-transparent"></div>
 
             {/* Status Badge in Corner */}
             <div className="absolute top-6 right-8 flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 backdrop-blur-md">
@@ -330,7 +320,7 @@ Let's split and share smarter with FairFare! 💸`;
             </div>
           </div>
 
-          <div className="px-6 sm:px-10 pb-6">
+          <div className="px-6 sm:px-10 pb-8">
             {/* --- AVATAR SECTION --- */}
             <div className="relative -mt-20 mb-8 flex flex-col items-center">
               <div
@@ -347,11 +337,11 @@ Let's split and share smarter with FairFare! 💸`;
                       <img
                         src={preview}
                         alt="Profile"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-800">
-                        <User className="w-16 h-16 text-slate-600" />
+                      <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+                        <User className="w-16 h-16 text-zinc-700" />
                       </div>
                     )}
 
@@ -382,7 +372,7 @@ Let's split and share smarter with FairFare! 💸`;
                 {/* Floating Action Button */}
                 <label
                   htmlFor="photo-upload"
-                  className="absolute bottom-1 right-1 bg-white text-slate-900 rounded-full p-2.5 shadow-lg shadow-black/50 cursor-pointer hover:bg-amber-400 transition-colors"
+                  className="absolute bottom-1 right-1 bg-zinc-100 text-zinc-950 rounded-full p-2.5 shadow-lg shadow-black/50 cursor-pointer hover:bg-white hover:scale-105 transition-all"
                 >
                   <Upload className="w-4 h-4" />
                 </label>
@@ -391,16 +381,11 @@ Let's split and share smarter with FairFare! 💸`;
 
             {/* --- HEADER TEXT --- */}
             <div className="text-center mb-10">
-              <div className="inline-flex items-center justify-center gap-2 mb-2">
-                <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-                  {profile.username || "User Profile"}
-                </h2>
-                <ShieldCheck className="w-6 h-6 text-cyan-400" />
-              </div>
-              <p className="text-slate-400 text-sm flex items-center justify-center gap-2">
-                <Sparkles className="w-3 h-3 text-amber-400" />
+              <h2 className="text-3xl font-bold text-white tracking-tight mb-2">
+                {profile.username || "User Profile"}
+              </h2>
+              <p className="text-zinc-500 text-sm flex items-center justify-center gap-2">
                 Manage your personal identity and preferences
-                <Sparkles className="w-3 h-3 text-amber-400" />
               </p>
             </div>
 
@@ -408,27 +393,27 @@ Let's split and share smarter with FairFare! 💸`;
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Username Field */}
               <div className="group space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
                   Display Name
                 </label>
                 <div className="relative transition-all duration-300 focus-within:transform focus-within:-translate-y-1">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-slate-500 group-focus-within:text-amber-400 transition-colors" />
+                    <User className="h-5 w-5 text-zinc-600 group-focus-within:text-zinc-100 transition-colors" />
                   </div>
                   <input
                     type="text"
                     name="username"
                     value={profile.username}
                     onChange={handleChange}
-                    className={`block w-full pl-12 pr-4 py-4 bg-slate-800/50 border ${
+                    className={`block w-full pl-12 pr-4 py-4 bg-zinc-900/40 border ${
                       isUsernameAvailable
-                        ? "border-slate-700 focus:border-amber-500/50"
-                        : "border-red-500/50"
-                    } rounded-2xl text-white placeholder-slate-600 focus:ring-4 focus:ring-amber-500/10 focus:bg-slate-800 focus:outline-none transition-all`}
+                        ? "border-white/5 focus:border-indigo-500/50"
+                        : "border-red-500/30"
+                    } rounded-xl text-white placeholder-zinc-700 focus:bg-zinc-900/80 focus:outline-none transition-all shadow-inner`}
                     placeholder="Choose a unique handle"
                   />
                   {!isUsernameAvailable && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400 text-xs font-medium bg-red-400/10 px-2 py-1 rounded">
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400 text-xs font-medium bg-red-500/10 px-2 py-1 rounded">
                       Taken
                     </div>
                   )}
@@ -437,51 +422,47 @@ Let's split and share smarter with FairFare! 💸`;
 
               {/* Email Field (Read Only) */}
               <div className="group space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1 flex justify-between">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1 flex justify-between">
                   <span>Digital ID</span>
-                  <span className="text-emerald-500 flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> Verified
-                  </span>
                 </label>
-                <div className="relative opacity-75">
+                <div className="relative opacity-60">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-slate-500" />
+                    <Mail className="h-5 w-5 text-zinc-600" />
                   </div>
                   <input
                     type="email"
                     value={profile.email}
                     readOnly
-                    className="block w-full pl-12 pr-10 py-4 bg-slate-900/50 border border-slate-800 rounded-2xl text-slate-300 font-mono text-sm cursor-default focus:outline-none"
+                    className="block w-full pl-12 pr-10 py-4 bg-zinc-900/20 border border-zinc-800 rounded-xl text-zinc-400 font-mono text-sm cursor-default focus:outline-none"
                   />
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                    <Lock className="h-4 w-4 text-slate-600" />
+                    <Lock className="h-4 w-4 text-zinc-700" />
                   </div>
                 </div>
               </div>
 
               {/* UPI Field */}
               <div className="group space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
-                  Payment Handle{" "}
-                  <span className="w-1 h-1 rounded-full bg-red-500"></span>
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                  Payment Handle
                 </label>
                 <div className="relative transition-all duration-300 focus-within:transform focus-within:-translate-y-1">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <CreditCard className="h-5 w-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+                    <CreditCard className="h-5 w-5 text-zinc-600 group-focus-within:text-zinc-100 transition-colors" />
                   </div>
                   <input
                     type="text"
                     name="upiId"
                     value={profile.upiId}
                     onChange={handleChange}
-                    className="block w-full pl-12 pr-4 py-4 bg-slate-800/50 border border-slate-700 rounded-2xl text-white placeholder-slate-600 focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/10 focus:bg-slate-800 focus:outline-none transition-all"
+                    className="block w-full pl-12 pr-4 py-4 bg-zinc-900/40 border border-white/5 rounded-xl text-white placeholder-zinc-700 focus:border-indigo-500/50 focus:bg-zinc-900/80 focus:outline-none transition-all shadow-inner"
                     placeholder="username@bank"
                   />
                 </div>
               </div>
 
               {/* Bottom Actions */}
-              <div className="pt-1 flex flex-col gap-4">
+              <div className="pt-4 flex flex-col gap-4">
                 <button
                   type="submit"
                   disabled={
@@ -490,39 +471,28 @@ Let's split and share smarter with FairFare! 💸`;
                     !isUsernameAvailable ||
                     checkingUsername
                   }
-                  className={`relative w-full py-4 rounded-2xl font-bold tracking-wide overflow-hidden group ${
+                  className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 active:scale-[0.98] ${
                     !profile.upiId || uploading
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]"
+                      ? "bg-zinc-800 text-zinc-600 cursor-not-allowed border border-white/5"
+                      : "bg-indigo-400/70 text-zinc-950 hover:bg-white hover:shadow-zinc-500/10"
                   }`}
                 >
-                  <div
-                    className={`absolute inset-0 bg-gradient-to-r from-cyan-600 via-indigo-600 to-cyan-600 transition-all duration-1000 ${
-                      uploading
-                        ? ""
-                        : "group-hover:bg-[length:200%_200%] animate-gradient-x"
-                    }`}
-                  ></div>
-                  <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-
-                  <span className="relative flex items-center justify-center gap-3 text-white">
-                    {uploading ? (
-                      <>Processing Updates...</>
-                    ) : (
-                      <>
-                        Update Profile
-                        <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </span>
+                  {uploading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 border-2 border-zinc-400 border-t-zinc-800 rounded-full animate-spin"></span>
+                      Processing...
+                    </span>
+                  ) : (
+                    "Update Profile"
+                  )}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => navigate("/change-password")}
-                  className="text-s text-slate-500 hover:text-white transition-colors text-right"
+                  className="text-xs font-medium text-zinc-600 hover:text-zinc-300 transition-colors text-center"
                 >
-                  Change Passoword?
+                  Change Password?
                 </button>
               </div>
             </form>

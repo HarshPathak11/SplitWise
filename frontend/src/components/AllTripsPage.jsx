@@ -4,6 +4,7 @@ import TripCard from "./tripCard"; // Ensure this component is styled properly
 import Cookies from "js-cookie"; // Import Cookies library
 import axios from "axios";
 import { ArrowLeft, Search, Map, Layers } from "lucide-react";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AllTripsPage = () => {
@@ -25,7 +26,7 @@ const AllTripsPage = () => {
           return;
         }
 
-        const response = await axios.get(
+        const response = await api.get(
           `${API_BASE}/group/user-groups/${userId}`
         );
 
@@ -56,115 +57,109 @@ const AllTripsPage = () => {
   );
 
   return (
-    <div className="relative bg-slate-950 min-h-screen flex flex-col font-sans selection:bg-cyan-500/30 overflow-x-hidden">
-      {/* --- ATMOSPHERIC BACKGROUND --- */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[100px] animate-pulse"></div>
-        <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[100px] animate-pulse delay-1000"></div>
-        <div className="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px]"></div>
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+    <div className="relative bg-zinc-950 min-h-screen flex flex-col font-sans selection:bg-indigo-500/30 overflow-x-hidden text-zinc-100">
+      {/* --- BACKGROUND FX --- */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] right-[20%] w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-fuchsia-900/10 rounded-full blur-[100px]"></div>
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
       </div>
 
-      {/* --- HEADER SECTION --- */}
-      <div className="relative z-20 px-6 pt-6 pb-2">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          {/* Back Button */}
-          <button
-            onClick={() => navigate("/dash")}
-            className="group flex items-center justify-center w-12 h-12 rounded-full bg-slate-900/50 backdrop-blur-md border border-white/10 text-slate-400 hover:text-white hover:border-white/30 transition-all duration-300 shadow-xl"
-            title="Back to Dashboard"
-          >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          </button>
-
-          {/* Optional: User Avatar or Logo could go here on the right */}
-        </div>
-
-        <div className="max-w-2xl mx-auto mt-8 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mb-4">
-            <Map className="w-3 h-3 text-cyan-400" />
-            <span className="text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase">
-              Travel History
-            </span>
+      {/* --- DASHBOARD HEADER --- */}
+      <div className="relative z-20 pt-6 px-4 pb-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Top Controls */}
+          <div className="flex items-center justify-between mb-8">
+            <button
+              onClick={() => navigate("/dash")}
+              className="group flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 backdrop-blur-md transition-all duration-300 active:scale-95 shadow-lg"
+            >
+              <ArrowLeft className="w-4 h-4 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+              <span className="text-sm font-medium text-zinc-400 group-hover:text-zinc-200">
+                Dashboard
+              </span>
+            </button>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-3">
-            Trips &{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">
-              Events
-            </span>
-          </h1>
-
-          <p className="text-slate-400 text-sm leading-relaxed max-w-md mx-auto">
-            Manage your shared adventures. Track expenses, settle balances, and
-            keep the memories.
-          </p>
-        </div>
-      </div>
-
-      {/* --- SEARCH BAR --- */}
-      <div className="relative z-20 px-4 mt-8 mb-6">
-        <div className="max-w-xl mx-auto group">
-          <div className="relative transition-all duration-300 transform group-focus-within:-translate-y-1">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-slate-500 group-focus-within:text-cyan-400 transition-colors" />
+          {/* Title & Search Section */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5">
+            <div>
+              <div className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 mb-3">
+                <Map className="w-3 h-3 text-indigo-400" />
+                <span className="text-[10px] font-bold tracking-widest text-indigo-300 uppercase">
+                  Travel History
+                </span>
+              </div>
+              <h1 className="text-3xl font-bold text-white tracking-tight">
+                Trips &{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-fuchsia-400">
+                  Events
+                </span>
+              </h1>
             </div>
-            <input
-              type="text"
-              placeholder="Search past journeys..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-12 pr-4 py-4 bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500/50 transition-all shadow-lg hover:bg-slate-800/60"
-            />
+
+            {/* Search Bar */}
+            <div className="w-full md:w-72 group">
+              <div className="relative transition-all duration-300 transform group-focus-within:-translate-y-1">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Filter past journeys..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="block w-full pl-10 pr-4 py-3 bg-zinc-900/40 backdrop-blur-sm border border-white/5 rounded-2xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:bg-zinc-900/60 focus:border-indigo-500/50 transition-all shadow-lg"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* --- CONTENT AREA --- */}
-      <div className="relative z-10 flex-1 w-full max-w-3xl mx-auto px-4 pb-20 overflow-y-auto custom-scrollbar">
+      {/* --- MAIN CONTENT --- */}
+      <div className="relative z-10 flex-1 w-full max-w-6xl mx-auto px-4 pb-20 overflow-y-auto custom-scrollbar">
         {loading ? (
-          // Premium Loading State
-          <div className="flex flex-col items-center justify-center py-20 opacity-70">
+          // Loading State
+          <div className="flex flex-col items-center justify-center py-32 opacity-70">
             <div className="relative">
-              <div className="w-12 h-12 border-4 border-slate-800 rounded-full"></div>
-              <div className="w-12 h-12 border-4 border-cyan-500 rounded-full animate-spin border-t-transparent absolute inset-0"></div>
+              <div className="w-12 h-12 border-4 border-zinc-800 rounded-full"></div>
+              <div className="w-12 h-12 border-4 border-indigo-500 rounded-full animate-spin border-t-transparent absolute inset-0"></div>
             </div>
-            <p className="mt-4 text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase animate-pulse">
+            <p className="mt-4 text-[10px] font-bold tracking-widest text-zinc-500 uppercase animate-pulse">
               Syncing Itineraries...
             </p>
           </div>
         ) : trips.length === 0 ? (
-          // Premium Empty State
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-20 h-20 bg-slate-900/50 rounded-3xl flex items-center justify-center border border-white/5 mb-6 rotate-3">
-              <Layers className="w-8 h-8 text-slate-600" />
+          // Empty State
+          <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-white/5 rounded-3xl bg-zinc-900/20 mt-4 mx-auto max-w-2xl">
+            <div className="w-20 h-20 bg-zinc-900/80 rounded-2xl flex items-center justify-center border border-white/10 mb-6 shadow-xl rotate-3">
+              <Layers className="w-10 h-10 text-zinc-600" />
             </div>
-            <h3 className="text-white font-bold text-lg mb-2">
+            <h3 className="text-white font-bold text-xl mb-2">
               No Adventures Yet
             </h3>
-            <p className="text-slate-500 text-sm max-w-xs mb-8">
+            <p className="text-zinc-500 text-sm max-w-xs mb-8">
               {searchQuery
                 ? "We couldn't find any trips matching your search."
                 : "You haven't created or joined any trips yet."}
             </p>
             {!searchQuery && (
               <button
-                onClick={() => navigate("/create-trip")} // Assuming you have this route
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-semibold text-sm hover:shadow-lg hover:shadow-cyan-500/20 transition-all active:scale-95"
+                onClick={() => navigate("/create-trip")}
+                className="px-6 py-2.5 rounded-xl bg-zinc-800 text-indigo-400 border border-indigo-900/30 font-semibold text-sm hover:bg-zinc-700 hover:text-indigo-300 transition-all"
               >
-                Plan a New Trip
+                Start Planning
               </button>
             )}
           </div>
         ) : (
-          // Grid Layout
-          <div className="grid gap-4 sm:gap-6 pb-10">
+          // Grid Layout for TripCards
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             {filteredTrips.map((trip) => (
-              // We wrap the TripCard to ensure it sits in the layout correctly
-              // The TripCard itself should ideally have a dark/glass background to match
               <div
                 key={trip._id}
-                className="transform transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-cyan-900/10"
+                className="transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10"
               >
                 <TripCard
                   amount={trip.tripTotal}
@@ -174,31 +169,36 @@ const AllTripsPage = () => {
               </div>
             ))}
 
-            {/* Footer Text */}
-            <div className="text-center mt-8 opacity-30">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-white">
-                End of List
-              </p>
+            {/* End of List Indicator */}
+            <div className="col-span-full text-center mt-12 opacity-30">
+              <div className="flex items-center justify-center gap-4">
+                <div className="h-px w-12 bg-gradient-to-r from-transparent to-zinc-600"></div>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                  End of List
+                </p>
+                <div className="h-px w-12 bg-gradient-to-l from-transparent to-zinc-600"></div>
+              </div>
             </div>
           </div>
         )}
       </div>
 
+      {/* Scrollbar Styles */}
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.2);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-      `}</style>
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    `}</style>
     </div>
   );
 };

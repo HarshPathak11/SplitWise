@@ -11,6 +11,7 @@ import {
   Target, 
   ArrowLeft 
 } from "lucide-react";
+import api from "../utils/api";
 
 export default function Analytics() {
   const [topCategories, setTopCategories] = useState([]);
@@ -83,7 +84,7 @@ export default function Analytics() {
 
         if (group && group._id) {
           const apiStartDate = getDateFilterForAPI();
-          const response = await axios.get(
+          const response = await api.get(
             `${API_BASE}/group/${group._id}/top-categories`,
             {
               params: apiStartDate ? { startDate: apiStartDate, endDate } : {},
@@ -99,7 +100,7 @@ export default function Analytics() {
         if (!userId) return;
 
         const apiStartDate = getDateFilterForAPI();
-        const response = await axios.post(`${API_BASE}/user/top-categories`, {
+        const response = await api.post(`${API_BASE}/user/top-categories`, {
           userId,
           ...(apiStartDate && { startDate: apiStartDate, endDate }),
         });

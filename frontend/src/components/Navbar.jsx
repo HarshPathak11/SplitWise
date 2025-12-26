@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Sparkles, Menu, X, Zap, ChevronRight, Lock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X, Zap, ChevronRight, Lock } from "lucide-react";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -44,7 +44,7 @@ const Navbar = () => {
           </a>
 
           {/* --- DESKTOP COMMAND CENTER --- */}
-          <div className="hidden md:flex items-center gap-8">
+          {isLarge && <div className="space-x-1 lg-space-x-1 md:flex items-center gap-8">
             {/* Links */}
             <div className="flex items-center gap-6">
               <a
@@ -93,7 +93,7 @@ const Navbar = () => {
                 </span>
               </a>
             </div>
-          </div>
+          </div>}
 
           {/* --- MOBILE MENU TRIGGER --- */}
           <div className="md:hidden">

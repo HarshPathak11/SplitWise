@@ -7,6 +7,7 @@ import logo from "../../public/newIcon-192x192.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 import { toast } from "react-hot-toast";
+import api from "../utils/api";
 
 const LogIn = () => {
   const [email, setEmail] = React.useState("");
@@ -50,7 +51,20 @@ const LogIn = () => {
       });
 
       if (response.data.user) {
-        Cookies.set("id", response.data.user._id, { expires: 7 });
+        const { user, token } = response.data; // ✅ token expected from backend
+
+        // existing behaviour
+        Cookies.set("id", user._id, { expires: 7 });
+
+        // ✅ NEW: store JWT securely
+        if (token) {
+          Cookies.set("authToken", token, {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        }
+
         navigate(redirectPath);
       }
     } catch (error) {
@@ -89,7 +103,7 @@ const LogIn = () => {
         {/* Glowing Border Effect */}
         <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent rounded-3xl blur-sm opacity-50 pointer-events-none"></div>
 
-        <div className="relative bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl ring-1 ring-white/5">
+        <div className="relative mb-3 bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl ring-1 ring-white/5">
           {/* Header */}
           <div className="text-center mb-10">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-white/10 to-transparent border border-white/10 mb-6 shadow-lg">
@@ -135,7 +149,7 @@ const LogIn = () => {
               </label>
               <div className="relative group">
                 <input
-                  value={password}
+                    value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
@@ -190,7 +204,7 @@ const LogIn = () => {
         </div>
 
         {/* Footer Text */}
-        <p className="text-center text-white/20 text-xs mt-8">
+        <p className="text-center text-white/20 text-xs">
           Secured by FairFare Identity Services
         </p>
       </div>

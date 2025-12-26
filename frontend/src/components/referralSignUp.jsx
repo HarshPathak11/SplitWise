@@ -1,11 +1,16 @@
-import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useState, useEffect } from "react";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import Cookies from "js-cookie";
 import logo from "../../public/newIcon-192x192.png";
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ReferralSignUp = () => {
@@ -19,7 +24,17 @@ const ReferralSignUp = () => {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { referId } = useParams(); // Get referId from
+  const { referId } = useParams();
+  const [searchParams] = useSearchParams();
+
+  //Set Email when the component mounts
+  useEffect(() => {
+    const emailFromUrl = searchParams.get("email");
+
+    if (emailFromUrl) {
+      setEmail(emailFromUrl);
+    }
+  }, [searchParams]); // 3. Add searchParams as a dependency
 
   const handleOtpSend = async () => {
     if (!email || !username || !password) {
@@ -29,7 +44,7 @@ const ReferralSignUp = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE}/user/send-otp`, {
+      const response = await api.post(`${API_BASE}/user/send-otp`, {
         email,
         username,
       });
@@ -53,7 +68,7 @@ const ReferralSignUp = () => {
 
   const handleOtpVerify = async () => {
     try {
-      const response = await axios.post(`${API_BASE}/user/verify-otp`, {
+      const response = await api.post(`${API_BASE}/user/verify-otp`, {
         email,
         otp,
         otpGenerated,
@@ -63,7 +78,15 @@ const ReferralSignUp = () => {
       });
 
       if (response.status === 200) {
-        Cookies.set("id", response.data._id, { expires: 7 });
+        const { id, token } = response.data;
+        Cookies.set("id", id, { expires: 7 });
+        if (token) {
+          Cookies.set("authToken", token, {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        }
         navigate("/profile");
       }
     } catch (error) {
@@ -151,8 +174,19 @@ const ReferralSignUp = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   placeholder="name@example.com"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all"
+                  // Use readOnly if the email is in the URL
+                  readOnly={!!searchParams.get("email")}
+                  className={`w-full border rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none transition-all ${
+                    searchParams.get("email")
+                      ? "bg-white/5 border-white/5 cursor-not-allowed opacity-70" // Style for auto-filled state
+                      : "bg-white/5 border-white/10 focus:bg-white/10 focus:border-white/20"
+                  }`}
                 />
+                {searchParams.get("email") && (
+                  <p className="text-[10px] text-cyan-400/60 ml-1">
+                    Email linked to your invitation
+                  </p>
+                )}
               </div>
 
               {/* Password */}
@@ -197,7 +231,14 @@ const ReferralSignUp = () => {
                   </label>
                   <input
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // 1. Check if the input is a number and length is <= 6
+                      if (/^\d*$/.test(val) && val.length <= 6) {
+                        setOtp(val);
+                      }
+                    }}
+                    maxLength={6}
                     type="text"
                     placeholder="• • • • • •"
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-center tracking-[0.5em] font-mono text-lg placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-indigo-500/50 transition-all"

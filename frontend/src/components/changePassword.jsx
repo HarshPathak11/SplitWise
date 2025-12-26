@@ -1,19 +1,10 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  Mail,
-  KeyRound,
-  Lock,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  Loader2,
-  Save,
-} from "lucide-react";
+import { FaEye, FaEyeSlash, FaArrowLeft, FaLock } from "react-icons/fa"; // Added FaLock for UI icon
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ChangePassword = () => {
@@ -42,7 +33,7 @@ const ChangePassword = () => {
     }
     try {
       // Send OTP request to the backend
-      const response = await axios.post(`${API_BASE}/user/forgot-password`, {
+      const response = await api.post(`${API_BASE}/user/forgot-password`, {
         email,
       });
       if (response.status === 200) {
@@ -67,7 +58,7 @@ const ChangePassword = () => {
     setMessage("");
     try {
       // Verify OTP entered by the user
-      const response = await axios.post(
+      const response = await api.post(
         `${API_BASE}/user/verify-forgot-password`,
         { email, otp, otpGenerated }
       );
@@ -104,7 +95,7 @@ const ChangePassword = () => {
     }
 
     try {
-      const response = await axios.post(`${API_BASE}/user/change-password`, {
+      const response = await api.post(`${API_BASE}/user/change-password`, {
         userId,
         newPassword,
       });
@@ -120,204 +111,243 @@ const ChangePassword = () => {
         navigate("/login"); // Redirect to login page after successful password change
       }
     } catch (error) {
-      setMessage("Error changing password. Please try again.");
-      // console.log("Error changing password:", error);
+      toast.error(error.response.data.message);
+      setMessage(error.response.data.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans relative flex items-center justify-center overflow-hidden p-4">
-      {/* --- BACKGROUND FX --- */}
+    <div className="relative min-h-screen w-full bg-[#0a0a0a] overflow-hidden flex items-center justify-center selection:bg-indigo-500/30 selection:text-indigo-200">
+      {/* --- BACKGROUND: The Digital Aurora --- */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-        <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-emerald-600/10 rounded-full blur-[120px]"></div>
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
+        <div className="absolute top-[-20%] right-[-10%] w-[70%] h-[70%] bg-indigo-900/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-20%] left-[-10%] w-[70%] h-[70%] bg-fuchsia-900/20 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+        {/* Noise overlay */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05]"></div>
       </div>
 
-      {/* --- BACK BUTTON --- */}
-      <div className="absolute top-6 left-6 z-50">
+      {/* --- NAVIGATION: Back Button --- */}
+      <div className="absolute top-8 left-8 z-50">
         <button
           onClick={() => navigate("/profile")}
-          className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg"
-          title="Return to Profile"
+          className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-md"
         >
-          <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+          <FaArrowLeft className="text-white/70 group-hover:text-white transition-colors" />
+          <span className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">
+            Back to Profile
+          </span>
         </button>
       </div>
 
       {/* --- MAIN CARD --- */}
-      <div className="relative z-10 w-full max-w-md bg-zinc-900/60 border border-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl shadow-black/50 animate-in fade-in zoom-in duration-300">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-zinc-800/50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/5 shadow-inner">
-            <ShieldCheck size={32} className="text-indigo-400" />
-          </div>
-          <h2 className="text-2xl font-black text-white tracking-tight uppercase">
-            Security Update
-          </h2>
-          <p className="text-sm text-zinc-500 font-mono mt-2 uppercase tracking-wide">
-            {!otpSent && !isOtpVerified
-              ? "Phase 1: Verification"
-              : !isOtpVerified
-              ? "Phase 2: Authentication"
-              : "Phase 3: New Credentials"}
-          </p>
-        </div>
+      <div className="relative z-10 w-full max-w-md px-4">
+        {/* Glow behind card */}
+        <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent rounded-3xl blur-xl opacity-50 pointer-events-none"></div>
 
-        <div className="space-y-4">
-          {/* STEP 1: Email Input */}
-          {!otpSent && !isOtpVerified && (
-            <div className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
-                  Email Address
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-indigo-400 transition-colors">
-                    <Mail size={18} />
-                  </div>
+        <div className="relative bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl ring-1 ring-white/5">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-white/10 to-transparent border border-white/10 mb-4 shadow-lg">
+              {/* Using FaLock as a generic secure icon if not available, simply text will show */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-6 h-6 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+              Change Password
+            </h1>
+            <p className="text-white/40 text-sm mt-2">
+              Secure your account with a new password.
+            </p>
+          </div>
+
+          <div className="space-y-5">
+            {/* STAGE 1: Email Input */}
+            {!otpSent && !isOtpVerified && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-white/50 uppercase tracking-wider ml-1">
+                    Confirm Email
+                  </label>
                   <input
                     type="email"
-                    placeholder="user@domain.com"
+                    placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-zinc-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono text-sm"
                     required
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all"
                   />
                 </div>
-              </div>
-              <button
-                onClick={handleSendOtp}
-                disabled={loading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
-              >
-                {loading && <Loader2 size={16} className="animate-spin" />}
-                {loading ? "Transmitting..." : "Send Verification Code"}
-              </button>
-            </div>
-          )}
 
-          {/* STEP 2: OTP Input */}
-          {otpSent && !isOtpVerified && (
-            <div className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
-                  One-Time Password
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-cyan-400 transition-colors">
-                    <KeyRound size={18} />
-                  </div>
+                <button
+                  onClick={handleSendOtp}
+                  disabled={loading}
+                  className={`relative w-full overflow-hidden rounded-xl py-4 font-semibold text-sm tracking-wide transition-all duration-300
+                    ${
+                      loading
+                        ? "bg-white/10 text-white/30 cursor-wait"
+                        : "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                    }`}
+                >
+                  {loading ? "Sending..." : "Send Verification Code"}
+                </button>
+              </div>
+            )}
+
+            {/* STAGE 2: OTP Verification */}
+            {otpSent && !isOtpVerified && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex items-center gap-2 mb-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span className="text-xs font-medium text-emerald-400">
+                    Code sent to {email}
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-white/50 uppercase tracking-wider ml-1">
+                    Enter OTP
+                  </label>
                   <input
                     type="text"
-                    placeholder="######"
+                    placeholder="• • • • • •"
                     value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    className="w-full bg-zinc-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 transition-all font-mono text-sm tracking-widest"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, ""); // remove non-digits
+                      if (val.length <= 6) setOtp(val);
+                    }}
                     required
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-center tracking-[0.5em] font-mono text-lg placeholder-white/10 focus:outline-none focus:bg-white/10 focus:border-indigo-500/50 transition-all"
                   />
                 </div>
-              </div>
-              <button
-                onClick={handleVerifyOtp}
-                disabled={loading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
-              >
-                {loading && <Loader2 size={16} className="animate-spin" />}
-                {loading ? "Verifying..." : "Verify Identity"}
-              </button>
-            </div>
-          )}
 
-          {/* STEP 3: New Password */}
-          {isOtpVerified && (
-            <div className="space-y-4 animate-in slide-in-from-right-4 fade-in duration-300">
-              {/* New Password */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
-                  New Password
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                    <Lock size={18} />
+                <button
+                  onClick={handleVerifyOtp}
+                  disabled={loading}
+                  className={`relative w-full overflow-hidden rounded-xl py-4 font-semibold text-sm tracking-wide transition-all duration-300
+                    ${
+                      loading
+                        ? "bg-white/10 text-white/30 cursor-wait"
+                        : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)]"
+                    }`}
+                >
+                  {loading ? "Verifying..." : "Verify Code"}
+                </button>
+              </div>
+            )}
+
+            {/* STAGE 3: New Password */}
+            {isOtpVerified && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex items-center gap-2 mb-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <span className="text-xs font-medium text-emerald-400">
+                    Identity Verified
+                  </span>
+                </div>
+
+                {/* New Password */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-white/50 uppercase tracking-wider ml-1">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword1 ? "text" : "password"}
+                      placeholder="New Password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all pr-10"
+                    />
+                    <button
+                      onClick={() => setShowPassword1(!showPassword1)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+                      type="button"
+                    >
+                      {showPassword1 ? <FaEyeSlash /> : <FaEye />}
+                    </button>
                   </div>
-                  <input
-                    type={showPassword1 ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full bg-zinc-950/50 border border-white/10 text-white pl-10 pr-10 py-3 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono text-sm"
-                    required
-                  />
-                  <button
-                    onClick={() => setShowPassword1(!showPassword1)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
-                  >
-                    {showPassword1 ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
                 </div>
-              </div>
 
-              {/* Confirm Password */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider ml-1">
-                  Confirm Password
-                </label>
-                <div className="relative group">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
-                    <Lock size={18} />
+                {/* Confirm Password */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-white/50 uppercase tracking-wider ml-1">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword2 ? "text" : "password"}
+                      placeholder="Confirm New Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all pr-10"
+                    />
+                    <button
+                      onClick={() => setShowPassword2(!showPassword2)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+                      type="button"
+                    >
+                      {showPassword2 ? <FaEyeSlash /> : <FaEye />}
+                    </button>
                   </div>
-                  <input
-                    type={showPassword2 ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-zinc-950/50 border border-white/10 text-white pl-10 pr-10 py-3 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono text-sm"
-                    required
-                  />
-                  <button
-                    onClick={() => setShowPassword2(!showPassword2)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
-                  >
-                    {showPassword2 ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
                 </div>
+
+                <button
+                  onClick={handleChangePassword}
+                  disabled={loading}
+                  className={`relative w-full overflow-hidden rounded-xl py-4 font-semibold text-sm tracking-wide transition-all duration-300 mt-2
+                    ${
+                      loading
+                        ? "bg-white/10 text-white/30 cursor-wait"
+                        : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                    }`}
+                >
+                  {loading ? "Updating..." : "Update Password"}
+                </button>
               </div>
+            )}
 
-              <button
-                onClick={handleChangePassword}
-                disabled={loading}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2 uppercase tracking-wide text-sm"
+            {/* Status Messages */}
+            {message && (
+              <div
+                className={`mt-4 p-3 rounded-lg text-xs font-medium text-center border animate-in fade-in duration-300 ${
+                  message.includes("Error") || message.includes("not match")
+                    ? "bg-red-500/10 border-red-500/20 text-red-200"
+                    : "bg-blue-500/10 border-blue-500/20 text-blue-200"
+                }`}
               >
-                {loading ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" /> Processing...
-                  </>
-                ) : (
-                  <>
-                    <Save size={16} /> Update Credentials
-                  </>
-                )}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* --- STATUS MESSAGE --- */}
-        {message && (
-          <div
-            className={`mt-6 p-3 rounded-xl text-center text-sm font-medium border animate-in slide-in-from-bottom-2 ${
-              message.includes("Error")
-                ? "bg-red-500/10 border-red-500/20 text-red-400"
-                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-            }`}
-          >
-            {message}
+                {message}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Styles */}
+      <style>{`
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.2; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 8s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

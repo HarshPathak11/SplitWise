@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const EditExpense = () => {
@@ -50,7 +51,7 @@ const EditExpense = () => {
     // console.log("hii")
     const fetchExpense = async () => {
       try {
-        const { data } = await axios.get(
+        const { data } = await api.get(
           `${API_BASE}/group/expense/${expenseId}`
           // `//http://localhost:8000/group/expense/${expenseId}`
         );
@@ -165,14 +166,14 @@ const EditExpense = () => {
       setIsLoading(true);
 
       // 1) DELETE the old expense
-      await axios.delete(
+      await api.delete(
         `${API_BASE}/group/del-expense/${expenseId}`,
         // `//http://localhost:8000/group/del-expense/${expenseId}`,
         { data: { action: "edit" } }
       );
 
       // 2) POST the new one
-      const response = await axios.post(
+      const response = await api.post(
         `${API_BASE}/group/del-add-expense`,
         // `//http://localhost:8000/group/del-add-expense`,
         payload

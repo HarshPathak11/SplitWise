@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-import dashboardLogo from "../../public/dashboardLogo.png";
+import dashboardLogoNew from "../../public/dashboardLogoNew.png";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -39,7 +39,7 @@ const TopNavbar = () => {
         <Link to="/" className="block relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg blur opacity-0 group-hover:opacity-20 transition duration-500"></div>
           <img
-            src={dashboardLogo}
+            src={dashboardLogoNew}
             alt="Fair Fare Dashboard"
             className="relative h-10 w-auto object-contain rounded-lg"
           />

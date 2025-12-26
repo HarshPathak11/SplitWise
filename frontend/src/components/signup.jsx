@@ -68,8 +68,21 @@ const SignUp = () => {
         }
       );
 
-      if (response.status === 200) {
-        Cookies.set("id", response.data._id, { expires: 7 });
+       if (response.status === 200) {
+        const { id, token } = response.data; // ✅ token expected from backend
+
+        // existing behaviour: keep this
+        Cookies.set("id", id, { expires: 7 });
+
+        // ✅ NEW: store JWT in a secure cookie (frontend-readable)
+        if (token) {
+          Cookies.set("authToken", token, {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        }
+
         navigate("/profile");
       }
     } catch (error) {
@@ -102,7 +115,7 @@ const SignUp = () => {
       </div>
 
       {/* --- MAIN CARD --- */}
-      <div className="relative z-10 w-full max-w-md p-4">
+      <div className="relative z-10 w-full max-w-md px-4">
         {/* Glow behind card */}
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent rounded-3xl blur-xl opacity-50 pointer-events-none"></div>
 

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const RemoveMembers = () => {
@@ -59,7 +60,7 @@ useEffect(() => {
 
       const memberIds = selectedMembers.map((m) => m._id);
 
-      const res = await axios.post(
+      const res = await api.post(
         `${API_BASE}/group/remove-members/${groupId}`,
         // `//http://localhost:8000/group/remove-members/${groupId}`,
         {

@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaTrash } from "react-icons/fa"; // Import the trash icon
 import toast from "react-hot-toast";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
-import { FaBell } from "react-icons/fa";
 import Cookies from "js-cookie";
 import {
   ArrowLeft,
@@ -12,42 +10,88 @@ import {
   UserPlus,
   Bell,
   X,
+  Mail,
+  Send,
   Check,
   Trash2,
   ShieldCheck,
   Sparkles,
+  UserCheck, // Imported UserCheck
 } from "lucide-react";
+import api from "../utils/api";
+// import { convertOffsetToTimes } from "framer-motion";
 
 const AddFriend = () => {
   const navigate = useNavigate();
 
-  const [friends, setFriends] = useState([]); // { email, name? }
+  const [friends, setFriends] = useState([]); // Selected friends to add
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [requests, setRequests] = useState([]);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteSent, setInviteSent] = useState(false);
 
   // Debounce + suggestions
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [suggestions, setSuggestions] = useState([]); // [{ _id, username, email }]
+  const [suggestions, setSuggestions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [loadingInvite, setLoadingInvite] = useState(false);
+  const [existingFriendIds, setExistingFriendIds] = useState(new Set());
   const controllerRef = useRef(null);
 
   const userId = Cookies.get("id");
 
-  const fetchRequests = async () => {
-    try {
-      if (!userId) return;
-      const res = await axios.get(`${API_BASE}/user/friend-requests/${userId}`);
-      setRequests(res.data || []);
-    } catch (e) {
-      // console.error(e);
-    }
-  };
-
+  // 1. Fetch Request & Existing Friends
   useEffect(() => {
-    fetchRequests();
+    const fetchLocalData = async () => {
+      // 1. Fetch pending requests (Keep this API call as requests change frequently)
+      if (userId) {
+        try {
+          const reqRes = await api.get(
+            `${API_BASE}/user/friend-requests/${userId}`
+          );
+          setRequests(reqRes.data || []);
+        } catch (e) {
+          console.error("Failed to fetch requests", e);
+        }
+      }
+
+      // 2. Load Existing Friends from LocalStorage
+      // Assuming the key is "user" or "userInfo" - adjust if yours is different
+      const localUserStr = localStorage.getItem("user");
+
+      if (localUserStr) {
+        try {
+          const localUser = JSON.parse(localUserStr);
+          const friendsList = localUser.friends || [];
+
+          // Create a Set of IDs
+          const ids = new Set();
+
+          friendsList.forEach((item) => {
+            // The schema says: friends: [{ friend: ObjectId, balance: Number }]
+            // We need to handle two cases for 'item.friend':
+
+            if (typeof item.friend === "string") {
+              // Case A: It's just an ID string (Unpopulated)
+              ids.add(item.friend);
+            } else if (item.friend && item.friend._id) {
+              // Case B: It's a full object (Populated)
+              ids.add(item.friend._id);
+            }
+          });
+
+          setExistingFriendIds(ids);
+        } catch (err) {
+          console.error("Error parsing user from localStorage", err);
+        }
+      }
+    };
+
+    fetchLocalData();
   }, [userId]);
 
   useEffect(() => {
@@ -62,12 +106,15 @@ const AddFriend = () => {
 
   const respond = async (fromUserId, action) => {
     try {
-      await axios.post(`${API_BASE}/user/friend-requests/respond`, {
+      await api.post(`${API_BASE}/user/friend-requests/respond`, {
         userId,
         fromUserId,
         action,
       });
-      await fetchRequests();
+      // Refresh requests list
+      const res = await api.get(`${API_BASE}/user/friend-requests/${userId}`);
+      setRequests(res.data || []);
+
       toast.success(
         action === "approve"
           ? "Friend request accepted"
@@ -82,16 +129,15 @@ const AddFriend = () => {
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedQuery(search.trim());
-    }, 300); // 300ms debounce
+    }, 300);
     return () => clearTimeout(t);
   }, [search]);
 
-  // Fetch suggestions when debouncedQuery changes
+  // Fetch suggestions
   useEffect(() => {
     if (!debouncedQuery) {
       setSuggestions([]);
       setIsSearching(false);
-      // abort any inflight request
       if (controllerRef.current) {
         controllerRef.current.abort();
         controllerRef.current = null;
@@ -99,7 +145,6 @@ const AddFriend = () => {
       return;
     }
 
-    // Cancel previous request if any
     if (controllerRef.current) {
       controllerRef.current.abort();
     }
@@ -109,30 +154,28 @@ const AddFriend = () => {
     const fetchSuggestions = async () => {
       setIsSearching(true);
       try {
-        // replace with your real backend endpoint if different
         const url = `${API_BASE}/user/search?username=${encodeURIComponent(
           debouncedQuery
         )}`;
 
-        const res = await axios.get(url, { signal: controller.signal });
+        const res = await api.get(url, { signal: controller.signal });
 
-        // support either { users: [...] } or just [...]
         const users = res.data?.users ?? res.data ?? [];
-        // Limit suggestions, map to expected shape
+
         const mapped = (users || [])
-          .filter((u) => u._id !== userId) // exclude self
+          .filter((u) => u._id !== userId)
           .slice(0, 8)
           .map((u) => ({
             _id: u._id,
             username: u.username,
             email: u.email,
-            profilePhotoUrl: u.profilePhotoUrl || "/userIcon.png", // fallback if no photo
+            profilePhotoUrl: u.profilePhotoUrl || "/userIcon.png",
           }));
 
         setSuggestions(mapped);
       } catch (err) {
         if (axios.isCancel(err) || err.name === "CanceledError") {
-          // request was aborted — ignore
+          // ignore
         } else {
           console.error("Error fetching suggestions:", err);
         }
@@ -145,22 +188,29 @@ const AddFriend = () => {
     fetchSuggestions();
 
     return () => {
-      // cleanup: abort when effect re-runs or component unmounts
       controller.abort();
       controllerRef.current = null;
     };
   }, [debouncedQuery]);
 
   const handleSuggestionClick = (userObj) => {
-    // userObj: { _id, username, email }
     if (!userObj?.email) {
       toast.error("Selected user has no email associated.");
       return;
     }
 
+    // Check if ALREADY existing friend (Backend)
+    if (existingFriendIds.has(userObj._id)) {
+      toast("You are already friends with this person.", {
+        icon: "🤝",
+        style: { borderRadius: "10px", background: "#333", color: "#fff" },
+      });
+      return;
+    }
+
+    // Check if ALREADY in selection list (Local State)
     if (friends.some((f) => f.email === userObj.email)) {
-      toast.error("This friend is already added.");
-      // clear input & suggestions optionally
+      toast.error("This friend is already selected.");
       setSearch("");
       setSuggestions([]);
       return;
@@ -174,7 +224,7 @@ const AddFriend = () => {
         profilePhotoUrl: userObj.profilePhotoUrl,
       },
     ]);
-    // Clear search and suggestions after selection
+
     setSearch("");
     setDebouncedQuery("");
     setSuggestions([]);
@@ -198,13 +248,10 @@ const AddFriend = () => {
     try {
       setLoading(true);
 
-      const response = await axios.post(
-        `${API_BASE}/user/friend-requests/send`,
-        {
-          fromUserId: userId,
-          toEmail: friends.map((f) => f.email),
-        }
-      );
+      const response = await api.post(`${API_BASE}/user/friend-requests/send`, {
+        fromUserId: userId,
+        toEmail: friends.map((f) => f.email),
+      });
 
       if (response.status === 200) {
         const results = response.data.results || [];
@@ -213,7 +260,6 @@ const AddFriend = () => {
           r.reason ? toast.success(`(${r.reason})`) : "";
         });
 
-        // ✅ Clear the list after successful attempt
         setFriends([]);
       } else {
         toast.error(`Failed to add friends: ${response.data.message}`);
@@ -223,6 +269,23 @@ const AddFriend = () => {
       toast.error("Something went wrong!");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendInvite = async () => {
+    setLoadingInvite(true);
+    setInviteSent(false);
+    try {
+      await api.post(`${API_BASE}/user/invite`, {
+        email: inviteEmail,
+        userId: userId,
+      });
+      setInviteSent(true);
+    } catch (e) {
+      if (e.status === 403) toast.error("Email already exists!");
+      else toast.error("Some error occurred!");
+    } finally {
+      setLoadingInvite(false); // Stop the spinner
     }
   };
 
@@ -237,7 +300,6 @@ const AddFriend = () => {
 
       {/* --- TOP NAVIGATION BAR --- */}
       <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-50">
-        {/* Back Button */}
         <button
           onClick={() => navigate("/dash")}
           className="group flex items-center justify-center w-12 h-12 rounded-full bg-slate-900/50 backdrop-blur-md border border-white/10 text-slate-400 hover:text-white hover:border-white/30 transition-all duration-300 shadow-xl"
@@ -246,7 +308,6 @@ const AddFriend = () => {
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </button>
 
-        {/* Notifications / Friend Requests */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setOpen((v) => !v)}
@@ -269,7 +330,7 @@ const AddFriend = () => {
             )}
           </button>
 
-          {/* Requests Dropdown Panel */}
+          {/* Requests Dropdown */}
           {open && (
             <div className="absolute right-0 mt-3 w-80 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-fade-in-down origin-top-right ring-1 ring-black/5">
               <div className="px-4 py-3 border-b border-white/5 bg-white/5 flex justify-between items-center">
@@ -353,8 +414,8 @@ const AddFriend = () => {
           </div>
 
           {/* Search Section */}
-          <div className="px-6 sm:px-8 relative z-30">
-            <div className="relative group">
+          <div className="px-6 sm:px-8 relative z-30 flex flex-col gap-3">
+            <div className="relative group flex-1">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
               <div className="relative flex items-center bg-slate-950 border border-white/10 rounded-xl px-4 py-3 shadow-inner focus-within:border-cyan-500/50 transition-colors">
                 <Search className="w-5 h-5 text-slate-500 mr-3" />
@@ -375,34 +436,65 @@ const AddFriend = () => {
               {(suggestions.length > 0 ||
                 (isSearching && search.length > 0)) && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar ring-1 ring-black/20">
-                  {suggestions.map((s) => (
-                    <div
-                      key={s._id}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => handleSuggestionClick(s)}
-                      className="px-4 py-3 hover:bg-white/5 cursor-pointer flex items-center gap-3 transition-colors group/item"
-                    >
-                      <img
-                        src={s.profilePhotoUrl}
-                        alt={s.username}
-                        className="w-10 h-10 rounded-full object-cover border border-white/10 group-hover/item:border-cyan-500/50 transition-colors"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm text-white">
-                            {s.username}
-                          </span>
-                          <ShieldCheck className="w-3 h-3 text-cyan-500" />
+                  {suggestions.map((s) => {
+                    const isAlreadyFriend = existingFriendIds.has(s._id);
+
+                    return (
+                      <div
+                        key={s._id}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() =>
+                          !isAlreadyFriend && handleSuggestionClick(s)
+                        }
+                        className={`px-4 py-3 flex items-center gap-3 transition-colors group/item ${
+                          isAlreadyFriend
+                            ? "cursor-not-allowed bg-white/5 opacity-60"
+                            : "cursor-pointer hover:bg-white/5"
+                        }`}
+                      >
+                        <img
+                          src={s.profilePhotoUrl}
+                          alt={s.username}
+                          className={`w-10 h-10 rounded-full object-cover border transition-colors ${
+                            isAlreadyFriend
+                              ? "border-emerald-500/30 grayscale-[0.5]"
+                              : "border-white/10 group-hover/item:border-cyan-500/50"
+                          }`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-white">
+                              {s.username}
+                            </span>
+                            {isAlreadyFriend ? (
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/20">
+                                Friend
+                              </span>
+                            ) : (
+                              <ShieldCheck className="w-3 h-3 text-cyan-500" />
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-400 truncate">
+                            {s.email}
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-400 truncate">
-                          {s.email}
+
+                        <div
+                          className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
+                            isAlreadyFriend
+                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                              : "border-white/10 group-hover/item:bg-cyan-500 group-hover/item:border-cyan-500"
+                          }`}
+                        >
+                          {isAlreadyFriend ? (
+                            <UserCheck className="w-3 h-3" />
+                          ) : (
+                            <UserPlus className="w-3 h-3 text-slate-400 group-hover/item:text-white" />
+                          )}
                         </div>
                       </div>
-                      <div className="w-6 h-6 rounded-full border border-white/10 flex items-center justify-center group-hover/item:bg-cyan-500 group-hover/item:border-cyan-500 transition-all">
-                        <UserPlus className="w-3 h-3 text-slate-400 group-hover/item:text-white" />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {suggestions.length === 0 && !isSearching && (
                     <div className="p-4 text-center text-xs text-slate-500">
                       No users found
@@ -411,6 +503,15 @@ const AddFriend = () => {
                 </div>
               )}
             </div>
+
+            {/* NEW: Invite via Email Button */}
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all text-xs font-semibold"
+            >
+              <Mail className="w-4 h-4" />
+              Can't find them? Invite via Email
+            </button>
           </div>
 
           {/* Selected Friends List */}
@@ -496,6 +597,142 @@ const AddFriend = () => {
           </div>
         </div>
       </div>
+
+      {/* --- EMAIL INVITE MODAL --- */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+            onClick={() => {
+              setShowInviteModal(false);
+              setInviteSent(false); // Reset success state on close
+            }}
+          ></div>
+          <div className="relative w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="p-8">
+              {/* --- CLOSE BUTTON --- */}
+              {!loadingInvite && (
+                <button
+                  onClick={() => {
+                    setShowInviteModal(false);
+                    setInviteSent(false);
+                  }}
+                  className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 text-slate-500 hover:text-white transition-colors z-10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+
+              {loadingInvite ? (
+                /* --- LOADING STATE --- */
+                <div className="py-12 flex flex-col items-center justify-center space-y-4 animate-pulse">
+                  <div className="relative">
+                    <div className="w-16 h-16 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
+                    <Mail className="absolute inset-0 m-auto w-6 h-6 text-cyan-400" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="text-lg font-bold text-white">
+                      Sending Invite
+                    </h3>
+                    <p className="text-slate-400 text-sm">
+                      Deploying magic link...
+                    </p>
+                  </div>
+                </div>
+              ) : inviteSent ? (
+                /* --- SUCCESS STATE --- */
+                <div className="py-12 flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mb-4 animate-bounce">
+                    <Check className="w-8 h-8 text-emerald-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Invite Sent!</h3>
+                  <p className="text-slate-400 text-sm mt-2 mb-8">
+                    {inviteEmail} has been invited.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setInviteSent(false);
+                      setInviteEmail("");
+                    }}
+                    className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold rounded-lg transition-all"
+                  >
+                    Send Another
+                  </button>
+                </div>
+              ) : (
+                /* --- INPUT STATE (DEFAULT) --- */
+                <>
+                  <div className="mb-6">
+                    <h3 className="text-xl font-bold text-white">
+                      Invite via Email
+                    </h3>
+                    <p className="text-slate-400 text-sm mt-1">
+                      Send a magic link to join your squad.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="relative group">
+                      <Mail
+                        className={`absolute left-4 top-5 w-5 h-5 transition-colors ${
+                          inviteEmail &&
+                          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)
+                            ? "text-red-400"
+                            : "text-slate-500 group-focus-within:text-cyan-400"
+                        }`}
+                      />
+                      <input
+                        type="email"
+                        placeholder="friend@example.com"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        className={`w-full bg-slate-950 border rounded-xl py-4 pl-12 pr-12 text-white focus:outline-none transition-all ${
+                          inviteEmail &&
+                          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)
+                            ? "border-red-500/50 focus:border-red-500"
+                            : "border-white/10 focus:border-cyan-500/50"
+                        }`}
+                      />
+
+                      {/* --- CLEAR (X) OPTION --- */}
+                      {inviteEmail && (
+                        <button
+                          onClick={() => setInviteEmail("")}
+                          className="absolute right-4 top-5 p-0.5 rounded-full bg-white/5 hover:bg-white/20 text-slate-500 hover:text-white transition-all duration-200"
+                          title="Clear input"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {/* Validation Message */}
+                      {inviteEmail &&
+                        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail) && (
+                          <p className="text-[10px] text-red-400 mt-1.5 ml-1 font-medium animate-in fade-in slide-in-from-top-1">
+                            Please enter a valid email address
+                          </p>
+                        )}
+                    </div>
+
+                    <button
+                      onClick={handleSendInvite}
+                      disabled={
+                        !inviteEmail ||
+                        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail) ||
+                        loadingInvite
+                      }
+                      className="w-full py-4 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                    >
+                      <Send className="w-4 h-4" />
+                      Send Invitation
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .animate-swing { animation: swing 2s infinite; transform-origin: top center; }
