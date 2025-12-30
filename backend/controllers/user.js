@@ -1,6 +1,6 @@
 import { User, Expense, FriendRequest } from "../models/schema.js";
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import {
   sendOneNotification,
   sendMultipleNotifications,
