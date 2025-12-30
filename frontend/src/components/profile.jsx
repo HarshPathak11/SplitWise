@@ -229,7 +229,6 @@ const ProfileEnhanced = () => {
   };
 
   const handleShareProfile = async () => {
-    const userId = getCookie("id");
     const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
     const message = `Hey! 👋
 
