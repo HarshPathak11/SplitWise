@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import FriendCard from "./FriendCard"; // ✅ adjust path as needed
 import { FaArrowLeft } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { FixedSizeList as List } from "react-window";
 import api from "../utils/api";
+import Cookies from "js-cookie";
 
 const AllFriendsPage = () => {
   const navigate = useNavigate();
@@ -75,6 +75,39 @@ const AllFriendsPage = () => {
     const interval = setInterval(fetchUpdatedBalances, 2000);
     return () => clearInterval(interval);
   }, [user?._id]);
+
+  useEffect(() => {
+    async function getDetails() {
+      const userId = Cookies.get("id");
+
+      try {
+        if (user) {
+          const lastUpdatedAtUser = await api.get(
+            `${API_BASE}/user/last-updated-at/${userId}`
+          );
+          if (
+            new Date(lastUpdatedAtUser.data.lastUpdatedAt).getTime() !==
+            new Date(user.updatedAt).getTime()
+          ) {
+            const response = await api.get(`${API_BASE}/user/${userId}`);
+            if (response.status === 200) {
+              setUser(response.data.user);
+              localStorage.setItem("user", JSON.stringify(response.data.user));
+            }
+          }
+        } else {
+          const response = await api.get(`${API_BASE}/user/${userId}`);
+          if (response.status === 200) {
+            setUser(response.data.user);
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      }
+    }
+    getDetails();
+  }, []);
 
   const handleDeleteFriend = async (friendIdToDelete) => {
     try {
