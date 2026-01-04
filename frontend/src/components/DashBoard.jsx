@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
-import axios from "axios";
 import TripsSection from "./TripsSection";
 import FairFareCard from "./FairFareCard";
 import FriendsSection from "./friendsSection";

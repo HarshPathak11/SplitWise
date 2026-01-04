@@ -66,6 +66,32 @@ function CashMapAI() {
 
   useEffect(() => {
     scrollToBottom();
+    
+    // Check if we need to reset the daily counter based on lastUsed timestamp
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        const aiChatUsage = user?.aiChatUsage;
+        
+        if (aiChatUsage?.lastUsed) {
+          const lastUsedDate = new Date(aiChatUsage.lastUsed);
+          const currentDate = new Date();
+          const hoursDifference = (currentDate - lastUsedDate) / (1000 * 60 * 60);
+          
+          // If more than 24 hours have passed, reset the counter
+          if (hoursDifference >= 24) {
+            localStorage.setItem("dailyAIQueryCounter", "0");
+            setDailyCount(0);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+    
+    // Otherwise, use the existing counter value
     const dailyAIQueryCount = localStorage.getItem("dailyAIQueryCounter");
     setDailyCount(parseInt(dailyAIQueryCount) || 0);
   }, []);
@@ -146,8 +172,6 @@ function CashMapAI() {
         updated.pop(); // Remove analyzing message
         return [...updated, { type: "bot", content: answer }];
       });
-
-      setDailyCount(response?.data?.updatedCount);
     } catch (error) {
       console.error("Error:", error);
       clearTimeout(timeoutRef.current);
@@ -164,6 +188,28 @@ function CashMapAI() {
           },
         ];
       });
+    } finally {
+      // Fetch updated user data from backend and update localStorage
+      // This runs regardless of success or error
+      try {
+        const storedUser = localStorage.getItem("user");
+        const user = storedUser ? JSON.parse(storedUser) : {};
+        const userId = user?._id || "";
+
+        const API_BASE = import.meta.env.VITE_API_BASE_URL;
+        const userResponse = await api.get(`${API_BASE}/user/${userId}`);
+        if (userResponse?.data) {
+          localStorage.setItem("user", JSON.stringify(userResponse.data.user));
+          
+          // Update dailyAIQueryCounter based on fetched user data
+          const updatedCount = userResponse.data?.user?.aiChatUsage?.count || 0;
+          localStorage.setItem("dailyAIQueryCounter", updatedCount.toString());
+          setDailyCount(updatedCount);
+        }
+      } catch (userFetchError) {
+        console.error("Error fetching updated user data:", userFetchError);
+        // Don't throw - this is a non-critical update
+      }
     }
   };
 
@@ -177,7 +223,7 @@ function CashMapAI() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-slate-950 text-white overflow-hidden relative font-sans">
+    <div className="flex flex-col min-h-screen bg-slate-950 text-white overflow-hidden relative font-sans">
       {/* --- PREMIUM ATMOSPHERIC BACKGROUND --- */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {/* Background Gradients (Enhanced, Subtler Colors) */}
