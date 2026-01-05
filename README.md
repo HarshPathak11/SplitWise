@@ -109,39 +109,12 @@
 - MongoDB (local or Atlas)
 - npm or yarn
 
-### Environment Variables
-
-Create `.env` files in both `backend` and `frontend` directories:
-
-**Backend `.env`:**
-```env
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-CLOUDINARY_CLOUD_NAME=your_cloudinary_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-FIREBASE_PROJECT_ID=your_firebase_project_id
-GOOGLE_GEMINI_API_KEY=your_gemini_api_key
-PORT=8000
-```
-
-**Frontend `.env`:**
-```env
-VITE_API_BASE_URL=http://localhost:8000
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
-VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-VITE_FIREBASE_APP_ID=your_firebase_app_id
-```
-
 ### Setup Instructions
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/splitwise.git
-   cd splitwise
+   git clone https://github.com/HarshPathak11/SplitWise.git
+   cd SplitWise
    ```
 
 2. **Install dependencies**
@@ -286,12 +259,6 @@ Contributions are welcome! Please follow these steps:
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
