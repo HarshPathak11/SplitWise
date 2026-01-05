@@ -970,6 +970,26 @@ const removeFriend = async (req, res) => {
   }
 
   try {
+    // Fetch both users to check balance
+    const user = await User.findById(userId);
+    const friend = await User.findById(friendId);
+
+    if (!user || !friend) {
+      return res.status(404).json({ message: "User or friend not found." });
+    }
+
+    // Check if there's an unsettled balance
+    const friendRecord = user.friends.find(
+      (f) => f.friend.toString() === friendId.toString()
+    );
+
+    if (friendRecord && friendRecord.balance !== 0) {
+      return res.status(400).json({
+        message: "Balance is not settled. Please settle the balance first before removing this friend.",
+        balance: friendRecord.balance,
+      });
+    }
+
     // Remove friend from current user
     await User.findByIdAndUpdate(userId, {
       $pull: { friends: { friend: friendId } },

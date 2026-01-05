@@ -301,9 +301,9 @@ const AddFriend = () => {
       {/* --- TOP NAVIGATION BAR --- */}
       <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-50">
         <button
-          onClick={() => navigate("/dash")}
+          onClick={() => navigate(-1)}
           className="group flex items-center justify-center w-12 h-12 rounded-full bg-slate-900/50 backdrop-blur-md border border-white/10 text-slate-400 hover:text-white hover:border-white/30 transition-all duration-300 shadow-xl"
-          title="Back to Dashboard"
+          title="Back"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </button>
