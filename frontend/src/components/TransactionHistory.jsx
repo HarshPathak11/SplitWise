@@ -212,7 +212,7 @@ const TransactionHistory = () => {
       });
       toast.success("Payment reminder sent!");
     } catch (error) {
-      toast.error("Error sending payment reminder");
+      toast.error("Notification not enabled by this friend");
       console.error("Error sending payment reminder:", error);
     }
   };
@@ -321,7 +321,7 @@ const TransactionHistory = () => {
               )}
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white leading-none group-hover:text-indigo-300 transition-colors">
+              <h2 className="text-sm font-bold text-white leading-none mb-3 mt-2 group-hover:text-indigo-300 transition-colors">
                 {friendName.username}
               </h2>
               <div className="flex items-center gap-1 mt-1">
