@@ -11,12 +11,26 @@ class DevToolsBlocker {
   }
 
   init() {
-    // Only run in production
-    if (import.meta.env.DEV) {
-      console.log('Dev tools blocker disabled in development mode');
+    // Multiple checks to ensure we only run in production
+    const isDevelopment = 
+      import.meta.env.DEV || 
+      import.meta.env.MODE === 'development' ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.port === '5173'; // Default Vite dev port
+    
+    if (isDevelopment) {
+      console.log('🔓 Dev tools blocker disabled in development mode');
+      console.log('Environment:', {
+        DEV: import.meta.env.DEV,
+        MODE: import.meta.env.MODE,
+        hostname: window.location.hostname,
+        port: window.location.port
+      });
       return;
     }
 
+    console.log('🔒 Dev tools blocker activated');
     this.blockKeyboardShortcuts();
     this.blockRightClick();
     this.detectDevTools();
