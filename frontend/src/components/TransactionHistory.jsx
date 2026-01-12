@@ -28,6 +28,8 @@ const TransactionHistory = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [storedUser, setStoredUser] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showPaidConfirm, setShowPaidConfirm] = useState(false);
+  const [showReceivedConfirm, setShowReceivedConfirm] = useState(false);
   const userId = Cookies.get("id");
 
   const handleScroll = () => {
@@ -187,7 +189,7 @@ const TransactionHistory = () => {
     fetchUser();
   }, []);
 
-  const handlePaid = async () => {
+  const confirmPaid = () => {
     if (amount === "" || amount === 0) {
       toast.error("Please enter a valid amount to pay.");
       return;
@@ -201,6 +203,12 @@ const TransactionHistory = () => {
       toast.error("Amount cannot be more than 50k");
       return;
     }
+    setShowPaidConfirm(true);
+  };
+
+  const handlePaid = async () => {
+    setShowPaidConfirm(false);
+    const paidAmount = Math.abs(amount);
     try {
       setLoading(true);
       await api.post(`${API_BASE}/user/update-friend-balance`, {
@@ -224,7 +232,7 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleReceived = async () => {
+  const confirmReceived = () => {
     if (amount === "" || amount === 0) {
       toast.error("Please enter a valid amount to receive.");
       return;
@@ -239,6 +247,12 @@ const TransactionHistory = () => {
       toast.error("Amount cannot be more than 50k");
       return;
     }
+    setShowReceivedConfirm(true);
+  };
+
+  const handleReceived = async () => {
+    setShowReceivedConfirm(false);
+    const receivedAmount = Math.abs(amount);
     try {
       setLoading(true);
       await api.post(`${API_BASE}/user/update-friend-balance`, {
@@ -279,7 +293,7 @@ const TransactionHistory = () => {
       });
       toast.success("Payment reminder sent!");
     } catch (error) {
-      toast.error("Error sending payment reminder");
+      toast.error("Notification not enabled by this friend");
       console.error("Error sending payment reminder:", error);
     }
   };
@@ -388,7 +402,7 @@ const TransactionHistory = () => {
               )}
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white leading-none group-hover:text-indigo-300 transition-colors">
+              <h2 className="text-sm font-bold text-white leading-none mb-3 mt-2 group-hover:text-indigo-300 transition-colors">
                 {friendName.username}
               </h2>
               <div className="flex items-center gap-1 mt-1">
@@ -640,14 +654,14 @@ const TransactionHistory = () => {
           {/* Action Buttons */}
           <div className="flex gap-3">
             <button
-              onClick={handleReceived}
+              onClick={confirmReceived}
               disabled={loading}
               className="flex-1 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
             >
               + Received
             </button>
             <button
-              onClick={handlePaid}
+              onClick={confirmPaid}
               className="flex-1 py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
             >
               - Paid
@@ -656,7 +670,7 @@ const TransactionHistory = () => {
         </div>
       </div>
 
-      {/* --- CONFIRMATION MODAL --- */}
+      {/* --- CONFIRMATION MODAL - SETTLE UP --- */}
       {showConfirm && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
@@ -680,6 +694,74 @@ const TransactionHistory = () => {
                 className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20"
               >
                 Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CONFIRMATION MODAL - PAID --- */}
+      {showPaidConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">
+              Confirm Payment?
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              You are recording that <strong className="text-rose-400">you paid ₹{Math.abs(amount)}</strong> to{" "}
+              <strong className="text-white">{friendName.username}</strong>.
+              Or on behalf of <strong className="text-white">{friendName.username}</strong>.
+            </p>
+            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+              <strong className="text-zinc-300">Note:</strong> "{text}"<br/>
+              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will reduce your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe less. If you already owe them, you'll owe more.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPaidConfirm(false)}
+                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePaid}
+                className="flex-1 py-2.5 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-500 shadow-lg shadow-rose-900/20 transition-colors"
+              >
+                Confirm Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CONFIRMATION MODAL - RECEIVED --- */}
+      {showReceivedConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">
+              Confirm Receipt?
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              You are recording that you <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> from{" "}
+              <strong className="text-white">{friendName.username}</strong>.
+              Or <strong className="text-white">{friendName.username}</strong> paid <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> on your behalf.
+            </p>
+            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+              <strong className="text-zinc-300">Note:</strong> "{text}"<br/>
+              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will increase your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe more. If you owed them, you'll owe less.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowReceivedConfirm(false)}
+                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReceived}
+                className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transition-colors"
+              >
+                Confirm Receipt
               </button>
             </div>
           </div>

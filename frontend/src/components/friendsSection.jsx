@@ -81,7 +81,16 @@ const FriendsSection = ({ user }) => {
       }
     } catch (error) {
       console.error("Failed to delete friend:", error);
-      toast.error("Could not delete friend. Try again.");
+      // Extract error message from backend response
+      const errorMessage = error.response?.data?.message || "Could not delete friend. Try again.";
+      const balance = error.response?.data?.balance;
+      
+      // Show balance info if available
+      if (balance !== undefined) {
+        toast.error(`${errorMessage} Current balance: ₹${Math.abs(balance).toFixed(2)}`);
+      } else {
+        toast.error(errorMessage);
+      }
     }
   };
 
