@@ -89,6 +89,22 @@ const verifyOtp = async (req, res) => {
   }
 
   try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ 
+        message: "User with this email already exists. Please login instead." 
+      });
+    }
+
+    // Check if username is already taken
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(409).json({ 
+        message: "Username already taken. Please choose a different username." 
+      });
+    }
+
     // Clean the password
     const cleanPassword = String(password).trim();
 
@@ -120,7 +136,7 @@ const verifyOtp = async (req, res) => {
     }
     const token = signAccessToken(newUser._id);
 
-    return res.status(200).json(newUser._id, token);
+    return res.status(200).json({ id: newUser._id, token });
   } catch (error) {
     console.error("Error during user creation:", error);
     return res
@@ -470,6 +486,7 @@ const userDetails = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    console.log("User sent:",user);
 
     res.status(200).json({ user: user });
   } catch (err) {
@@ -970,6 +987,26 @@ const removeFriend = async (req, res) => {
   }
 
   try {
+    // Fetch both users to check balance
+    const user = await User.findById(userId);
+    const friend = await User.findById(friendId);
+
+    if (!user || !friend) {
+      return res.status(404).json({ message: "User or friend not found." });
+    }
+
+    // Check if there's an unsettled balance
+    const friendRecord = user.friends.find(
+      (f) => f.friend.toString() === friendId.toString()
+    );
+
+    if (friendRecord && friendRecord.balance !== 0) {
+      return res.status(400).json({
+        message: "Balance is not settled. Please settle the balance first before removing this friend.",
+        balance: friendRecord.balance,
+      });
+    }
+
     // Remove friend from current user
     await User.findByIdAndUpdate(userId, {
       $pull: { friends: { friend: friendId } },
