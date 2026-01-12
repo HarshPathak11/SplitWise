@@ -14,7 +14,7 @@ import cloudinary from "../config/cloudinary.js";
 import { signAccessToken } from "../utils/jwt.js";
 import { sendMail } from "../utils/mailService.js";
 import { createSnapshot, applyExpenseCreate } from "./snapshots.js";
-
+import { invalidateAICache } from "./ai.js";
 /**
  * Helper: upload buffer to Cloudinary
  */
@@ -1115,6 +1115,16 @@ const updateFriendBalance = async (req, res) => {
       console.error("Snapshot expense apply failed:", snapshotErr);
     }
     /* =========================================================== */
+
+    /* ================= INVALIDATE AI CACHE ================= */
+    // Clear cached AI context for both users so fresh data is fetched
+    try {
+      invalidateAICache(user._id);
+      invalidateAICache(friend._id);
+    } catch (err) {
+      console.error("AI cache invalidation failed:", err);
+    }
+    /* ======================================================= */
 
     // ✅ Send notifications
     if (friend.fcmToken) {

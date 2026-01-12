@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Bot, Send, ArrowDown, Zap, Loader2 } from "lucide-react";
+import { ArrowLeft, Bot, Send, ArrowDown, Zap, Loader2, Copy, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import userIcon from "../../public/userIcon.png";
 import api from "../utils/api";
+import toast from "react-hot-toast";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 function CashMapAI() {
@@ -11,6 +14,7 @@ function CashMapAI() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const timeoutRef = React.useRef(null);
+  const [copiedIndex, setCopiedIndex] = useState(null);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
 
   const [messages, setMessages] = useState(() => {
@@ -144,6 +148,11 @@ function CashMapAI() {
       const data = response?.data;
       const answer = data?.answer || "Sorry, something went wrong!";
 
+      // Log if fallback model was used
+      if (data?.modelUsed && data.modelUsed !== "gemini-2.5-flash") {
+        console.log(`ℹ️ Using fallback model: ${data.modelUsed}`);
+      }
+
       setMessages((prev) => {
         const updated = [...prev];
         updated.pop(); // Remove analyzing message
@@ -157,6 +166,11 @@ function CashMapAI() {
       clearTimeout(timeoutRef.current);
       setIsWaitingForResponse(false);
 
+      // Get error message from backend or use default
+      const errorData = error?.response?.data;
+      const errorMessage = errorData?.answer || "⚠ Error retrieving response. Please try again later.";
+      const errorType = errorData?.errorType;
+
       setMessages((prev) => {
         const updated = [...prev];
         updated.pop(); // Remove analyzing message
@@ -164,10 +178,25 @@ function CashMapAI() {
           ...updated,
           {
             type: "bot",
-            content: "⚠ Error retrieving response. Please try again.",
+            content: errorMessage,
           },
         ];
       });
+
+      // Show appropriate toast based on error type
+      if (errorType === 'QUOTA_EXCEEDED') {
+        toast.error("AI quota exceeded. Try again after midnight UTC (5:30 AM IST).", {
+          duration: 5000,
+        });
+      } else if (errorType === 'SERVICE_ERROR') {
+        toast.error("AI service temporarily unavailable. Please try again in a few minutes.", {
+          duration: 4000,
+        });
+      } else {
+        toast.error("Failed to get AI response. Please try again.", {
+          duration: 3000,
+        });
+      }
     }
   };
 
@@ -244,16 +273,45 @@ function CashMapAI() {
                 </div>
               )}
 
-              <div
-                style={{ whiteSpace: "pre-line" }}
-                className={`max-w-[75%] rounded-2xl p-4 transition-all duration-300 shadow-xl ${
-                  message.type === "user"
-                    ? "bg-indigo-600 text-white rounded-br-md self-start"
-                    : "bg-slate-800/80 text-gray-100 rounded-tl-md border border-white/5"
-                }`}
-              >
-                {/* User Message Text */}
-                {message.content}
+              <div className="relative group">
+                {/* Copy button for user messages - positioned outside on the left */}
+                {message.type === "user" && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(message.content);
+                      setCopiedIndex(index);
+                      toast.success("Copied to clipboard!");
+                      setTimeout(() => setCopiedIndex(null), 2000);
+                    }}
+                    className="absolute top-1/2 -translate-y-1/2 -left-12 transition-all duration-200 w-9 h-9 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center shadow-lg border border-white/10"
+                    title="Copy your message"
+                  >
+                    {copiedIndex === index ? (
+                      <Check className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-gray-300" />
+                    )}
+                  </button>
+                )}
+
+                <div
+                  className={`rounded-2xl p-4 transition-all duration-300 shadow-xl ${
+                    message.type === "user"
+                      ? "bg-indigo-600 text-white rounded-br-md self-start min-w-[120px] pr-6"
+                      : "bg-slate-800/80 text-gray-100 rounded-tl-md border border-white/5 max-w-[75%]"
+                  }`}
+                >
+                  {/* Render markdown for bot messages, plain text for user */}
+                  {message.type === "bot" ? (
+                    <div className="markdown-content">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div style={{ whiteSpace: "pre-line" }}>{message.content}</div>
+                  )}
+                </div>
               </div>
 
               {/* Profile Avatar/Icon for User */}
@@ -331,7 +389,7 @@ function CashMapAI() {
       </div>
 
       <style>{`
-        /* Assuming 'User' icon is available, otherwise replace with a generic icon or initials */
+        /* Animations */
         @keyframes pulse {
           0%, 100% { transform: scale(1); opacity: 0.3; }
           50% { transform: scale(1.1); opacity: 0.6; }
@@ -343,6 +401,93 @@ function CashMapAI() {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+
+        /* Markdown Styling */
+        .markdown-content h2 {
+          font-size: 1.25rem;
+          font-weight: 700;
+          margin-top: 1rem;
+          margin-bottom: 0.75rem;
+          color: #60a5fa;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding-bottom: 0.5rem;
+        }
+        
+        .markdown-content h3 {
+          font-size: 1.1rem;
+          font-weight: 600;
+          margin-top: 0.75rem;
+          margin-bottom: 0.5rem;
+          color: #93c5fd;
+        }
+        
+        .markdown-content p {
+          margin-bottom: 0.75rem;
+          line-height: 1.6;
+        }
+        
+        .markdown-content strong {
+          font-weight: 700;
+          color: #fbbf24;
+        }
+        
+        .markdown-content ul, .markdown-content ol {
+          margin-left: 1.5rem;
+          margin-bottom: 0.75rem;
+        }
+        
+        .markdown-content li {
+          margin-bottom: 0.5rem;
+          line-height: 1.5;
+        }
+        
+        .markdown-content code {
+          background-color: rgba(0, 0, 0, 0.3);
+          padding: 0.2rem 0.4rem;
+          border-radius: 0.25rem;
+          font-family: 'Courier New', monospace;
+          font-size: 0.9em;
+          color: #22d3ee;
+        }
+        
+        .markdown-content pre {
+          background-color: rgba(0, 0, 0, 0.4);
+          padding: 1rem;
+          border-radius: 0.5rem;
+          overflow-x: auto;
+          margin-bottom: 0.75rem;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .markdown-content pre code {
+          background-color: transparent;
+          padding: 0;
+          color: #e5e7eb;
+        }
+        
+        .markdown-content hr {
+          border: none;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          margin: 1rem 0;
+        }
+        
+        .markdown-content blockquote {
+          border-left: 3px solid #60a5fa;
+          padding-left: 1rem;
+          margin-left: 0;
+          font-style: italic;
+          color: #d1d5db;
+          margin-bottom: 0.75rem;
+        }
+
+        .markdown-content a {
+          color: #60a5fa;
+          text-decoration: underline;
+        }
+        
+        .markdown-content a:hover {
+          color: #93c5fd;
+        }
       `}</style>
     </div>
   );
