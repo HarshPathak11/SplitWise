@@ -1,8 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { UserFinancialSnapshot, User, Expense, Group } from "../models/schema.js";
 import NodeCache from "node-cache";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ================= CACHE CONFIGURATION =================
 // 5-minute cache for user context data
@@ -13,7 +15,7 @@ const aiCache = new NodeCache({
 });
 
 // ================= MODEL SWITCHING STATE =================
-let activeModel = "gemini-2.5-flash"; // default primary model
+let activeModel = "llama-3.3-70b-versatile"; // default primary model (Groq)
 let lastSwitchDate = new Date().toDateString(); // track when quota was last reset
 let triedFallbackToday = false; // flag to avoid looping between models
 
@@ -458,56 +460,86 @@ ${query}
 - Refer to friends and groups by their names
 `;
 
-    /* ================= CALL GEMINI AI WITH AUTO-FALLBACK ================= */
+    /* ================= CALL AI WITH AUTO-FALLBACK ================= */
     
     // Recursive helper function to call AI with model fallback
-    async function callGeminiWithFallback(userPrompt, attempt = 1) {
+    async function callAIWithFallback(userPrompt, attempt = 1) {
       // Reset model to primary at the start of a new day
       const today = new Date().toDateString();
       if (today !== lastSwitchDate) {
-        activeModel = "gemini-2.5-flash";
+        activeModel = "llama-3.3-70b-versatile";
         triedFallbackToday = false;
         lastSwitchDate = today;
-        console.log("🔄 New day - reset to gemini-2.5-flash");
+        console.log("🔄 New day - reset to llama-3.3-70b-versatile (Groq)");
       }
 
       try {
-        const model = genAI.getGenerativeModel({ 
-          model: activeModel,
-          systemInstruction: SYSTEM_PROMPT
-        });
+        if (activeModel.startsWith("llama") || activeModel.startsWith("mixtral") || activeModel.startsWith("gemma")) {
+          // CALL GROQ
+          console.log(`🚀 Calling Groq with model: ${activeModel}`);
+          const chatCompletion = await groq.chat.completions.create({
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: userPrompt }
+            ],
+            model: activeModel,
+            temperature: 0.1, // Keep it precise for financial data
+            max_tokens: 1024,
+            top_p: 1,
+            stream: false,
+          });
 
-        const result = await model.generateContent(userPrompt);
-        const answer = result.response.text();
-        
-        console.log(`✅ AI Response generated using ${activeModel}`);
-        return { answer, modelUsed: activeModel };
+          const answer = chatCompletion.choices[0]?.message?.content;
+          if (!answer) throw new Error("Empty response from Groq");
+          
+          console.log(`✅ AI Response generated using Groq (${activeModel})`);
+          return { answer, modelUsed: activeModel };
+        } else {
+          // CALL GEMINI (Fallback)
+          console.log(`🚀 Calling Gemini with model: ${activeModel}`);
+          const model = genAI.getGenerativeModel({ 
+            model: activeModel,
+            systemInstruction: SYSTEM_PROMPT
+          });
+
+          const result = await model.generateContent(userPrompt);
+          const answer = result.response.text();
+          
+          console.log(`✅ AI Response generated using Gemini (${activeModel})`);
+          return { answer, modelUsed: activeModel };
+        }
         
       } catch (err) {
-        console.error(`❌ Gemini error on ${activeModel}:`, err.message);
+        console.error(`❌ AI error on ${activeModel}:`, err.message);
 
-        // Handle quota exhaustion (429 error with quota info)
-        if ((err.status === 429 || err.message?.includes('quota')) && err.message?.includes('quota')) {
+        // Handle Groq Quota/Error (Switch to Gemini)
+        if (activeModel.startsWith("llama") || activeModel.startsWith("mixtral")) {
+            console.log("⚠️ Groq issue detected. Switching to Gemini fallback...");
+            activeModel = "gemini-2.5-flash";
+            triedFallbackToday = true;
+            return callAIWithFallback(userPrompt, attempt + 1);
+        }
+
+        // Handle Gemini Quota
+        if ((err.status === 429 || err.message?.includes('quota'))) {
           if (activeModel === "gemini-2.5-flash" && !triedFallbackToday) {
             console.log("⚠️ gemini-2.5-flash quota exceeded. Switching to gemini-2.5-pro...");
             activeModel = "gemini-2.5-pro";
             triedFallbackToday = true;
-            // Retry with fallback model
-            return callGeminiWithFallback(userPrompt, attempt + 1);
+            return callAIWithFallback(userPrompt, attempt + 1);
           } else {
-            console.log("⚠️ Both models' quotas exhausted. Falling back to primary until reset.");
-            activeModel = "gemini-2.5-flash"; // stick to primary until next day reset
-            throw err; // Throw to be caught by outer catch
+            console.log("⚠️ All quotas exhausted.");
+            activeModel = "llama-3.3-70b-versatile"; // reset for next request
+            throw err;
           }
         }
 
-        // Non-quota error, throw it
         throw err;
       }
     }
 
     // Call the AI with fallback logic
-    const { answer, modelUsed } = await callGeminiWithFallback(userPrompt);
+    const { answer, modelUsed } = await callAIWithFallback(userPrompt);
 
     // ✅ Increment usage ONLY AFTER successful response
     const finalCount = currentCount + 1;

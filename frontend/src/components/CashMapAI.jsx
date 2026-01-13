@@ -148,9 +148,9 @@ function CashMapAI() {
       const data = response?.data;
       const answer = data?.answer || "Sorry, something went wrong!";
 
-      // Log if fallback model was used
-      if (data?.modelUsed && data.modelUsed !== "gemini-2.5-flash") {
-        console.log(`ℹ️ Using fallback model: ${data.modelUsed}`);
+      // Log the model used
+      if (data?.modelUsed) {
+        console.log(`ℹ️ AI response generated using: ${data.modelUsed}`);
       }
 
       setMessages((prev) => {
