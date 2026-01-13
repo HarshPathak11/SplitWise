@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookie from "js-cookie";
@@ -18,6 +18,7 @@ import api from "../utils/api";
 
 export default function Expenses() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { category, subcategory, timeframe, startDate, endDate } =
     location.state || {};
   const userId = Cookie.get("id");
@@ -36,7 +37,7 @@ export default function Expenses() {
     const fetchExpenses = async () => {
       setLoading(true);
       try {
-        if (group && Array.isArray(group.expenses)) {
+        if (group) {
           const response = await api.post(
             `${API_BASE}/group/expenses-by-subcategory`,
             {
@@ -129,20 +130,12 @@ export default function Expenses() {
       <div className="relative z-10 max-w-5xl mx-auto">
         {/* --- HEADER --- */}
         <div className="flex items-center gap-4 mb-6">
-          <Link
-            to="/subcategories"
-            state={{
-              category: category, // Crucial: This tells the previous page which slice to show
-              group: group,
-              timeframe: timeframe,
-              startDate: startDate,
-              endDate: endDate,
-            }}
+          <button 
+            onClick={() => navigate(-1)}
+            className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg"
           >
-            <button className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg">
-              <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
-            </button>
-          </Link>
+            <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+          </button>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase flex items-center gap-3">
               {subcategory || "Expenses Protocol"}
@@ -172,7 +165,7 @@ export default function Expenses() {
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="text-indigo-400" size={18} />
               <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
-                Total Share
+                Your Total Share
               </p>
             </div>
             <p className="text-white text-2xl sm:text-3xl font-black font-mono tracking-tight">
@@ -186,7 +179,7 @@ export default function Expenses() {
             <div className="flex items-center gap-2 mb-2">
               <Receipt className="text-fuchsia-400" size={18} />
               <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
-                Entries
+                Total Entries
               </p>
             </div>
             <p className="text-white text-2xl sm:text-3xl font-black font-mono tracking-tight">
@@ -218,7 +211,7 @@ export default function Expenses() {
             />
             <input
               type="text"
-              placeholder="QUERY DATABASE..."
+              placeholder="Search Expense"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-xl bg-zinc-900/60 border border-white/10 text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono text-sm"

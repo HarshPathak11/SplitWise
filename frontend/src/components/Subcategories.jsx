@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookie from "js-cookie";
@@ -17,6 +17,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function Subcategories() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { category } = location.state || {};
 
   const [subcategories, setSubcategories] = useState([]);
@@ -149,11 +150,12 @@ export default function Subcategories() {
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* --- HEADER: Sector Analysis Style --- */}
         <div className="flex items-center gap-4 mb-8">
-          <Link to="/analytics">
-            <button className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg shadow-black/20">
-              <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
-            </button>
-          </Link>
+          <button 
+            onClick={() => navigate(-1)}
+            className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg shadow-black/20"
+          >
+            <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+          </button>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase flex items-center gap-3">
               {category || "Unknown Sector"}

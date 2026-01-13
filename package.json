@@ -2,10 +2,12 @@
   "scripts": {
     "start": "concurrently \"npm run dev\" \"npm run star\"",
     "dev": "cd backend && npm start",
-    "star": "cd frontend && npm run dev"
+    "star": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "preview": "concurrently \"npm run dev\" \"cd frontend && npm run preview\""
   },
   "devDependencies": {
-    "baseline-browser-mapping": "^2.9.4",
+    "baseline-browser-mapping": "^2.9.7",
     "concurrently": "^9.2.1"
   },
   "dependencies": {

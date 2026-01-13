@@ -1,6 +1,5 @@
 import { User, Expense, FriendRequest,UserFinancialSnapshot } from "../models/schema.js";
 import mongoose from "mongoose";
-import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import {
   sendOneNotification,
@@ -91,6 +90,22 @@ const verifyOtp = async (req, res) => {
   }
 
   try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ 
+        message: "User with this email already exists. Please login instead." 
+      });
+    }
+
+    // Check if username is already taken
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(409).json({ 
+        message: "Username already taken. Please choose a different username." 
+      });
+    }
+
     // Clean the password
     const cleanPassword = String(password).trim();
 
@@ -132,7 +147,7 @@ const verifyOtp = async (req, res) => {
     }
     const token = signAccessToken(newUser._id);
 
-    return res.status(200).json(newUser._id,token);
+    return res.status(200).json({ id: newUser._id, token });
   } catch (error) {
     console.error("Error during user creation:", error);
     return res
@@ -192,7 +207,7 @@ const userLogin = async (req, res) => {
     return res.status(200).json({
       message: "Access Granted",
       user: userWithoutPassword,
-      token
+      token,
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -315,6 +330,8 @@ const getTopCategoriesForUser = async (req, res) => {
 //   }
 // };
 const getSubCategoriesForUser = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { userId, category, startDate, endDate } = req.body;
 
@@ -358,17 +375,24 @@ const getSubCategoriesForUser = async (req, res) => {
         },
       },
       { $sort: { total: -1 } },
-    ]);
+    ]).session(session);
 
     const formattedSubcategories = subcategories.map((sub) => ({
       name: sub._id,
       total: sub.total,
     }));
 
+    await session.commitTransaction();
+
     res.status(200).json({ subcategories: formattedSubcategories });
   } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     console.error("Error fetching subcategories:", error);
     res.status(500).json({ message: "Server error" });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -488,6 +512,7 @@ const userDetails = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    console.log("User sent:",user);
 
     res.status(200).json({ user: user });
   } catch (err) {
@@ -645,10 +670,10 @@ const updateUserProfile = async (req, res) => {
 
 //Adding the friends
 
-const addFriends = async (req, res) => {
-  const { email, friendsArray, autoAdd } = req.body;
+const inviteFriend = async (req, res) => {
+  const { email, userId } = req.body;
 
-  if (!email || !Array.isArray(friendsArray) || friendsArray.length === 0) {
+  if (!email) {
     return res.status(400).json({ message: "Incomplete data received" });
   }
 
@@ -795,37 +820,32 @@ const addFriends = async (req, res) => {
         // Friend does not exist — send invitation email via our mail microservice
         const inviteLink = `https://fair-fare-phi.vercel.app/signup/${user._id}`;
 
-        try {
-          await sendMail({
-            to: friendEmail,
-            subject: `Heartfelt invitation from ${user.username}`,
-            text: `${user.username} has invited you to join Fair Fare. Join here: ${inviteLink}`,
-            html: `
+    try {
+      await sendMail({
+        to: email,
+        subject: `Heartfelt invitation from ${user.username}`,
+        text: `${user.username} has invited you to join Fair Fare. Join here: ${inviteLink}`,
+        html: `
               <h1>Hi,</h1>
               <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
               <p>Please click on the link below to join:</p>
               <p><a href="${inviteLink}">Join Fair Fare</a></p>
               <p>Thanks,<br/>Fair Fare Team</p>
             `,
-          });
-          // Optionally log or track successful invite sends
-        } catch (err) {
-          // Log the mail error but continue processing other friends
-          console.error(`Failed to send invite email to ${friendEmail}:`, err);
-        }
-      }
+      });
+      // Optionally log or track successful invite sends
+    } catch (err) {
+      // Log the mail error but continue processing other friends
+      console.error(`Failed to send invite email to ${friendEmail}:`, err);
     }
-
     return res.status(200).json({
       message: "Friends processed",
-      addedFriends,
     });
   } catch (error) {
     console.error("Error in addFriends:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 // Friend Requests: send, list, approve, deny
 const sendFriendRequest = async (req, res) => {
@@ -1182,6 +1202,26 @@ const removeFriend = async (req, res) => {
   }
 
   try {
+    // Fetch both users to check balance
+    const user = await User.findById(userId);
+    const friend = await User.findById(friendId);
+
+    if (!user || !friend) {
+      return res.status(404).json({ message: "User or friend not found." });
+    }
+
+    // Check if there's an unsettled balance
+    const friendRecord = user.friends.find(
+      (f) => f.friend.toString() === friendId.toString()
+    );
+
+    if (friendRecord && friendRecord.balance !== 0) {
+      return res.status(400).json({
+        message: "Balance is not settled. Please settle the balance first before removing this friend.",
+        balance: friendRecord.balance,
+      });
+    }
+
     // Remove friend from current user
     await User.findByIdAndUpdate(userId, {
       $pull: { friends: { friend: friendId } },
@@ -1513,7 +1553,7 @@ const getUserLastUpdatedAt = async (req, res) => {
 export {
   sendOtp,
   userLogin,
-  addFriends,
+  inviteFriend,
   verifyForgotPassword,
   forgotPassword,
   updateUserProfile,

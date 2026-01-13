@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client'
 import router from './App.jsx'
 import './index.css'
 import { RouterProvider } from 'react-router-dom'
+import devToolsBlocker from './utils/devToolsBlocker'
+
+// Initialize dev tools blocker (only runs in production)
+devToolsBlocker.init();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
