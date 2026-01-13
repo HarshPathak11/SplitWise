@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ArrowLeft, Bot, Send, ArrowDown, Zap, Loader2, Copy, Check } from "lucide-react";
 import { Link } from "react-router-dom";
+import Cookies from "js-cookie";
 import axios from "axios";
 import userIcon from "../../public/userIcon.png";
 import api from "../utils/api";
@@ -36,22 +37,30 @@ function CashMapAI() {
   });
 
   const [input, setInput] = useState("");
-  const [dailyCount, setDailyCount] = useState(() => {
-    const stored = localStorage.getItem("user");
-    const parsedStored = stored ? JSON.parse(stored) : null;
+  const [dailyCount, setDailyCount] = useState(0);
 
-    let count = 0;
+  const fetchAiUsage = async () => {
+    try {
+      const userId = Cookies.get("id");
+      if (!userId) {
+        console.warn("⚠️ No User ID found in cookies for AI usage fetch.");
+        return;
+      }
 
-    if (parsedStored?.aiChatUsage?.count) {
-      count = parseInt(parsedStored.aiChatUsage.count);
+      // Consistent with Dashboard.jsx usage: use absolute URL if needed, 
+      // but api utility handles baseURL. Let's try relative first as per standard practice,
+      // or match Dashboard's absolute style if it's proven to work.
+      const response = await api.get(`/user/ai-usage/${userId}`);
+      
+      if (response.data && typeof response.data.usageCount === 'number') {
+        setDailyCount(response.data.usageCount);
+      } else if (response.data && typeof response.data.count === 'number') {
+        setDailyCount(response.data.count);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching AI usage:", error);
     }
-    // count=0;
-
-    localStorage.setItem("dailyAIQueryCounter", count.toString());
-
-    // return parseInt(localStorage.getItem("dailyAIQueryCounter")) || 0;
-    return 0;
-  });
+  };
 
   useEffect(() => {
     const chatEl = chatContainerRef.current;
@@ -59,7 +68,7 @@ function CashMapAI() {
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = chatEl;
-      const buffer = 100; // Allow a little wiggle room
+      const buffer = 100;
       if (scrollTop + clientHeight >= scrollHeight - buffer) {
         setIsAtBottom(true);
       } else {
@@ -73,13 +82,15 @@ function CashMapAI() {
 
   useEffect(() => {
     scrollToBottom();
-    const dailyAIQueryCount = localStorage.getItem("dailyAIQueryCounter");
-    setDailyCount(parseInt(dailyAIQueryCount) || 0);
+    fetchAiUsage();
   }, []);
 
   useEffect(() => {
     localStorage.setItem("chatMessages", JSON.stringify(messages));
-    setProfilePhotoUrl(JSON.parse(localStorage.getItem("user")).profilePhotoUrl);
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setProfilePhotoUrl(JSON.parse(storedUser).profilePhotoUrl);
+    }
   }, [messages]);
 
   const scrollToBottom = () => {
@@ -134,15 +145,13 @@ function CashMapAI() {
     scrollToBottom();
 
     try {
-      const storedUser = localStorage.getItem("user");
-      const user = storedUser ? JSON.parse(storedUser) : {};
-      const userId = user?._id || "";
+      const userId = Cookies.get("id") || "";
 
-      const response = await api.post(`${API_BASE}/user/ai`, {
+      const response = await api.post("/user/ai", {
         userId,
         query: input,
       });
-      clearTimeout(timeoutRef.current); // Clear timeout if response arrives
+      clearTimeout(timeoutRef.current);
       setIsWaitingForResponse(false);
 
       const data = response?.data;
@@ -158,9 +167,13 @@ function CashMapAI() {
         updated.pop(); // Remove analyzing message
         return [...updated, { type: "bot", content: answer }];
       });
-      localStorage.setItem("dailyAIQueryCounter", response?.data?.usageCount);
-
-      setDailyCount(response?.data?.usageCount);
+      
+      // Update count from the response if available, otherwise fetch
+      if (typeof data?.usageCount === 'number') {
+        setDailyCount(data.usageCount);
+      } else {
+        await fetchAiUsage();
+      }
     } catch (error) {
       console.error("Error:", error);
       clearTimeout(timeoutRef.current);
@@ -210,143 +223,171 @@ function CashMapAI() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-slate-950 text-white overflow-hidden relative font-sans">
-      {/* --- PREMIUM ATMOSPHERIC BACKGROUND --- */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        {/* Background Gradients (Enhanced, Subtler Colors) */}
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[100px] animate-pulse"></div>
-        <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[100px] animate-pulse delay-1000"></div>
+    <div className="flex flex-col h-[100dvh] w-full bg-zinc-950 text-zinc-100 overflow-x-hidden overflow-y-hidden relative font-sans selection:bg-indigo-500/30">
+      {/* --- PROFESSIONAL ATMOSPHERIC BACKGROUND --- */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        {/* Subtle top-down spotlight */}
+        <div className="absolute top-0 left-0 right-0 h-[500px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950"></div>
+        {/* Subtle noise texture */}
         <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       </div>
 
-      {/* --- HEADER (Fixed Top Bar) --- */}
-      <div className="p-4 border-b border-white/10 backdrop-blur-md bg-slate-900/80 z-20 sticky top-0">
+      {/* --- HEADER --- */}
+      <header className="px-4 py-3 md:py-4 border-b border-white/5 backdrop-blur-xl bg-zinc-900/40 z-30 sticky top-0 transition-all">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link
             to="/dash"
-            className="group flex items-center text-slate-300 hover:text-white transition-colors"
+            className="group flex items-center text-zinc-400 hover:text-white transition-all duration-300"
           >
-            <ArrowLeft className="h-5 w-5 mr-3 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="font-medium text-sm tracking-wide">Dashboard</span>
+            <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-white/10 flex items-center justify-center mr-2 transition-colors">
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
+            </div>
+            <span className="font-medium text-xs md:text-sm tracking-wide uppercase">Dashboard</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <Bot className="h-6 w-6 text-cyan-400" />
-            <span className="font-extrabold text-xl tracking-tight text-white">
-              Fair <span className="text-cyan-400">AI</span>
+          
+          <div className="flex items-center gap-2 md:gap-3 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 shadow-inner">
+            <Bot className="h-4 w-4 md:h-5 md:w-5 text-indigo-400" />
+            <span className="font-bold text-base md:text-lg tracking-tight">
+              Fair<span className="text-zinc-400">AI</span>
             </span>
           </div>
+          
+          <div className="hidden md:flex items-center gap-2">
+            <div className={`h-2 w-2 rounded-full animate-pulse ${dailyCount >= 10 ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Active System</span>
+          </div>
+        </div>
+      </header>
+
+      {/* --- STATUS BAR --- */}
+      <div className="px-4 py-2 z-20 max-w-4xl mx-auto w-full relative">
+        <div className={`text-center py-2 px-4 rounded-xl border backdrop-blur-md transition-all duration-500 ${
+          dailyCount >= 10 
+            ? "text-red-400 bg-red-500/10 border-red-500/20" 
+            : "text-zinc-400 bg-white/5 border-white/5"
+        }`}>
+          <p className="text-[11px] md:text-xs font-medium flex items-center justify-center gap-2">
+            <Zap className={`w-3 h-3 ${dailyCount >= 10 ? 'text-red-500' : 'text-indigo-400'}`} />
+            {dailyCount >= 10 
+              ? "System limit reached. Service resumes tomorrow." 
+              : `Token Utilization: ${dailyCount} of 10 daily queries used.`}
+          </p>
         </div>
       </div>
 
-      {/* --- Query Limit Status Bar --- */}
-      <div className="px-4 py-2 text-center text-sm z-10 max-w-4xl mx-auto w-full">
-        {dailyCount >= 12 ? (
-          <div className="text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg py-2">
-            <Zap className="inline-block w-4 h-4 mr-2" />
-            You've reached your **10 query limit** for today! 🚫
-          </div>
-        ) : (
-          <div className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg py-2">
-            <Zap className="inline-block w-4 h-4 mr-2" />
-            You've used **{dailyCount} of 10** queries today.
-          </div>
-        )}
-      </div>
-
       {/* --- CHAT MESSAGES CONTAINER --- */}
-      <div
+      <main
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 z-10 max-w-4xl mx-auto w-full custom-scrollbar"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 z-10 max-w-4xl mx-auto w-full custom-scrollbar space-y-8"
       >
-        <div className="space-y-6">
-          {messages?.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${
-                message.type === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              {/* Profile Avatar/Icon for AI */}
-              {message.type !== "user" && (
-                <div className="w-8 h-8 rounded-full bg-cyan-600/20 border border-cyan-600/50 flex items-center justify-center mr-3 shrink-0 self-start mt-1">
-                  <Bot className="w-4 h-4 text-cyan-400" />
+        {messages?.map((message, index) => (
+          <div
+            key={index}
+            className={`flex items-start animate-in fade-in slide-in-from-bottom-2 duration-500 ${
+              message.type === "user" ? "flex-row-reverse" : "flex-row"
+            }`}
+          >
+            {/* Avatar */}
+            <div className={`shrink-0 mt-1 ${message.type === "user" ? "ml-3" : "mr-3"}`}>
+              {message.type === "bot" ? (
+                <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center shadow-lg group hover:border-indigo-500/50 transition-colors">
+                  <Bot className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
                 </div>
-              )}
-
-              <div className="relative group">
-                {/* Copy button for user messages - positioned outside on the left */}
-                {message.type === "user" && (
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(message.content);
-                      setCopiedIndex(index);
-                      toast.success("Copied to clipboard!");
-                      setTimeout(() => setCopiedIndex(null), 2000);
-                    }}
-                    className="absolute top-1/2 -translate-y-1/2 -left-12 transition-all duration-200 w-9 h-9 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center shadow-lg border border-white/10"
-                    title="Copy your message"
-                  >
-                    {copiedIndex === index ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-gray-300" />
-                    )}
-                  </button>
-                )}
-
-                <div
-                  className={`rounded-2xl p-4 transition-all duration-300 shadow-xl ${
-                    message.type === "user"
-                      ? "bg-indigo-600 text-white rounded-br-md self-start min-w-[120px] pr-6"
-                      : "bg-slate-800/80 text-gray-100 rounded-tl-md border border-white/5 max-w-[75%]"
-                  }`}
-                >
-                  {/* Render markdown for bot messages, plain text for user */}
-                  {message.type === "bot" ? (
-                    <div className="markdown-content">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {message.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <div style={{ whiteSpace: "pre-line" }}>{message.content}</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Profile Avatar/Icon for User */}
-              {message.type === "user" && (
-                <div className="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-600/50 flex items-center justify-center ml-3 shrink-0 self-start mt-1">
+              ) : (
+                <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl overflow-hidden border border-white/10 shadow-lg p-0.5 bg-zinc-900 group">
                   <img
                     src={profilePhotoUrl || userIcon}
-                    alt="Profile"
-                    className="w-full h-full rounded-full object-cover grayscale contrast-125 hover:grayscale-0 transition-all duration-500"
+                    alt="User"
+                    className="w-full h-full rounded-[10px] object-cover group-hover:scale-110 transition-transform"
                   />
                 </div>
               )}
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* --- Scroll to bottom arrow (FAB) --- */}
+            {/* Bubble Content */}
+            <div className={`relative flex flex-col ${message.type === "user" ? "items-end max-w-[80%] md:max-w-[75%]" : "items-start max-w-[80%] md:max-w-[80%]"}`}>
+              <div
+                className={`group relative overflow-hidden px-4 md:px-5 py-3 md:py-4 rounded-2xl shadow-2xl transition-all duration-300 border ${
+                  message.type === "user"
+                    ? "bg-indigo-600 border-indigo-500/30 text-white rounded-tr-none"
+                    : "bg-zinc-900/60 backdrop-blur-md border-white/5 text-zinc-100 rounded-tl-none"
+                }`}
+              >
+                {/* Subtle sheen effect for user messages */}
+                {message.type === "user" && (
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
+                )}
+
+                {/* Content Rendering */}
+                {message.type === "bot" ? (
+                  <div className="markdown-content">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="text-sm md:text-[15px] leading-relaxed relative z-10 whitespace-pre-line">{message.content}</div>
+                )}
+
+                {/* Utility buttons for Bot messages */}
+                {message.type === "bot" && message.content !== "I'm analyzing your spending patterns and will provide insights shortly..." && (
+                  <div className="mt-4 pt-3 border-t border-white/5 flex items-center gap-4">
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(message.content);
+                        toast.success("Copied to clipboard");
+                      }}
+                      className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-zinc-500 hover:text-indigo-400 transition-colors"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copy text
+                    </button>
+                    <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-mono">FairAI Engine v2.0</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Copy button for user messages (Overlay Style) */}
+              {message.type === "user" && (
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(message.content);
+                    toast.success("Message copied");
+                  }}
+                  className="mt-1 flex items-center gap-1 text-[10px] text-zinc-600 hover:text-indigo-400 transition-colors uppercase font-bold tracking-tighter"
+                >
+                  <Copy className="w-2.5 h-2.5" />
+                  Copy
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </main>
+
+      {/* --- FLOATING SCROLL BUTTON --- */}
       {!isAtBottom && (
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="absolute bottom-28 right-6 z-20">
           <button
             onClick={scrollToBottom}
-            className="w-12 h-12 bg-cyan-500 hover:bg-cyan-600 text-white p-2 rounded-full shadow-2xl shadow-cyan-500/40 transition-all duration-300 animate-bounce active:scale-95"
+            className="w-10 h-10 md:w-12 md:h-12 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white rounded-full shadow-2xl border border-white/10 transition-all active:scale-95 group"
           >
-            <ArrowDown className="h-5 w-5 mx-auto" />
+            <ArrowDown className="h-5 w-5 mx-auto text-zinc-400 group-hover:text-white group-hover:translate-y-0.5 transition-all" />
           </button>
         </div>
       )}
 
-      {/* --- INPUT FIELD BAR (Sticky Bottom) --- */}
-      <div className="p-4 border-t border-white/5 backdrop-blur-md bg-slate-900/80 z-20 shrink-0">
-        <form onSubmit={handleSend} className="max-w-4xl mx-auto flex gap-3">
+      {/* --- INPUT AREA --- */}
+      <footer className="p-4 md:p-6 border-t border-white/5 backdrop-blur-2xl bg-zinc-900/60 z-30 shrink-0 relative overflow-hidden">
+        {/* Progress indicator glow */}
+        {isWaitingForResponse && (
+          <div className="absolute top-0 left-0 h-[2px] bg-indigo-500 animate-[loading_2s_infinite]"></div>
+        )}
+        
+        <form onSubmit={handleSend} className="max-w-4xl mx-auto flex gap-3 md:gap-4 items-end">
           <div className="flex-1 relative group">
-            <input
-              type="text"
+            <textarea
+              rows="1"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -356,137 +397,148 @@ function CashMapAI() {
                 }
               }}
               placeholder={
-                dailyCount >= 12
-                  ? "Query limit reached for today!"
+                dailyCount >= 10
+                  ? "Daily limit reached..."
                   : isWaitingForResponse
-                  ? "Waiting for AI response..."
-                  : "Ask about your finances, balances, or insights..."
+                  ? "Processing context..."
+                  : "How is my spending this week?"
               }
-              className={`w-full bg-slate-800/80 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all shadow-inner placeholder-slate-500 text-sm ${
-                (dailyCount >= 12 || isWaitingForResponse) &&
-                "opacity-60 cursor-not-allowed"
+              className={`w-full bg-zinc-800/50 border border-white/5 rounded-2xl px-4 py-3.5 pr-12 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all shadow-inner placeholder-zinc-600 text-sm md:text-base resize-none ${
+                (dailyCount >= 10 || isWaitingForResponse) && "opacity-50 cursor-not-allowed"
               }`}
-              disabled={dailyCount >= 12 || isWaitingForResponse}
+              disabled={dailyCount >= 10 || isWaitingForResponse}
+              onInput={(e) => {
+                e.target.style.height = 'auto';
+                e.target.style.height = (e.target.scrollHeight) + 'px';
+              }}
             />
+            {/* Character count or extra hint could go here */}
           </div>
 
           <button
             type="submit"
-            className={`w-12 h-12 rounded-xl transition-all duration-300 shadow-lg flex items-center justify-center ${
+            className={`shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-2xl transition-all duration-300 shadow-xl flex items-center justify-center border ${
               dailyCount >= 10 || isWaitingForResponse
-                ? "bg-slate-700 text-slate-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-cyan-600 to-indigo-600 text-white hover:from-cyan-500 hover:to-indigo-500 active:scale-95"
+                ? "bg-zinc-800 border-white/5 text-zinc-600 cursor-not-allowed"
+                : "bg-indigo-600 border-indigo-500/50 text-white hover:bg-indigo-500 hover:scale-[1.02] active:scale-95 shadow-indigo-500/20"
             }`}
             disabled={dailyCount >= 10 || isWaitingForResponse}
           >
             {isWaitingForResponse ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <Loader2 className="h-5 w-5 md:h-6 md:w-6 animate-spin" />
             ) : (
-              <Send className="h-5 w-5" />
+              <Send className="h-5 w-5 md:h-6 md:w-6" />
             )}
           </button>
         </form>
-      </div>
+        
+        <div className="mt-3 text-[9px] md:text-[10px] text-center text-zinc-600 uppercase tracking-widest font-medium">
+          Powered by FairAI Intelligence • Secure Financial Node
+        </div>
+      </footer>
 
       <style>{`
-        /* Animations */
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 0.3; }
-          50% { transform: scale(1.1); opacity: 0.6; }
+        @keyframes loading {
+          0% { width: 0; left: 0; }
+          50% { width: 40%; left: 30%; }
+          100% { width: 0; left: 100%; }
         }
-        .animate-pulse { animation: pulse 4s ease-in-out infinite; }
-        
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
 
-        /* Markdown Styling */
-        .markdown-content h2 {
-          font-size: 1.25rem;
-          font-weight: 700;
-          margin-top: 1rem;
-          margin-bottom: 0.75rem;
-          color: #60a5fa;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          padding-bottom: 0.5rem;
-        }
-        
-        .markdown-content h3 {
-          font-size: 1.1rem;
-          font-weight: 600;
-          margin-top: 0.75rem;
-          margin-bottom: 0.5rem;
-          color: #93c5fd;
-        }
-        
-        .markdown-content p {
-          margin-bottom: 0.75rem;
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.1); }
+
+        /* Markdown Professional Styling */
+        .markdown-content {
+          font-size: 0.9rem;
           line-height: 1.6;
+          color: #e4e4e7;
         }
+
+        @media (min-width: 768px) {
+          .markdown-content { font-size: 0.95rem; }
+        }
+
+        .markdown-content h2 {
+          font-size: 1.15rem;
+          font-weight: 700;
+          margin: 1.5rem 0 0.75rem;
+          color: #818cf8;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .markdown-content h2::before {
+          content: "";
+          display: inline-block;
+          width: 4px;
+          height: 16px;
+          background: #6366f1;
+          border-radius: 2px;
+        }
+        
+        .markdown-content p { margin-bottom: 0.75rem; }
         
         .markdown-content strong {
-          font-weight: 700;
-          color: #fbbf24;
+          color: #fff;
+          font-weight: 600;
         }
         
         .markdown-content ul, .markdown-content ol {
-          margin-left: 1.5rem;
-          margin-bottom: 0.75rem;
+          margin: 0.75rem 0 0.75rem 1.25rem;
+          list-style-type: none;
         }
         
         .markdown-content li {
+          position: relative;
+          padding-left: 1.25rem;
           margin-bottom: 0.5rem;
-          line-height: 1.5;
+        }
+
+        .markdown-content ul li::before {
+          content: "•";
+          position: absolute;
+          left: 0;
+          color: #6366f1;
+          font-weight: bold;
         }
         
         .markdown-content code {
-          background-color: rgba(0, 0, 0, 0.3);
-          padding: 0.2rem 0.4rem;
-          border-radius: 0.25rem;
-          font-family: 'Courier New', monospace;
-          font-size: 0.9em;
-          color: #22d3ee;
+          background-color: rgba(63, 66, 241, 0.15);
+          color: #a5b4fc;
+          padding: 0.1rem 0.3rem;
+          border-radius: 4px;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.85em;
+          border: 1px solid rgba(99, 102, 241, 0.2);
         }
         
         .markdown-content pre {
-          background-color: rgba(0, 0, 0, 0.4);
+          background-color: rgba(0, 0, 0, 0.3);
           padding: 1rem;
-          border-radius: 0.5rem;
+          border-radius: 12px;
           overflow-x: auto;
-          margin-bottom: 0.75rem;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .markdown-content pre code {
-          background-color: transparent;
-          padding: 0;
-          color: #e5e7eb;
-        }
-        
-        .markdown-content hr {
-          border: none;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
           margin: 1rem 0;
-        }
-        
-        .markdown-content blockquote {
-          border-left: 3px solid #60a5fa;
-          padding-left: 1rem;
-          margin-left: 0;
-          font-style: italic;
-          color: #d1d5db;
-          margin-bottom: 0.75rem;
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .markdown-content a {
-          color: #60a5fa;
-          text-decoration: underline;
+        .markdown-content hr {
+          border: none;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          margin: 1.5rem 0;
         }
-        
-        .markdown-content a:hover {
-          color: #93c5fd;
+
+        .markdown-content blockquote {
+          background: rgba(99, 102, 241, 0.05);
+          border-left: 2px solid #6366f1;
+          padding: 0.75rem 1rem;
+          margin: 1rem 0;
+          border-radius: 0 8px 8px 0;
+          font-style: italic;
+          color: #a1a1aa;
         }
       `}</style>
     </div>

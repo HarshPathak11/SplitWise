@@ -521,6 +521,33 @@ const setFcmToken = async (req, res) => {
   }
 };
 
+const getAiUsage = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findById(userId).select("aiChatUsage");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const usage = user.aiChatUsage || {};
+    let count = usage.count || 0;
+    const lastUsed = usage.lastUsed;
+
+    if (!lastUsed || new Date(lastUsed) < today) {
+      count = 0;
+    }
+
+    res.status(200).json({ count, usageCount: count });
+  } catch (error) {
+    console.error("Error fetching AI usage:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 const notifyFriend = async (req, res) => {
   const { friendId, userId } = req.body;
   const user = await User.findOne({ _id: userId });
@@ -1509,4 +1536,5 @@ export {
   notifyFriend,
   uploadProfilePhoto,
   getUserLastUpdatedAt,
+  getAiUsage
 };

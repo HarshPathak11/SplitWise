@@ -25,6 +25,7 @@ import {
   notifyFriend,
   uploadProfilePhoto,
   getUserLastUpdatedAt,
+  getAiUsage,
 } from "../controllers/user.js";
 import upload from "../middleware/multer.js";
 import {auth} from "../middleware/auth.js";
@@ -63,6 +64,7 @@ router.put('/:id/photo',  upload.single('profilePhoto'),uploadProfilePhoto);
 router.get('/search',auth, getUsernames);
 router.get("/friend-requests/:userId",auth, listFriendRequests);
 router.get("/last-updated-at/:id",auth, getUserLastUpdatedAt);
+router.get("/ai-usage/:id", auth, getAiUsage);
 router.get("/:id", auth ,userDetails);
 
 //DELETE routes
