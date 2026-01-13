@@ -8,7 +8,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ================= CACHE CONFIGURATION =================
 // 5-minute cache for user context data
-const aiCache = new NodeCache({ 
+const aiCache = new NodeCache({
   stdTTL: 300, // 5 minutes in seconds
   checkperiod: 60, // Check for expired keys every 60 seconds
   useClones: false // Better performance, data is read-only anyway
@@ -43,7 +43,7 @@ You help users understand their spending patterns, manage shared expenses with f
 ## DATA YOU HAVE ACCESS TO
 1. **User Profile**: Name, friends count, groups participation
 2. **Friends**: List of friends with their balances (positive = they owe user, negative = user owes them)
-3. **Groups**: Trip/event groups with total spending and category breakdowns
+3. **Groups**: Trip/event groups with total spending and category summaries. **Note**: Detailed individual expenses (up to 50) are only provided for a group if the user explicitly mentions the group's name in their message. If you need details for a group but don't see them, ask the user to specify which group they want to discuss.
 4. **Expenses**: Recent transactions (up to 20) with:
    - Title, amount, category, date, group name
    - Who paid for the expense
@@ -223,18 +223,19 @@ Transform raw financial data into **clear, helpful, beautiful insights** that ma
  * Build user context from financial snapshot (fast) + selective detailed data
  * This prioritizes the pre-aggregated snapshot over full DB queries
  */
-async function buildUserContext(userId) {
-  console.log("🔍 Building fresh user context for:", userId);
+async function buildUserContext(userId, userQuery = "") {
+  const q = userQuery.toLowerCase();
+  console.log("🔍 Building fresh user context for:", userId, q ? `(query: ${q})` : "");
 
   // 1. PRIMARY SOURCE: Financial Snapshot (pre-aggregated, super fast)
   const snapshot = await UserFinancialSnapshot.findOne({ userId }).lean();
-  
+
   if (!snapshot) {
     // Fallback: If snapshot doesn't exist, build minimal context
     const basicUser = await User.findById(userId)
       .select(SAFE_USER_FIELDS.join(' '))
       .lean();
-    
+
     return {
       profile: {
         username: basicUser?.username || "User",
@@ -257,12 +258,12 @@ async function buildUserContext(userId) {
       { 'owedBy.user': userId }
     ]
   })
-  .select('title amount category createdAt paidBy owedBy groupName')
-  .populate('paidBy', SAFE_FRIEND_FIELDS.join(' '))
-  .populate('owedBy.user', SAFE_FRIEND_FIELDS.join(' '))
-  .sort({ createdAt: -1 })
-  .limit(20)
-  .lean();
+    .select('title amount category createdAt paidBy owedBy groupName')
+    .populate('paidBy', SAFE_FRIEND_FIELDS.join(' '))
+    .populate('owedBy.user', SAFE_FRIEND_FIELDS.join(' '))
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .lean();
 
   // 3. Build context from snapshot + recent expenses
   const userContext = {
@@ -283,18 +284,46 @@ async function buildUserContext(userId) {
     // Groups data - fetch actual groups with member details
     groups: await (async () => {
       if (!snapshot.groups || snapshot.groups.length === 0) return [];
-      
+
       const groupIds = snapshot.groups.map(g => g.groupId);
       const actualGroups = await Group.find({ _id: { $in: groupIds } })
         .select('name description members tripTotal from to')
         .populate('members', 'username')
         .lean();
-      
-      return actualGroups.map(g => {
+
+      return Promise.all(actualGroups.map(async (g) => {
         const snapshotGroup = snapshot.groups.find(
           sg => sg.groupId.toString() === g._id.toString()
         );
-        
+
+        // SELECTIVE FETCH: only fetch detail if group title is in query
+        const isMentioned = q.includes(g.name.toLowerCase());
+        let recentGroupExpenses = [];
+
+        if (isMentioned) {
+          const groupExpenses = await Expense.find({ group: g._id })
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .populate('paidBy', SAFE_FRIEND_FIELDS.join(' '))
+            .populate('owedBy.user', SAFE_FRIEND_FIELDS.join(' '))
+            .lean();
+
+          recentGroupExpenses = groupExpenses.map(ge => {
+            const isUserPayer = ge.paidBy?._id?.toString() === userId.toString();
+            return {
+              title: ge.title,
+              amount: ge.amount,
+              category: ge.category,
+              date: ge.createdAt,
+              paidBy: ge.paidBy?.username || "Unknown",
+              youPaid: isUserPayer,
+              involvedFriends: ge.owedBy
+                ?.filter(o => o.user?._id?.toString() !== userId.toString())
+                .map(o => o.user?.username || "Unknown") || []
+            };
+          });
+        }
+
         return {
           name: g.name,
           description: g.description,
@@ -303,19 +332,21 @@ async function buildUserContext(userId) {
           topCategory: snapshotGroup?.topCategory,
           membersCount: g.members?.length || 0,
           memberNames: g.members?.map(m => m.username) || [],
+          recentGroupExpenses,
+          isDeepContextAvailable: isMentioned,
           period: g.from && g.to ? {
             from: g.from,
             to: g.to
           } : null
         };
-      });
+      }));
     })(),
 
     // Recent expenses with friend context
     recentExpenses: recentExpenses.map(e => {
       const paidByName = e.paidBy?.username || "Unknown";
       const isUserPayer = e.paidBy?._id?.toString() === userId.toString();
-      
+
       const friendsInvolved = e.owedBy
         ?.filter(o => o.user?._id?.toString() !== userId.toString())
         .map(o => ({
@@ -338,10 +369,10 @@ async function buildUserContext(userId) {
     // Financial summary from snapshot (pre-aggregated!)
     financialSummary: {
       totalSpent: snapshot.spending?.totalSpend || 0,
-      categoryBreakdown: snapshot.spending?.categoryTotals 
-        ? (snapshot.spending.categoryTotals instanceof Map 
-            ? Object.fromEntries(snapshot.spending.categoryTotals) 
-            : snapshot.spending.categoryTotals)
+      categoryBreakdown: snapshot.spending?.categoryTotals
+        ? (snapshot.spending.categoryTotals instanceof Map
+          ? Object.fromEntries(snapshot.spending.categoryTotals)
+          : snapshot.spending.categoryTotals)
         : {},
       monthlyTrend: {
         thisMonth: snapshot.trends?.monthlyTotal || 0,
@@ -375,7 +406,7 @@ export function invalidateAICache(userId) {
 
 export const askFairFareAI = async (req, res) => {
   let count = 0; // Declare outside try-catch to prevent ReferenceError in error handlers
-  
+
   try {
     const { userId, query } = req.body;
 
@@ -418,15 +449,33 @@ export const askFairFareAI = async (req, res) => {
     }
 
     /* ================= FETCH OR GET CACHED CONTEXT ================= */
-    
-    const cacheKey = `ai_context_${userId}`;
+    const lowercaseQuery = query.toLowerCase();
+
+    // 1. Pre-AI Interception: Check if query is group-related but vague
+    const snapshotForInterception = await UserFinancialSnapshot.findOne({ userId }).select('groups').lean();
+    const groupNames = snapshotForInterception?.groups?.map(g => g.groupName) || [];
+
+    const groupKeywords = ["group", "trip", "trips", "expense", "expenses", "spending", "spent"];
+    const isGroupRelated = groupKeywords.some(kw => lowercaseQuery.includes(kw));
+    const mentionsAnyGroup = groupNames.some(name => lowercaseQuery.includes(name.toLowerCase()));
+
+    if (isGroupRelated && !mentionsAnyGroup && groupNames.length > 0) {
+      console.log("🛑 Intercepting vague group query");
+      return res.status(200).json({
+        answer: `I see you're asking about your group expenses! 📊 To give you a detailed breakdown, could you please specify which group? \n\nYou are currently in: \n${groupNames.map(n => `• **${n}**`).join('\n')}`,
+        usageCount: currentCount
+      });
+    }
+
+    // 2. Proceed with normal AI flow if not intercepted
+    const cacheKey = `ai_context_${userId}_${lowercaseQuery.replace(/\s+/g, '_').substring(0, 30)}`;
     let userContext = aiCache.get(cacheKey);
 
     if (!userContext) {
       // Cache miss - build fresh context
       console.log("❌ Cache miss - fetching from DB");
-      userContext = await buildUserContext(userId);
-      
+      userContext = await buildUserContext(userId, query);
+
       // Store in cache for 5 minutes
       aiCache.set(cacheKey, userContext);
       console.log("💾 Context cached for 5 minutes");
@@ -441,7 +490,7 @@ export const askFairFareAI = async (req, res) => {
     };
 
     /* ================= BUILD AI PROMPT ================= */
-    
+
     const userPrompt = `
 ## USER FINANCIAL DATA
 
@@ -461,7 +510,7 @@ ${query}
 `;
 
     /* ================= CALL AI WITH AUTO-FALLBACK ================= */
-    
+
     // Recursive helper function to call AI with model fallback
     async function callAIWithFallback(userPrompt, attempt = 1) {
       // Reset model to primary at the start of a new day
@@ -491,33 +540,33 @@ ${query}
 
           const answer = chatCompletion.choices[0]?.message?.content;
           if (!answer) throw new Error("Empty response from Groq");
-          
+
           console.log(`✅ AI Response generated using Groq (${activeModel})`);
           return { answer, modelUsed: activeModel };
         } else {
           // CALL GEMINI (Fallback)
           console.log(`🚀 Calling Gemini with model: ${activeModel}`);
-          const model = genAI.getGenerativeModel({ 
+          const model = genAI.getGenerativeModel({
             model: activeModel,
             systemInstruction: SYSTEM_PROMPT
           });
 
           const result = await model.generateContent(userPrompt);
           const answer = result.response.text();
-          
+
           console.log(`✅ AI Response generated using Gemini (${activeModel})`);
           return { answer, modelUsed: activeModel };
         }
-        
+
       } catch (err) {
         console.error(`❌ AI error on ${activeModel}:`, err.message);
 
         // Handle Groq Quota/Error (Switch to Gemini)
         if (activeModel.startsWith("llama") || activeModel.startsWith("mixtral")) {
-            console.log("⚠️ Groq issue detected. Switching to Gemini fallback...");
-            activeModel = "gemini-2.5-flash";
-            triedFallbackToday = true;
-            return callAIWithFallback(userPrompt, attempt + 1);
+          console.log("⚠️ Groq issue detected. Switching to Gemini fallback...");
+          activeModel = "gemini-2.5-flash";
+          triedFallbackToday = true;
+          return callAIWithFallback(userPrompt, attempt + 1);
         }
 
         // Handle Gemini Quota
@@ -553,15 +602,15 @@ ${query}
       }
     );
 
-    return res.json({ 
-      answer, 
+    return res.json({
+      answer,
       usageCount: finalCount,
       modelUsed
     });
 
   } catch (error) {
     console.error("❌ FairFare AI Error:", error);
-    
+
     // Check if it's a quota exceeded error
     if (error.status === 429 || error.message?.includes('quota')) {
       return res.status(429).json({
@@ -573,7 +622,7 @@ Sorry for the inconvenience! 🙏`,
         errorType: 'UNEXPECTED_ERROR'
       });
     }
-    
+
     // Check if it's a network/API error
     if (error.status === 500 || error.status === 503) {
       return res.status(503).json({
@@ -593,10 +642,10 @@ We apologize for the inconvenience! 🙏`,
         errorType: 'SERVICE_ERROR'
       });
     }
-    
+
     // Generic error (don't expose technical details to users)
     console.error('Full error details:', error.message || error);
-    
+
     return res.status(500).json({
       answer: `## 😕 Something Went Wrong
 

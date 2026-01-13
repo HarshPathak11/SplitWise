@@ -1,4 +1,4 @@
-import { User, Expense, FriendRequest,UserFinancialSnapshot } from "../models/schema.js";
+import { User, Expense, FriendRequest, UserFinancialSnapshot } from "../models/schema.js";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import {
@@ -93,16 +93,16 @@ const verifyOtp = async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ 
-        message: "User with this email already exists. Please login instead." 
+      return res.status(409).json({
+        message: "User with this email already exists. Please login instead."
       });
     }
 
     // Check if username is already taken
     const existingUsername = await User.findOne({ username });
     if (existingUsername) {
-      return res.status(409).json({ 
-        message: "Username already taken. Please choose a different username." 
+      return res.status(409).json({
+        message: "Username already taken. Please choose a different username."
       });
     }
 
@@ -119,10 +119,10 @@ const verifyOtp = async (req, res) => {
       password: cleanPassword, // schema middleware handles hashing
     });
 
-        /* ================= SNAPSHOT: CREATE USER SNAPSHOT ================= */
+    /* ================= SNAPSHOT: CREATE USER SNAPSHOT ================= */
     try {
       await createSnapshot(newUser._id);
-      console.log("Snapshot created successfully");
+      // console.log("Snapshot created successfully");
     } catch (snapshotErr) {
       console.error("Snapshot creation failed:", snapshotErr);
       // ❗ DO NOT fail signup — snapshot can be rebuilt later
@@ -512,7 +512,7 @@ const userDetails = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    console.log("User sent:",user);
+    // console.log("User sent:", user);
 
     res.status(200).json({ user: user });
   } catch (err) {
@@ -603,9 +603,8 @@ const notifyFriend = async (req, res) => {
   if (friend.fcmToken) {
     const token = friend.fcmToken;
     const title = "Healthy Reminder";
-    const body = `It's always good to settle your balances. You owe ${
-      user.username
-    } ₹${Math.abs(balance).toFixed(2)}.`;
+    const body = `It's always good to settle your balances. You owe ${user.username
+      } ₹${Math.abs(balance).toFixed(2)}.`;
 
     await sendOneNotification(token, title, body);
     return res.status(200).json({ message: "Notification sent successfully!" });
@@ -709,7 +708,7 @@ const inviteFriend = async (req, res) => {
       session.endSession();
     }
 
-     /* ================= SNAPSHOT: ADD FRIEND (AUTO ADD) ================= */
+    /* ================= SNAPSHOT: ADD FRIEND (AUTO ADD) ================= */
     try {
       await UserFinancialSnapshot.updateOne(
         { userId: user._id },
@@ -791,7 +790,7 @@ const inviteFriend = async (req, res) => {
             { userId: user._id },
             {
               $addToSet: {
-                friends: { friendId: friend._id,friendName: friend.username, netBalance: 0 }
+                friends: { friendId: friend._id, friendName: friend.username, netBalance: 0 }
               }
             }
           );
@@ -820,27 +819,29 @@ const inviteFriend = async (req, res) => {
         // Friend does not exist — send invitation email via our mail microservice
         const inviteLink = `https://fair-fare-phi.vercel.app/signup/${user._id}`;
 
-    try {
-      await sendMail({
-        to: email,
-        subject: `Heartfelt invitation from ${user.username}`,
-        text: `${user.username} has invited you to join Fair Fare. Join here: ${inviteLink}`,
-        html: `
+        try {
+          await sendMail({
+            to: email,
+            subject: `Heartfelt invitation from ${user.username}`,
+            text: `${user.username} has invited you to join Fair Fare. Join here: ${inviteLink}`,
+            html: `
               <h1>Hi,</h1>
               <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
               <p>Please click on the link below to join:</p>
               <p><a href="${inviteLink}">Join Fair Fare</a></p>
               <p>Thanks,<br/>Fair Fare Team</p>
             `,
-      });
-      // Optionally log or track successful invite sends
-    } catch (err) {
-      // Log the mail error but continue processing other friends
-      console.error(`Failed to send invite email to ${friendEmail}:`, err);
+          });
+          // Optionally log or track successful invite sends
+        } catch (err) {
+          // Log the mail error but continue processing other friends
+          console.error(`Failed to send invite email to ${friendEmail}:`, err);
+        }
+        return res.status(200).json({
+          message: "Friends processed",
+        });
+      }
     }
-    return res.status(200).json({
-      message: "Friends processed",
-    });
   } catch (error) {
     console.error("Error in addFriends:", error);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -1139,7 +1140,7 @@ const updateFriendBalance = async (req, res) => {
       { $push: { recentExpense: expense._id } }
     );
 
-     /* ================= SNAPSHOT: FRIEND BALANCE UPDATE ================= */
+    /* ================= SNAPSHOT: FRIEND BALANCE UPDATE ================= */
     try {
       await UserFinancialSnapshot.updateOne(
         { userId: user._id, "friends.friendId": friend._id },
@@ -1232,7 +1233,7 @@ const removeFriend = async (req, res) => {
       $pull: { friends: { friend: userId } },
     });
 
-     /* ================= SNAPSHOT: REMOVE FRIEND ================= */
+    /* ================= SNAPSHOT: REMOVE FRIEND ================= */
     try {
       await UserFinancialSnapshot.updateOne(
         { userId },
@@ -1274,7 +1275,7 @@ const forgotPassword = async (req, res) => {
 
   // Generate OTP
   const otp = Math.floor(100000 + Math.random() * 900000);
-  console.log("Password reset OTP generated:", otp);
+  // console.log("Password reset OTP generated:", otp);
 
   try {
     const hashedOtp = await bcrypt.hash(String(otp), 10);
@@ -1295,7 +1296,7 @@ const forgotPassword = async (req, res) => {
       `,
     });
 
-    console.log(`OTP email sent successfully to ${email}`);
+    // console.log(`OTP email sent successfully to ${email}`);
 
     return res.status(200).json({
       message: "OTP sent to email",
@@ -1576,5 +1577,5 @@ export {
   notifyFriend,
   uploadProfilePhoto,
   getUserLastUpdatedAt,
-  getAiUsage
+  getAiUsage,
 };

@@ -157,10 +157,10 @@ function CashMapAI() {
       const data = response?.data;
       const answer = data?.answer || "Sorry, something went wrong!";
 
-      // Log the model used
-      if (data?.modelUsed) {
-        console.log(`ℹ️ AI response generated using: ${data.modelUsed}`);
-      }
+      // // Log the model used
+      // if (data?.modelUsed) {
+      //   console.log(`ℹ️ AI response generated using: ${data.modelUsed}`);
+      // }
 
       setMessages((prev) => {
         const updated = [...prev];
@@ -367,7 +367,7 @@ function CashMapAI() {
 
       {/* --- FLOATING SCROLL BUTTON --- */}
       {!isAtBottom && (
-        <div className="absolute bottom-28 right-6 z-20">
+        <div className="absolute bottom-28 md:bottom-36 right-6 md:right-10 z-40">
           <button
             onClick={scrollToBottom}
             className="w-10 h-10 md:w-12 md:h-12 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white rounded-full shadow-2xl border border-white/10 transition-all active:scale-95 group"
@@ -403,13 +403,19 @@ function CashMapAI() {
                   ? "Processing context..."
                   : "How is my spending this week?"
               }
-              className={`w-full bg-zinc-800/50 border border-white/5 rounded-2xl px-4 py-3.5 pr-12 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all shadow-inner placeholder-zinc-600 text-sm md:text-base resize-none ${
+              className={`w-full bg-zinc-800/50 border border-white/5 rounded-2xl px-4 py-3.5 pr-12 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all shadow-inner placeholder-zinc-600 text-sm md:text-base resize-none max-h-[150px] overflow-hidden custom-scrollbar ${
                 (dailyCount >= 10 || isWaitingForResponse) && "opacity-50 cursor-not-allowed"
               }`}
               disabled={dailyCount >= 10 || isWaitingForResponse}
               onInput={(e) => {
                 e.target.style.height = 'auto';
-                e.target.style.height = (e.target.scrollHeight) + 'px';
+                const scHeight = e.target.scrollHeight;
+                e.target.style.height = scHeight + 'px';
+                if (scHeight > 150) {
+                  e.target.style.overflowY = 'auto';
+                } else {
+                  e.target.style.overflowY = 'hidden';
+                }
               }}
             />
             {/* Character count or extra hint could go here */}
@@ -444,11 +450,29 @@ function CashMapAI() {
           100% { width: 0; left: 100%; }
         }
 
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.1); }
+        /* Premium Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { 
+          width: 6px; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-track { 
+          background: rgba(255, 255, 255, 0.02); 
+          border-radius: 10px;
+          margin: 4px 0;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+          background: rgba(99, 102, 241, 0.2); /* Indigo-500 with low opacity */
+          border-radius: 10px; 
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
+          background: rgba(99, 102, 241, 0.4); 
+        }
+        
+        /* Firefox support */
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(99, 102, 241, 0.2) rgba(255, 255, 255, 0.02);
+        }
 
         /* Markdown Professional Styling */
         .markdown-content {

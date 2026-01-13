@@ -1,5 +1,6 @@
 import { User, Group, Expense } from "../models/schema.js";
 import { UserFinancialSnapshot } from "../models/schema.js";
+import { invalidateAICache } from "./ai.js";
 
 export async function createSnapshot(userId) {
   const user = await User.findById(userId).lean();
@@ -77,13 +78,13 @@ export async function buildFullSnapshot(snapshot, userId) {
   }
 
   /* ---------- FRIEND BALANCES ---------- */
-    /* ---------- FRIEND BALANCES (SOURCE OF TRUTH: USER MODEL) ---------- */
+  /* ---------- FRIEND BALANCES (SOURCE OF TRUTH: USER MODEL) ---------- */
 
   const user = await User.findById(userId)
     .populate("friends.friend", "username")
     .lean();
 
-    console.log(user.friends)
+  console.log(user.friends)
 
   snapshot.friends = (user.friends || [])
     .filter(f => String(f.friend?._id) !== String(userId)) // 🚫 safety: no self
@@ -112,7 +113,7 @@ export async function buildFullSnapshot(snapshot, userId) {
 //     if (!snapshot) {
 //       snapshot = await createSnapshot(userId);
 //     }
-   
+
 
 //     if (String(expense.paidBy) === String(userId)) {
 //       // Spending
@@ -301,6 +302,7 @@ export async function applyExpenseCreate(expense) {
     snapshot.version += 1;
     snapshot.lastUpdated = new Date();
     await snapshot.save();
+    invalidateAICache(userId);
   }
 }
 
@@ -327,5 +329,6 @@ export async function applyExpenseDelete(expense) {
     snapshot.version += 1;
     snapshot.lastUpdated = new Date();
     await snapshot.save();
+    invalidateAICache(userId);
   }
 }
