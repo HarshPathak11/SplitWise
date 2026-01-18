@@ -486,7 +486,7 @@ const userDetails = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    console.log("User sent:",user);
+    // console.log("User sent:",user);
 
     res.status(200).json({ user: user });
   } catch (err) {
