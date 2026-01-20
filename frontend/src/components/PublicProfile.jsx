@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
-import logo from "../../public/newIcon-192x192.png";
+import logo from "../../public/newIconV3-192x192.png";
 import { toast } from "react-hot-toast";
 import userIcon from "../../public/userIcon.png";
 import Swal from "sweetalert2";
