@@ -3,16 +3,21 @@ import axios from "axios";
 import {
   ArrowLeft,
   Share2,
-  Upload,
-  Camera,
   User,
+  Camera,
+  Upload,
+  Lock,
   Mail,
   CreditCard,
-  Lock,
+  Crown,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
+import { authFetch } from "../utils/authFetch";
+import api from "../utils/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -37,19 +42,13 @@ const ProfileEnhanced = () => {
   const navigate = useNavigate();
   const userId = Cookies.get("id");
 
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(";").shift();
-  };
-
   useEffect(() => {
-    const userId = getCookie("id");
+    console.log("userId",userId);
 
     async function getDetails() {
       if (!user && userId) {
         try {
-          const response = await fetch(`${API_BASE}/user/${userId}`);
+          const response = await authFetch(`${API_BASE}/user/${userId}`);
           if (response.ok) {
             const data = await response.json();
             const fetchedUser = data.user;
@@ -100,7 +99,7 @@ const ProfileEnhanced = () => {
         const url = `${API_BASE}/user/search?username=${encodeURIComponent(
           debouncedQuery
         )}`;
-        const res = await axios.get(url, { signal: controller.signal });
+        const res = await api.get(url, { signal: controller.signal });
         const users = res.data?.users ?? res.data ?? [];
 
         // 👇 Check if current username is already taken
@@ -155,7 +154,7 @@ const ProfileEnhanced = () => {
       toast.error("Username cannot be empty");
       return;
     }
-    return fetch(`${API_BASE}/user/${userId}`, {
+    return authFetch(`${API_BASE}/user/${userId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -171,7 +170,7 @@ const ProfileEnhanced = () => {
     try {
       const formData = new FormData();
       formData.append("profilePhoto", file);
-      const resp = await fetch(`${API_BASE}/user/${userId}/photo`, {
+      const resp = await authFetch(`${API_BASE}/user/${userId}/photo`, {
         method: "PUT",
         body: formData,
       });
@@ -189,7 +188,7 @@ const ProfileEnhanced = () => {
     e.preventDefault();
 
     try {
-      const userId = getCookie("id");
+      const userId = Cookies.get("id");
       if (!userId) return;
 
       const response = await saveProfileFields(userId);
@@ -230,7 +229,7 @@ const ProfileEnhanced = () => {
   };
 
   const handleShareProfile = async () => {
-    const userId = getCookie("id");
+    const userId = Cookies.get("id");
     const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
     const message = `Hey! 👋
 
@@ -276,70 +275,92 @@ Let's split and share smarter with FairFare! 💸`;
   };
 
   return (
-    <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center min-h-screen overflow-hidden p-4">
-      <div className="absolute inset-0 z-0">
-        <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
-        <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
-        <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
-        <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
-        <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
+    <div className="relative bg-zinc-950 flex items-center justify-center min-h-screen overflow-hidden p-2 font-sans selection:bg-indigo-500/30 text-zinc-100">
+      {/* --- BACKGROUND FX --- */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] right-[20%] w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[120px]"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-fuchsia-900/10 rounded-full blur-[100px]"></div>
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
       </div>
 
+      {/* --- NAVIGATION --- */}
       <button
         onClick={() => navigate("/dash")}
-        className="fixed top-4 left-4 z-50 group"
+        className="fixed top-6 left-6 z-50 group"
       >
-        <div className="relative p-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-cyan-500/20">
-          <ArrowLeft className="h-5 w-5 text-white group-hover:text-cyan-400 transition-colors" />
+        <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
+          <ArrowLeft className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
         </div>
       </button>
 
       <button
         onClick={handleShareProfile}
-        className="fixed top-4 right-4 z-50 group"
+        className="fixed top-6 right-6 z-50 group"
       >
-        <div className="relative p-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:shadow-emerald-500/20">
-          <Share2 className="h-5 w-5 text-white group-hover:text-emerald-400 transition-colors" />
+        <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
+          <Share2 className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
         </div>
       </button>
 
-      <div className="relative z-10 w-full max-w-3xl">
-        <div className="bg-white/5 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/10 overflow-hidden">
-          <div className="relative h-24 bg-gradient-to-r from-blue-600 via-teal-600 to-orange-500 overflow-hidden">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxIDAgNiAyLjY5IDYgNnMtMi42OSA2LTYgNi02LTIuNjktNi02IDIuNjktNiA2LTZ6TTI0IDM2YzMuMzEgMCA2IDIuNjkgNiA2cy0yLjY5IDYtNiA2LTYtMi42OS02LTYgMi42OS02IDYtNnoiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii4xIi8+PC9nPjwvc3ZnPg==')] opacity-30"></div>
+      {/* --- MAIN CARD --- */}
+      <div className="relative pt-6 px-2 z-10 w-full max-w-2xl">
+        <div className="bg-zinc-900/40 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/5 overflow-hidden relative">
+          {/* --- BANNER --- */}
+          <div className="relative h-40 bg-gradient-to-br from-slate-800 via-slate-900 to-black overflow-hidden group">
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+
+            {/* Subtle Industrial Gradient instead of Gold */}
+            <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 to-transparent"></div>
+
+            {/* Status Badge in Corner */}
+            <div className="absolute top-6 right-8 flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 backdrop-blur-md">
+              <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
+              <span className="text-[10px] font-bold tracking-widest text-amber-300 uppercase">
+                Premium Member
+              </span>
+            </div>
           </div>
 
-          <div className="px-6 sm:px-8 pb-8">
-            <div className="relative -mt-16 mb-6 flex flex-col items-center">
+          <div className="px-6 sm:px-10 pb-8">
+            {/* --- AVATAR SECTION --- */}
+            <div className="relative -mt-20 mb-8 flex flex-col items-center">
               <div
                 className="relative group cursor-pointer"
                 onMouseEnter={() => setIsHoveringPhoto(true)}
                 onMouseLeave={() => setIsHoveringPhoto(false)}
               >
-                <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 p-1 shadow-2xl ring-4 ring-slate-900">
-                  <div className="w-full h-full rounded-full bg-slate-800 overflow-hidden">
+                {/* Glowing Ring Effect */}
+                <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-700 opacity-70 blur-md group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                <div className="relative w-36 h-36 rounded-full p-[3px] bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-700 shadow-2xl">
+                  <div className="w-full h-full rounded-full bg-slate-900 overflow-hidden border-4 border-slate-900 relative">
                     {preview ? (
                       <img
                         src={preview}
                         alt="Profile"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-90 group-hover:opacity-100"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <User className="w-16 h-16 text-slate-600" />
+                      <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+                        <User className="w-16 h-16 text-zinc-700" />
                       </div>
                     )}
+
+                    {/* Overlay for upload */}
+                    <div
+                      className={`absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center transition-all duration-300 ${
+                        isHoveringPhoto
+                          ? "opacity-100 scale-100"
+                          : "opacity-0 scale-90"
+                      }`}
+                    >
+                      <Camera className="w-8 h-8 text-white mb-1" />
+                      <span className="text-[10px] text-white/80 font-medium tracking-wide uppercase">
+                        Change
+                      </span>
+                    </div>
                   </div>
                 </div>
-
-                <label
-                  htmlFor="photo-upload"
-                  className={`absolute inset-0 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center cursor-pointer transition-opacity duration-300 ${
-                    isHoveringPhoto ? "opacity-100" : "opacity-0"
-                  }`}
-                >
-                  <Camera className="w-8 h-8 text-white" />
-                </label>
 
                 <input
                   id="photo-upload"
@@ -349,181 +370,136 @@ Let's split and share smarter with FairFare! 💸`;
                   className="hidden"
                 />
 
-                <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full p-2 shadow-lg">
-                  <Upload className="w-4 h-4 text-white" />
-                </div>
+                {/* Floating Action Button */}
+                <label
+                  htmlFor="photo-upload"
+                  className="absolute bottom-1 right-1 bg-zinc-100 text-zinc-950 rounded-full p-2.5 shadow-lg shadow-black/50 cursor-pointer hover:bg-white hover:scale-105 transition-all"
+                >
+                  <Upload className="w-4 h-4" />
+                </label>
               </div>
-
-              {/* <p className="text-xs text-slate-400 mt-3 text-center">
-                Click to upload photo • Max 5MB • JPG, PNG, WEBP
-              </p> */}
             </div>
 
-            <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-                Edit Profile
+            {/* --- HEADER TEXT --- */}
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold text-white tracking-tight mb-2">
+                {profile.username || "User Profile"}
               </h2>
-              <p className="text-slate-400 text-sm">
-                Update your personal information
+              <p className="text-zinc-500 text-sm flex items-center justify-center gap-2">
+                Manage your personal identity and preferences
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-5">
-                <div className="group">
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-                    <User className="w-4 h-4 text-cyan-400" />
-                    Username
-                  </label>
-                  <div className="relative w-full">
-                    <input
-                      type="text"
-                      name="username"
-                      value={profile.username}
-                      onChange={handleChange}
-                      className={`w-full px-4 py-3.5 rounded-xl bg-white/5 border ${
-                        isUsernameAvailable
-                          ? "border-white/10 focus:ring-cyan-500/50 focus:border-cyan-500/50"
-                          : "border-red-500 focus:ring-red-500/50"
-                      } text-white placeholder-slate-500 focus:outline-none transition-all duration-300 hover:bg-white/10`}
-                      placeholder="Enter your username"
-                    />
-                    {!isUsernameAvailable && (
-                      <p className="text-red-400 text-sm mt-2">
-                        Username is already taken
-                      </p>
-                    )}
+            {/* --- FORM --- */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Username Field */}
+              <div className="group space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
+                  Display Name
+                </label>
+                <div className="relative transition-all duration-300 focus-within:transform focus-within:-translate-y-1">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-zinc-600 group-focus-within:text-zinc-100 transition-colors" />
                   </div>
-                </div>
-
-                <div className="group">
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-                    <Mail className="w-4 h-4 text-emerald-400" />
-                    Email
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      name="email"
-                      value={profile.email}
-                      readOnly
-                      className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 cursor-not-allowed"
-                      placeholder="Email is not editable"
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <Lock className="w-4 h-4 text-slate-500" />
+                  <input
+                    type="text"
+                    name="username"
+                    value={profile.username}
+                    onChange={handleChange}
+                    className={`block w-full pl-12 pr-4 py-4 bg-zinc-900/40 border ${
+                      isUsernameAvailable
+                        ? "border-white/5 focus:border-indigo-500/50"
+                        : "border-red-500/30"
+                    } rounded-xl text-white placeholder-zinc-700 focus:bg-zinc-900/80 focus:outline-none transition-all shadow-inner`}
+                    placeholder="Choose a unique handle"
+                  />
+                  {!isUsernameAvailable && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400 text-xs font-medium bg-red-500/10 px-2 py-1 rounded">
+                      Taken
                     </div>
-                  </div>
+                  )}
                 </div>
+              </div>
 
-                <div className="group">
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-                    <CreditCard className="w-4 h-4 text-teal-400" />
-                    UPI ID
-                    <span className="text-xs text-red-400 font-normal">
-                      (Required)
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="upiId"
-                      value={profile.upiId}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all duration-300 hover:bg-white/10"
-                      placeholder="yourname@upi"
-                    />
+              {/* Email Field (Read Only) */}
+              <div className="group space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1 flex justify-between">
+                  <span>Digital ID</span>
+                </label>
+                <div className="relative opacity-60">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-zinc-600" />
+                  </div>
+                  <input
+                    type="email"
+                    value={profile.email}
+                    readOnly
+                    className="block w-full pl-12 pr-10 py-4 bg-zinc-900/20 border border-zinc-800 rounded-xl text-zinc-400 font-mono text-sm cursor-default focus:outline-none"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <Lock className="h-4 w-4 text-zinc-700" />
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4">
+              {/* UPI Field */}
+              <div className="group space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                  Payment Handle
+                </label>
+                <div className="relative transition-all duration-300 focus-within:transform focus-within:-translate-y-1">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <CreditCard className="h-5 w-5 text-zinc-600 group-focus-within:text-zinc-100 transition-colors" />
+                  </div>
+                  <input
+                    type="text"
+                    name="upiId"
+                    value={profile.upiId}
+                    onChange={handleChange}
+                    className="block w-full pl-12 pr-4 py-4 bg-zinc-900/40 border border-white/5 rounded-xl text-white placeholder-zinc-700 focus:border-indigo-500/50 focus:bg-zinc-900/80 focus:outline-none transition-all shadow-inner"
+                    placeholder="username@bank"
+                  />
+                </div>
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="pt-4 flex flex-col gap-4">
+                <button
+                  type="submit"
+                  disabled={
+                    !profile.upiId ||
+                    uploading ||
+                    !isUsernameAvailable ||
+                    checkingUsername
+                  }
+                  className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 active:scale-[0.98] ${
+                    !profile.upiId || uploading
+                      ? "bg-zinc-800 text-zinc-600 cursor-not-allowed border border-white/5"
+                      : "bg-indigo-400/70 text-zinc-950 hover:bg-white hover:shadow-zinc-500/10"
+                  }`}
+                >
+                  {uploading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 border-2 border-zinc-400 border-t-zinc-800 rounded-full animate-spin"></span>
+                      Processing...
+                    </span>
+                  ) : (
+                    "Update Profile"
+                  )}
+                </button>
+
                 <button
                   type="button"
                   onClick={() => navigate("/change-password")}
-                  className="text-sm text-slate-400 hover:text-cyan-400 transition-colors duration-300 flex items-center gap-1 group"
+                  className="text-xs font-medium text-zinc-600 hover:text-zinc-300 transition-colors text-center"
                 >
-                  <Lock className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-                  Reset password
+                  Change Password?
                 </button>
               </div>
-
-              <button
-                type="submit"
-                disabled={
-                  !profile.upiId ||
-                  uploading ||
-                  !isUsernameAvailable ||
-                  checkingUsername
-                }
-                className={`w-full py-4 rounded-xl font-semibold text-white transition-all duration-300 shadow-lg ${
-                  !profile.upiId ||
-                  uploading ||
-                  !isUsernameAvailable ||
-                  checkingUsername
-                    ? "bg-slate-700 cursor-not-allowed opacity-50"
-                    : "bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 hover:shadow-cyan-500/50 hover:scale-[1.02] active:scale-[0.98]"
-                }`}
-              >
-                {uploading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Saving Changes...
-                  </span>
-                ) : (
-                  "Save Changes"
-                )}
-              </button>
-
-              {!profile.upiId && (
-                <p className="text-xs text-center text-red-400 -mt-2">
-                  Please add your UPI ID to save changes
-                </p>
-              )}
             </form>
           </div>
         </div>
-
-        <p className="text-center text-slate-500 text-xs mt-4">
-          Your information is secure and encrypted
-        </p>
       </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 0.3;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.5;
-            transform: scale(1.1);
-          }
-        }
-
-        .animate-pulse {
-          animation: pulse 4s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   );
 };

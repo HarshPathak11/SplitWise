@@ -1,6 +1,5 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { FaArrowDown, FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +7,7 @@ import Cookies from "js-cookie";
 import { Link } from "react-router-dom";
 import { FaCopy } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TransactionHistory = () => {
@@ -27,6 +27,8 @@ const TransactionHistory = () => {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [storedUser, setStoredUser] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showPaidConfirm, setShowPaidConfirm] = useState(false);
+  const [showReceivedConfirm, setShowReceivedConfirm] = useState(false);
   const userId = Cookies.get("id");
 
   const handleScroll = () => {
@@ -69,7 +71,7 @@ const TransactionHistory = () => {
         navigate("/login");
         return;
       }
-      const res = await axios.get(`${API_BASE}/user/${userId}`);
+      const res = await api.get(`${API_BASE}/user/${userId}`);
       fetchData(res.data.user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -97,9 +99,7 @@ const TransactionHistory = () => {
 
       setFriendName(friend?.friend || "Unknown");
 
-      const txRes = await axios.get(
-        `${API_BASE}/expenses/${userId}/${friendId}`
-      );
+      const txRes = await api.get(`${API_BASE}/expenses/${userId}/${friendId}`);
 
       // Sort the transactions by createdAt (latest first)
       const sortedTransactions = txRes.data.expenses.sort(
@@ -110,8 +110,9 @@ const TransactionHistory = () => {
       setTransactions(sortedTransactions.reverse());
       setNetBalance(friend.balance || 0);
     } catch (err) {
-      toast.error("Error fetching transaction history");
+      toast.error("No longer friends!");
       console.error(err);
+      navigate("/dash");
     } finally {
       setLoading(false);
     }
@@ -121,7 +122,7 @@ const TransactionHistory = () => {
     fetchUser();
   }, []);
 
-  const handlePaid = async () => {
+  const confirmPaid = () => {
     if (amount === "" || amount === 0) {
       toast.error("Please enter a valid amount to pay.");
       return;
@@ -131,16 +132,25 @@ const TransactionHistory = () => {
       return;
     }
     const paidAmount = Math.abs(amount);
-    if(paidAmount > 50000){toast.error("Amount cannot be more than 50k");return;}
+    if (paidAmount > 50000) {
+      toast.error("Amount cannot be more than 50k");
+      return;
+    }
+    setShowPaidConfirm(true);
+  };
+
+  const handlePaid = async () => {
+    setShowPaidConfirm(false);
+    const paidAmount = Math.abs(amount);
     try {
       setLoading(true);
-      await axios.post(`${API_BASE}/user/update-friend-balance`, {
-        userEmail: storedUser.email,
-        friendEmail: friendName.email,
+      await api.post(`${API_BASE}/user/update-friend-balance`, {
+        userEmail: storedUser?.email,
+        friendEmail: friendName?.email,
         amount: paidAmount,
         action: "paid",
         note: text,
-        friendFcmToken: friendName.fcmToken,
+        friendFcmToken: friendName?.fcmToken,
       });
       toast.success("Paid transaction added!");
       setAmount(0);
@@ -155,7 +165,7 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleReceived = async () => {
+  const confirmReceived = () => {
     if (amount === "" || amount === 0) {
       toast.error("Please enter a valid amount to receive.");
       return;
@@ -166,16 +176,25 @@ const TransactionHistory = () => {
       return;
     }
     const receivedAmount = Math.abs(amount);
-    if(receivedAmount > 50000){toast.error("Amount cannot be more than 50k");return;}
+    if (receivedAmount > 50000) {
+      toast.error("Amount cannot be more than 50k");
+      return;
+    }
+    setShowReceivedConfirm(true);
+  };
+
+  const handleReceived = async () => {
+    setShowReceivedConfirm(false);
+    const receivedAmount = Math.abs(amount);
     try {
       setLoading(true);
-      await axios.post(`${API_BASE}/user/update-friend-balance`, {
-        userEmail: storedUser.email,
-        friendEmail: friendName.email,
+      await api.post(`${API_BASE}/user/update-friend-balance`, {
+        userEmail: storedUser?.email,
+        friendEmail: friendName?.email,
         amount: receivedAmount,
         action: "received",
         note: text,
-        friendFcmToken: friendName.fcmToken,
+        friendFcmToken: friendName?.fcmToken,
       });
       toast.success("Received transaction added!");
       setAmount(0);
@@ -201,13 +220,13 @@ const TransactionHistory = () => {
       return;
     }
     try {
-      await axios.post(`${API_BASE}/user/notify`, {
+      await api.post(`${API_BASE}/user/notify`, {
         userId: userId,
         friendId: friendId,
       });
       toast.success("Payment reminder sent!");
     } catch (error) {
-      toast.error("Error sending payment reminder");
+      toast.error("Notification not enabled by this friend");
       console.error("Error sending payment reminder:", error);
     }
   };
@@ -221,22 +240,22 @@ const TransactionHistory = () => {
 
     try {
       if (currentBalance > 0) {
-        await axios.post(`${API_BASE}/user/update-friend-balance`, {
-          userEmail: storedUser.email,
-          friendEmail: friendName.email,
+        await api.post(`${API_BASE}/user/update-friend-balance`, {
+          userEmail: storedUser?.email,
+          friendEmail: friendName?.email,
           amount: currentBalance,
           action: "received",
           note: "Cleared Everything",
-          friendFcmToken: friendName.fcmToken,
+          friendFcmToken: friendName?.fcmToken,
         });
       } else {
-        await axios.post(`${API_BASE}/user/update-friend-balance`, {
-          userEmail: storedUser.email,
-          friendEmail: friendName.email,
+        await api.post(`${API_BASE}/user/update-friend-balance`, {
+          userEmail: storedUser?.email,
+          friendEmail: friendName?.email,
           amount: Math.abs(currentBalance),
           action: "paid",
           note: "Cleared Everything",
-          friendFcmToken: friendName.fcmToken,
+          friendFcmToken: friendName?.fcmToken,
         });
       }
       fetchUser();
@@ -260,306 +279,411 @@ const TransactionHistory = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900">
-      {/* Loading Screen */}
+    <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 overflow-hidden relative">
+      {/* --- BACKGROUND FX --- */}
+      <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+      {/* --- LOADING OVERLAY (System Boot Style) --- */}
       {loading && (
-        <div className="flex flex-1 items-center justify-center bg-gray-900 absolute inset-0 z-50">
-          <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-x-4 border-blue-500 mb-6"></div>
-            <span className="text-lg text-blue-400 font-semibold">
-              Loading transactions...
-            </span>
-          </div>
+        <div className="absolute inset-0 z-50 bg-zinc-950 flex flex-col items-center justify-center">
+          <div className="w-16 h-16 border-4 border-zinc-800 border-t-indigo-500 rounded-full animate-spin"></div>
+          <span className="mt-4 text-xs font-mono text-indigo-400 animate-pulse">
+            SYNCING_LEDGER_DATA...
+          </span>
         </div>
       )}
-      {/* Chat Header */}
-      <div className="p-2 bg-gray-800 border-b border-gray-700 flex items-center">
-        <button className="mr-3" onClick={() => navigate(-1)}>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+
+      {/* --- HEADER: The Control Panel --- */}
+      <div className="relative z-20 px-4 py-3 bg-zinc-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between shadow-lg shadow-black/20">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
               strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-        <Link to={`/public-profile/${friendName._id}`}>
-          <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-lg font-medium">
-            {friendName?.profilePhotoUrl ?
-              <img src={friendName.profilePhotoUrl} alt={friendName.username} className="w-full h-full rounded-full object-cover" />
-              : friendName.username
-                ? friendName.username.charAt(0).toUpperCase()
-                : "?"}
-          </div>
-        </Link>
-        <div className="ml-3 flex items-start justify-between w-full">
-          <div>
-            <Link to={`/public-profile/${friendName._id}`}>
-              <h2 className="cursor-pointer font-medium">
-                {friendName.username}
-              </h2>
-            </Link>
-            <div className="flex items-center space-x-2">
-              <p className="text-xs text-gray-400 truncate">
-                {friendName.upiId}
-              </p>
-              {friendName.upiId && (
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(friendName.upiId);
-                    toast.success("UPI ID copied to clipboard!");
-                  }}
-                  className="p-1 bg-gray-600 rounded hover:bg-gray-700 transition flex items-center justify-center"
-                  title="Copy UPI ID"
-                >
-                  <FaCopy className="h-3 w-3 text-white" />
-                </button>
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+
+          <Link
+            to={`/public-profile/${friendName._id}`}
+            className="flex items-center gap-3 group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 overflow-hidden relative shadow-inner">
+              {friendName?.profilePhotoUrl ? (
+                <img
+                  src={friendName.profilePhotoUrl}
+                  alt="User"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-indigo-400 font-bold">
+                  {friendName.username?.charAt(0).toUpperCase()}
+                </div>
               )}
             </div>
-          </div>
-          <div>
-            <button
-              title="Remind"
-              onClick={handleSendReminder}
-              className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
-            >
-              <FaBell className="w-8 h-8" />
-            </button>
+            <div>
+              <h2 className="text-sm font-bold text-white leading-none mb-3 mt-2 group-hover:text-indigo-300 transition-colors">
+                {friendName.username}
+              </h2>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-[10px] font-mono text-zinc-500 tracking-wider truncate max-w-[100px]">
+                  {friendName.upiId || "NO_UPI_LINKED"}
+                </span>
+                {friendName.upiId && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigator.clipboard.writeText(friendName.upiId);
+                      toast.success("Copied");
+                    }}
+                    className="text-zinc-600 hover:text-indigo-400 transition-colors"
+                  >
+                    <FaCopy size={10} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </Link>
+        </div>
 
-            <button
-              title="Settle Up"
-              onClick={confirmSettle}
-              className="text-yellow-400 hover:text-yellow-300 transition ml-3 mt-2 mr-3"
-            >
-              <MdOutlineCurrencyExchange className="w-8 h-8" />
-            </button>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSendReminder}
+            className="p-2.5 rounded-xl bg-zinc-800/50 hover:bg-yellow-500/10 text-zinc-400 hover:text-yellow-400 border border-transparent hover:border-yellow-500/20 transition-all"
+            title="Send Reminder"
+          >
+            <FaBell size={16} />
+          </button>
+          <button
+            onClick={confirmSettle}
+            className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/20 transition-all"
+            title="Settle Up"
+          >
+            <MdOutlineCurrencyExchange size={18} />
+          </button>
         </div>
       </div>
 
-      {/* Balance */}
-      <div className="py-2 bg-gray-800/50 border-b border-gray-700 text-center">
-        <p className="text-sm text-gray-400 mb-1">Net Balance</p>
-        <p
-          className={`text-3xl font-bold ${
-            netBalance >= 0 ? "text-green-400" : "text-red-400"
-          }`}
-        >
-          {netBalance >= 0 ? "₹" : "₹"}
-          {Math.abs(netBalance).toFixed(2)}
-        </p>
-        <p className="text-xs text-gray-500 mt-2">
-          {netBalance >= 0
-            ? `${friendName.username} owes you`
-            : `You owe ${friendName.username}`}
-        </p>
+      {/* --- BALANCE TICKER --- */}
+      <div className="relative z-10 py-4 bg-zinc-950/50 border-b border-white/5 backdrop-blur-sm">
+        <div className="flex flex-col items-center">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-1">
+            Net Position
+          </span>
+          <div
+            className={`text-4xl font-mono font-medium tracking-tighter ${
+              netBalance >= 0
+                ? "text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]"
+                : "text-rose-400 drop-shadow-[0_0_15px_rgba(251,113,133,0.3)]"
+            }`}
+          >
+            {netBalance >= 0 ? "+" : "-"}₹{Math.abs(netBalance).toFixed(2)}
+          </div>
+          <span className="text-xs text-zinc-600 mt-1 font-medium bg-zinc-900 px-2 py-0.5 rounded border border-white/5">
+            {netBalance >= 0
+              ? `${friendName.username} owes you`
+              : `You owe ${friendName.username}`}
+          </span>
+        </div>
       </div>
 
-      {/* Transactions */}
+      {/* --- STREAM AREA --- */}
       <div
         ref={chatContainerRef}
         onScroll={handleScroll}
-        className="flex-1 custom-scrollbar overflow-y-auto p-4 space-y-3 relative"
+        className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar relative z-0"
       >
         {transactions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-4">
-            <div className="w-16 h-16 mb-4 bg-gray-800 rounded-full flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+          <div className="h-full flex flex-col items-center justify-center opacity-50">
+            <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center mb-4">
+              <span className="text-4xl">🧾</span>
             </div>
-            <h3 className="text-lg font-medium text-gray-300 mb-1">
-              No transactions yet
-            </h3>
-            <p className="text-gray-500 text-sm">
-              Start adding transactions with {friendName.username}
+            <p className="text-zinc-500 font-mono text-sm">LEDGER_EMPTY</p>
+            <p className="text-zinc-600 text-xs mt-1">
+              Initialize transaction stream.
             </p>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto auto p-3">
+          <>
             {transactions.map((tx) => {
               const isUser = tx.paidBy._id === currentUserId;
               const owedEntry = isUser
                 ? tx.owedBy.find((o) => o.user._id === friendId)
                 : tx.owedBy.find((o) => o.user._id === currentUserId);
-
               const amount = owedEntry ? owedEntry.amount : 0;
 
               return (
                 <div
                   key={tx._id}
-                  className={`mt-5 flex ${
+                  className={`flex w-full ${
                     isUser ? "justify-end" : "justify-start"
-                  }`}
+                  } animate-in slide-in-from-bottom-2 duration-500`}
                 >
-                  <div
-                    className={`max-w-xs px-4 py-3 rounded-2xl ${
-                      isUser
-                        ? "bg-red-900 rounded-br-none"
-                        : "bg-green-800 rounded-bl-none"
-                    }`}
-                  >
-                    <div className="flex flex-col items-start">
-                      <span
-                        className={`text-2xl font-bold ${
-                          isUser ? "text-red-300" : "text-green-300"
+                  {/* Digital Receipt Bubble */}
+                  <div className={`relative max-w-[85%] sm:max-w-xs group`}>
+                    {/* Visual Connector Line to Side */}
+                    <div
+                      className={`absolute top-4 w-2 h-[1px] ${
+                        isUser
+                          ? "-right-2 bg-indigo-500/50"
+                          : "-left-2 bg-zinc-600/50"
+                      }`}
+                    ></div>
+
+                    <div
+                      className={`
+                      relative p-4 rounded-xl border backdrop-blur-md shadow-lg transition-all duration-300
+                      ${
+                        isUser
+                          ? "bg-indigo-950/30 border-indigo-500/30 rounded-tr-sm hover:border-indigo-500/50"
+                          : "bg-zinc-900/60 border-white/10 rounded-tl-sm hover:border-white/20"
+                      }
+                    `}
+                    >
+                      {/* Header: Title & Date */}
+                      <div className="flex justify-between items-start gap-4 mb-2 border-b border-white/5 pb-2">
+                        <span
+                          className={`text-sm font-bold truncate ${
+                            isUser ? "text-indigo-200" : "text-zinc-200"
+                          }`}
+                        >
+                          {tx.title || "Untitled Transaction"}
+                        </span>
+                        <div className="flex justify-between iterms-start gap-1">
+                          <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
+                            {new Date(tx.createdAt).toLocaleDateString([])}
+                          </span>
+                          <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
+                            {new Date(tx.createdAt).toLocaleTimeString([])}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Content: Amount & Who Paid */}
+                      <div className="flex justify-between items-end">
+                        <div className="flex flex-col mr-2">
+                          <span className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
+                            {isUser ? "You Paid" : "They Paid"}
+                          </span>
+                          <span className="text-[10px] text-zinc-400 bg-black/20 px-1.5 py-0.5 rounded">
+                            {tx.groupName}
+                          </span>
+                        </div>
+                        <div
+                          className={`text-2xl font-mono font-medium tracking-tight ${
+                            isUser ? "text-indigo-400" : "text-white"
+                          }`}
+                        >
+                          ₹{amount.toFixed(2)}
+                        </div>
+                      </div>
+
+                      {/* Corner Decoration */}
+                      <div
+                        className={`absolute bottom-0 w-3 h-3 border-b border-l ${
+                          isUser
+                            ? "right-0 border-indigo-500/30 rounded-bl-lg"
+                            : "left-0 border-zinc-500/30 rounded-br-lg"
                         }`}
-                      >
-                        ₹{amount.toFixed(2)}
-                      </span>
-                      {tx.title && (
-                        <h2 className=" font-bold text-gray-200 mt-1">
-                          {tx.title}
-                        </h2>
-                      )}
+                      ></div>
                     </div>
-                    <div className="flex justify-between items-center mt-2">
-                      <div className="text-left mr-2">
-                        <span className="text-xs text-white-500 mt-1">
-                          {tx.groupName}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs text-gray-300">
-                          {isUser ? "You paid" : `${friendName.username} paid`}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-400 mt-1">
-                      {new Date(tx.createdAt).toLocaleString([], {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </span>
                   </div>
                 </div>
               );
             })}
-            {/* Bottom sentinel for scrollIntoView */}
             <div ref={bottomRef} />
-          </div>
+          </>
         )}
       </div>
 
-      {/* Scroll-to-bottom arrow */}
+      {/* --- SCROLL TO BOTTOM --- */}
       {!isAtBottom && (
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-          <button
-            onClick={scrollToBottom}
-            className="bg-blue-500 hover:bg-blue-600 mb-40 text-white p-2 rounded-full shadow-lg transition-all"
-          >
-            <FaArrowDown className="h-5 w-5" />
-          </button>
-        </div>
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-36 left-1/2 -translate-x-1/2 z-50 p-3 rounded-full bg-zinc-800 text-indigo-400 shadow-lg border border-white/10 hover:bg-zinc-700 transition-all"
+        >
+          <FaArrowDown size={14} />
+        </button>
       )}
 
-      {/* Input Section */}
-      <div className="p-3 bg-gray-800 border-t border-gray-700">
-        <div className="flex flex-col gap-2">
-          {/* Amount Input */}
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={amount}
-            onChange={(e) => {
-              let value = e.target.value;
-              if (value === "") return setAmount("");
-              if (
-                !value.startsWith("0.") &&
-                !value.startsWith("-0.") &&
-                value.length > 1 &&
-                !value.startsWith("-")
-              ) {
-                value = value.replace(/^0+/, "");
-              } else if (
-                value.startsWith("-") &&
-                value.length > 2 &&
-                !value.startsWith("-0.")
-              ) {
-                value = "-" + value.replace(/^-0+/, "");
-              }
-              const parsed = parseFloat(value);
-              setAmount(isNaN(parsed) ? "" : parsed);
-            }}
-            className="w-full bg-gray-700 border border-gray-600 px-4 py-2 text-sm focus:outline-none rounded"
-            placeholder="Enter amount"
-          />
+      {/* --- COMMAND BAR (Input) --- */}
+      <div className="p-4 bg-zinc-950/80 backdrop-blur-xl border-t border-white/5 relative z-30">
+        <div className="max-w-3xl mx-auto flex flex-col gap-3">
+          {/* Input Capsule */}
+          <div className="flex items-center gap-3 p-1.5 bg-zinc-900 border border-white/10 rounded-2xl shadow-inner focus-within:border-indigo-500/50 transition-colors">
+            {/* Amount Field */}
+            <div className="relative pl-3">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 font-mono">
+                ₹
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={amount}
+                onChange={(e) => {
+                  /* keeping existing logic */
+                  let value = e.target.value;
+                  if (value === "") return setAmount("");
+                  if (
+                    !value.startsWith("0.") &&
+                    !value.startsWith("-0.") &&
+                    value.length > 1 &&
+                    !value.startsWith("-")
+                  ) {
+                    value = value.replace(/^0+/, "");
+                  } else if (
+                    value.startsWith("-") &&
+                    value.length > 2 &&
+                    !value.startsWith("-0.")
+                  ) {
+                    value = "-" + value.replace(/^-0+/, "");
+                  }
+                  const parsed = parseFloat(value);
+                  setAmount(isNaN(parsed) ? "" : parsed);
+                }}
+                className="w-24 bg-transparent text-white font-mono font-medium focus:outline-none pl-4 py-2 placeholder-zinc-600"
+                placeholder="0.00"
+              />
+            </div>
 
-          {/* Note Input */}
-          <input
-            type="text"
-            placeholder="Add a note..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 px-4 py-2 text-sm focus:outline-none rounded"
-          />
+            {/* Divider */}
+            <div className="w-px h-6 bg-zinc-700"></div>
 
-          {/* Buttons in a row */}
-          <div className="flex gap-2">
+            {/* Description Field */}
+            <input
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              className="flex-1 bg-transparent text-white text-sm focus:outline-none px-2 py-2 placeholder-zinc-600"
+              placeholder="Add a note..."
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
             <button
-              onClick={handleReceived}
-              className={`flex-1 py-2 text-white rounded text-center ${
-                loading
-                  ? "bg-green-400 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700"
-              }`}
+              onClick={confirmReceived}
+              disabled={loading}
+              className="flex-1 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
             >
-              Received
+              + Received
             </button>
             <button
-              onClick={handlePaid}
-              className="flex-1 bg-red-600 hover:bg-red-700 py-2 text-white rounded text-center"
+              onClick={confirmPaid}
+              className="flex-1 py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
             >
-              Paid
+              - Paid
             </button>
           </div>
         </div>
       </div>
-      {/* ✅ Confirmation Popup */}
+
+      {/* --- CONFIRMATION MODAL - SETTLE UP --- */}
       {showConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-2xl shadow-xl text-center w-80">
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Confirm Settlement
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">
+              Execute Settlement?
             </h3>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to settle your complete balance with{" "}
-              <span className="font-bold text-blue-400">
-                {friendName.username}
-              </span>
-              ?
+            <p className="text-sm text-zinc-400 mb-6">
+              This will zero out all pending balances with{" "}
+              <strong className="text-white">{friendName.username}</strong>.
+              Confirm authorization?
             </p>
-            <div className="flex justify-center gap-4">
-              <button
-                onClick={handleConfirmYes}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white font-medium"
-              >
-                Yes
-              </button>
+            <div className="flex gap-3">
               <button
                 onClick={handleConfirmNo}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white font-medium"
+                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800"
               >
-                No
+                Abort
+              </button>
+              <button
+                onClick={handleConfirmYes}
+                className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CONFIRMATION MODAL - PAID --- */}
+      {showPaidConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">
+              Confirm Payment?
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              You are recording that <strong className="text-rose-400">you paid ₹{Math.abs(amount)}</strong> to{" "}
+              <strong className="text-white">{friendName.username}</strong>.
+              Or on behalf of <strong className="text-white">{friendName.username}</strong>.
+            </p>
+            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+              <strong className="text-zinc-300">Note:</strong> "{text}"<br/>
+              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will reduce your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe less. If you already owe them, you'll owe more.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPaidConfirm(false)}
+                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePaid}
+                className="flex-1 py-2.5 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-500 shadow-lg shadow-rose-900/20 transition-colors"
+              >
+                Confirm Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CONFIRMATION MODAL - RECEIVED --- */}
+      {showReceivedConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">
+              Confirm Receipt?
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              You are recording that you <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> from{" "}
+              <strong className="text-white">{friendName.username}</strong>.
+              Or <strong className="text-white">{friendName.username}</strong> paid <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> on your behalf.
+            </p>
+            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+              <strong className="text-zinc-300">Note:</strong> "{text}"<br/>
+              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will increase your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe more. If you owed them, you'll owe less.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowReceivedConfirm(false)}
+                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReceived}
+                className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transition-colors"
+              >
+                Confirm Receipt
               </button>
             </div>
           </div>

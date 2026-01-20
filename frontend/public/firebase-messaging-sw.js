@@ -39,7 +39,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.data.title;
   const notificationOptions = {
     body: payload.data.body,
-    icon: "./newIcon-192x192.png", // 👈 your app’s icon here
+    icon: "./newIconV3-512x512.png", // 👈 your app’s icon here
     // badge: payload.data.badge || "/badge-icon.png", // optional
     data: { url: payload.data.url || "https://fair-fare-phi.vercel.app" }, // 👈 fallback
   };

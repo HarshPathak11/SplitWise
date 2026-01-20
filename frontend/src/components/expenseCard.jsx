@@ -4,6 +4,7 @@ import { Trash2, Edit3 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ExpenseCard = ({
@@ -50,12 +51,13 @@ const ExpenseCard = ({
   };
 
   const handleDeleteClick = () => {
+    handleToggle();
     setShowDeleteModal(true);
   };
 
   const confirmDelete = async () => {
     try {
-      await axios.delete(
+      await api.delete(
         `${API_BASE}/group/del-expense/${_id}`
         // `//http://localhost:8000/group/del-expense/${_id}`
       );
@@ -87,103 +89,197 @@ const ExpenseCard = ({
 
   return (
     <div
-      className="flex flex-col bg-gray-800 p-4 rounded-lg mb-4 cursor-pointer transition-all duration-300 ease-in-out"
-      onClick={handleToggle}
+      className="group relative flex flex-col bg-zinc-900/40 hover:bg-zinc-900/60 border border-white/5 hover:border-indigo-500/30 rounded-xl transition-all duration-300 ease-out overflow-hidden"
+      onClick={(e) => {
+        // Prevent toggle if clicking buttons or modal
+        if (
+          e.target.closest("button") ||
+          e.target.closest(".delete-modal-content")
+        )
+          return;
+        handleToggle();
+      }}
     >
-      {/* Main card content */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center">
-          <div className={`${iconColor} p-3 rounded-full`}></div>
-          <div className="ml-4">
-            <h3 className="font-semibold">{title || category}</h3>
-            {/* Inline categorization shown even when card is collapsed */}
-            <p className="text-sm text-gray-300 mt-1">
+      {/* --- Main Card Content --- */}
+      <div className="flex justify-between items-center p-4 cursor-pointer relative z-10">
+        {/* Left: Icon & Details */}
+        <div className="flex items-center gap-4">
+          {/* Glowing Status Orb */}
+          <div className="relative flex-shrink-0">
+            <div
+              className={`absolute inset-0 ${iconColor} blur-md opacity-40 group-hover:opacity-60 transition-opacity`}
+            ></div>
+            <div
+              className={`relative w-10 h-10 rounded-full ${iconColor} bg-opacity-20 flex items-center justify-center border border-white/10 shadow-inner`}
+            >
+              {/* Optional: You can put an icon here later. For now, a simple dot or initial */}
+              <div
+                className={`w-2 h-2 rounded-full ${iconColor.replace(
+                  "bg-",
+                  "bg-"
+                )}-200 bg-white`}
+              ></div>
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <h3 className="font-semibold text-zinc-100 text-base leading-tight group-hover:text-indigo-200 transition-colors">
+              {title || category}
+            </h3>
+
+            {/* Inline Categorization Badges */}
+            <div className="flex flex-wrap items-center gap-2 mt-1.5">
               {category ? (
-                <span>
-                  <strong className="font-medium text-gray-200">
-                    Category:
-                  </strong>
-                  <span className="text-gray-300"> {category}</span>
+                <>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-white/5">
+                    {category}
+                  </span>
                   {subcategory && (
-                    <span className="text-gray-400">
-                      {" "}
-                      &nbsp;→&nbsp; {subcategory}
-                    </span>
+                    <>
+                      <span className="text-[10px] text-zinc-600">›</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800/50 text-zinc-500 border border-white/5">
+                        {subcategory}
+                      </span>
+                    </>
                   )}
-                </span>
+                </>
               ) : (
-                <span className="italic text-gray-500">Categorizing...</span>
+                <span className="text-[10px] italic text-zinc-600 flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-zinc-600 animate-ping"></span>
+                  Processing
+                </span>
               )}
+            </div>
+
+            <p className="text-[10px] text-zinc-500 mt-1 font-mono tracking-wide opacity-60">
+              {date}
             </p>
-            <p className="text-xs pt-1 text-gray-400">{date}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {allowEdit && (
-            <button
-              onClick={handleEdit}
-              className="text-gray-400 hover:text-white transition-colors"
-              title="Edit Expense"
-            >
-              <Edit3 size={18} />
-            </button>
-          )}
-          {allowEdit && (
-            <button
-              onClick={handleDeleteClick}
-              className="text-gray-400 hover:text-white transition-colors"
-              title="Delete Expense"
-            >
-              <Trash2 size={18} />
-            </button>
-          )}
-          <div className="text-lg font-semibold">₹{amount}</div>
+        {/* Right: Amount & Actions */}
+        <div className="flex items-center gap-4">
+          {/* Actions - Fade in on hover for cleaner look */}
+          <div className="flex items-center gap-1 transition-opacity duration-200 translate-x-2 group-hover:translate-x-0">
+            {allowEdit && (
+              <button
+                onClick={handleEdit}
+                className="p-2 rounded-lg text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                title="Edit Expense"
+              >
+                <Edit3 size={16} />
+              </button>
+            )}
+            {allowEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick();
+                }}
+                className="p-2 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                title="Delete Expense"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
+
+          {/* Amount Display */}
+          <div className="text-right">
+            <div className="text-lg font-mono font-medium text-white tracking-tight">
+              ₹{amount?.toFixed(2)}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Expanded section (on click anywhere in the left part) */}
-      {isExpanded && (
-        <div className="mt-4 bg-gray-900 p-4 rounded-lg">
-          <p className="text-gray-300 mb-2">
-            <strong>Paid by:</strong> {paidBy?.username}
-          </p>
-          <p className="text-gray-300 mb-2">
-            <strong>Beneficiaries:</strong>
-          </p>
-          <ul className="text-gray-400">
-            {beneficiaries.map((person, index) => (
-              <li key={index} className="ml-4 list-disc">
-                {person.user?.username} has a share of ₹{person.amount}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Delete Confirmation Overlay Inside Card */}
-      {showDeleteModal && (
-        <div className="relative mt-4">
-          {/* Overlay background */}
-          <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm rounded-lg z-10" />
-
-          {/* Modal content */}
-          <div className="relative z-20 bg-gray-800 p-4 rounded-lg border border-gray-600">
-            <p className="text-white text-sm mb-3">
-              Are you sure you want to delete this expense?
+      {/* --- Expanded Details Section --- */}
+      <div
+        className={`bg-black/20 border-t border-white/5 overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="p-4 flex flex-col sm:flex-row gap-6 text-sm">
+          {/* Payer Info */}
+          <div className="sm:w-1/3">
+            <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-2">
+              Transaction Details
             </p>
-            <div className="flex justify-end gap-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] text-indigo-400 font-bold border border-indigo-500/30">
+                P
+              </div>
+              <span className="text-zinc-300">
+                Paid by{" "}
+                <span className="text-white font-medium">
+                  {paidBy?.username}
+                </span>
+              </span>
+            </div>
+          </div>
+
+          {/* Split Details */}
+          <div className="sm:w-2/3">
+            <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-2">
+              Split Breakdown
+            </p>
+            <div className="space-y-2">
+              {beneficiaries?.map((person, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between group/row"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-700 group-hover/row:bg-emerald-500 transition-colors"></div>
+                    <span className="text-zinc-400 group-hover/row:text-zinc-200 transition-colors">
+                      {person.user?.username}
+                    </span>
+                  </div>
+                  <div className="font-mono text-zinc-500 group-hover/row:text-emerald-400 transition-colors">
+                    ₹{person.amount.toFixed(2)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- Delete Confirmation Modal (Embedded) --- */}
+      {showDeleteModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm delete-modal-content animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-zinc-900 border border-red-500/30 rounded-xl p-4 shadow-2xl shadow-red-900/20">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 bg-red-500/10 rounded-lg text-red-500">
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h4 className="text-white font-medium">Delete Transaction?</h4>
+                <p className="text-xs text-zinc-400 mt-1">
+                  This action cannot be undone. It will affect balances for
+                  everyone involved.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
               <button
-                onClick={() => setShowDeleteModal(false)}
-                className="bg-gray-600 hover:bg-gray-700 text-white text-sm px-3 py-1 rounded"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDeleteModal(false);
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={confirmDelete}
-                className="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1 rounded"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  confirmDelete();
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/20 transition-all"
               >
-                Delete
+                Confirm Delete
               </button>
             </div>
           </div>
