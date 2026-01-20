@@ -1,16 +1,17 @@
 import { User, Expense, FriendRequest } from "../models/schema.js";
 import mongoose from "mongoose";
-import nodemailer from "nodemailer";
 import bcrypt from "bcrypt";
 import {
   sendOneNotification,
   sendMultipleNotifications,
 } from "../controllers/Notifications.js";
-import sgMail from "@sendgrid/mail";
+
 import dotenv from "dotenv";
 dotenv.config();
 import streamifier from "streamifier";
 import cloudinary from "../config/cloudinary.js";
+import { signAccessToken } from "../utils/jwt.js";
+import { sendMail } from "../utils/mailService.js";
 
 /**
  * Helper: upload buffer to Cloudinary
@@ -48,50 +49,28 @@ const sendOtp = async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000);
-
-  // Ensure API key is set
-  if (!process.env.SENDGRID_API_KEY) {
-    console.error("SENDGRID_API_KEY not set in env");
-    return res.status(500).json({ message: "Email service not configured" });
-  }
-  if (!process.env.SENDING_EMAIL) {
-    console.error("SENDING_EMAIL not set in env");
-    return res.status(500).json({ message: "Sender email not configured" });
-  }
-
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-  const msg = {
-    to: email,
-    from: process.env.SENDING_EMAIL,
-    subject: `Welcome Onboard ${username}`,
-    html: `<h1>Hi ${username},</h1>
-           <p>Your OTP for signup is:</p>
-           <h2><strong>${otp}</strong></h2>
-           <p>This code is valid for 5 minutes.</p>
-           <p>Thanks, Fair Fare Team</p>`,
-  };
+  const hashedOtp = await bcrypt.hash(String(otp), 10);
 
   try {
-    const hashedOtp = await bcrypt.hash(String(otp), 10);
+    // 🔥 Send email via our Next.js mail microservice
+    await sendMail({
+      to: email,
+      subject: `Welcome Onboard ${username}`,
+      html: `
+        <h1>Hi ${username},</h1>
+        <p>Your OTP for signup is:</p>
+        <h2><strong>${otp}</strong></h2>
+        <p>This code is valid for 5 minutes.</p>
+        <p>Thanks, FairFare Team</p>
+      `,
+    });
 
-    // send the email
-    await sgMail.send(msg);
-
-    // console.log("otp sent via SendGrid");
-
-    // Optionally store hashedOtp + expiry in DB here so you can validate later
-    // e.g. await OtpModel.create({ email, otp: hashedOtp, expiresAt: Date.now() + 5*60*1000 });
-
-    return res
-      .status(200)
-      .json({ message: "OTP sent to email", otp: hashedOtp });
+    return res.status(200).json({
+      message: "OTP sent to email",
+      otp: hashedOtp, // you were already returning this (same output)
+    });
   } catch (error) {
-    // SendGrid errors may include response body with details
-    console.error("SendGrid error:", error);
-    if (error.response && error.response.body) {
-      console.error("SendGrid response body:", error.response.body);
-    }
+    console.error("Mail service error:", error);
     return res.status(500).json({ message: "Failed to send OTP email" });
   }
 };
@@ -110,12 +89,31 @@ const verifyOtp = async (req, res) => {
   }
 
   try {
-    // 1️⃣ Clean the password
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ 
+        message: "User with this email already exists. Please login instead." 
+      });
+    }
+
+    // Check if username is already taken
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(409).json({ 
+        message: "Username already taken. Please choose a different username." 
+      });
+    }
+
+    // Clean the password
     const cleanPassword = String(password).trim();
 
-    // 4️⃣ Create user in MongoDB
+    // Clean the username
+    const cleanUsername = String(username).trim();
+
+    // Create user in MongoDB
     const newUser = await User.create({
-      username,
+      username: cleanUsername,
       email,
       password: cleanPassword, // schema middleware handles hashing
     });
@@ -136,8 +134,9 @@ const verifyOtp = async (req, res) => {
         { $push: { friends: { friend: referId, balance: 0 } } }
       );
     }
+    const token = signAccessToken(newUser._id);
 
-    return res.status(200).json(newUser);
+    return res.status(200).json({ id: newUser._id, token });
   } catch (error) {
     console.error("Error during user creation:", error);
     return res
@@ -177,10 +176,12 @@ const userLogin = async (req, res) => {
     // Remove password from user object before sending response
     const userWithoutPassword = { ...user.toObject() };
     delete userWithoutPassword.password;
+    const token = signAccessToken(user._id);
 
     return res.status(200).json({
       message: "Access Granted",
       user: userWithoutPassword,
+      token,
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -303,6 +304,8 @@ const getTopCategoriesForUser = async (req, res) => {
 //   }
 // };
 const getSubCategoriesForUser = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
     const { userId, category, startDate, endDate } = req.body;
 
@@ -346,17 +349,24 @@ const getSubCategoriesForUser = async (req, res) => {
         },
       },
       { $sort: { total: -1 } },
-    ]);
+    ]).session(session);
 
     const formattedSubcategories = subcategories.map((sub) => ({
       name: sub._id,
       total: sub.total,
     }));
 
+    await session.commitTransaction();
+
     res.status(200).json({ subcategories: formattedSubcategories });
   } catch (error) {
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     console.error("Error fetching subcategories:", error);
     res.status(500).json({ message: "Server error" });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -455,7 +465,8 @@ const userDetails = async (req, res) => {
       })
       .populate({
         path: "groups",
-        select: "name description tripTotal from to createdAt updatedAt members",
+        select:
+          "name description tripTotal from to createdAt updatedAt members",
         options: { sort: { updatedAt: -1 }, limit: 3 }, // 👈 most recently updated groups first
       })
       .select({
@@ -475,6 +486,7 @@ const userDetails = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    // console.log("User sent:",user);
 
     res.status(200).json({ user: user });
   } catch (err) {
@@ -605,137 +617,48 @@ const updateUserProfile = async (req, res) => {
 
 //Adding the friends
 
-const addFriends = async (req, res) => {
-  const { email, friendsArray, autoAdd } = req.body;
+const inviteFriend = async (req, res) => {
+  const { email, userId } = req.body;
 
-  if (!email || !Array.isArray(friendsArray) || friendsArray.length === 0) {
+  if (!email) {
     return res.status(400).json({ message: "Incomplete data received" });
   }
 
-  // Ensure SendGrid config available (used only for invitation emails)
-  if (!process.env.SENDGRID_API_KEY || !process.env.SENDING_EMAIL) {
-    console.warn("SendGrid config missing - invitation emails won't be sent");
-  } else {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  }
-
-  if (autoAdd) {
-    const user = await User.findOne({ email });
-    const friend = await User.findOne({ _id: friendsArray[0] });
-
-    if (!user || !friend) {
-      return res.status(404).json({ message: "User or Friend not found" });
-    }
-
-    await User.updateOne(
-      { _id: friend._id },
-      { $addToSet: { friends: { friend: user._id, balance: 0 } } }
-    );
-
-    await User.updateOne(
-      { _id: user._id, "friends.friend": { $ne: friend._id } }, // prevent duplicates
-      { $push: { friends: { friend: friend._id, balance: 0 } } }
-    );
-
-    // Send FCM notification if available
-    if (friend.fcmToken) {
-      const tokens = [friend.fcmToken];
-      const title = "New Friend Added";
-      const body = `${user.username} has added you as a friend!`;
-
-      await sendMultipleNotifications(tokens, title, body);
-    }
-
-    return res.status(200).json({
-      message: "Friend added successfully",
-      friend,
-    });
-  }
-
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
+    const user = await User.findOne({ _id: userId });
+    const emailExists = await User.findOne({ email });
+    
+    if(emailExists){ return res.status(403).json({message: "email already exists."});}
+
+    if (!user || user.email === email) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const addedFriends = [];
+    // Friend does not exist — send invitation email via our mail microservice
+    // In your inviteFriend controller
+    const encodedEmail = encodeURIComponent(email);
+    const inviteLink = `https://fair-fare-phi.vercel.app/signup/${user._id}?email=${encodedEmail}`;
 
-    for (const friendEmail of friendsArray) {
-      // Skip adding self
-      if (friendEmail === email) continue;
-
-      const friend = await User.findOne({ email: friendEmail });
-
-      if (friend) {
-        // Add friend to user's list if not present
-        if (!user.friends.some((f) => f.friend.equals(friend._id))) {
-          await User.updateOne(
-            { _id: user._id, "friends.friend": { $ne: friend._id } }, // prevent duplicates
-            { $push: { friends: { friend: friend._id, balance: 0 } } }
-          );
-        }
-
-        // Ensure friendship is mutual
-        if (!friend.friends.some((f) => f.friend?.equals(user._id))) {
-          await User.updateOne(
-            { _id: friend._id },
-            { $addToSet: { friends: { friend: user._id, balance: 0 } } }
-          );
-        }
-
-        addedFriends.push({
-          _id: friend._id,
-          email: friend.email,
-          username: friend.username,
-        });
-
-        //Send FCM Notification
-        if (friend.fcmToken) {
-          const tokens = [friend.fcmToken];
-          const title = "New Friend Added";
-          const body = `${user.username} has added you as a friend!`;
-          await sendMultipleNotifications(tokens, title, body);
-        }
-      } else {
-        // Friend does not exist — send invitation email via SendGrid (if configured)
-        if (!process.env.SENDGRID_API_KEY || !process.env.SENDING_EMAIL) {
-          console.warn(
-            `Skipping invite email to ${friendEmail} — SendGrid not configured`
-          );
-          continue;
-        }
-
-        const inviteLink = `https://fair-fare-phi.vercel.app/signup/${user._id}`;
-        const msg = {
-          to: friendEmail,
-          from: process.env.SENDING_EMAIL,
-          subject: `Heartfelt invitation from ${user.username}`,
-          text: `${user.username} has invited you to join Fair Fare. Join here: ${inviteLink}`,
-          html: `
-            <h1>Hi,</h1>
-            <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
-            <p>Please click on the link below to join:</p>
-            <p><a href="${inviteLink}">Join Fair Fare</a></p>
-            <p>Thanks,<br/>Fair Fare Team</p>
-          `,
-        };
-
-        try {
-          await sgMail.send(msg);
-          // Optionally log or track successful invite sends
-        } catch (err) {
-          // Log the SendGrid error but continue processing other friends
-          console.error(`Failed to send invite email to ${friendEmail}:`, err);
-          if (err.response && err.response.body) {
-            console.error("SendGrid response body:", err.response.body);
-          }
-        }
-      }
+    try {
+      await sendMail({
+        to: email,
+        subject: `Heartfelt invitation from ${user.username}`,
+        text: `${user.username} has invited you to join Fair Fare. Join here: ${inviteLink}`,
+        html: `
+              <h1>Hi,</h1>
+              <p>Your friend <strong>${user.username}</strong> has added you as a friend on the Fair Fare App.</p>
+              <p>Please click on the link below to join:</p>
+              <p><a href="${inviteLink}">Join Fair Fare</a></p>
+              <p>Thanks,<br/>Fair Fare Team</p>
+            `,
+      });
+      // Optionally log or track successful invite sends
+    } catch (err) {
+      // Log the mail error but continue processing other friends
+      console.error(`Failed to send invite email to ${friendEmail}:`, err);
     }
-
     return res.status(200).json({
       message: "Friends processed",
-      addedFriends,
     });
   } catch (error) {
     console.error("Error in addFriends:", error);
@@ -769,13 +692,20 @@ const sendFriendRequest = async (req, res) => {
         continue;
       }
 
-      // Skip if already friends
-      const alreadyFriends = toUser.friends?.some(
+      // Check friendship in both directions
+      const userHasFriend = fromUser.friends?.some(
+        (f) => String(f.friend) === String(toUser._id)
+      );
+      const otherHasFriend = toUser.friends?.some(
         (f) => String(f.friend) === String(fromUser._id)
       );
 
-      if (alreadyFriends) {
-        results.push({ email, status: "skipped", reason: "Already friends" });
+      if (userHasFriend || otherHasFriend) {
+        results.push({
+          email,
+          status: "skipped",
+          reason: "Already friends or partially friends",
+        });
         continue;
       }
 
@@ -800,7 +730,7 @@ const sendFriendRequest = async (req, res) => {
       });
 
       if (existingRequest1) {
-        console.log("Found existing friend request:", existingRequest1);
+        // console.log("Found existing friend request:", existingRequest1);
         results.push({
           email,
           reason: `You have a friend request from ${toUser.username}. Please respond to it.`,
@@ -863,47 +793,65 @@ const listFriendRequests = async (req, res) => {
 };
 
 const respondToFriendRequest = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const { userId, fromUserId, action, requestId } = req.body; // action: 'approve' | 'deny'
+    const { userId, fromUserId, action, requestId } = req.body;
     if (!userId || !fromUserId || !action) {
       return res.status(400).json({ message: "Incomplete data received" });
     }
 
-    const user = await User.findById(userId);
-    const fromUser = await User.findById(fromUserId);
+    const user = await User.findById(userId).session(session);
+    const fromUser = await User.findById(fromUserId).session(session);
+
     if (!user || !fromUser) {
-      return res.status(404).json({ message: "Users not found" });
+      throw new Error("User not found");
     }
 
-    // Find the friend request. If requestId provided use it, otherwise find by from/to/status
-    let friendRequest = null;
+    let friendRequest;
     if (requestId) {
-      friendRequest = await FriendRequest.findById(requestId);
+      friendRequest = await FriendRequest.findById(requestId).session(session);
     } else {
       friendRequest = await FriendRequest.findOne({
         from: fromUserId,
         to: userId,
-      });
+      }).session(session);
     }
 
     if (!friendRequest) {
-      return res.status(404).json({ message: "Friend request not found" });
+      throw new Error("Friend request not found");
     }
 
-    // Decrease requests count
-    await User.updateOne({ _id: userId }, { $inc: { requests: -1 } });
+    // decrease request count
+    await User.updateOne(
+      { _id: userId },
+      { $inc: { requests: -1 } },
+      { session }
+    );
 
     if (action === "approve") {
-      // Add to both friends lists if not already present
+      // Add mutual friendship safely
       await User.updateOne(
-        { _id: user._id, "friends.friend": { $ne: fromUser._id } },
-        { $push: { friends: { friend: fromUser._id, balance: 0 } } }
-      );
-      await User.updateOne(
-        { _id: fromUser._id, "friends.friend": { $ne: user._id } },
-        { $push: { friends: { friend: user._id, balance: 0 } } }
+        { _id: userId, "friends.friend": { $ne: fromUserId } },
+        { $push: { friends: { friend: fromUserId, balance: 0 } } },
+        { session }
       );
 
+      await User.updateOne(
+        { _id: fromUserId, "friends.friend": { $ne: userId } },
+        { $push: { friends: { friend: userId, balance: 0 } } },
+        { session }
+      );
+    }
+
+    // delete request inside transaction
+    await FriendRequest.deleteOne({ _id: friendRequest._id }, { session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    if (action === "approve") {
       if (fromUser.fcmToken) {
         await sendOneNotification(
           fromUser.fcmToken,
@@ -911,19 +859,17 @@ const respondToFriendRequest = async (req, res) => {
           `${user.username} accepted your friend request`
         );
       }
-    }
-
-    // Finally, delete the friend request document to free storage
-    await FriendRequest.deleteOne({ _id: friendRequest._id });
-
-    if (action === "approve") {
       return res.status(200).json({ message: "Friend request approved" });
+    } else {
+      return res.status(200).json({ message: "Friend request denied" });
     }
-
-    return res.status(200).json({ message: "Friend request denied" });
   } catch (error) {
-    console.error("Error responding to friend request:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Transaction failed:", error);
+    return res
+      .status(500)
+      .json({ message: error.message || "Internal Server Error" });
   }
 };
 
@@ -1041,6 +987,26 @@ const removeFriend = async (req, res) => {
   }
 
   try {
+    // Fetch both users to check balance
+    const user = await User.findById(userId);
+    const friend = await User.findById(friendId);
+
+    if (!user || !friend) {
+      return res.status(404).json({ message: "User or friend not found." });
+    }
+
+    // Check if there's an unsettled balance
+    const friendRecord = user.friends.find(
+      (f) => f.friend.toString() === friendId.toString()
+    );
+
+    if (friendRecord && friendRecord.balance !== 0) {
+      return res.status(400).json({
+        message: "Balance is not settled. Please settle the balance first before removing this friend.",
+        balance: friendRecord.balance,
+      });
+    }
+
     // Remove friend from current user
     await User.findByIdAndUpdate(userId, {
       $pull: { friends: { friend: friendId } },
@@ -1070,45 +1036,28 @@ const forgotPassword = async (req, res) => {
     return res.status(404).json({ message: "User not found" });
   }
 
-  // Generate a 6-digit OTP
+  // Generate OTP
   const otp = Math.floor(100000 + Math.random() * 900000);
   console.log("Password reset OTP generated:", otp);
-
-  // Check SendGrid config
-  if (!process.env.SENDGRID_API_KEY) {
-    console.error("SENDGRID_API_KEY not set in environment");
-    return res.status(500).json({ message: "Email service not configured" });
-  }
-
-  if (!process.env.SENDING_EMAIL) {
-    console.error("SENDING_EMAIL not set in environment");
-    return res.status(500).json({ message: "Sender email not configured" });
-  }
-
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-  const msg = {
-    to: email,
-    from: process.env.SENDING_EMAIL, // must be a verified sender in SendGrid
-    subject: "Account Recovery - Fair Fare",
-    html: `
-      <h1>Password Reset Requested</h1>
-      <p>Hi ${user.username || "User"},</p>
-      <p>Your OTP for account recovery is:</p>
-      <h2><strong>${otp}</strong></h2>
-      <p>This code is valid for 5 minutes.</p>
-      <p>If you did not request this, please ignore this email.</p>
-      <br/>
-      <p>Thanks,</p>
-      <p><strong>Fair Fare Team</strong></p>
-    `,
-  };
 
   try {
     const hashedOtp = await bcrypt.hash(String(otp), 10);
 
-    // Send email via SendGrid
-    await sgMail.send(msg);
+    // 🔥 Send OTP email using our mail microservice
+    await sendMail({
+      to: email,
+      subject: "Account Recovery - Fair Fare",
+      html: `
+        <h1>Password Reset Requested</h1>
+        <p>Hi ${user.username || "User"},</p>
+        <p>Your OTP for account recovery is:</p>
+        <h2><strong>${otp}</strong></h2>
+        <p>This code is valid for 5 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+        <br/>
+        <p>Thanks,<br/><strong>Fair Fare Team</strong></p>
+      `,
+    });
 
     console.log(`OTP email sent successfully to ${email}`);
 
@@ -1118,16 +1067,12 @@ const forgotPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("Failed to send password reset email:", error);
-
-    if (error.response && error.response.body) {
-      console.error("SendGrid error details:", error.response.body);
-    }
-
     return res.status(500).json({
       message: "Failed to send OTP email",
     });
   }
 };
+
 const verifyForgotPassword = async (req, res) => {
   const { otpGenerated, otp, email } = req.body;
   if (!otp || !otpGenerated)
@@ -1139,8 +1084,8 @@ const verifyForgotPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
     const user = await User.findOne({ email: email });
-
-    return res.status(200).json({ user });
+    const token = signAccessToken(user._id);
+    return res.status(200).json({ user, token });
   } catch (error) {
     console.error("Error during user creation:", error);
     return res
@@ -1151,7 +1096,6 @@ const verifyForgotPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
   const { userId, newPassword } = req.body;
-  // console.log(userId,newPassword)
 
   // Validate required fields
   if (!userId || !newPassword) {
@@ -1204,20 +1148,23 @@ const getUpdatedFriendBalances = async (req, res) => {
 
   try {
     // Fetch the user by ID
-    const user = await User.findById(userId).populate({path:"friends.friend", select: "username profilePhotoUrl"});
+    const user = await User.findById(userId).populate({
+      path: "friends.friend",
+      select: "username profilePhotoUrl",
+    });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // Create an array of friend balances in the desired format
     const updatedData = user.friends
-    .filter(f => f && f.friend) // remove null or broken entries
-    .map((f) => ({
-      friendId: f.friend._id, // friend ID
-      balance: f.balance, // balance
-      username: f.friend.username, // friend's username
-      profilePhotoUrl: f.friend.profilePhotoUrl, // friend's profile photo URL
-    }));
+      .filter((f) => f && f.friend) // remove null or broken entries
+      .map((f) => ({
+        friendId: f.friend._id, // friend ID
+        balance: f.balance, // balance
+        username: f.friend.username, // friend's username
+        profilePhotoUrl: f.friend.profilePhotoUrl, // friend's profile photo URL
+      }));
 
     // Send the updated data as response
     return res.status(200).json(updatedData);
@@ -1330,7 +1277,10 @@ const uploadProfilePhoto = async (req, res) => {
       try {
         await cloudinary.uploader.destroy(user.profilePhotoId);
       } catch (err) {
-        console.warn("Failed to delete previous Cloudinary image:", err.message);
+        console.warn(
+          "Failed to delete previous Cloudinary image:",
+          err.message
+        );
       }
     }
 
@@ -1367,7 +1317,7 @@ const getUserLastUpdatedAt = async (req, res) => {
 export {
   sendOtp,
   userLogin,
-  addFriends,
+  inviteFriend,
   verifyForgotPassword,
   forgotPassword,
   updateUserProfile,

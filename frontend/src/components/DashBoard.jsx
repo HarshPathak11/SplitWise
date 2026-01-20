@@ -1,29 +1,39 @@
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
-import axios from "axios";
 import TripsSection from "./TripsSection";
 import FairFareCard from "./FairFareCard";
 import FriendsSection from "./friendsSection";
 import RecentExpenses from "./RecentExpenses";
 import TopNavbar from "./TopNavbar";
+import SwipeToFriends from "./SwipeToFriends";
 import { requestNotificationPermission } from "../../notifications";
+import api from "../utils/api";
 
 const Dashboard = () => {
-const [user, setUser] = useState(null);
-
-//Setting user from localStorage if available
-useEffect(() => {
-  try {
-    const stored = localStorage.getItem("user");
-    if (stored) {
-      setUser(JSON.parse(stored));
-    }
-  } catch (e) {
-    console.error("Failed to parse user from localStorage:", e);
-  }
-}, []);
-
+  const [user, setUser] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+  // --- LOGIC SECTION (Unchanged) ---
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        setUser(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error("Failed to parse user from localStorage:", e);
+    }
+  }, []);
 
   useEffect(() => {
     async function getDetails() {
@@ -34,34 +44,32 @@ useEffect(() => {
 
       try {
         if (user) {
-          const lastUpdatedAtUser = await axios.get(
+          const lastUpdatedAtUser = await api.get(
             `${API_BASE}/user/last-updated-at/${userId}`
           );
-          if (new Date(lastUpdatedAtUser.data.lastUpdatedAt).getTime() !== new Date(user.updatedAt).getTime()) {
-            const response = await axios.get(`${API_BASE}/user/${userId}`);
-            
+          if (
+            new Date(lastUpdatedAtUser.data.lastUpdatedAt).getTime() !==
+            new Date(user.updatedAt).getTime()
+          ) {
+            const response = await api.get(`${API_BASE}/user/${userId}`);
             if (response.status === 200) {
-              setUser(response.data.user); // Update state with fetched user data
-
-              localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
-              fcmTokens = response.data.user.fcmToken || []; // Filter out null/undefined tokens
+              setUser(response.data.user);
+              localStorage.setItem("user", JSON.stringify(response.data.user));
+              fcmTokens = response.data.user.fcmToken || [];
             }
           }
         } else {
-          const response = await axios.get(`${API_BASE}/user/${userId}`);
-
+          const response = await api.get(`${API_BASE}/user/${userId}`);
           if (response.status === 200) {
-            setUser(response.data.user); // Update state with fetched user data
-
-            localStorage.setItem("user", JSON.stringify(response.data.user)); // Cache in localStorage
-            fcmTokens = response.data.user.fcmToken || []; // Filter out null/undefined tokens
+            setUser(response.data.user);
+            localStorage.setItem("user", JSON.stringify(response.data.user));
+            fcmTokens = response.data.user.fcmToken || [];
           }
         }
 
         const fcmToken = await requestNotificationPermission();
-
         if (fcmToken && (!fcmTokens.includes(fcmToken) || fcmTokens === null)) {
-          await axios.post(`${API_BASE}/user/set-fcm-token`, {
+          await api.post(`${API_BASE}/user/set-fcm-token`, {
             fcmToken,
             userId,
           });
@@ -70,40 +78,68 @@ useEffect(() => {
         console.error("Error fetching user:", err);
       }
     }
-
     getDetails();
   }, []);
-  // console.log(user);
+
+  // --- UI SECTION (Redesigned) ---
   return (
-    <div className="bg-[#000000] text-white min-h-screen p-3 sm:p-4 md:p-6 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -inset-[10px] opacity-50">
-          <div className="absolute top-0 -left-4 w-48 md:w-72 h-48 md:h-72 bg-[#9e27ff] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-          <div className="absolute top-0 -right-4 w-48 md:w-72 h-48 md:h-72 bg-[#00FFA3] rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-48 md:w-72 h-48 md:h-72 bg-gray-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
-        </div>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8 relative selection:bg-indigo-500/30 font-sans">
+      {/* 1. Controlled Background Theme (Max 2 colors) */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        {/* Simple top-down spotlight - Clean, no messy blobs */}
+        <div className="absolute top-0 left-0 right-0 h-[500px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950"></div>
+        {/* Subtle noise texture for industry feel */}
+        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 ">
-        {/* Left side: Expenses */}
-        <div className="lg:col-span-1 space-y-4 md:space-y-6">
-          {/* Title */}
-          <TopNavbar />
+      <div className="relative z-10 max-w-7xl mx-auto">
+        {/* Grid Layout: 7 cols for Main, 5 cols for Data/Friends */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          {/* --- LEFT COLUMN (Primary Actions) --- */}
+          <div className="lg:col-span-7 flex flex-col gap-6">
+            {/* Header Area */}
+            <div className="pl-1">
+              <TopNavbar />
+            </div>
 
-          {/* Flippable Card */}
-          <FairFareCard />
+            {/* Main Card Wrapper - Giving it a 'Premium Device' feel */}
+            <div className="relative group perspective-1000">
+              <FairFareCard />
+            </div>
 
-          {/* Trips Section */}
-          <TripsSection user={user} />
-        </div>
+            {/* Trips Section - Wrapped in a clean container */}
+            <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-1 backdrop-blur-sm overflow-hidden">
+              <div className="p-4 md:p-6">
+                <TripsSection user={user} />
+              </div>
+            </div>
+          </div>
 
-        <div className="space-y-4 h-full flex flex-col">
-          {/* Today's expenses */}
-          <RecentExpenses user={user} />
+          {/* --- RIGHT COLUMN (Data & Social) --- */}
+          <div className="lg:col-span-5 flex flex-col gap-6 h-full">
+            {/* Mobile Swipe Hint */}
+            {isMobile && (
+              <div>
+                <SwipeToFriends />
+              </div>
+            )}
 
-          {/* Friends Section */}
-          <FriendsSection user={user} />
+            {/* Recent Expenses - The 'Ledger' */}
+            <div className="flex-1 bg-zinc-900/50 border border-white/5 rounded-2xl backdrop-blur-sm overflow-hidden flex flex-col">
+              <div className="p-4 md:p-6 flex-1">
+                <RecentExpenses user={user} />
+              </div>
+            </div>
+
+            {/* Friends Section - The 'Contacts' */}
+            {!isMobile && (
+              <div className="bg-zinc-900/50 border border-white/5 rounded-2xl backdrop-blur-sm overflow-hidden">
+                <div className="p-4 md:p-6">
+                  <FriendsSection user={user} />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

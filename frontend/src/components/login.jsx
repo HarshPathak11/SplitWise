@@ -6,6 +6,8 @@ import { FaHome } from "react-icons/fa";
 import logo from "../../public/newIcon-192x192.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+import { toast } from "react-hot-toast";
+import api from "../utils/api";
 
 const LogIn = () => {
   const [email, setEmail] = React.useState("");
@@ -38,7 +40,7 @@ const LogIn = () => {
     e.preventDefault();
     try {
       if (!email || !password) {
-        alert("Please fill in all fields.");
+        toast.error("Please fill in all fields.");
         return;
       }
 
@@ -49,107 +51,174 @@ const LogIn = () => {
       });
 
       if (response.data.user) {
-        Cookies.set("id", response.data.user._id, { expires: 7 });
+        const { user, token } = response.data; // ✅ token expected from backend
+
+        // existing behaviour
+        Cookies.set("id", user._id, { expires: 7 });
+
+        // ✅ NEW: store JWT securely
+        if (token) {
+          Cookies.set("authToken", token, {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        }
+
         navigate(redirectPath);
       }
     } catch (error) {
       console.error("Error logging in:", error);
-      alert("Login failed");
+      toast.error("Login failed");
     } finally {
       setLoading(false); // Stop loading
     }
   };
 
   return (
-    <div className="relative bg-[#000000] flex items-center justify-center min-h-screen overflow-hidden">
-      <div className="absolute cursor-pointer mt-3.5 z-50 top-4 left-4">
+    <div className="relative min-h-screen w-full bg-[#0a0a0a] overflow-hidden flex items-center justify-center selection:bg-purple-500/30 selection:text-purple-200">
+      {/* --- BACKGROUND: The Digital Aurora --- */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-purple-900/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[70%] bg-blue-900/20 rounded-full blur-[120px] animate-pulse-slow delay-1000"></div>
+        {/* Starfield overlay */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05]"></div>
+      </div>
+
+      {/* --- NAVIGATION: Floating Home Button --- */}
+      <div className="absolute top-8 left-8 z-50">
         <button
-          onClick={() => navigate("/")} // Navigate to the landing page route
-          className="p-2 rounded-full shadow-lg backdrop-blur-md bg-white/10 border border-white/20 hover:bg-white/20 hover:scale-105 transition-transform duration-300 ease-in-out"
-          title="Back to Landing Page"
+          onClick={() => navigate("/")}
+          className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-md"
         >
-          <FaHome className="text-white text-xl" />
+          <FaHome className="text-white/70 group-hover:text-white transition-colors" />
+          <span className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">
+            Back
+          </span>
         </button>
       </div>
-      {/* Animated Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-move"></div>
-        <div className="w-[400px] h-[400px] bg-gradient-to-r from-blue-500 to-green-500 rounded-full blur-3xl opacity-30 animate-rotate delay-2000"></div>
-        <div className="w-[600px] h-[600px] bg-gradient-to-r from-yellow-500 to-red-500 rounded-full blur-3xl opacity-30 animate-move delay-4000"></div>
-        <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-lg opacity-50 animate-bounce"></div>
-        <div className="absolute bottom-10 right-10 w-24 h-24 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-full blur-lg opacity-50 animate-bounce delay-3000"></div>
-      </div>
-      {/* Login Card */}
-      <div className="relative w-full max-w-sm p-8 bg-glass rounded-lg shadow-lg overflow-hidden animate-fade-in z-10">
-        <div className="relative z-10">
-          <div className="flex items-center ">
-            <img src={logo} alt="Icon" className="w-8 h-8 mr-2" />
-            <span className="text-4xl text-center font-bold text-white">
-              FairFare
-            </span>
-          </div>
-          <div className="flex justify-between items-center mb-6 mt-6">
-            <div className="text-2xl font-bold text-[#00f5ff]">LOGIN</div>
-            <Link to="/signup">
-              <div className=" text-[#00f5ff] cursor-pointer hover:underline">
-                SIGN UP
-              </div>
-            </Link>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label
-                className="block text-white text-sm font-bold mb-2"
-                htmlFor="email"
-              ></label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="Email Address"
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:shadow-outline hover:shadow-lg transition-shadow duration-300 text-white bg-transparent placeholder-gray-400"
+
+      {/* --- MAIN CARD: The Portal --- */}
+      <div className="relative z-10 w-full max-w-md p-1">
+        {/* Glowing Border Effect */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent rounded-3xl blur-sm opacity-50 pointer-events-none"></div>
+
+        <div className="relative mb-3 bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl ring-1 ring-white/5">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-white/10 to-transparent border border-white/10 mb-6 shadow-lg">
+              <img
+                src={logo}
+                alt="FairFare"
+                className="w-6 h-6 object-contain drop-shadow-md"
               />
             </div>
-            <div className="mb-4 relative">
-              <input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                className="w-full px-3 py-2 border rounded-lg pr-10 text-white bg-transparent placeholder-gray-400"
-              />
-              <span
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </span>
+            <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-2">
+              Welcome Back
+            </h1>
+            <p className="text-white/40 text-sm">
+              Enter your credentials to access the vault.
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Input */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-white/50 uppercase tracking-wider ml-1">
+                Email
+              </label>
+              <div className="relative group">
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all duration-300"
+                />
+                {/* Subtle shine on hover */}
+                <div className="absolute inset-0 rounded-xl ring-1 ring-white/0 group-hover:ring-white/10 pointer-events-none transition-all duration-300"></div>
+              </div>
             </div>
 
-            <div className="text-right mb-4">
+            {/* Password Input */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-white/50 uppercase tracking-wider ml-1">
+                Password
+              </label>
+              <div className="relative group">
+                <input
+                    value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all duration-300 pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors"
+                >
+                  {showPassword ? (
+                    <FaEyeSlash size={18} />
+                  ) : (
+                    <FaEye size={18} />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-2">
+              <Link
+                to="/signup"
+                className="text-sm text-white/40 hover:text-white transition-colors"
+              >
+                Create account
+              </Link>
               <Link
                 to="/forgot-password"
-                className="text-sm text-slate-300 hover:text-blue-300 hover:underline"
+                className="text-sm text-white/40 hover:text-white transition-colors"
               >
-                Forgot your password?
+                Forgot password?
               </Link>
             </div>
+
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-transform transform 
-    ${
-      loading
-        ? "bg-gray-400 text-white cursor-not-allowed"
-        : "bg-[#00f5ff] text-black hover:bg-green-700 hover:scale-105"
-    }`}
+              className={`relative w-full overflow-hidden rounded-xl py-4 font-semibold text-sm tracking-wide transition-all duration-300 
+                ${
+                  loading
+                    ? "bg-white/10 text-white/30 cursor-wait"
+                    : "bg-white text-black hover:bg-white/90 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                }`}
             >
-              {loading ? "Logging in..." : "Login"}
+              <span className="relative z-10">
+                {loading ? "Authenticating..." : "Sign In"}
+              </span>
             </button>
           </form>
         </div>
+
+        {/* Footer Text */}
+        <p className="text-center text-white/20 text-xs">
+          Secured by FairFare Identity Services
+        </p>
       </div>
+
+      {/* Animation Styles */}
+      <style>{`
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.2; transform: scale(1); }
+          50% { opacity: 0.3; transform: scale(1.1); }
+        }
+        .animate-pulse-slow {
+          animation: pulse-slow 8s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

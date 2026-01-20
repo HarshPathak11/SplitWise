@@ -1,15 +1,21 @@
-import Header from "../components/Header";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { Calendar, ChevronDown } from "lucide-react";
+import { 
+  Calendar, 
+  ChevronDown, 
+  Trophy, 
+  TrendingUp, 
+  Target, 
+  ArrowLeft 
+} from "lucide-react";
+import api from "../utils/api";
 
 export default function Analytics() {
   const [topCategories, setTopCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [timeframe, setTimeframe] = useState("all");
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -18,6 +24,7 @@ export default function Analytics() {
   const location = useLocation();
   const group = location?.state?.group;
   const [isLarge, setIsLarge] = useState(false);
+  const [timeframe, setTimeframe] = useState(group?.name ? "all" : "month");
 
   useEffect(() => {
     const handleResize = () => setIsLarge(window.innerWidth >= 768);
@@ -75,9 +82,9 @@ export default function Analytics() {
       try {
         setLoading(true);
 
-        if (group && Array.isArray(group.expenses)) {
+        if (group && group._id) {
           const apiStartDate = getDateFilterForAPI();
-          const response = await axios.get(
+          const response = await api.get(
             `${API_BASE}/group/${group._id}/top-categories`,
             {
               params: apiStartDate ? { startDate: apiStartDate, endDate } : {},
@@ -93,7 +100,7 @@ export default function Analytics() {
         if (!userId) return;
 
         const apiStartDate = getDateFilterForAPI();
-        const response = await axios.post(`${API_BASE}/user/top-categories`, {
+        const response = await api.post(`${API_BASE}/user/top-categories`, {
           userId,
           ...(apiStartDate && { startDate: apiStartDate, endDate }),
         });
@@ -146,290 +153,242 @@ export default function Analytics() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950 to-gray-900 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <Header
-          title={
-            group?.name ? `Analytics — ${group.name}` : "Your Spend Analytics"
-          }
-          backPath={group ? `/tripDetails/${group._id}` : "/dash"}
-        />
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 relative overflow-hidden p-4 sm:p-6 lg:p-8">
+      {/* --- BACKGROUND FX: Deep Space/Cyber Atmosphere --- */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-20%] left-[20%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-fuchsia-600/10 rounded-full blur-[100px]"></div>
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
+      </div>
 
-        <div className="mt-6 mb-8 space-y-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="flex items-center gap-2 text-blue-300 font-medium">
-              <Calendar size={20} />
-              <span className="text-sm">Time Period:</span>
+      <div className="relative z-10 max-w-7xl mx-auto">
+        {/* --- HEADER: Mission Status --- */}
+        <div className="flex items-center gap-4 mb-8">
+          <Link to={group ? `/tripDetails/${group._id}` : "/dash"}>
+            <button className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg shadow-black/20">
+              <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+            </button>
+          </Link>
+          <div>
+            <h1 className="text-xl sm:text-lg font-black text-white tracking-tight uppercase flex items-center gap-3">
+              {group?.name
+                ? `Mission Report: ${group.name}`
+                : "Global Statistics"}
+              {loading && (
+                <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-ping"></span>
+              )}
+            </h1>
+            <p className="text-xs text-zinc-500 font-mono tracking-wider uppercase mt-1">
+              FINANCIAL INTELLIGENCE UNIT
+            </p>
+          </div>
+        </div>
+
+        {/* --- CONTROL DECK (Filters) --- */}
+        <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-2 mb-8 backdrop-blur-sm flex flex-col sm:flex-row gap-4 items-center justify-between shadow-lg">
+          {/* Timeframe Dial */}
+          <div className="relative group w-full sm:w-auto">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-indigo-400">
+              <Calendar size={16} />
             </div>
-            <div className="relative flex-1 sm:flex-initial">
-              <select
-                value={timeframe}
-                onChange={(e) => handleTimeframeChange(e.target.value)}
-                className="w-full sm:w-auto appearance-none bg-gray-900/60 backdrop-blur-sm text-white px-4 py-3 pr-10 rounded-xl border-2 border-blue-500/30 hover:border-blue-400/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-300 cursor-pointer font-medium"
-              >
-                <option value="all">All Time</option>
-                <option value="day">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-                <option value="custom">Custom Range</option>
-              </select>
-              <ChevronDown
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 pointer-events-none"
-                size={20}
+            <select
+              value={timeframe}
+              onChange={(e) => handleTimeframeChange(e.target.value)}
+              className="w-full sm:w-56 appearance-none bg-zinc-900 border border-white/10 text-white pl-10 pr-10 py-3 rounded-xl focus:outline-none focus:border-indigo-500/50 hover:bg-zinc-800 transition-colors cursor-pointer text-sm font-bold uppercase tracking-wide"
+            >
+              <option value="all">All Time Records</option>
+              <option value="day">Daily Cycle</option>
+              <option value="week">Weekly Cycle</option>
+              <option value="month">Monthly Cycle</option>
+              <option value="custom">Custom Parameters</option>
+            </select>
+            <ChevronDown
+              size={16}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+            />
+          </div>
+
+          {/* Date Range Inputs (Holographic Slide Down) */}
+          {showCustomDatePicker && (
+            <div className="flex gap-2 w-full sm:w-auto animate-in fade-in slide-in-from-top-2">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-zinc-900 border border-white/10 text-zinc-300 px-3 py-2.5 rounded-xl text-xs focus:outline-none focus:border-indigo-500 w-full font-mono"
+              />
+              <span className="text-zinc-600 self-center font-bold">-</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate}
+                className="bg-zinc-900 border border-white/10 text-zinc-300 px-3 py-2.5 rounded-xl text-xs focus:outline-none focus:border-indigo-500 w-full font-mono"
               />
             </div>
-          </div>
-
-          {showCustomDatePicker && (
-            <div className="bg-gray-900/40 backdrop-blur-sm border-2 border-blue-500/30 rounded-xl p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1">
-                  <label className="block text-blue-300 text-sm font-medium mb-2">
-                    From Date
-                  </label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-gray-800/60 text-white px-4 py-2.5 rounded-lg border-2 border-blue-500/30 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-blue-300 text-sm font-medium mb-2">
-                    To Date
-                  </label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    min={startDate}
-                    className="w-full bg-gray-800/60 text-white px-4 py-2.5 rounded-lg border-2 border-blue-500/30 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  />
-                </div>
-              </div>
-            </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 backdrop-blur-md rounded-2xl p-6 border-2 border-blue-500/30 shadow-2xl">
-            <p className="text-blue-300 text-sm font-medium mb-2">
-              Total Spending
-            </p>
-            <p className="text-white text-3xl font-bold">
-              ₹{totalSpending.toLocaleString()}
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-800/20 backdrop-blur-md rounded-2xl p-6 border-2 border-cyan-500/30 shadow-2xl">
-            <p className="text-cyan-300 text-sm font-medium mb-2">Categories</p>
-            <p className="text-white text-3xl font-bold">
-              {topCategories.length}
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-sky-900/40 to-sky-800/20 backdrop-blur-md rounded-2xl p-6 border-2 border-sky-500/30 shadow-2xl">
-            <p className="text-sky-300 text-sm font-medium mb-2">
-              Avg per Category
-            </p>
-            <p className="text-white text-3xl font-bold">
-              ₹
-              {topCategories.length > 0
-                ? Math.round(
-                    totalSpending / topCategories.length
-                  ).toLocaleString()
-                : 0}
-            </p>
-          </div>
-        </div>
+        {/* --- HUD STATS (Scoreboard) --- */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {/* Main Score: Total Spent */}
+          <div className="col-span-1 md:col-span-2 relative overflow-hidden bg-gradient-to-br from-indigo-950/50 to-zinc-900/50 border border-indigo-500/20 rounded-3xl p-6 shadow-2xl group">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(99,102,241,0.05)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%,100%_100%] animate-shimmer pointer-events-none" />
 
-        <div className="bg-gradient-to-br from-gray-900/60 to-blue-900/20 backdrop-blur-md rounded-3xl border-2 border-blue-500/30 shadow-2xl p-6 sm:p-8 mb-8">
-          {loading ? (
-            <div className="h-64 sm:h-96 flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
-                <p className="text-white/80 font-medium">
-                  Loading analytics...
-                </p>
-              </div>
+            <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity transform group-hover:scale-110 duration-700">
+              <Target size={120} className="text-indigo-500" />
             </div>
-          ) : topCategories.length === 0 ? (
-            <div className="h-64 sm:h-96 flex items-center justify-center">
-              <div className="text-center space-y-3">
-                <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Calendar size={40} className="text-blue-400" />
-                </div>
-                <p className="text-blue-300 font-semibold text-lg">
-                  No data available
-                </p>
-                <p className="text-gray-400 text-sm">
-                  {filteredCount === 0 && timeframe !== "all"
-                    ? `No expenses recorded for ${
-                        timeframe === "day"
-                          ? "today"
-                          : timeframe === "week"
-                          ? "this week"
-                          : "this month"
-                      }`
-                    : "Start tracking your expenses to see analytics"}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <h2 className="text-white font-bold text-xl sm:text-2xl text-center bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                Spending Distribution
+
+            <div className="relative z-10">
+              <p className="text-indigo-300 text-xs font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                Total Expenditure
+              </p>
+              <h2 className="text-5xl sm:text-7xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] font-mono">
+                ₹{totalSpending.toLocaleString()}
               </h2>
-
-              {/* Enhanced Pie Chart with Side Labels */}
-              <div className="w-full h-full flex flex-col lg:flex-row items-center justify-center">
-                {/* Chart Container */}
-                <div className="w-full lg:w-1/2 h-64 lg:h-80 mb-6 lg:mb-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={topCategories}
-                        dataKey="total"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius="80%"
-                        innerRadius="55%"
-                        fill="#8884d8"
-                        paddingAngle={2}
-                        startAngle={90}
-                        endAngle={450}
-                        cornerRadius={8}
-                      >
-                        {topCategories.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                            className="hover:opacity-90 transition-all duration-300 cursor-pointer"
-                            stroke="rgba(255, 255, 255, 0.1)"
-                            strokeWidth={2}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        content={<CustomTooltip />}
-                        wrapperStyle={{
-                          backdropFilter: "blur(10px)",
-                          backgroundColor: "rgba(15, 23, 42, 0.8)",
-                          borderRadius: "12px",
-                          border: "1px solid rgba(255, 255, 255, 0.1)",
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Labels Container */}
-                {isLarge && (
-                  <div className="md:block md:w-1/2 md:pl-8">
-                    <div className="space-y-4">
-                      {topCategories.map((entry, index) => {
-                        const percent = (entry.total / totalSpending) * 100;
-
-                        return (
-                          <div
-                            key={`label-${index}`}
-                            className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-gray-800/50 to-blue-900/30 hover:from-gray-700/50 hover:to-blue-800/30 transition-all duration-300 cursor-pointer group border border-blue-500/30 hover:border-blue-400/50"
-                          >
-                            <div className="flex items-center space-x-4 flex-1 min-w-0">
-                              {/* Color Indicator with Animation */}
-                              <div
-                                className="w-4 h-4 rounded-full flex-shrink-0 transition-transform duration-300 group-hover:scale-125 shadow-lg"
-                                style={{
-                                  backgroundColor:
-                                    COLORS[index % COLORS.length],
-                                  boxShadow: `0 0 12px ${
-                                    COLORS[index % COLORS.length]
-                                  }40`,
-                                }}
-                              />
-
-                              {/* Category Name */}
-                              <span className="text-sm font-semibold text-white truncate">
-                                {entry.name}
-                              </span>
-                            </div>
-
-                            {/* Percentage with beautiful styling */}
-                            <div className="flex items-center space-x-3">
-                              <div className="w-16 bg-gray-700/30 rounded-full h-2 overflow-hidden">
-                                <div
-                                  className="h-full rounded-full transition-all duration-1000 ease-out"
-                                  style={{
-                                    width: `${percent}%`,
-                                    backgroundColor:
-                                      COLORS[index % COLORS.length],
-                                    boxShadow: `0 0 8px ${
-                                      COLORS[index % COLORS.length]
-                                    }`,
-                                  }}
-                                />
-                              </div>
-                              <span
-                                className="text-lg font-bold min-w-12 text-right transition-all duration-300 group-hover:scale-110"
-                                style={{ color: COLORS[index % COLORS.length] }}
-                              >
-                                {`${percent.toFixed(0)}%`}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Mobile Labels - Grid Layout */}
-                <div className="w-full lg:w-1/2 lg:pl-8 lg:hidden">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {topCategories.map((entry, index) => {
-                      const percent = (entry.total / totalSpending) * 100;
-
-                      return (
-                        <div
-                          key={`label-mobile-${index}`}
-                          className="flex items-center p-3 rounded-xl bg-gray-800/40 hover:bg-gray-700/50 transition-all duration-300 cursor-pointer group border border-blue-500/30"
-                        >
-                          <div
-                            className="w-3 h-3 rounded-full mr-3 flex-shrink-0 transition-transform duration-300 group-hover:scale-125"
-                            style={{
-                              backgroundColor: COLORS[index % COLORS.length],
-                              boxShadow: `0 0 8px ${
-                                COLORS[index % COLORS.length]
-                              }`,
-                            }}
-                          />
-                          <span className="text-sm font-medium text-white truncate flex-1 mr-2">
-                            {entry.name}
-                          </span>
-                          <span
-                            className="text-base font-bold transition-all duration-300 group-hover:scale-110"
-                            style={{ color: COLORS[index % COLORS.length] }}
-                          >
-                            {`${percent.toFixed(0)}%`}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+              <div className="mt-4 inline-flex items-center gap-2 text-xs text-zinc-400 bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5">
+                <span className="text-indigo-300 font-bold font-mono">
+                  {filteredCount}
+                </span>
+                <span className="uppercase tracking-wide">
+                  Transactions Logged
+                </span>
               </div>
             </div>
-          )}
+          </div>
+
+          {/* Secondary Stats Grid */}
+          <div className="grid grid-rows-2 gap-4">
+            {/* Stat 1 */}
+            <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-4 flex items-center justify-between hover:bg-zinc-800/40 transition-colors">
+              <div>
+                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
+                  Active Sectors
+                </p>
+                <p className="text-2xl font-bold text-white font-mono">
+                  {topCategories.length}
+                </p>
+              </div>
+              {/* Visual Bars */}
+              <div className="flex gap-1 items-end h-8">
+                {[40, 70, 50, 90].map((h, i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 bg-zinc-700 rounded-sm"
+                    style={{ height: `${h}%` }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Stat 2 */}
+            <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-4 flex items-center justify-between hover:bg-zinc-800/40 transition-colors">
+              <div>
+                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
+                  Avg. per Sector
+                </p>
+                <p className="text-2xl font-bold text-white font-mono">
+                  ₹
+                  {topCategories.length > 0
+                    ? Math.round(
+                        totalSpending / topCategories.length
+                      ).toLocaleString()
+                    : 0}
+                </p>
+              </div>
+              <div className="bg-emerald-500/10 p-2 rounded-lg text-emerald-400 border border-emerald-500/20">
+                <TrendingUp size={20} />
+              </div>
+            </div>
+          </div>
         </div>
 
-        {topCategories.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="text-white font-bold text-lg sm:text-xl mb-4 flex items-center gap-2">
-              <span className="w-1 h-6 bg-blue-500 rounded-full"></span>
-              Category Breakdown
-            </h3>
-            <div className="grid gap-3">
+        {/* --- MAIN VISUALIZER GRID --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* LEFT: Holographic Chart */}
+          <div className="lg:col-span-5 bg-zinc-900/30 border border-white/5 rounded-3xl p-6 flex flex-col items-center justify-center relative min-h-[400px] shadow-inner">
+            {loading ? (
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-16 h-16 border-4 border-zinc-800 border-t-indigo-500 rounded-full animate-spin"></div>
+                <span className="text-xs font-mono text-zinc-500 animate-pulse">
+                  PROCESSING DATA STREAM...
+                </span>
+              </div>
+            ) : topCategories.length === 0 ? (
+              <div className="text-center opacity-50">
+                <div className="w-24 h-24 bg-zinc-800/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-dashed border-zinc-700">
+                  <Target size={40} className="text-zinc-600" />
+                </div>
+                <p className="text-zinc-400 text-sm font-medium">
+                  NO DATA SIGNATURE DETECTED
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="absolute top-6 left-6 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+                  <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                    Visual Breakdown
+                  </span>
+                </div>
+
+                <ResponsiveContainer width="100%" height={350}>
+                  <PieChart>
+                    <Pie
+                      data={topCategories}
+                      dataKey="total"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={110}
+                      innerRadius={70}
+                      paddingAngle={4}
+                      cornerRadius={6}
+                      stroke="none"
+                    >
+                      {topCategories.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                          className="outline-none hover:opacity-80 transition-opacity cursor-pointer filter drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} cursor={false} />
+                  </PieChart>
+                </ResponsiveContainer>
+
+                {/* Decorative Center Element */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border border-dashed border-white/10 pointer-events-none animate-spin-slow flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full bg-zinc-950/80 backdrop-blur-sm border border-white/5 flex items-center justify-center">
+                    <span className="text-[10px] text-zinc-600 font-mono">
+                      100%
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* RIGHT: Leaderboard (XP Bars) */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="flex items-center gap-2 mb-4 px-2">
+              <Trophy
+                size={18}
+                className="text-yellow-500 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]"
+              />
+              <h3 className="text-lg font-bold text-white uppercase tracking-wide">
+                Top Spenders Leaderboard
+              </h3>
+            </div>
+
+            <div className="space-y-3">
               {topCategories.map((category, index) => {
                 const percentage = (category.total / totalSpending) * 100;
+                const color = COLORS[index % COLORS.length];
+
                 return (
                   <Link
                     key={category.name}
@@ -437,51 +396,74 @@ export default function Analytics() {
                     state={{
                       category: category.name,
                       group,
-                      timeframe: timeframe,
-                      startDate: startDate,
-                      endDate: endDate,
+                      timeframe,
+                      startDate,
+                      endDate,
                     }}
-                    className="group relative overflow-hidden bg-gradient-to-r from-gray-900/60 to-blue-900/20 backdrop-blur-md rounded-2xl p-5 border-2 border-blue-500/20 hover:border-blue-400/50 hover:scale-[1.02] transition-all duration-300 shadow-lg hover:shadow-blue-500/20"
+                    className="group relative block"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 via-blue-600/5 to-blue-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative bg-zinc-900/40 hover:bg-zinc-900/80 border border-white/5 hover:border-indigo-500/30 rounded-xl p-4 transition-all duration-300 overflow-hidden backdrop-blur-sm">
+                      {/* "XP Bar" Background Fill */}
+                      <div
+                        className="absolute inset-0 opacity-10 transition-all duration-1000 ease-out group-hover:opacity-15"
+                        style={{
+                          width: `${percentage}%`,
+                          backgroundColor: color,
+                        }}
+                      ></div>
 
-                    <div className="relative flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-3 h-3 rounded-full shadow-lg"
-                          style={{
-                            backgroundColor: COLORS[index % COLORS.length],
-                          }}
-                        ></div>
-                        <span className="text-white font-semibold text-base sm:text-lg">
-                          {category.name}
-                        </span>
-                      </div>
-                      <span className="text-white font-bold text-lg sm:text-xl">
-                        ₹{category.total.toLocaleString()}
-                      </span>
-                    </div>
+                      <div className="relative flex justify-between items-center z-10">
+                        <div className="flex items-center gap-4">
+                          {/* Rank Badge */}
+                          <div
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg font-black text-sm border ${
+                              index === 0
+                                ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/30 shadow-[0_0_10px_rgba(234,179,8,0.2)]"
+                                : index === 1
+                                ? "bg-zinc-400/10 text-zinc-300 border-zinc-400/30"
+                                : index === 2
+                                ? "bg-orange-700/10 text-orange-400 border-orange-700/30"
+                                : "bg-zinc-800/50 text-zinc-500 border-zinc-700/30"
+                            }`}
+                          >
+                            {index + 1}
+                          </div>
 
-                    <div className="relative">
-                      <div className="w-full h-2 bg-gray-800/60 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500 shadow-lg"
-                          style={{
-                            width: `${percentage}%`,
-                            backgroundColor: COLORS[index % COLORS.length],
-                          }}
-                        ></div>
+                          <div>
+                            <h4 className="text-white font-bold text-sm sm:text-base group-hover:text-indigo-300 transition-colors uppercase tracking-tight">
+                              {category.name}
+                            </h4>
+
+                            {/* Progress Line */}
+                            <div className="mt-2 w-32 sm:w-48 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full shadow-[0_0_8px_currentColor]"
+                                style={{
+                                  width: `${percentage}%`,
+                                  backgroundColor: color,
+                                  color: color,
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-white font-mono font-bold text-lg tracking-tight">
+                            ₹{category.total.toLocaleString()}
+                          </p>
+                          <p className="text-zinc-500 text-[10px] font-bold uppercase bg-black/30 px-1.5 py-0.5 rounded inline-block mt-1">
+                            {percentage.toFixed(1)}% Share
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-blue-300 text-sm font-medium mt-1 block">
-                        {percentage.toFixed(1)}% of total spending
-                      </span>
                     </div>
                   </Link>
                 );
               })}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
