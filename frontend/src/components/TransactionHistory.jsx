@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FaCopy } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
+import Cookies from "js-cookie";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -63,28 +64,63 @@ const TransactionHistory = () => {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  async function fetchData(user) {
+  async function fetchData(initialUser, silent = false) {
     try {
-      if (user === null) {
-        toast.error("No user found");
-        return;
-      }
-
-      if (!userId) {
-        toast.error("User ID not found. Please log in again.");
+      const currentUserId = Cookies.get("id");
+      if (!currentUserId) {
+        toast.error("User session expired. Please log in again.");
         navigate("/login");
         return;
       }
 
-      // 1. Immediately set basic info from localStorage
-      const friend = user?.friends?.find((f) => f.friend?._id === friendId);
-      setFriendName(friend?.friend || "Unknown");
-      setNetBalance(friend?.balance || 0);
-      setLoading(false); // Enable immediate display of local data
+      let user = initialUser;
 
-      // 2. Fetch remote data (Transactions & Last Seen)
-      setTxLoading(true);
-      const txRes = await api.get(`${API_BASE}/expenses/${userId}/${friendId}`);
+      // 1. Sync User Data if needed (compare updatedAt)
+      try {
+        if (user) {
+          const lastUpdatedAtUser = await api.get(
+            `${API_BASE}/user/last-updated-at/${currentUserId}`
+          );
+          if (
+            new Date(lastUpdatedAtUser.data.lastUpdatedAt).getTime() !==
+            new Date(user.updatedAt).getTime()
+          ) {
+            const response = await api.get(`${API_BASE}/user/${currentUserId}`);
+            if (response.status === 200) {
+              user = response.data.user;
+              setStoredUser(user);
+              localStorage.setItem("user", JSON.stringify(user));
+            }
+          }
+        } else {
+          const response = await api.get(`${API_BASE}/user/${currentUserId}`);
+          if (response.status === 200) {
+            user = response.data.user;
+            setStoredUser(user);
+            localStorage.setItem("user", JSON.stringify(user));
+          }
+        }
+      } catch (syncErr) {
+        console.error("Failed to sync user data:", syncErr);
+        // Continue with local data if sync fails
+      }
+
+      if (!user) {
+        toast.error("No user data found");
+        return;
+      }
+
+      // 2. Immediately set basic info from current user data
+      const friend = user?.friends?.find((f) => f.friend?._id === friendId);
+      setFriendName(friend?.friend || { username: "Unknown" }); // Handle case where friend object might be missing
+      setNetBalance(friend?.balance || 0);
+      
+      // Only set global loading to false if this is the first load
+      if (!silent) setLoading(false);
+
+      // 3. Fetch remote data (Transactions & Last Seen)
+      if (!silent) setTxLoading(true);
+      const txRes = await api.get(`${API_BASE}/expenses/${currentUserId}/${friendId}`);
 
       // Sort & Process transactions
       const sortedTransactions = txRes.data.expenses.sort(
@@ -145,8 +181,8 @@ const TransactionHistory = () => {
       toast.success("Paid transaction added!");
       setAmount(0);
       setText("");
-      // Optionally, refetch transactions
-      fetchUser();
+      // Silent refetch to avoid flickering
+      await fetchData(storedUser, true);
     } catch (error) {
       toast.error("Error updating friend balance (paid)");
       console.error("Error updating friend balance (paid):", error);
@@ -189,8 +225,8 @@ const TransactionHistory = () => {
       toast.success("Received transaction added!");
       setAmount(0);
       setText("");
-      // Optionally, refetch transactions
-      fetchUser();
+      // Silent refetch to avoid flickering
+      await fetchData(storedUser, true);
     } catch (error) {
       toast.error("Error updating friend balance (received)");
       console.error("Error updating friend balance (received):", error);
@@ -221,7 +257,7 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleSettleBalance = async () => {
+  const handleSettleBalance = async () => { 
     const currentBalance = netBalance;
     if (currentBalance === 0) {
       toast.error("No balance to settle.");
@@ -229,6 +265,7 @@ const TransactionHistory = () => {
     }
 
     try {
+      setLoading(true);
       if (currentBalance > 0) {
         await api.post(`${API_BASE}/user/update-friend-balance`, {
           userEmail: storedUser?.email,
@@ -248,10 +285,12 @@ const TransactionHistory = () => {
           friendFcmToken: friendName?.fcmToken,
         });
       }
-      fetchUser();
+      await fetchData(storedUser, true);
       setNetBalance(0);
     } catch (error) {
       toast.error("Please refresh the page first!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -314,16 +353,6 @@ const TransactionHistory = () => {
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* --- LOADING OVERLAY (System Boot Style) --- */}
-      {loading && (
-        <div className="absolute inset-0 z-50 bg-zinc-950 flex flex-col items-center justify-center">
-          <div className="w-16 h-16 border-4 border-zinc-800 border-t-indigo-500 rounded-full animate-spin"></div>
-          <span className="mt-4 text-xs font-mono text-indigo-400 animate-pulse">
-            SYNCING_LEDGER_DATA...
-          </span>
-        </div>
-      )}
-
       {/* --- HEADER: The Control Panel --- */}
       <div className="relative z-20 px-4 py-3 bg-zinc-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between shadow-lg shadow-black/20">
         <div className="flex items-center gap-2">
@@ -369,7 +398,7 @@ const TransactionHistory = () => {
                 {friendName.username}
               </h2>
               <div className="flex items-center mt-0 overflow-hidden">
-                {txLoading ? (
+                {(txLoading || loading) ? (
                   <div className="flex items-center gap-1.5 py-1">
                     <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
                     <span className="text-[10px] font-mono text-indigo-400/70 animate-pulse tracking-tight">
@@ -435,7 +464,7 @@ const TransactionHistory = () => {
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar relative z-0"
       >
-        {txLoading ? (
+        {(txLoading || loading) ? (
           <div className="h-full flex flex-col items-center justify-center space-y-4">
              {/* Sequential pulse bars for transaction list loading */}
              {[1, 2, 3].map((i) => (
@@ -618,6 +647,7 @@ const TransactionHistory = () => {
             </button>
             <button
               onClick={confirmPaid}
+              disabled={loading}
               className="flex-1 py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
             >
               - Paid
@@ -647,6 +677,7 @@ const TransactionHistory = () => {
               </button>
               <button
                 onClick={handleConfirmYes}
+                disabled={loading}
                 className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20"
               >
                 Confirm
