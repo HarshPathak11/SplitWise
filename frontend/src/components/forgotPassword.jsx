@@ -43,7 +43,7 @@ const ForgotPassword = () => {
           email,
         }
       );
-      console.log("response.data:",response.data);
+      // console.log("response.data:",response.data);
       if (response.status === 200) {
         const { user, token } = response.data;
         if (token) {

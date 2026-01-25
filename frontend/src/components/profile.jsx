@@ -43,7 +43,7 @@ const ProfileEnhanced = () => {
   const userId = Cookies.get("id");
 
   useEffect(() => {
-    console.log("userId",userId);
+    // console.log("userId",userId);
 
     async function getDetails() {
       if (!user && userId) {
