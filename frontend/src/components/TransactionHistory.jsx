@@ -3,7 +3,6 @@ import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { FaArrowDown, FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
 import { Link } from "react-router-dom";
 import { FaCopy } from "react-icons/fa";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
@@ -16,20 +15,21 @@ const TransactionHistory = () => {
 
   const [transactions, setTransactions] = useState([]);
   const [friendName, setFriendName] = useState("");
-  const [currentUserId, setCurrentUserId] = useState("");
   const [netBalance, setNetBalance] = useState(0);
   const [amount, setAmount] = useState(0);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
+  const [txLoading, setTxLoading] = useState(true);
+  const [activityInfo, setActivityInfo] = useState(null);
 
   const chatContainerRef = useRef(null);
   const bottomRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const [storedUser, setStoredUser] = useState(null);
+  const [storedUser, setStoredUser] = useState(JSON.parse(localStorage.getItem("user")) || null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPaidConfirm, setShowPaidConfirm] = useState(false);
   const [showReceivedConfirm, setShowReceivedConfirm] = useState(false);
-  const userId = Cookies.get("id");
+  const userId = storedUser?._id;
 
   const handleScroll = () => {
     const el = chatContainerRef.current;
@@ -63,63 +63,53 @@ const TransactionHistory = () => {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  async function fetchUser() {
-    try {
-      setLoading(true);
-      if (!userId) {
-        toast.error("User ID not found. Please log in again.");
-        navigate("/login");
-        return;
-      }
-      const res = await api.get(`${API_BASE}/user/${userId}`);
-      fetchData(res.data.user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function fetchData(user) {
     try {
-      setLoading(true);
-
       if (user === null) {
         toast.error("No user found");
         return;
       }
 
-      setStoredUser(user);
-
-      if (user?._id) {
-        setCurrentUserId(user._id);
+      if (!userId) {
+        toast.error("User ID not found. Please log in again.");
+        navigate("/login");
+        return;
       }
 
+      // 1. Immediately set basic info from localStorage
       const friend = user?.friends?.find((f) => f.friend?._id === friendId);
-
       setFriendName(friend?.friend || "Unknown");
+      setNetBalance(friend?.balance || 0);
+      setLoading(false); // Enable immediate display of local data
 
+      // 2. Fetch remote data (Transactions & Last Seen)
+      setTxLoading(true);
       const txRes = await api.get(`${API_BASE}/expenses/${userId}/${friendId}`);
 
-      // Sort the transactions by createdAt (latest first)
+      // Sort & Process transactions
       const sortedTransactions = txRes.data.expenses.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
-
-      // Reverse the sorted transactions so that latest expense is at the bottom
       setTransactions(sortedTransactions.reverse());
-      setNetBalance(friend.balance || 0);
+
+      // Extract activity info
+      if (txRes.data.lastAtive) {
+        setActivityInfo({ lastAtive: txRes.data.lastAtive });
+      } else if (txRes.data.updatedAt) {
+        setActivityInfo({ updatedAt: txRes.data.updatedAt });
+      } else {
+        setActivityInfo(null);
+      }
     } catch (err) {
-      toast.error("No longer friends!");
+      toast.error("Error fetching data!");
       console.error(err);
-      navigate("/dash");
     } finally {
-      setLoading(false);
+      setTxLoading(false);
     }
   }
 
   useEffect(() => {
-    fetchUser();
+    fetchData(storedUser);
   }, []);
 
   const confirmPaid = () => {
@@ -278,6 +268,46 @@ const TransactionHistory = () => {
     setShowConfirm(false);
   };
 
+  const getActivityText = () => {
+    if (!activityInfo) return "NO_ACTIVITY_DATA";
+
+    const value = activityInfo.lastAtive || activityInfo.updatedAt;
+    if (!value) return "NO_ACTIVITY_DATA";
+
+    const lastSeenDate = new Date(value);
+    const now = new Date();
+    let diffInSeconds = Math.floor((now - lastSeenDate) / 1000);
+
+    if (diffInSeconds < 0) {
+      diffInSeconds = Math.abs(diffInSeconds);
+      if (diffInSeconds >= 10) {
+        diffInSeconds -= 10;
+      }
+    }
+
+    if (activityInfo.lastAtive && diffInSeconds <= 10) {
+      return "Active";
+    }
+
+    const options = { hour: "numeric", minute: "numeric", hour12: true };
+    const timeStr = lastSeenDate.toLocaleTimeString([], options);
+
+    const isToday = lastSeenDate.toDateString() === now.toDateString();
+    if (isToday) {
+      return `Last seen today at ${timeStr}`;
+    }
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      lastSeenDate.toDateString() === yesterday.toDateString();
+    if (isYesterday) {
+      return `Last seen yesterday at ${timeStr}`;
+    }
+
+    return `Last seen on ${lastSeenDate.toLocaleDateString()} at ${timeStr}`;
+  };
+
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 overflow-hidden relative">
       {/* --- BACKGROUND FX --- */}
@@ -296,10 +326,10 @@ const TransactionHistory = () => {
 
       {/* --- HEADER: The Control Panel --- */}
       <div className="relative z-20 px-4 py-3 bg-zinc-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between shadow-lg shadow-black/20">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -319,7 +349,7 @@ const TransactionHistory = () => {
 
           <Link
             to={`/public-profile/${friendName._id}`}
-            className="flex items-center gap-3 group"
+            className="flex items-center gap-2 group"
           >
             <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 overflow-hidden relative shadow-inner">
               {friendName?.profilePhotoUrl ? (
@@ -334,25 +364,25 @@ const TransactionHistory = () => {
                 </div>
               )}
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-white leading-none mb-3 mt-2 group-hover:text-indigo-300 transition-colors">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-sm font-bold text-white leading-none mb-2 mt-2 group-hover:text-indigo-300 transition-colors truncate">
                 {friendName.username}
               </h2>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-[10px] font-mono text-zinc-500 tracking-wider truncate max-w-[100px]">
-                  {friendName.upiId || "NO_UPI_LINKED"}
-                </span>
-                {friendName.upiId && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigator.clipboard.writeText(friendName.upiId);
-                      toast.success("Copied");
-                    }}
-                    className="text-zinc-600 hover:text-indigo-400 transition-colors"
+              <div className="flex items-center mt-0 overflow-hidden">
+                {txLoading ? (
+                  <div className="flex items-center gap-1.5 py-1">
+                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
+                    <span className="text-[10px] font-mono text-indigo-400/70 animate-pulse tracking-tight">
+                      SYNCING_STATUS...
+                    </span>
+                  </div>
+                ) : (
+                  <span
+                    className={`text-[10px] font-mono whitespace-nowrap ${getActivityText() === "Active" ? "text-emerald-400 font-bold" : "text-zinc-500"}`}
+                    style={{ wordSpacing: "-0.15em" }}
                   >
-                    <FaCopy size={10} />
-                  </button>
+                    {getActivityText()}
+                  </span>
                 )}
               </div>
             </div>
@@ -384,11 +414,10 @@ const TransactionHistory = () => {
             Net Position
           </span>
           <div
-            className={`text-4xl font-mono font-medium tracking-tighter ${
-              netBalance >= 0
-                ? "text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]"
-                : "text-rose-400 drop-shadow-[0_0_15px_rgba(251,113,133,0.3)]"
-            }`}
+            className={`text-4xl font-mono font-medium tracking-tighter ${netBalance >= 0
+              ? "text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]"
+              : "text-rose-400 drop-shadow-[0_0_15px_rgba(251,113,133,0.3)]"
+              }`}
           >
             {netBalance >= 0 ? "+" : "-"}₹{Math.abs(netBalance).toFixed(2)}
           </div>
@@ -406,7 +435,18 @@ const TransactionHistory = () => {
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar relative z-0"
       >
-        {transactions.length === 0 ? (
+        {txLoading ? (
+          <div className="h-full flex flex-col items-center justify-center space-y-4">
+             {/* Sequential pulse bars for transaction list loading */}
+             {[1, 2, 3].map((i) => (
+               <div key={i} className={`w-full max-w-[70%] h-24 bg-zinc-900/50 rounded-xl border border-white/5 animate-pulse flex flex-col p-4 gap-2 ${i % 2 === 0 ? 'self-end' : 'self-start'}`}>
+                  <div className="w-1/3 h-3 bg-zinc-800 rounded"></div>
+                  <div className="w-1/2 h-2 bg-zinc-800/50 rounded"></div>
+                  <div className="mt-auto self-end w-1/4 h-6 bg-indigo-900/20 rounded"></div>
+               </div>
+             ))}
+          </div>
+        ) : transactions.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center opacity-50">
             <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center mb-4">
               <span className="text-4xl">🧾</span>
@@ -419,46 +459,42 @@ const TransactionHistory = () => {
         ) : (
           <>
             {transactions.map((tx) => {
-              const isUser = tx.paidBy._id === currentUserId;
+              const isUser = tx.paidBy._id === userId;
               const owedEntry = isUser
                 ? tx.owedBy.find((o) => o.user._id === friendId)
-                : tx.owedBy.find((o) => o.user._id === currentUserId);
+                : tx.owedBy.find((o) => o.user._id === userId);
               const amount = owedEntry ? owedEntry.amount : 0;
 
               return (
                 <div
                   key={tx._id}
-                  className={`flex w-full ${
-                    isUser ? "justify-end" : "justify-start"
-                  } animate-in slide-in-from-bottom-2 duration-500`}
+                  className={`flex w-full ${isUser ? "justify-end" : "justify-start"
+                    } animate-in slide-in-from-bottom-2 duration-500`}
                 >
                   {/* Digital Receipt Bubble */}
                   <div className={`relative max-w-[85%] sm:max-w-xs group`}>
                     {/* Visual Connector Line to Side */}
                     <div
-                      className={`absolute top-4 w-2 h-[1px] ${
-                        isUser
-                          ? "-right-2 bg-indigo-500/50"
-                          : "-left-2 bg-zinc-600/50"
-                      }`}
+                      className={`absolute top-4 w-2 h-[1px] ${isUser
+                        ? "-right-2 bg-indigo-500/50"
+                        : "-left-2 bg-zinc-600/50"
+                        }`}
                     ></div>
 
                     <div
                       className={`
                       relative p-4 rounded-xl border backdrop-blur-md shadow-lg transition-all duration-300
-                      ${
-                        isUser
+                      ${isUser
                           ? "bg-indigo-950/30 border-indigo-500/30 rounded-tr-sm hover:border-indigo-500/50"
                           : "bg-zinc-900/60 border-white/10 rounded-tl-sm hover:border-white/20"
-                      }
+                        }
                     `}
                     >
                       {/* Header: Title & Date */}
                       <div className="flex justify-between items-start gap-4 mb-2 border-b border-white/5 pb-2">
                         <span
-                          className={`text-sm font-bold truncate ${
-                            isUser ? "text-indigo-200" : "text-zinc-200"
-                          }`}
+                          className={`text-sm font-bold truncate ${isUser ? "text-indigo-200" : "text-zinc-200"
+                            }`}
                         >
                           {tx.title || "Untitled Transaction"}
                         </span>
@@ -483,9 +519,8 @@ const TransactionHistory = () => {
                           </span>
                         </div>
                         <div
-                          className={`text-2xl font-mono font-medium tracking-tight ${
-                            isUser ? "text-indigo-400" : "text-white"
-                          }`}
+                          className={`text-2xl font-mono font-medium tracking-tight ${isUser ? "text-indigo-400" : "text-white"
+                            }`}
                         >
                           ₹{amount.toFixed(2)}
                         </div>
@@ -493,11 +528,10 @@ const TransactionHistory = () => {
 
                       {/* Corner Decoration */}
                       <div
-                        className={`absolute bottom-0 w-3 h-3 border-b border-l ${
-                          isUser
-                            ? "right-0 border-indigo-500/30 rounded-bl-lg"
-                            : "left-0 border-zinc-500/30 rounded-br-lg"
-                        }`}
+                        className={`absolute bottom-0 w-3 h-3 border-b border-l ${isUser
+                          ? "right-0 border-indigo-500/30 rounded-bl-lg"
+                          : "left-0 border-zinc-500/30 rounded-br-lg"
+                          }`}
                       ></div>
                     </div>
                   </div>
@@ -635,7 +669,7 @@ const TransactionHistory = () => {
               Or on behalf of <strong className="text-white">{friendName.username}</strong>.
             </p>
             <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
-              <strong className="text-zinc-300">Note:</strong> "{text}"<br/>
+              <strong className="text-zinc-300">Note:</strong> "{text}"<br />
               <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will reduce your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe less. If you already owe them, you'll owe more.
             </p>
             <div className="flex gap-3">
@@ -669,7 +703,7 @@ const TransactionHistory = () => {
               Or <strong className="text-white">{friendName.username}</strong> paid <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> on your behalf.
             </p>
             <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
-              <strong className="text-zinc-300">Note:</strong> "{text}"<br/>
+              <strong className="text-zinc-300">Note:</strong> "{text}"<br />
               <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will increase your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe more. If you owed them, you'll owe less.
             </p>
             <div className="flex gap-3">
