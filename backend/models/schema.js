@@ -8,6 +8,7 @@ const expenseSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     category: { type: String, default: null, index: true },
     subcategory: { type: String, default: null, index: true },
+    date: { type: Date, default: Date.now },
     paidBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -83,7 +84,7 @@ const userSchema = new mongoose.Schema(
       lastUsed: { type: Date, default: null },
     },
     profilePhotoUrl: { type: String, default: null }, // secure_url from Cloudinary
-    profilePhotoId:  { type: String, default: null }, // public_id used for deletion
+    profilePhotoId: { type: String, default: null }, // public_id used for deletion
     lastActive: { type: Date, default: null },
   },
   { timestamps: true }
@@ -95,7 +96,7 @@ const LabelCategorySchema = new mongoose.Schema({
   category: String,
   subcategory: String,
 },
-{ timestamps: true });
+  { timestamps: true });
 
 // Password hashing middleware
 userSchema.pre("save", async function (next) {
