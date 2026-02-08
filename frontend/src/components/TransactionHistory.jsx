@@ -114,7 +114,7 @@ const TransactionHistory = () => {
       const friend = user?.friends?.find((f) => f.friend?._id === friendId);
       setFriendName(friend?.friend || { username: "Unknown" }); // Handle case where friend object might be missing
       setNetBalance(friend?.balance || 0);
-      
+
       // Only set global loading to false if this is the first load
       if (!silent) setLoading(false);
 
@@ -257,7 +257,7 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleSettleBalance = async () => { 
+  const handleSettleBalance = async () => {
     const currentBalance = netBalance;
     if (currentBalance === 0) {
       toast.error("No balance to settle.");
@@ -438,10 +438,14 @@ const TransactionHistory = () => {
             </button>
             <button
               onClick={confirmSettle}
-              className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/20 transition-all"
+              disabled={loading || txLoading}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-900/30 transition-all duration-300 group ${loading || txLoading
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:from-indigo-500 hover:to-violet-500 active:scale-95'
+                }`}
               title="Settle Up"
             >
-              <MdOutlineCurrencyExchange size={18} />
+              {loading || txLoading ? 'Loading...' : 'Settle All'}
             </button>
           </div>
         </div>
@@ -498,14 +502,14 @@ const TransactionHistory = () => {
         <div className="max-w-3xl mx-auto space-y-6">
           {(txLoading || loading) ? (
             <div className="h-full flex flex-col items-center justify-center space-y-4">
-               {/* Sequential pulse bars for transaction list loading */}
-               {[1, 2, 3].map((i) => (
-                 <div key={i} className={`w-full max-w-[70%] h-24 bg-zinc-900/50 rounded-xl border border-white/5 animate-pulse flex flex-col p-4 gap-2 ${i % 2 === 0 ? 'self-end' : 'self-start'}`}>
-                    <div className="w-1/3 h-3 bg-zinc-800 rounded"></div>
-                    <div className="w-1/2 h-2 bg-zinc-800/50 rounded"></div>
-                    <div className="mt-auto self-end w-1/4 h-6 bg-indigo-900/20 rounded"></div>
-                 </div>
-               ))}
+              {/* Sequential pulse bars for transaction list loading */}
+              {[1, 2, 3].map((i) => (
+                <div key={i} className={`w-full max-w-[70%] h-24 bg-zinc-900/50 rounded-xl border border-white/5 animate-pulse flex flex-col p-4 gap-2 ${i % 2 === 0 ? 'self-end' : 'self-start'}`}>
+                  <div className="w-1/3 h-3 bg-zinc-800 rounded"></div>
+                  <div className="w-1/2 h-2 bg-zinc-800/50 rounded"></div>
+                  <div className="mt-auto self-end w-1/4 h-6 bg-indigo-900/20 rounded"></div>
+                </div>
+              ))}
             </div>
           ) : transactions.length === 0 ? (
             <div className="h-full mt-20 flex flex-col items-center justify-center opacity-50">
