@@ -363,91 +363,93 @@ const TransactionHistory = () => {
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none"></div>
 
       {/* --- HEADER: The Control Panel --- */}
-      <div className="relative z-20 px-4 py-3 bg-zinc-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between shadow-lg shadow-black/20">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+      <div className="relative z-20 bg-zinc-900/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/20">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-
-          <Link
-            to={`/public-profile/${friendName._id}`}
-            className="flex items-center gap-2 group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 overflow-hidden relative shadow-inner">
-              {friendName?.profilePhotoUrl ? (
-                <img
-                  src={friendName.profilePhotoUrl}
-                  alt="User"
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-indigo-400 font-bold">
-                  {friendName.username?.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-white leading-none mb-2 mt-2 group-hover:text-indigo-300 transition-colors truncate">
-                {friendName.username}
-              </h2>
-              <div className="flex items-center mt-0 overflow-hidden">
-                {(txLoading || loading) ? (
-                  <div className="flex items-center gap-1.5 py-1">
-                    <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
-                    <span className="text-[10px] font-mono text-indigo-400/70 animate-pulse tracking-tight">
-                      SYNCING_STATUS...
-                    </span>
-                  </div>
+              </svg>
+            </button>
+
+            <Link
+              to={`/public-profile/${friendName._id}`}
+              className="flex items-center gap-2 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 overflow-hidden relative shadow-inner">
+                {friendName?.profilePhotoUrl ? (
+                  <img
+                    src={friendName.profilePhotoUrl}
+                    alt="User"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
                 ) : (
-                  <span
-                    className={`text-[10px] font-mono whitespace-nowrap ${getActivityText() === "Active" ? "text-emerald-400 font-bold" : "text-zinc-500"}`}
-                    style={{ wordSpacing: "-0.15em" }}
-                  >
-                    {getActivityText()}
-                  </span>
+                  <div className="w-full h-full flex items-center justify-center text-indigo-400 font-bold">
+                    {friendName.username?.charAt(0).toUpperCase()}
+                  </div>
                 )}
               </div>
-            </div>
-          </Link>
-        </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-bold text-white leading-none mb-2 mt-2 group-hover:text-indigo-300 transition-colors truncate">
+                  {friendName.username}
+                </h2>
+                <div className="flex items-center mt-0 overflow-hidden">
+                  {(txLoading || loading) ? (
+                    <div className="flex items-center gap-1.5 py-1">
+                      <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
+                      <span className="text-[10px] font-mono text-indigo-400/70 animate-pulse tracking-tight">
+                        SYNCING_STATUS...
+                      </span>
+                    </div>
+                  ) : (
+                    <span
+                      className={`text-[10px] font-mono whitespace-nowrap ${getActivityText() === "Active" ? "text-emerald-400 font-bold" : "text-zinc-500"}`}
+                      style={{ wordSpacing: "-0.15em" }}
+                    >
+                      {getActivityText()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Link>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleSendReminder}
-            className="p-2.5 rounded-xl bg-zinc-800/50 hover:bg-yellow-500/10 text-zinc-400 hover:text-yellow-400 border border-transparent hover:border-yellow-500/20 transition-all"
-            title="Send Reminder"
-          >
-            <FaBell size={16} />
-          </button>
-          <button
-            onClick={confirmSettle}
-            className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/20 transition-all"
-            title="Settle Up"
-          >
-            <MdOutlineCurrencyExchange size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSendReminder}
+              className="p-2.5 rounded-xl bg-zinc-800/50 hover:bg-yellow-500/10 text-zinc-400 hover:text-yellow-400 border border-transparent hover:border-yellow-500/20 transition-all"
+              title="Send Reminder"
+            >
+              <FaBell size={16} />
+            </button>
+            <button
+              onClick={confirmSettle}
+              className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/20 transition-all"
+              title="Settle Up"
+            >
+              <MdOutlineCurrencyExchange size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* --- BALANCE TICKER --- */}
       <div className="relative z-10 py-4 bg-zinc-950/50 border-b border-white/5 backdrop-blur-sm">
-        <div className="flex flex-col items-center">
+        <div className="max-w-3xl mx-auto flex flex-col items-center">
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-1">
             Net Position
           </span>
@@ -491,114 +493,116 @@ const TransactionHistory = () => {
       <div
         ref={chatContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar relative z-0"
+        className="flex-1 overflow-y-auto p-4 custom-scrollbar relative z-0"
       >
-        {(txLoading || loading) ? (
-          <div className="h-full flex flex-col items-center justify-center space-y-4">
-             {/* Sequential pulse bars for transaction list loading */}
-             {[1, 2, 3].map((i) => (
-               <div key={i} className={`w-full max-w-[70%] h-24 bg-zinc-900/50 rounded-xl border border-white/5 animate-pulse flex flex-col p-4 gap-2 ${i % 2 === 0 ? 'self-end' : 'self-start'}`}>
-                  <div className="w-1/3 h-3 bg-zinc-800 rounded"></div>
-                  <div className="w-1/2 h-2 bg-zinc-800/50 rounded"></div>
-                  <div className="mt-auto self-end w-1/4 h-6 bg-indigo-900/20 rounded"></div>
-               </div>
-             ))}
-          </div>
-        ) : transactions.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center opacity-50">
-            <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center mb-4">
-              <span className="text-4xl">🧾</span>
+        <div className="max-w-3xl mx-auto space-y-6">
+          {(txLoading || loading) ? (
+            <div className="h-full flex flex-col items-center justify-center space-y-4">
+               {/* Sequential pulse bars for transaction list loading */}
+               {[1, 2, 3].map((i) => (
+                 <div key={i} className={`w-full max-w-[70%] h-24 bg-zinc-900/50 rounded-xl border border-white/5 animate-pulse flex flex-col p-4 gap-2 ${i % 2 === 0 ? 'self-end' : 'self-start'}`}>
+                    <div className="w-1/3 h-3 bg-zinc-800 rounded"></div>
+                    <div className="w-1/2 h-2 bg-zinc-800/50 rounded"></div>
+                    <div className="mt-auto self-end w-1/4 h-6 bg-indigo-900/20 rounded"></div>
+                 </div>
+               ))}
             </div>
-            <p className="text-zinc-500 font-mono text-sm">LEDGER_EMPTY</p>
-            <p className="text-zinc-600 text-xs mt-1">
-              Initialize transaction stream.
-            </p>
-          </div>
-        ) : (
-          <>
-            {transactions.map((tx) => {
-              const isUser = tx.paidBy._id === userId;
-              const owedEntry = isUser
-                ? tx.owedBy.find((o) => o.user._id === friendId)
-                : tx.owedBy.find((o) => o.user._id === userId);
-              const amount = owedEntry ? owedEntry.amount : 0;
+          ) : transactions.length === 0 ? (
+            <div className="h-full mt-20 flex flex-col items-center justify-center opacity-50">
+              <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center mb-4">
+                <span className="text-4xl">🧾</span>
+              </div>
+              <p className="text-zinc-500 font-mono text-sm">LEDGER_EMPTY</p>
+              <p className="text-zinc-600 text-xs mt-1">
+                Initialize transaction stream.
+              </p>
+            </div>
+          ) : (
+            <>
+              {transactions.map((tx) => {
+                const isUser = tx.paidBy._id === userId;
+                const owedEntry = isUser
+                  ? tx.owedBy.find((o) => o.user._id === friendId)
+                  : tx.owedBy.find((o) => o.user._id === userId);
+                const amount = owedEntry ? owedEntry.amount : 0;
 
-              return (
-                <div
-                  key={tx._id}
-                  className={`flex w-full ${isUser ? "justify-end" : "justify-start"
-                    } animate-in slide-in-from-bottom-2 duration-500`}
-                >
-                  {/* Digital Receipt Bubble */}
-                  <div className={`relative max-w-[85%] sm:max-w-xs group`}>
-                    {/* Visual Connector Line to Side */}
-                    <div
-                      className={`absolute top-4 w-2 h-[1px] ${isUser
-                        ? "-right-2 bg-indigo-500/50"
-                        : "-left-2 bg-zinc-600/50"
-                        }`}
-                    ></div>
-
-                    <div
-                      className={`
-                      relative p-4 rounded-xl border backdrop-blur-md shadow-lg transition-all duration-300
-                      ${isUser
-                          ? "bg-indigo-950/30 border-indigo-500/30 rounded-tr-sm hover:border-indigo-500/50"
-                          : "bg-zinc-900/60 border-white/10 rounded-tl-sm hover:border-white/20"
-                        }
-                    `}
-                    >
-                      {/* Header: Title & Date */}
-                      <div className="flex justify-between items-start gap-4 mb-2 border-b border-white/5 pb-2">
-                        <span
-                          className={`text-sm font-bold truncate ${isUser ? "text-indigo-200" : "text-zinc-200"
-                            }`}
-                        >
-                          {tx.title || "Untitled Transaction"}
-                        </span>
-                        <div className="flex justify-between iterms-start gap-1">
-                          <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
-                            {new Date(tx.createdAt).toLocaleDateString([])}
-                          </span>
-                          <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
-                            {new Date(tx.createdAt).toLocaleTimeString([])}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Content: Amount & Who Paid */}
-                      <div className="flex justify-between items-end">
-                        <div className="flex flex-col mr-2">
-                          <span className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
-                            {isUser ? "You Paid" : "They Paid"}
-                          </span>
-                          <span className="text-[10px] text-zinc-400 bg-black/20 px-1.5 py-0.5 rounded">
-                            {tx.groupName}
-                          </span>
-                        </div>
-                        <div
-                          className={`text-2xl font-mono font-medium tracking-tight ${isUser ? "text-indigo-400" : "text-white"
-                            }`}
-                        >
-                          ₹{amount.toFixed(2)}
-                        </div>
-                      </div>
-
-                      {/* Corner Decoration */}
+                return (
+                  <div
+                    key={tx._id}
+                    className={`flex w-full ${isUser ? "justify-end" : "justify-start"
+                      } animate-in slide-in-from-bottom-2 duration-500`}
+                  >
+                    {/* Digital Receipt Bubble */}
+                    <div className={`relative max-w-[85%] sm:max-w-xs group`}>
+                      {/* Visual Connector Line to Side */}
                       <div
-                        className={`absolute bottom-0 w-3 h-3 border-b border-l ${isUser
-                          ? "right-0 border-indigo-500/30 rounded-bl-lg"
-                          : "left-0 border-zinc-500/30 rounded-br-lg"
+                        className={`absolute top-4 w-2 h-[1px] ${isUser
+                          ? "-right-2 bg-indigo-500/50"
+                          : "-left-2 bg-zinc-600/50"
                           }`}
                       ></div>
+
+                      <div
+                        className={`
+                        relative p-4 rounded-xl border backdrop-blur-md shadow-lg transition-all duration-300
+                        ${isUser
+                            ? "bg-indigo-950/30 border-indigo-500/30 rounded-tr-sm hover:border-indigo-500/50"
+                            : "bg-zinc-900/60 border-white/10 rounded-tl-sm hover:border-white/20"
+                          }
+                      `}
+                      >
+                        {/* Header: Title & Date */}
+                        <div className="flex justify-between items-start gap-4 mb-2 border-b border-white/5 pb-2">
+                          <span
+                            className={`text-sm font-bold truncate ${isUser ? "text-indigo-200" : "text-zinc-200"
+                              }`}
+                          >
+                            {tx.title || "Untitled Transaction"}
+                          </span>
+                          <div className="flex justify-between iterms-start gap-1">
+                            <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
+                              {new Date(tx.createdAt).toLocaleDateString([])}
+                            </span>
+                            <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
+                              {new Date(tx.createdAt).toLocaleTimeString([])}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Content: Amount & Who Paid */}
+                        <div className="flex justify-between items-end">
+                          <div className="flex flex-col mr-2">
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
+                              {isUser ? "You Paid" : "They Paid"}
+                            </span>
+                            <span className="text-[10px] text-zinc-400 bg-black/20 px-1.5 py-0.5 rounded">
+                              {tx.groupName}
+                            </span>
+                          </div>
+                          <div
+                            className={`text-2xl font-mono font-medium tracking-tight ${isUser ? "text-indigo-400" : "text-white"
+                              }`}
+                          >
+                            ₹{amount.toFixed(2)}
+                          </div>
+                        </div>
+
+                        {/* Corner Decoration */}
+                        <div
+                          className={`absolute bottom-0 w-3 h-3 border-b border-l ${isUser
+                            ? "right-0 border-indigo-500/30 rounded-bl-lg"
+                            : "left-0 border-zinc-500/30 rounded-br-lg"
+                            }`}
+                        ></div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-            <div ref={bottomRef} />
-          </>
-        )}
+                );
+              })}
+              <div ref={bottomRef} />
+            </>
+          )}
+        </div>
       </div>
 
       {/* --- SCROLL TO BOTTOM --- */}
