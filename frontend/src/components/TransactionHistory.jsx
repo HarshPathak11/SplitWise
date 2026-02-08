@@ -439,7 +439,7 @@ const TransactionHistory = () => {
             <button
               onClick={confirmSettle}
               disabled={loading || txLoading}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-900/30 transition-all duration-300 group ${loading || txLoading
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-900/30 transition-all duration-300 group whitespace-nowrap ${loading || txLoading
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:from-indigo-500 hover:to-violet-500 active:scale-95'
                 }`}
