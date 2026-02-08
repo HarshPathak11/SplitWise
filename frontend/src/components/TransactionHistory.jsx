@@ -347,6 +347,15 @@ const TransactionHistory = () => {
     return `Last seen on ${lastSeenDate.toLocaleDateString()} at ${timeStr}`;
   };
 
+  const handleCopyUpi = () => {
+    if (friendName?.upiId) {
+      navigator.clipboard.writeText(friendName.upiId);
+      toast.success("UPI ID copied to clipboard!");
+    } else {
+      toast.error("UPI ID not available");
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 overflow-hidden relative">
       {/* --- BACKGROUND FX --- */}
@@ -455,6 +464,26 @@ const TransactionHistory = () => {
               ? `${friendName.username} owes you`
               : `You owe ${friendName.username}`}
           </span>
+
+          {friendName?.upiId && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-1.5 bg-indigo-500/5 border border-indigo-500/20 rounded-lg group hover:bg-indigo-500/10 transition-all duration-300">
+              <div className="flex flex-col">
+                <span className="text-[9px] uppercase tracking-wider text-indigo-400/70 font-bold leading-none mb-0.5">
+                  UPI ID
+                </span>
+                <span className="text-sm font-mono text-indigo-200">
+                  {friendName.upiId}
+                </span>
+              </div>
+              <button
+                onClick={handleCopyUpi}
+                className="ml-2 p-1.5 rounded-md text-indigo-400 hover:text-indigo-200 hover:bg-indigo-500/20 transition-colors"
+                title="Copy UPI ID"
+              >
+                <FaCopy size={14} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
