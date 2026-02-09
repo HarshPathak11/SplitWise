@@ -30,6 +30,7 @@ const TransactionHistory = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPaidConfirm, setShowPaidConfirm] = useState(false);
   const [showReceivedConfirm, setShowReceivedConfirm] = useState(false);
+  const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const userId = storedUser?._id;
 
   const handleScroll = () => {
@@ -235,7 +236,7 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleSendReminder = async () => {
+  const confirmSendReminder = () => {
     const currentBalance = netBalance;
     if (currentBalance === 0) {
       toast.error("No balance to remind.");
@@ -245,6 +246,11 @@ const TransactionHistory = () => {
       toast.error("You owe money. Cannot send reminder.");
       return;
     }
+    setShowReminderConfirm(true);
+  };
+
+  const handleSendReminder = async () => {
+    setShowReminderConfirm(false);
     try {
       await api.post(`${API_BASE}/user/notify`, {
         userId: userId,
@@ -430,7 +436,7 @@ const TransactionHistory = () => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleSendReminder}
+              onClick={confirmSendReminder}
               className="p-2.5 rounded-xl bg-zinc-800/50 hover:bg-yellow-500/10 text-zinc-400 hover:text-yellow-400 border border-transparent hover:border-yellow-500/20 transition-all"
               title="Send Reminder"
             >
@@ -786,6 +792,39 @@ const TransactionHistory = () => {
                 className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transition-colors"
               >
                 Confirm Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CONFIRMATION MODAL - SEND REMINDER --- */}
+      {showReminderConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">
+              Send Payment Reminder?
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              Do you want to send a reminder to{" "}
+              <strong className="text-white">{friendName.username}</strong> to settle the balance between you guys?
+            </p>
+            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+              <strong className="text-zinc-300">Current Balance:</strong> <span className="text-emerald-400">+₹{Math.abs(netBalance).toFixed(2)}</span><br />
+              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will send a push notification to {friendName.username} reminding them about the pending balance.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowReminderConfirm(false)}
+                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendReminder}
+                className="flex-1 py-2.5 rounded-lg bg-yellow-600 text-white font-medium hover:bg-yellow-500 shadow-lg shadow-yellow-900/20 transition-colors"
+              >
+                Send Reminder
               </button>
             </div>
           </div>
