@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
-import logo from "../../public/newIcon-192x192.png";
+import logo from "../../public/newIconV3-192x192.png";
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";

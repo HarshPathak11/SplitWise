@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import FriendCard from "./FriendCard"; // ✅ adjust path as needed
 import { FaArrowLeft } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -137,7 +137,16 @@ const AllFriendsPage = () => {
       }
     } catch (error) {
       console.error("Failed to delete friend:", error);
-      toast.error("Could not delete friend. Try again.");
+      // Extract error message from backend response
+      const errorMessage = error.response?.data?.message || "Could not delete friend. Try again.";
+      const balance = error.response?.data?.balance;
+      
+      // Show balance info if available
+      if (balance !== undefined) {
+        toast.error(`${errorMessage} Current balance: ₹${Math.abs(balance).toFixed(2)}`);
+      } else {
+        toast.error(errorMessage);
+      }
     }
   };
 

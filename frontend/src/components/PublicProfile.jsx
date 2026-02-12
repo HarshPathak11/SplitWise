@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
-import logo from "../../public/newIcon-192x192.png";
+import logo from "../../public/newIconV3-192x192.png";
 import { toast } from "react-hot-toast";
 import userIcon from "../../public/userIcon.png";
 import Swal from "sweetalert2";
@@ -110,10 +110,9 @@ const PublicProfile = () => {
       if (!result.isConfirmed) return;
 
       try {
-        const response = await api.post(`${API_BASE}/user/add-friends`, {
-          email: email,
-          autoAdd: true,
-          friendsArray: [currentUserId],
+        const response = await api.post(`${API_BASE}/user/friend-requests/send`, {
+          fromUserId: currentUserId,
+          toEmail: [email],
         });
 
         if (response.status === 200) {
@@ -184,18 +183,27 @@ const PublicProfile = () => {
           });
         }
       } catch (error) {
+        // Extract error message from backend response
+        const errorMessage = error.response?.data?.message || "Could not remove friend. Please try again.";
+        const balance = error.response?.data?.balance;
+
         Swal.fire({
           title: "Failed!",
-          text: "Could not remove friend. Please try again.",
+          text: errorMessage + (balance !== undefined ? ` Current balance: ₹${Math.abs(balance).toFixed(2)}` : ""),
           icon: "error",
           background: "#0b0b0b",
           color: "#fff",
           confirmButtonColor: "#ff4b4b",
+          customClass: {
+            popup:
+              "rounded-2xl shadow-lg backdrop-blur-md border border-white/10",
+          },
         });
         console.error("Failed to unfriend:", error);
       }
     }
   };
+  
   return (
     <>
       {loading ? (

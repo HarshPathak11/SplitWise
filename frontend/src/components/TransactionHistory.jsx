@@ -3,11 +3,10 @@ import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { FaArrowDown, FaBell, FaCopy } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
 import { Link } from "react-router-dom";
 import { Forward } from "lucide-react";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
-import html2canvas from "html2canvas";
+import Cookies from "js-cookie";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -17,18 +16,22 @@ const TransactionHistory = () => {
 
   const [transactions, setTransactions] = useState([]);
   const [friendName, setFriendName] = useState("");
-  const [currentUserId, setCurrentUserId] = useState("");
   const [netBalance, setNetBalance] = useState(0);
   const [amount, setAmount] = useState(0);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
+  const [txLoading, setTxLoading] = useState(true);
+  const [activityInfo, setActivityInfo] = useState(null);
 
   const chatContainerRef = useRef(null);
   const bottomRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  const [storedUser, setStoredUser] = useState(null);
+  const [storedUser, setStoredUser] = useState(JSON.parse(localStorage.getItem("user")) || null);
   const [showConfirm, setShowConfirm] = useState(false);
-  const userId = Cookies.get("id");
+  const [showPaidConfirm, setShowPaidConfirm] = useState(false);
+  const [showReceivedConfirm, setShowReceivedConfirm] = useState(false);
+  const [showReminderConfirm, setShowReminderConfirm] = useState(false);
+  const userId = storedUser?._id;
 
   const handleScroll = () => {
     const el = chatContainerRef.current;
@@ -128,66 +131,91 @@ const TransactionHistory = () => {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  async function fetchUser() {
+  async function fetchData(initialUser, silent = false) {
     try {
-      setLoading(true);
-      if (!userId) {
-        toast.error("User ID not found. Please log in again.");
+      const currentUserId = Cookies.get("id");
+      if (!currentUserId) {
+        toast.error("User session expired. Please log in again.");
         navigate("/login");
         return;
       }
-      const res = await api.get(`${API_BASE}/user/${userId}`);
-      fetchData(res.data.user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
-  async function fetchData(user) {
-    try {
-      setLoading(true);
+      let user = initialUser;
 
-      if (user === null) {
-        toast.error("No user found");
+      // 1. Sync User Data if needed (compare updatedAt)
+      try {
+        if (user) {
+          const lastUpdatedAtUser = await api.get(
+            `${API_BASE}/user/last-updated-at/${currentUserId}`
+          );
+          if (
+            new Date(lastUpdatedAtUser.data.lastUpdatedAt).getTime() !==
+            new Date(user.updatedAt).getTime()
+          ) {
+            const response = await api.get(`${API_BASE}/user/${currentUserId}`);
+            if (response.status === 200) {
+              user = response.data.user;
+              setStoredUser(user);
+              localStorage.setItem("user", JSON.stringify(user));
+            }
+          }
+        } else {
+          const response = await api.get(`${API_BASE}/user/${currentUserId}`);
+          if (response.status === 200) {
+            user = response.data.user;
+            setStoredUser(user);
+            localStorage.setItem("user", JSON.stringify(user));
+          }
+        }
+      } catch (syncErr) {
+        console.error("Failed to sync user data:", syncErr);
+        // Continue with local data if sync fails
+      }
+
+      if (!user) {
+        toast.error("No user data found");
         return;
       }
 
-      setStoredUser(user);
-
-      if (user?._id) {
-        setCurrentUserId(user._id);
-      }
-
+      // 2. Immediately set basic info from current user data
       const friend = user?.friends?.find((f) => f.friend?._id === friendId);
+      setFriendName(friend?.friend || { username: "Unknown" }); // Handle case where friend object might be missing
+      setNetBalance(friend?.balance || 0);
 
-      setFriendName(friend?.friend || "Unknown");
+      // Only set global loading to false if this is the first load
+      if (!silent) setLoading(false);
 
-      const txRes = await api.get(`${API_BASE}/expenses/${userId}/${friendId}`);
+      // 3. Fetch remote data (Transactions & Last Seen)
+      if (!silent) setTxLoading(true);
+      const txRes = await api.get(`${API_BASE}/expenses/${currentUserId}/${friendId}`);
 
-      // Sort the transactions by createdAt (latest first)
+      // Sort & Process transactions
       const sortedTransactions = txRes.data.expenses.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
-
-      // Reverse the sorted transactions so that latest expense is at the bottom
       setTransactions(sortedTransactions.reverse());
-      setNetBalance(friend.balance || 0);
+
+      // Extract activity info
+      if (txRes.data.lastAtive) {
+        setActivityInfo({ lastAtive: txRes.data.lastAtive });
+      } else if (txRes.data.updatedAt) {
+        setActivityInfo({ updatedAt: txRes.data.updatedAt });
+      } else {
+        setActivityInfo(null);
+      }
     } catch (err) {
-      toast.error("No longer friends!");
+      toast.error("Error fetching data!");
       console.error(err);
-      navigate("/dash");
     } finally {
-      setLoading(false);
+      setTxLoading(false);
     }
   }
 
   useEffect(() => {
-    fetchUser();
+    fetchData(storedUser);
   }, []);
 
-  const handlePaid = async () => {
+  const confirmPaid = () => {
     if (amount === "" || amount === 0) {
       toast.error("Please enter a valid amount to pay.");
       return;
@@ -201,6 +229,12 @@ const TransactionHistory = () => {
       toast.error("Amount cannot be more than 50k");
       return;
     }
+    setShowPaidConfirm(true);
+  };
+
+  const handlePaid = async () => {
+    setShowPaidConfirm(false);
+    const paidAmount = Math.abs(amount);
     try {
       setLoading(true);
       await api.post(`${API_BASE}/user/update-friend-balance`, {
@@ -214,8 +248,8 @@ const TransactionHistory = () => {
       toast.success("Paid transaction added!");
       setAmount(0);
       setText("");
-      // Optionally, refetch transactions
-      fetchUser();
+      // Silent refetch to avoid flickering
+      await fetchData(storedUser, true);
     } catch (error) {
       toast.error("Error updating friend balance (paid)");
       console.error("Error updating friend balance (paid):", error);
@@ -224,7 +258,7 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleReceived = async () => {
+  const confirmReceived = () => {
     if (amount === "" || amount === 0) {
       toast.error("Please enter a valid amount to receive.");
       return;
@@ -239,6 +273,12 @@ const TransactionHistory = () => {
       toast.error("Amount cannot be more than 50k");
       return;
     }
+    setShowReceivedConfirm(true);
+  };
+
+  const handleReceived = async () => {
+    setShowReceivedConfirm(false);
+    const receivedAmount = Math.abs(amount);
     try {
       setLoading(true);
       await api.post(`${API_BASE}/user/update-friend-balance`, {
@@ -252,8 +292,8 @@ const TransactionHistory = () => {
       toast.success("Received transaction added!");
       setAmount(0);
       setText("");
-      // Optionally, refetch transactions
-      fetchUser();
+      // Silent refetch to avoid flickering
+      await fetchData(storedUser, true);
     } catch (error) {
       toast.error("Error updating friend balance (received)");
       console.error("Error updating friend balance (received):", error);
@@ -262,7 +302,7 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleSendReminder = async () => {
+  const confirmSendReminder = () => {
     const currentBalance = netBalance;
     if (currentBalance === 0) {
       toast.error("No balance to remind.");
@@ -272,6 +312,11 @@ const TransactionHistory = () => {
       toast.error("You owe money. Cannot send reminder.");
       return;
     }
+    setShowReminderConfirm(true);
+  };
+
+  const handleSendReminder = async () => {
+    setShowReminderConfirm(false);
     try {
       await api.post(`${API_BASE}/user/notify`, {
         userId: userId,
@@ -279,7 +324,7 @@ const TransactionHistory = () => {
       });
       toast.success("Payment reminder sent!");
     } catch (error) {
-      toast.error("Error sending payment reminder");
+      toast.error("Notification not enabled by this friend");
       console.error("Error sending payment reminder:", error);
     }
   };
@@ -292,6 +337,7 @@ const TransactionHistory = () => {
     }
 
     try {
+      setLoading(true);
       if (currentBalance > 0) {
         await api.post(`${API_BASE}/user/update-friend-balance`, {
           userEmail: storedUser?.email,
@@ -311,10 +357,12 @@ const TransactionHistory = () => {
           friendFcmToken: friendName?.fcmToken,
         });
       }
-      fetchUser();
+      await fetchData(storedUser, true);
       setNetBalance(0);
     } catch (error) {
       toast.error("Please refresh the page first!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -331,117 +379,161 @@ const TransactionHistory = () => {
     setShowConfirm(false);
   };
 
+  const getActivityText = () => {
+    if (!activityInfo) return "NO_ACTIVITY_DATA";
+
+    const value = activityInfo.lastAtive || activityInfo.updatedAt;
+    if (!value) return "NO_ACTIVITY_DATA";
+
+    const lastSeenDate = new Date(value);
+    const now = new Date();
+    let diffInSeconds = Math.floor((now - lastSeenDate) / 1000);
+
+    if (diffInSeconds < 0) {
+      diffInSeconds = Math.abs(diffInSeconds);
+      if (diffInSeconds >= 10) {
+        diffInSeconds -= 10;
+      }
+    }
+
+    if (activityInfo.lastAtive && diffInSeconds <= 10) {
+      return "Active";
+    }
+
+    const options = { hour: "numeric", minute: "numeric", hour12: true };
+    const timeStr = lastSeenDate.toLocaleTimeString([], options);
+
+    const isToday = lastSeenDate.toDateString() === now.toDateString();
+    if (isToday) {
+      return `Last seen today at ${timeStr}`;
+    }
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      lastSeenDate.toDateString() === yesterday.toDateString();
+    if (isYesterday) {
+      return `Last seen yesterday at ${timeStr}`;
+    }
+
+    return `Last seen on ${lastSeenDate.toLocaleDateString()} at ${timeStr}`;
+  };
+
+  const handleCopyUpi = () => {
+    if (friendName?.upiId) {
+      navigator.clipboard.writeText(friendName.upiId);
+      toast.success("UPI ID copied to clipboard!");
+    } else {
+      toast.error("UPI ID not available");
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 overflow-hidden relative">
       {/* --- BACKGROUND FX --- */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* --- LOADING OVERLAY (System Boot Style) --- */}
-      {loading && (
-        <div className="absolute inset-0 z-50 bg-zinc-950 flex flex-col items-center justify-center">
-          <div className="w-16 h-16 border-4 border-zinc-800 border-t-indigo-500 rounded-full animate-spin"></div>
-          <span className="mt-4 text-xs font-mono text-indigo-400 animate-pulse">
-            SYNCING_LEDGER_DATA...
-          </span>
-        </div>
-      )}
-
       {/* --- HEADER: The Control Panel --- */}
-      <div className="relative z-20 px-4 py-3 bg-zinc-900/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between shadow-lg shadow-black/20">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
+      <div className="relative z-20 bg-zinc-900/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/20">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-
-          <Link
-            to={`/public-profile/${friendName._id}`}
-            className="flex items-center gap-3 group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 overflow-hidden relative shadow-inner">
-              {friendName?.profilePhotoUrl ? (
-                <img
-                  src={friendName.profilePhotoUrl}
-                  alt="User"
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-indigo-400 font-bold">
-                  {friendName.username?.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white leading-none group-hover:text-indigo-300 transition-colors">
-                {friendName.username}
-              </h2>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-[10px] font-mono text-zinc-500 tracking-wider truncate max-w-[100px]">
-                  {friendName.upiId || "NO_UPI_LINKED"}
-                </span>
-                {friendName.upiId && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      navigator.clipboard.writeText(friendName.upiId);
-                      toast.success("Copied");
-                    }}
-                    className="text-zinc-600 hover:text-indigo-400 transition-colors"
-                  >
-                    <FaCopy size={10} />
-                  </button>
+              </svg>
+            </button>
+
+            <Link
+              to={`/public-profile/${friendName._id}`}
+              className="flex items-center gap-2 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 overflow-hidden relative shadow-inner">
+                {friendName?.profilePhotoUrl ? (
+                  <img
+                    src={friendName.profilePhotoUrl}
+                    alt="User"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-indigo-400 font-bold">
+                    {friendName.username?.charAt(0).toUpperCase()}
+                  </div>
                 )}
               </div>
-            </div>
-          </Link>
-        </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-bold text-white leading-none mb-2 mt-2 group-hover:text-indigo-300 transition-colors truncate">
+                  {friendName.username}
+                </h2>
+                <div className="flex items-center mt-0 overflow-hidden">
+                  {(txLoading || loading) ? (
+                    <div className="flex items-center gap-1.5 py-1">
+                      <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
+                      <span className="text-[10px] font-mono text-indigo-400/70 animate-pulse tracking-tight">
+                        SYNCING_STATUS...
+                      </span>
+                    </div>
+                  ) : (
+                    <span
+                      className={`text-[10px] font-mono whitespace-nowrap ${getActivityText() === "Active" ? "text-emerald-400 font-bold" : "text-zinc-500"}`}
+                      style={{ wordSpacing: "-0.15em" }}
+                    >
+                      {getActivityText()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Link>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleSendReminder}
-            className="p-2.5 rounded-xl bg-zinc-800/50 hover:bg-yellow-500/10 text-zinc-400 hover:text-yellow-400 border border-transparent hover:border-yellow-500/20 transition-all"
-            title="Send Reminder"
-          >
-            <FaBell size={16} />
-          </button>
-          <button
-            onClick={confirmSettle}
-            className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/20 transition-all"
-            title="Settle Up"
-          >
-            <MdOutlineCurrencyExchange size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={confirmSendReminder}
+              className="p-2.5 rounded-xl bg-zinc-800/50 hover:bg-yellow-500/10 text-zinc-400 hover:text-yellow-400 border border-transparent hover:border-yellow-500/20 transition-all"
+              title="Send Reminder"
+            >
+              <FaBell size={16} />
+            </button>
+            <button
+              onClick={confirmSettle}
+              disabled={loading || txLoading}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-900/30 transition-all duration-300 group whitespace-nowrap ${loading || txLoading
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:from-indigo-500 hover:to-violet-500 active:scale-95'
+                }`}
+              title="Settle Up"
+            >
+              {loading || txLoading ? 'Loading...' : 'Settle All'}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* --- BALANCE TICKER --- */}
       <div className="relative z-10 py-4 bg-zinc-950/50 border-b border-white/5 backdrop-blur-sm">
-        <div className="flex flex-col items-center">
+        <div className="max-w-3xl mx-auto flex flex-col items-center">
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-1">
             Net Position
           </span>
           <div
-            className={`text-4xl font-mono font-medium tracking-tighter ${
-              netBalance >= 0
-                ? "text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]"
-                : "text-rose-400 drop-shadow-[0_0_15px_rgba(251,113,133,0.3)]"
-            }`}
+            className={`text-4xl font-mono font-medium tracking-tighter ${netBalance >= 0
+              ? "text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]"
+              : "text-rose-400 drop-shadow-[0_0_15px_rgba(251,113,133,0.3)]"
+              }`}
           >
             {netBalance >= 0 ? "+" : "-"}₹{Math.abs(netBalance).toFixed(2)}
           </div>
@@ -450,6 +542,26 @@ const TransactionHistory = () => {
               ? `${friendName.username} owes you`
               : `You owe ${friendName.username}`}
           </span>
+
+          {friendName?.upiId && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-1.5 bg-indigo-500/5 border border-indigo-500/20 rounded-lg group hover:bg-indigo-500/10 transition-all duration-300">
+              <div className="flex flex-col">
+                <span className="text-[9px] uppercase tracking-wider text-indigo-400/70 font-bold leading-none mb-0.5">
+                  UPI ID
+                </span>
+                <span className="text-sm font-mono text-indigo-200">
+                  {friendName.upiId}
+                </span>
+              </div>
+              <button
+                onClick={handleCopyUpi}
+                className="ml-2 p-1.5 rounded-md text-indigo-400 hover:text-indigo-200 hover:bg-indigo-500/20 transition-colors"
+                title="Copy UPI ID"
+              >
+                <FaCopy size={14} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -457,120 +569,116 @@ const TransactionHistory = () => {
       <div
         ref={chatContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar relative z-0"
+        className="flex-1 overflow-y-auto p-4 custom-scrollbar relative z-0"
       >
-        {transactions.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center opacity-50">
-            <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center mb-4">
-              <span className="text-4xl">🧾</span>
+        <div className="max-w-3xl mx-auto space-y-6">
+          {(txLoading || loading) ? (
+            <div className="h-full flex flex-col items-center justify-center space-y-4">
+              {/* Sequential pulse bars for transaction list loading */}
+              {[1, 2, 3].map((i) => (
+                <div key={i} className={`w-full max-w-[70%] h-24 bg-zinc-900/50 rounded-xl border border-white/5 animate-pulse flex flex-col p-4 gap-2 ${i % 2 === 0 ? 'self-end' : 'self-start'}`}>
+                  <div className="w-1/3 h-3 bg-zinc-800 rounded"></div>
+                  <div className="w-1/2 h-2 bg-zinc-800/50 rounded"></div>
+                  <div className="mt-auto self-end w-1/4 h-6 bg-indigo-900/20 rounded"></div>
+                </div>
+              ))}
             </div>
-            <p className="text-zinc-500 font-mono text-sm">LEDGER_EMPTY</p>
-            <p className="text-zinc-600 text-xs mt-1">
-              Initialize transaction stream.
-            </p>
-          </div>
-        ) : (
-          <>
-            {transactions.map((tx) => {
-              const isUser = tx.paidBy._id === currentUserId;
-              const owedEntry = isUser
-                ? tx.owedBy.find((o) => o.user._id === friendId)
-                : tx.owedBy.find((o) => o.user._id === currentUserId);
-              const amount = owedEntry ? owedEntry.amount : 0;
+          ) : transactions.length === 0 ? (
+            <div className="h-full mt-20 flex flex-col items-center justify-center opacity-50">
+              <div className="w-20 h-20 rounded-2xl bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center mb-4">
+                <span className="text-4xl">🧾</span>
+              </div>
+              <p className="text-zinc-500 font-mono text-sm">LEDGER_EMPTY</p>
+              <p className="text-zinc-600 text-xs mt-1">
+                Initialize transaction stream.
+              </p>
+            </div>
+          ) : (
+            <>
+              {transactions.map((tx) => {
+                const isUser = tx.paidBy._id === userId;
+                const owedEntry = isUser
+                  ? tx.owedBy.find((o) => o.user._id === friendId)
+                  : tx.owedBy.find((o) => o.user._id === userId);
+                const amount = owedEntry ? owedEntry.amount : 0;
 
-              return (
-                <div
-                  key={tx._id}
-                  className={`flex w-full ${
-                    isUser ? "justify-end" : "justify-start"
-                  } mb-4 px-2`}
-                >
-                  {/* 1. RELATIVE WRAPPER: Centers the button and the bubble as one unit */}
-                  <div className="relative group flex items-center max-w-[85%] sm:max-w-sm">
-                    {/* 2. ABSOLUTE FORWARD BUTTON: Must be outside the bubble's DOM flow */}
-                    <button
-                      onClick={() => handleShareTransaction(tx._id)}
-                      className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center 
-          w-9 h-9 rounded-full bg-zinc-900/90 border border-white/10 
-          text-zinc-400 hover:text-white hover:bg-zinc-800 
-          transition-all duration-300 shadow-2xl z-30
-          ${isUser ? "-left-14" : "-right-14"}`}
-                    >
-                      <Forward size={18} className="ml-0.5" />
-                    </button>
-
-                    {/* 3. THE BUBBLE: Added 'flex-1' and 'w-full' to prevent compression */}
-                    <div
-                      id={`tx-card-${tx._id}`}
-                      className="relative w-full flex-1"
-                    >
-                      {/* Connector Line */}
+                return (
+                  <div
+                    key={tx._id}
+                    className={`flex w-full ${isUser ? "justify-end" : "justify-start"
+                      } animate-in slide-in-from-bottom-2 duration-500`}
+                  >
+                    {/* Digital Receipt Bubble */}
+                    <div className={`relative max-w-[85%] sm:max-w-xs group`}>
+                      {/* Visual Connector Line to Side */}
                       <div
-                        className={`absolute top-4 w-2 h-[1px] ${
-                          isUser
-                            ? "-right-2 bg-indigo-500/50"
-                            : "-left-2 bg-zinc-600/50"
-                        }`}
-                      />
+                        className={`absolute top-4 w-2 h-[1px] ${isUser
+                          ? "-right-2 bg-indigo-500/50"
+                          : "-left-2 bg-zinc-600/50"
+                          }`}
+                      ></div>
 
                       <div
-                        className={`relative p-4 rounded-xl border backdrop-blur-md shadow-lg 
-            ${
-              isUser
-                ? "bg-indigo-950/30 border-indigo-500/30"
-                : "bg-zinc-900/60 border-white/10"
-            }`}
+                        className={`
+                        relative p-4 rounded-xl border backdrop-blur-md shadow-lg transition-all duration-300
+                        ${isUser
+                            ? "bg-indigo-950/30 border-indigo-500/30 rounded-tr-sm hover:border-indigo-500/50"
+                            : "bg-zinc-900/60 border-white/10 rounded-tl-sm hover:border-white/20"
+                          }
+                      `}
                       >
-                        {/* Header Section */}
-                        <div className="flex justify-between items-center gap-4 mb-2 border-b border-white/5 pb-2">
-                          {/* Title: whitespace-nowrap ensures it doesn't wrap or compress unless it hits max width */}
+                        {/* Header: Title & Date */}
+                        <div className="flex justify-between items-start gap-4 mb-2 border-b border-white/5 pb-2">
                           <span
-                            className={`text-sm font-bold whitespace-nowrap truncate ${
-                              isUser ? "text-indigo-200" : "text-zinc-200"
-                            }`}
+                            className={`text-sm font-bold truncate ${isUser ? "text-indigo-200" : "text-zinc-200"
+                              }`}
                           >
-                            {tx.title || "Untitled"}
+                            {tx.title || "Untitled Transaction"}
                           </span>
-                          <div className="flex flex-row gap-1">
-                            <span className="text-[9px] font-mono text-zinc-500">
-                              {new Date(tx.createdAt).toLocaleDateString()}
+                          <div className="flex justify-between iterms-start gap-1">
+                            <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
+                              {new Date(tx.createdAt).toLocaleDateString([])}
                             </span>
-                            <span className="text-[9px] font-mono text-zinc-500">
-                              {new Date(tx.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                            <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap pt-0.5">
+                              {new Date(tx.createdAt).toLocaleTimeString([])}
                             </span>
                           </div>
                         </div>
 
-                        {/* Amount Section */}
-                        <div className="flex justify-between items-end mt-4">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">
+                        {/* Content: Amount & Who Paid */}
+                        <div className="flex justify-between items-end">
+                          <div className="flex flex-col mr-2">
+                            <span className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">
                               {isUser ? "You Paid" : "They Paid"}
                             </span>
-                            <span className="text-[10px] text-zinc-400 bg-black/20 px-1.5 py-0.5 rounded mt-1">
+                            <span className="text-[10px] text-zinc-400 bg-black/20 px-1.5 py-0.5 rounded">
                               {tx.groupName}
                             </span>
                           </div>
                           <div
-                            className={`text-2xl font-mono font-medium ${
-                              isUser ? "text-indigo-400" : "text-white"
-                            }`}
+                            className={`text-2xl font-mono font-medium tracking-tight ${isUser ? "text-indigo-400" : "text-white"
+                              }`}
                           >
                             ₹{amount.toFixed(2)}
                           </div>
                         </div>
+
+                        {/* Corner Decoration */}
+                        <div
+                          className={`absolute bottom-0 w-3 h-3 border-b border-l ${isUser
+                            ? "right-0 border-indigo-500/30 rounded-bl-lg"
+                            : "left-0 border-zinc-500/30 rounded-br-lg"
+                            }`}
+                        ></div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-            <div ref={bottomRef} />
-          </>
-        )}
+                );
+              })}
+              <div ref={bottomRef} />
+            </>
+          )}
+        </div>
       </div>
 
       {/* --- SCROLL TO BOTTOM --- */}
@@ -640,14 +748,15 @@ const TransactionHistory = () => {
           {/* Action Buttons */}
           <div className="flex gap-3">
             <button
-              onClick={handleReceived}
+              onClick={confirmReceived}
               disabled={loading}
               className="flex-1 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
             >
               + Received
             </button>
             <button
-              onClick={handlePaid}
+              onClick={confirmPaid}
+              disabled={loading}
               className="flex-1 py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98]"
             >
               - Paid
@@ -656,7 +765,7 @@ const TransactionHistory = () => {
         </div>
       </div>
 
-      {/* --- CONFIRMATION MODAL --- */}
+      {/* --- CONFIRMATION MODAL - SETTLE UP --- */}
       {showConfirm && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
@@ -677,9 +786,111 @@ const TransactionHistory = () => {
               </button>
               <button
                 onClick={handleConfirmYes}
+                disabled={loading}
                 className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20"
               >
                 Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CONFIRMATION MODAL - PAID --- */}
+      {showPaidConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">
+              Confirm Payment?
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              You are recording that <strong className="text-rose-400">you paid ₹{Math.abs(amount)}</strong> to{" "}
+              <strong className="text-white">{friendName.username}</strong>.
+              Or on behalf of <strong className="text-white">{friendName.username}</strong>.
+            </p>
+            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+              <strong className="text-zinc-300">Note:</strong> "{text}"<br />
+              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will reduce your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe less. If you already owe them, you'll owe more.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPaidConfirm(false)}
+                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePaid}
+                className="flex-1 py-2.5 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-500 shadow-lg shadow-rose-900/20 transition-colors"
+              >
+                Confirm Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CONFIRMATION MODAL - RECEIVED --- */}
+      {showReceivedConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">
+              Confirm Receipt?
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              You are recording that you <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> from{" "}
+              <strong className="text-white">{friendName.username}</strong>.
+              Or <strong className="text-white">{friendName.username}</strong> paid <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> on your behalf.
+            </p>
+            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+              <strong className="text-zinc-300">Note:</strong> "{text}"<br />
+              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will increase your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe more. If you owed them, you'll owe less.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowReceivedConfirm(false)}
+                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReceived}
+                className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transition-colors"
+              >
+                Confirm Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CONFIRMATION MODAL - SEND REMINDER --- */}
+      {showReminderConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-2">
+              Send Payment Reminder?
+            </h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              Do you want to send a reminder to{" "}
+              <strong className="text-white">{friendName.username}</strong> to settle the balance between you guys?
+            </p>
+            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+              <strong className="text-zinc-300">Current Balance:</strong> <span className="text-emerald-400">+₹{Math.abs(netBalance).toFixed(2)}</span><br />
+              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will send a push notification to {friendName.username} reminding them about the pending balance.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowReminderConfirm(false)}
+                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendReminder}
+                className="flex-1 py-2.5 rounded-lg bg-yellow-600 text-white font-medium hover:bg-yellow-500 shadow-lg shadow-yellow-900/20 transition-colors"
+              >
+                Send Reminder
               </button>
             </div>
           </div>
