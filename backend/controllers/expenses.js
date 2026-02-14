@@ -67,4 +67,83 @@ const getUserFriendExpenses = async (req, res) => {
   }
 };
 
-export { getUserFriendExpenses };
+const createPersonalExpense = async (req, res) => {
+  try {
+    const { description, amount, date, category } = req.body;
+    const userId = req.user.id;
+
+    if (!description || !amount || !category) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const newExpense = new Expense({
+      title: description,
+      amount,
+      date: date || Date.now(),
+      category,
+      paidBy: userId,
+      owedBy: [{ user: userId, amount }],
+    });
+
+    await newExpense.save();
+
+    // Add to user's recent expenses
+    await User.findByIdAndUpdate(userId, {
+      $push: { recentExpense: newExpense._id }
+    });
+
+    res.status(201).json(newExpense);
+  } catch (error) {
+    console.error("Error creating personal expense:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getPersonalExpenses = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const expenses = await Expense.find({
+      paidBy: userId,
+      "owedBy.0.user": userId,
+      "owedBy.1": { $exists: false },
+      group: { $exists: false }
+    }).sort({ date: -1 });
+
+    res.status(200).json(expenses);
+  } catch (error) {
+    console.error("Error fetching personal expenses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const deletePersonalExpense = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const expense = await Expense.findOne({ _id: id, paidBy: userId });
+
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found or unauthorized" });
+    }
+
+    await Expense.findByIdAndDelete(id);
+
+    // Remove from user's recent expenses
+    await User.findByIdAndUpdate(userId, {
+      $pull: { recentExpense: id }
+    });
+
+    res.status(200).json({ message: "Expense deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting personal expense:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export {
+  getUserFriendExpenses,
+  createPersonalExpense,
+  getPersonalExpenses,
+  deletePersonalExpense
+};
