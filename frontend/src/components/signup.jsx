@@ -153,7 +153,7 @@ const SignUp = () => {
                 </label>
                 <input
                   value={username}
-                  onChange={(e) => setUserName(e.target.value)}
+                  onChange={(e) => setUserName(e.target.value.trim())}
                   type="text"
                   placeholder="John Doe"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all"
@@ -167,7 +167,7 @@ const SignUp = () => {
                 </label>
                 <input
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.trim())}
                   type="email"
                   placeholder="name@example.com"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all"
@@ -182,7 +182,7 @@ const SignUp = () => {
                 <div className="relative">
                   <input
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value.trim())}
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all pr-10"
