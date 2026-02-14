@@ -77,7 +77,7 @@ const sendOtp = async (req, res) => {
 
 // Verify OTP and create user
 const verifyOtp = async (req, res) => {
-  const { otp, username, email, password, otpGenerated, referId } = req.body;
+  const { otp, username, email, password, otpGenerated, referId, agreedToTerms } = req.body;
 
   if (!otp || !email || !otpGenerated || !username || !password) {
     return res.status(400).json({ message: "Incomplete data received" });
@@ -92,16 +92,16 @@ const verifyOtp = async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ 
-        message: "User with this email already exists. Please login instead." 
+      return res.status(409).json({
+        message: "User with this email already exists. Please login instead."
       });
     }
 
     // Check if username is already taken
     const existingUsername = await User.findOne({ username });
     if (existingUsername) {
-      return res.status(409).json({ 
-        message: "Username already taken. Please choose a different username." 
+      return res.status(409).json({
+        message: "Username already taken. Please choose a different username."
       });
     }
 
@@ -116,6 +116,7 @@ const verifyOtp = async (req, res) => {
       username: cleanUsername,
       email,
       password: cleanPassword, // schema middleware handles hashing
+      agreedToTerms: agreedToTerms,
     });
 
     if (referId) {
@@ -480,6 +481,7 @@ const userDetails = async (req, res) => {
         fcmToken: 1,
         profilePhotoUrl: 1,
         updatedAt: 1,
+        agreedToTerms: 1,
       })
       .lean();
     // console.log(user.friends) // exclude sensitive fields
@@ -550,9 +552,8 @@ const notifyFriend = async (req, res) => {
   if (friend.fcmToken) {
     const token = friend.fcmToken;
     const title = "Healthy Reminder";
-    const body = `It's always good to settle your balances. You owe ${
-      user.username
-    } ₹${Math.abs(balance).toFixed(2)}.`;
+    const body = `It's always good to settle your balances. You owe ${user.username
+      } ₹${Math.abs(balance).toFixed(2)}.`;
 
     await sendOneNotification(token, title, body);
     return res.status(200).json({ message: "Notification sent successfully!" });
@@ -590,16 +591,18 @@ const updateUserProfile = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    const { username, upiId } = req.body;
+    const { username, upiId, agreedToTerms } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(userId, {
-      username,
-      upiId,
-    });
+    const updateData = {};
+    if (username !== undefined) updateData.username = username;
+    if (upiId !== undefined) updateData.upiId = upiId;
+    if (agreedToTerms !== undefined) updateData.agreedToTerms = agreedToTerms;
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
 
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
@@ -627,8 +630,8 @@ const inviteFriend = async (req, res) => {
   try {
     const user = await User.findOne({ _id: userId });
     const emailExists = await User.findOne({ email });
-    
-    if(emailExists){ return res.status(403).json({message: "email already exists."});}
+
+    if (emailExists) { return res.status(403).json({ message: "email already exists." }); }
 
     if (!user || user.email === email) {
       return res.status(404).json({ message: "User not found" });
