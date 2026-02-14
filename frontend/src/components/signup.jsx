@@ -310,6 +310,7 @@ const SignUp = () => {
           otpGenerated,
           password,
           username,
+          agreedToTerms: agreed,
         }
       );
 
