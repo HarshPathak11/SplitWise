@@ -8,6 +8,7 @@ import TopNavbar from "./TopNavbar";
 import SwipeToFriends from "./SwipeToFriends";
 import { requestNotificationPermission } from "../../notifications";
 import api from "../utils/api";
+import TermsPopup from "./TermsPopup";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
@@ -142,6 +143,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      <TermsPopup user={user} setUser={setUser} />
     </div>
   );
 };
