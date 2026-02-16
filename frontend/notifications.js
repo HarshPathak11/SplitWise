@@ -7,7 +7,7 @@ export const requestNotificationPermission = async () => {
   .then((permission) => {
     if (permission === "granted" || permission === "default") {
       return getToken(messaging, {
-        vapidKey: "BJcK5VxVvregTfM4nPYNTg6s3GviBV0JeYFgbXaXoXrIadRMdvmxlwfwwK9LOsXqTgmmxqsiYp7nORzMJx5Mg0M"
+        vapidKey: import.meta.env.VAPID_PUBLIC_KEY
       });
     }
   })
