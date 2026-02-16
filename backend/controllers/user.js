@@ -493,6 +493,34 @@ const userDetails = async (req, res) => {
   }
 };
 
+// Public profile - no auth required
+const publicUserDetails = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findById(userId)
+      .populate({
+        path: "friends.friend",
+        select: "username email profilePhotoUrl",
+      })
+      .select({
+        username: 1,
+        email: 1,
+        profilePhotoUrl: 1,
+        friends: 1,
+      })
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ user });
+  } catch (err) {
+    console.error("Error fetching public user details:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 const setFcmToken = async (req, res) => {
   try {
     const { fcmToken, userId } = req.body;
@@ -1000,45 +1028,74 @@ const updateFriendBalance = async (req, res) => {
 const removeFriend = async (req, res) => {
   const { friendId, userId } = req.body;
 
-  if (!friendId) {
-    return res.status(400).json({ message: "Friend ID is required." });
+  if (!friendId || !userId) {
+    return res.status(400).json({ message: "Friend ID and User ID are required." });
   }
 
+  if (friendId === userId) {
+    return res.status(400).json({ message: "Cannot remove yourself as a friend." });
+  }
+
+  const session = await mongoose.startSession();
+
   try {
-    // Fetch both users to check balance
-    const user = await User.findById(userId);
-    const friend = await User.findById(friendId);
+    await session.withTransaction(async () => {
+      // Fetch both users within the transaction
+      const user = await User.findById(userId).session(session);
+      const friend = await User.findById(friendId).session(session);
 
-    if (!user || !friend) {
-      return res.status(404).json({ message: "User or friend not found." });
-    }
+      if (!user || !friend) {
+        throw new Error("USER_NOT_FOUND");
+      }
 
-    // Check if there's an unsettled balance
-    const friendRecord = user.friends.find(
-      (f) => f.friend.toString() === friendId.toString()
-    );
+      // Check if they are actually friends
+      const friendRecord = user.friends.find(
+        (f) => f.friend.toString() === friendId.toString()
+      );
 
-    if (friendRecord && friendRecord.balance !== 0) {
-      return res.status(400).json({
-        message: "Balance is not settled. Please settle the balance first before removing this friend.",
-        balance: friendRecord.balance,
-      });
-    }
+      if (!friendRecord) {
+        throw new Error("NOT_FRIENDS");
+      }
 
-    // Remove friend from current user
-    await User.findByIdAndUpdate(userId, {
-      $pull: { friends: { friend: friendId } },
-    });
+      // Check if there's an unsettled balance
+      if (friendRecord.balance !== 0) {
+        throw new Error("UNSETTLED_BALANCE:" + friendRecord.balance);
+      }
 
-    // Remove current user from friend's list
-    await User.findByIdAndUpdate(friendId, {
-      $pull: { friends: { friend: userId } },
+      // Remove friend from current user
+      await User.findByIdAndUpdate(
+        userId,
+        { $pull: { friends: { friend: friendId } } },
+        { session }
+      );
+
+      // Remove current user from friend's list
+      await User.findByIdAndUpdate(
+        friendId,
+        { $pull: { friends: { friend: userId } } },
+        { session }
+      );
     });
 
     return res.status(200).json({ message: "Friend removed successfully." });
   } catch (error) {
+    if (error.message === "USER_NOT_FOUND") {
+      return res.status(404).json({ message: "User or friend not found." });
+    }
+    if (error.message === "NOT_FRIENDS") {
+      return res.status(400).json({ message: "This user is not in your friends list." });
+    }
+    if (error.message.startsWith("UNSETTLED_BALANCE:")) {
+      const balance = error.message.split(":")[1];
+      return res.status(400).json({
+        message: "Balance is not settled. Please settle the balance first before removing this friend.",
+        balance: Number(balance),
+      });
+    }
     console.error("Error removing friend:", error);
     return res.status(500).json({ message: "Server error" });
+  } finally {
+    await session.endSession();
   }
 };
 
@@ -1332,6 +1389,20 @@ const getUserLastUpdatedAt = async (req, res) => {
   }
 };
 
+const checkFriendRequestStatus = async (req, res) => {
+  try {
+    const { fromUserId, toUserId } = req.params;
+    const request = await FriendRequest.findOne({
+      from: fromUserId,
+      to: toUserId,
+    });
+    return res.status(200).json({ pending: !!request });
+  } catch (error) {
+    console.error("Error checking friend request status:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 export {
   sendOtp,
   userLogin,
@@ -1358,4 +1429,6 @@ export {
   notifyFriend,
   uploadProfilePhoto,
   getUserLastUpdatedAt,
+  checkFriendRequestStatus,
+  publicUserDetails,
 };
