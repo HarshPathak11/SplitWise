@@ -3,18 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { toast } from "react-hot-toast";
 import {
-  Calendar,
   IndianRupee,
-  Tag,
   Trash2,
   Plus,
   Filter,
   Receipt,
-  ShoppingBag,
-  Coffee,
-  Car,
-  Zap,
-  MoreHorizontal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -29,46 +22,9 @@ const PersonalExpense = () => {
       hour: "2-digit",
       minute: "2-digit",
     }),
-    category: "",
   });
   const [errors, setErrors] = useState({});
-  const [filterCategory, setFilterCategory] = useState("");
-
-  // Refined categories map with icons and colors
-  const categoryConfig = {
-    Food: {
-      icon: Coffee,
-      color: "text-orange-400",
-      bg: "bg-orange-400/10",
-      border: "border-orange-400/20",
-    },
-    Transport: {
-      icon: Car,
-      color: "text-blue-400",
-      bg: "bg-blue-400/10",
-      border: "border-blue-400/20",
-    },
-    Entertainment: {
-      icon: ShoppingBag,
-      color: "text-purple-400",
-      bg: "bg-purple-400/10",
-      border: "border-purple-400/20",
-    },
-    Utilities: {
-      icon: Zap,
-      color: "text-yellow-400",
-      bg: "bg-yellow-400/10",
-      border: "border-yellow-400/20",
-    },
-    Other: {
-      icon: MoreHorizontal,
-      color: "text-gray-400",
-      bg: "bg-gray-400/10",
-      border: "border-gray-400/20",
-    },
-  };
-
-  const categories = Object.keys(categoryConfig);
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // holds expense to confirm delete
 
   const fetchExpenses = async () => {
     try {
@@ -94,7 +50,6 @@ const PersonalExpense = () => {
       newErrors.amount = "Valid amount is required";
     if (!newExpense.date) newErrors.date = "Date is required";
     if (!newExpense.time) newErrors.time = "Time is required";
-    if (!newExpense.category) newErrors.category = "Category is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -109,7 +64,6 @@ const PersonalExpense = () => {
           description: newExpense.description,
           amount: parseFloat(newExpense.amount),
           date: combinedDate,
-          category: newExpense.category,
         };
         const response = await api.post("/expenses/personal", payload);
 
@@ -124,7 +78,6 @@ const PersonalExpense = () => {
             hour: "2-digit",
             minute: "2-digit",
           }),
-          category: "",
         });
         setErrors({});
         toast.success("Expense added successfully");
@@ -135,22 +88,25 @@ const PersonalExpense = () => {
     }
   };
 
-  const deleteExpense = async (id) => {
+  const confirmDelete = (expense) => {
+    setDeleteConfirm(expense);
+  };
+
+  const deleteExpense = async () => {
+    if (!deleteConfirm) return;
     try {
-      await api.delete(`/expenses/personal/${id}`);
-      setExpenses(expenses.filter((expense) => expense._id !== id));
+      await api.delete(`/expenses/personal/${deleteConfirm._id}`);
+      setExpenses(expenses.filter((expense) => expense._id !== deleteConfirm._id));
       toast.success("Expense deleted successfully");
     } catch (error) {
       console.error("Error deleting expense:", error);
       toast.error("Failed to delete expense");
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
-  const filteredExpenses = filterCategory
-    ? expenses.filter((expense) => expense.category === filterCategory)
-    : expenses;
-
-  const totalExpenses = filteredExpenses.reduce(
+  const totalExpenses = expenses.reduce(
     (sum, expense) => sum + expense.amount,
     0,
   );
@@ -306,33 +262,6 @@ const PersonalExpense = () => {
                   </div>
                 </div>
 
-                {/* changed from grid grid-cols-3 to flex so buttons size to content */}
-                <div className="flex flex-wrap gap-2">
-                  {categories.map((cat) => {
-                    const Config = categoryConfig[cat];
-                    const Icon = Config.icon;
-                    const isSelected = newExpense.category === cat;
-                    return (
-                      <button
-                        key={cat}
-                        onClick={() =>
-                          setNewExpense({ ...newExpense, category: cat })
-                        }
-                        /* inline-flex column, horizontal padding so width matches label */
-                        className={`inline-flex flex-col items-center justify-center px-3 py-2 rounded-xl border transition-all duration-200 ${
-                          isSelected
-                            ? `${Config.bg} ${Config.border} ${Config.color} ring-1 ring-inset ring-current`
-                            : "bg-zinc-800/30 border-zinc-700/50 text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300"
-                        }`}
-                      >
-                        <Icon className="w-5 h-5 mb-1" />
-                        <span className="text-xs uppercase tracking-wide font-medium whitespace-nowrap leading-tight">
-                          {cat}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
                 {errors.category && (
                   <p className="text-red-400 text-xs mt-1 ml-1">
                     {errors.category}
@@ -367,34 +296,6 @@ const PersonalExpense = () => {
                   <IndianRupee className="w-6 h-6" />
                 </div>
               </div>
-
-              <div className="bg-zinc-900/50 border border-white/10 rounded-xl p-4 backdrop-blur-md">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-zinc-500 text-sm font-medium">
-                    Filter By Category
-                  </p>
-                  <Filter className="w-4 h-4 text-zinc-600" />
-                </div>
-                <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-                  <button
-                    onClick={() => setFilterCategory("")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors border ${!filterCategory ? "bg-white text-zinc-950 border-white" : "bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500"}`}
-                  >
-                    All
-                  </button>
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() =>
-                        setFilterCategory(cat === filterCategory ? "" : cat)
-                      }
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors border ${filterCategory === cat ? "bg-indigo-500 border-indigo-500 text-white" : "bg-transparent text-zinc-400 border-zinc-700 hover:border-zinc-500"}`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* List */}
@@ -405,7 +306,7 @@ const PersonalExpense = () => {
                   Recent Transactions
                 </h2>
                 <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded-full">
-                  {filteredExpenses.length} items
+                  {expenses.length} items
                 </span>
               </div>
 
@@ -414,7 +315,7 @@ const PersonalExpense = () => {
                   <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                   <p className="text-sm">Loading expenses...</p>
                 </div>
-              ) : filteredExpenses.length === 0 ? (
+              ) : expenses.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-zinc-500 border-2 border-dashed border-zinc-800 rounded-xl">
                   <div className="w-16 h-16 bg-zinc-800/50 rounded-full flex items-center justify-center mb-4">
                     <Receipt className="w-8 h-8 text-zinc-600" />
@@ -427,12 +328,7 @@ const PersonalExpense = () => {
               ) : (
                 <div className="space-y-2 overflow-y-auto flex-1 pr-2 custom-scrollbar">
                   <AnimatePresence mode="popLayout">
-                    {filteredExpenses.map((expense) => {
-                      const CategoryIcon =
-                        categoryConfig[expense.category]?.icon || Tag;
-                      const categoryStyle = categoryConfig[
-                        expense.category
-                      ] || { color: "text-zinc-400", bg: "bg-zinc-800" };
+                    {expenses.map((expense) => {
 
                       return (
                         <motion.div
@@ -444,20 +340,22 @@ const PersonalExpense = () => {
                           className="bg-zinc-800/40 hover:bg-zinc-800/60 border border-white/5 p-4 rounded-xl flex items-center justify-between group transition-all"
                         >
                           <div className="flex items-center gap-4">
-                            <div
-                              className={`w-12 h-12 rounded-xl flex items-center justify-center ${categoryStyle.bg} ${categoryStyle.color}`}
-                            >
-                              <CategoryIcon className="w-6 h-6" />
-                            </div>
                             <div>
                               <h3 className="font-semibold text-zinc-200">
                                 {expense.title || expense.description}
                               </h3>
-                              <div className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
-                                <span className={categoryStyle.color}>
-                                  {expense.category}
-                                </span>
-                                <span>•</span>
+                              <div className="flex items-center gap-2 mt-2 text-xs text-zinc-500 mt-0.5 flex-wrap">
+                                {expense.category && (
+                                  <>
+                                    <span>{expense.category}</span>
+                                    <span>•</span>
+                                  </>
+                                )}
+                                {expense.subcategory && (
+                                  <>
+                                    <span>{expense.subcategory}</span>
+                                  </>
+                                )}
                                 <span>
                                   {new Date(expense.date).toLocaleDateString()}{" "}
                                   at{" "}
@@ -472,11 +370,11 @@ const PersonalExpense = () => {
 
                           <div className="flex items-center gap-4">
                             <p className="text-lg font-bold text-white">
-                              -₹{expense.amount.toFixed(2)}
+                              ₹{expense.amount.toFixed(2)}
                             </p>
                             <button
-                              onClick={() => deleteExpense(expense._id)}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500/20"
+                              onClick={() => confirmDelete(expense)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 transition-all hover:bg-red-500/20"
                               title="Delete Expense"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -492,6 +390,56 @@ const PersonalExpense = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Popup */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setDeleteConfirm(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Delete Expense?</h3>
+              </div>
+
+              <p className="text-zinc-400 text-sm mb-1">Are you sure you want to delete this expense?</p>
+              <div className="bg-zinc-800/60 border border-white/5 rounded-xl p-3 mb-5">
+                <p className="text-zinc-200 font-medium">{deleteConfirm.title || deleteConfirm.description}</p>
+                <p className="text-red-400 font-bold text-lg mt-1">₹{deleteConfirm.amount.toFixed(2)}</p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-zinc-800 border border-white/10 text-zinc-300 hover:bg-zinc-700 transition-all text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteExpense}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-all text-sm font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
