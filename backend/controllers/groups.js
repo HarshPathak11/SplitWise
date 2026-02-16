@@ -1045,6 +1045,50 @@ const getAllExpensesForASubcategoryInGroup = async (req, res) => {
   }
 };
 
+const updateGroupDetails = async (req, res) => {
+  const { id } = req.params;
+  const { name, description, userId } = req.body;
+
+  if (!name || name.trim().length === 0) {
+    return res.status(400).json({ message: "Trip name is required." });
+  }
+
+  const session = await mongoose.startSession();
+
+  try {
+    let updatedGroup = null;
+
+    await session.withTransaction(async () => {
+      // Single atomic findOneAndUpdate — combines membership check + update
+      // No separate read, so no write conflict possible
+      const updateFields = { name: name.trim() };
+      if (description !== undefined) {
+        updateFields.description = description.trim();
+      }
+
+      updatedGroup = await Group.findOneAndUpdate(
+        { _id: id, members: userId }, // query: group exists AND user is a member
+        { $set: updateFields },
+        { new: true, session }
+      );
+
+      if (!updatedGroup) {
+        throw new Error("NOT_FOUND_OR_NOT_MEMBER");
+      }
+    });
+
+    return res.status(200).json({ message: "Group updated successfully.", group: updatedGroup });
+  } catch (error) {
+    if (error.message === "NOT_FOUND_OR_NOT_MEMBER") {
+      return res.status(403).json({ message: "Group not found or you are not a member." });
+    }
+    console.error("Error updating group details:", error);
+    return res.status(500).json({ message: "Server error" });
+  } finally {
+    await session.endSession();
+  }
+};
+
 export {
   createGroup,
   getGroupDetails,
@@ -1061,4 +1105,5 @@ export {
   getSubCategoriesForGroup,
   getAllExpensesForASubcategoryInGroup,
   getGroupExpenses,
+  updateGroupDetails,
 };

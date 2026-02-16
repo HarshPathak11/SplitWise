@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil, Check, X } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import { FaChartBar } from "react-icons/fa";
 import { useParams } from "react-router-dom";
@@ -21,6 +21,58 @@ const TripDetails = () => {
   const [loadingExpenses, setLoadingExpenses] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef(null);
+
+  // Inline editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const startEditing = () => {
+    setEditName(tripDetails?.name || "");
+    setEditDescription(tripDetails?.description || "");
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+  };
+
+  const saveEditing = async () => {
+    if (!editName.trim()) {
+      toast.error("Trip name cannot be empty.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const storedUser = localStorage.getItem("user");
+      const user = JSON.parse(storedUser);
+      const res = await api.put(`${API_BASE}/group/update/${tripId}`, {
+        name: editName,
+        description: editDescription,
+        userId: user._id,
+      });
+      if (res.status === 200) {
+        setTripDetails((prev) => ({
+          ...prev,
+          name: editName.trim(),
+          description: editDescription.trim(),
+        }));
+        // Update localStorage too
+        const cg = JSON.parse(localStorage.getItem("currentGroup") || "{}");
+        cg.name = editName.trim();
+        cg.description = editDescription.trim();
+        localStorage.setItem("currentGroup", JSON.stringify(cg));
+        toast.success("Trip updated!");
+        setIsEditing(false);
+      }
+    } catch (err) {
+      console.error("Error updating trip:", err);
+      toast.error(err.response?.data?.message || "Failed to update trip.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   //Fetching group Meta Data
   useEffect(() => {
@@ -248,13 +300,60 @@ const TripDetails = () => {
                     </span>
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-500 tracking-tight truncate">
-                    {tripDetails?.name}
-                  </h1>
-
-                  <p className="text-zinc-500 text-sm mt-1 line-clamp-1 max-w-xl font-medium">
-                    {tripDetails?.description || "No description provided."}
-                  </p>
+                  {isEditing ? (
+                    <div className="space-y-3 mt-2">
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-xl font-bold text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                        placeholder="Trip name"
+                        autoFocus
+                      />
+                      <input
+                        type="text"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-indigo-500/50 transition-colors"
+                        placeholder="Description (optional)"
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={saveEditing}
+                          disabled={saving}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          {saving ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold transition-colors border border-white/10"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 group/title">
+                        <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-500 tracking-tight truncate">
+                          {tripDetails?.name}
+                        </h1>
+                        <button
+                          onClick={startEditing}
+                          className="p-1 rounded-md hover:bg-white/10 text-zinc-500 hover:text-indigo-400 transition-all"
+                          title="Edit trip details"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-zinc-500 text-sm mt-1 line-clamp-1 max-w-xl font-medium">
+                        {tripDetails?.description || "No description provided."}
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 {/* Compact Actions */}
