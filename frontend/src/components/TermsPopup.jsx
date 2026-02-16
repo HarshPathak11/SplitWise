@@ -108,7 +108,7 @@ const TERMS_TEMPLATES = [
             <div className="p-4 rounded-xl bg-white/5 border border-white/10">
                 <h4 className="font-semibold text-white mb-2">✅ Eligibility & Account</h4>
                 <p className="text-sm text-white/70">
-                    You must be 12+ to use FairFare. Keep your login details secret - you are responsible for your account.
+                    You must be 3+ to use FairFare. Keep your login details secret - you are responsible for your account.
                 </p>
             </div>
             <div className="p-4 rounded-xl bg-white/5 border border-white/10">
@@ -188,7 +188,7 @@ const TERMS_TEMPLATES = [
         </div>
         <div className="bg-white/5 border border-white/10 rounded-xl p-5">
             <p className="text-white/80 leading-7 text-sm">
-                By using FairFare, you agree that you are <strong>over 12 years old</strong> and will use the app legally. We provide the platform for tracking expenses "as is", meaning we aren't liable if a third-party payment fails or if data has minor inaccuracies. Basically: <strong>be honest, keep your password safe, and double-check your payments</strong>. We can ban users who violate these rules.
+                By using FairFare, you agree that you are <strong>over 3 years old</strong> and will use the app legally. We provide the platform for tracking expenses "as is", meaning we aren't liable if a third-party payment fails or if data has minor inaccuracies. Basically: <strong>be honest, keep your password safe, and double-check your payments</strong>. We can ban users who violate these rules.
             </p>
         </div>
         <div className="text-center">
@@ -463,7 +463,7 @@ const TermsPopup = ({ user, setUser }) => {
 
                             <section>
                                 <h3 className="font-bold text-white mb-2">8. Children’s Privacy</h3>
-                                <p>FairFare is not intended for children under 12. We do not knowingly collect data from children.</p>
+                                <p>FairFare is not intended for children under 3. We do not knowingly collect data from children.</p>
                             </section>
 
                             <section>
@@ -489,7 +489,7 @@ const TermsPopup = ({ user, setUser }) => {
                                 <h3 className="font-bold text-white mb-2">1. Eligibility</h3>
                                 <p>To use FairFare, you must:</p>
                                 <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>Be at least 12 years old or have parental/guardian consent.</li>
+                                    <li>Be at least 3 years old or have parental/guardian consent.</li>
                                     <li>Provide accurate and complete information during registration.</li>
                                     <li>Use the Service only for lawful purposes.</li>
                                 </ul>
@@ -521,7 +521,7 @@ const TermsPopup = ({ user, setUser }) => {
                                 <h3 className="font-bold text-white mb-2">4. Payments and Transactions</h3>
                                 <ul className="list-disc pl-5 space-y-1">
                                     <li>FairFare is primarily a tool for expense tracking and management.</li>
-                                    <li>FairFare does not hold, transfer, or process money directly unless integrated with authorized third-party payment gateways (e.g., Google Pay, Razorpay, Paytm).</li>
+                                    <li>FairFare does not hold, transfer, or process money directly unless integrated with authorized third-party payment gateways.</li>
                                     <li>Any transactions between users are handled outside the app, or through such third parties.</li>
                                     <li>We are not responsible for payment disputes, failed transactions, or losses caused by user error or third-party failures.</li>
                                     <li>You agree to verify all transactions and use third-party payment services at your own risk.</li>
