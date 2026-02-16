@@ -14,7 +14,8 @@ import {
     getTopCategoriesForGroupExpense,
     getSubCategoriesForGroup,
     getAllExpensesForASubcategoryInGroup,
-    getGroupExpenses
+    getGroupExpenses,
+    updateGroupDetails
 } from '../controllers/groups.js';
 import {auth} from '../middleware/auth.js';
 const router = express.Router();
@@ -36,6 +37,9 @@ router.post('/create-group',auth, createGroup);
 router.post("/del-add-expense",auth, addafterDeleteExpenseController);
 router.post("/sub-categories",auth, getSubCategoriesForGroup);
 router.post("/expenses-by-subcategory",auth, getAllExpensesForASubcategoryInGroup);
+
+// PUT requests
+router.put("/update/:id", auth, updateGroupDetails);
 
 // DELETE requests
 router.delete("/del-expense/:expenseId",auth, deleteExpenseController);
