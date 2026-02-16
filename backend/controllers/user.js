@@ -77,13 +77,13 @@ const sendOtp = async (req, res) => {
 
 // Verify OTP and create user
 const verifyOtp = async (req, res) => {
-  const { otp, username, email, password, otpGenerated, referId } = req.body;
+  let { otp, username, email, password, otpGenerated, referId } = req.body;
   username=username.trim();
   email=email.trim();
   password=password.trim();
   otp=otp.trim();
   otpGenerated=otpGenerated.trim();
-  referId=referId.trim();
+  referId= referId!=null ? referId.trim() : null;
 
   if (!otp || !email || !otpGenerated || !username || !password) {
     return res.status(400).json({ message: "Incomplete data received" });
