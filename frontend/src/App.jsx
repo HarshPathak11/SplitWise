@@ -29,7 +29,6 @@ import Analytics from "./components/Analytics";
 import Subcategories from "./components/Subcategories";
 import Expenses from "./components/Expenses";
 import AllFriends from "./components/AllFriends";
-import Settings from "./components/Settings";
 
 const router = createBrowserRouter([
   {
@@ -153,14 +152,6 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ChangePassword />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "settings",
-        element: (
-          <ProtectedRoute>
-            <Settings />
           </ProtectedRoute>
         ),
       },
