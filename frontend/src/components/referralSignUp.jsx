@@ -42,6 +42,12 @@ const ReferralSignUp = () => {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await api.post(`${API_BASE}/user/send-otp`, {
@@ -57,7 +63,7 @@ const ReferralSignUp = () => {
       if (error.response && error.response.status === 410) {
         toast.error("Email already Taken!");
       } else if (error.response && error.response.status === 400) {
-        toast.error("Username already Taken!");
+        toast.error(error.response.data?.message || "Invalid request.");
       } else {
         toast.error("Failed to send OTP.");
       }
@@ -144,11 +150,10 @@ const ReferralSignUp = () => {
           <div className="space-y-5">
             {/* Step 1: User Details (Hide if OTP sent to focus on verification, or keep visible disabled) */}
             <div
-              className={`space-y-4 transition-all duration-500 ${
-                otpSent
+              className={`space-y-4 transition-all duration-500 ${otpSent
                   ? "opacity-50 pointer-events-none grayscale"
                   : "opacity-100"
-              }`}
+                }`}
             >
               {/* Full Name */}
               <div className="space-y-1">
@@ -176,11 +181,10 @@ const ReferralSignUp = () => {
                   placeholder="name@example.com"
                   // Use readOnly if the email is in the URL
                   readOnly={!!searchParams.get("email")}
-                  className={`w-full border rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none transition-all ${
-                    searchParams.get("email")
+                  className={`w-full border rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none transition-all ${searchParams.get("email")
                       ? "bg-white/5 border-white/5 cursor-not-allowed opacity-70" // Style for auto-filled state
                       : "bg-white/5 border-white/10 focus:bg-white/10 focus:border-white/20"
-                  }`}
+                    }`}
                 />
                 {searchParams.get("email") && (
                   <p className="text-[10px] text-cyan-400/60 ml-1">
@@ -253,10 +257,9 @@ const ReferralSignUp = () => {
               onClick={otpSent ? handleOtpVerify : handleOtpSend}
               disabled={loading}
               className={`relative w-full overflow-hidden rounded-xl py-4 font-semibold text-sm tracking-wide transition-all duration-300 mt-2
-                ${
-                  loading
-                    ? "bg-white/10 text-white/30 cursor-wait"
-                    : otpSent
+                ${loading
+                  ? "bg-white/10 text-white/30 cursor-wait"
+                  : otpSent
                     ? "bg-indigo-600 text-white hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)]"
                     : "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                 }`}
@@ -265,8 +268,8 @@ const ReferralSignUp = () => {
                 {loading
                   ? "Processing..."
                   : otpSent
-                  ? "Verify & Complete"
-                  : "Send Verification Code"}
+                    ? "Verify & Complete"
+                    : "Send Verification Code"}
               </span>
             </button>
 

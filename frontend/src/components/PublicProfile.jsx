@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
-import logo from "../../public/newIcon-192x192.png";
+import logo from "../../public/newIconV3-192x192.png";
 import { toast } from "react-hot-toast";
 import userIcon from "../../public/userIcon.png";
 import Swal from "sweetalert2";
@@ -15,6 +15,7 @@ import {
   UserPlus,
   UserMinus,
   LogIn,
+  Clock,
 } from "lucide-react";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -25,6 +26,7 @@ const PublicProfile = () => {
   const [username, setUsername] = useState("");
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
   const [hasError, setHasError] = React.useState(false);
   const [friendId, setFriendId] = useState(null);
 
@@ -36,7 +38,8 @@ const PublicProfile = () => {
     async function fetchUser() {
       try {
         setLoading(true);
-        const res = await api.get(`${API_BASE}/user/${userId}`); // Adjust this endpoint based on your backend
+        // Use the public endpoint — no auth required
+        const res = await api.get(`${API_BASE}/user/public/${userId}`);
         setLoading(false);
         if (res.status === 200) {
           setFriendId(res?.data?.user?._id);
@@ -47,12 +50,22 @@ const PublicProfile = () => {
 
           if (currentUserId === userId) {
             setIsFriend(true);
-          } else if (currentUserId !== userId) {
+          } else if (currentUserId && currentUserId !== userId) {
             res.data.user.friends.forEach((friend) => {
               if (friend?.friend?._id === currentUserId) {
                 setIsFriend(true);
               }
             });
+
+            // Check if a friend request is already pending
+            try {
+              const reqRes = await api.get(
+                `${API_BASE}/user/friend-request-status/${currentUserId}/${res.data.user._id}`
+              );
+              if (reqRes.data?.pending) setRequestSent(true);
+            } catch (e) {
+              // ignore — just won't show "Request Sent"
+            }
           }
         } else {
           setHasError(true);
@@ -88,6 +101,8 @@ const PublicProfile = () => {
       return;
     }
 
+    if (requestSent) return;
+
     if (!isFriend) {
       // Add Friend Confirmation
       const result = await Swal.fire({
@@ -95,11 +110,11 @@ const PublicProfile = () => {
         text: "They’ll be able to share and split expenses with you.",
         icon: "question",
         showCancelButton: true,
-        confirmButtonText: "Yes, add friend",
+        confirmButtonText: "Yes, send request",
         cancelButtonText: "Cancel",
         background: "#0b0b0b",
         color: "#fff",
-        confirmButtonColor: "#00f5ff",
+        confirmButtonColor: "#128b5fff",
         cancelButtonColor: "#555",
         customClass: {
           popup:
@@ -116,14 +131,14 @@ const PublicProfile = () => {
         });
 
         if (response.status === 200) {
-          setIsFriend(true);
+          setRequestSent(true);
           Swal.fire({
-            title: "Friend Added!",
-            text: `${username} has been added successfully.`,
+            title: "Request Sent!",
+            text: `A friend request has been sent to ${username}.`,
             icon: "success",
             background: "#0b0b0b",
             color: "#fff",
-            confirmButtonColor: "#00f5ff",
+            confirmButtonColor: "#128b5fff",
             customClass: {
               popup:
                 "rounded-2xl shadow-lg backdrop-blur-md border border-white/10",
@@ -368,21 +383,36 @@ const PublicProfile = () => {
                     ${
                       !currentUserId
                         ? "bg-slate-100 text-slate-900 hover:bg-white border border-transparent"
+                        : currentUserId === userId
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default"
                         : isFriend
                         ? "bg-transparent text-red-400 border border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50"
+                        : requestSent
+                        ? "bg-transparent text-amber-400 border border-amber-500/30 cursor-default opacity-80"
                         : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-900/20"
                     }
                   `}
+                  disabled={requestSent || currentUserId === userId}
                 >
                   {!currentUserId ? (
                     <>
                       {" "}
                       <LogIn className="w-4 h-4" /> Login to Connect{" "}
                     </>
+                  ) : currentUserId === userId ? (
+                    <>
+                      {" "}
+                      <ShieldCheck className="w-4 h-4" /> Yes, it's you!{" "}
+                    </>
                   ) : isFriend ? (
                     <>
                       {" "}
                       <UserMinus className="w-4 h-4" /> Remove Connection{" "}
+                    </>
+                  ) : requestSent ? (
+                    <>
+                      {" "}
+                      <Clock className="w-4 h-4" /> Request Sent{" "}
                     </>
                   ) : (
                     <>
