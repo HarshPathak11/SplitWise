@@ -22,7 +22,13 @@ const SignUp = () => {
 
   const handleOtpSend = async () => {
     if (!email || !username || !password) {
-      alert("Please fill in all fields.");
+      toast.error("Please fill in all fields.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address.");
       return;
     }
 
@@ -30,7 +36,6 @@ const SignUp = () => {
     try {
       const response = await axios.post(
         `${API_BASE}/user/send-otp`,
-        // "//http://localhost:8000/user/send-otp",
         {
           email,
           username,
@@ -45,9 +50,10 @@ const SignUp = () => {
       if (error.response && error.response.status === 410) {
         toast.error("Email already Taken!");
       } else if (error.response && error.response.status === 400) {
-        toast.error("Username already Taken!");
+        toast.error(error.response.data?.message || "Invalid request.");
       } else {
         toast.error("Failed to send OTP.");
+        console.log(error);
       }
     } finally {
       setLoading(false);
@@ -58,7 +64,6 @@ const SignUp = () => {
     try {
       const response = await axios.post(
         `${API_BASE}/user/verify-otp`,
-        // "//http://localhost:8000/user/verify-otp",
         {
           email,
           otp,
@@ -87,7 +92,7 @@ const SignUp = () => {
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
-      alert("OTP verification failed.");
+      toast.error("OTP verification failed.");
     }
   };
 

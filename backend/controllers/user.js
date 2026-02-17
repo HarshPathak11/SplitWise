@@ -8,6 +8,27 @@ import {
 
 import dotenv from "dotenv";
 dotenv.config();
+
+// Allowlist of trusted email providers
+const allowedEmailDomains = new Set([
+  // Google
+  "gmail.com", "googlemail.com",
+  // Microsoft
+  "outlook.com", "hotmail.com", "live.com", "msn.com",
+  // Yahoo
+  "yahoo.com", "yahoo.co.in", "yahoo.co.uk", "ymail.com",
+  // Apple
+  "icloud.com", "me.com", "mac.com",
+  // Proton
+  "protonmail.com", "proton.me", "pm.me",
+  // Others
+  "aol.com", "zoho.com", "zohomail.in",
+  "rediffmail.com",
+  "mail.com", "email.com",
+  "gmx.com", "gmx.net",
+  // India-specific
+  "yandex.com", "yandex.ru",
+]);
 import streamifier from "streamifier";
 import cloudinary from "../config/cloudinary.js";
 import { signAccessToken } from "../utils/jwt.js";
@@ -33,9 +54,16 @@ const uploadFromBuffer = (buffer, folder = "profile_photos") =>
 
 const sendOtp = async (req, res) => {
   const { email, username } = req.body;
+  console.log("send otp controller called");
 
   if (!email || !username)
     return res.status(400).json({ message: "Incomplete data received" });
+
+  // Only allow trusted email providers
+  const emailDomain = email.split("@")[1]?.toLowerCase();
+  if (!emailDomain || !allowedEmailDomains.has(emailDomain)) {
+    return res.status(400).json({ message: "Please use a genuine email provider (e.g., Gmail, Outlook, Yahoo)." });
+  }
 
   const existingUser = await User.findOne({ email });
   const existingUsername = await User.findOne({ username });
