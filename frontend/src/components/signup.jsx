@@ -6,6 +6,7 @@ import logo from "../../public/newIconV3-192x192.png";
 import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash, FaRobot, FaMagic } from "react-icons/fa";
 import toast from "react-hot-toast";
+import ReactMarkdown from "react-markdown";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PRIVACY_TEMPLATES = [
@@ -217,6 +218,11 @@ const SignUp = () => {
   const [thinkingText, setThinkingText] = useState("");
   const [summaryTemplateIndex, setSummaryTemplateIndex] = useState(0);
 
+  // State for fetched legal documents
+  const [termsContent, setTermsContent] = useState(null);
+  const [privacyContent, setPrivacyContent] = useState(null);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -226,6 +232,32 @@ const SignUp = () => {
       setThinkingText("");
     }
   }, [activeModal]);
+
+  // Fetch Terms and Privacy Policy on component mount
+  useEffect(() => {
+    const fetchLegalDocs = async () => {
+      try {
+        const [termsRes, privacyRes] = await Promise.all([
+          axios.get(`${API_BASE}/terms/active?type=terms`),
+          axios.get(`${API_BASE}/terms/active?type=privacy`)
+        ]);
+
+        if (termsRes.data?.term) {
+          setTermsContent(termsRes.data.term);
+        }
+        if (privacyRes.data?.term) {
+          setPrivacyContent(privacyRes.data.term);
+        }
+      } catch (error) {
+        console.error("Error fetching legal documents:", error);
+        toast.error("Failed to load legal documents");
+      } finally {
+        setLoadingDocs(false);
+      }
+    };
+
+    fetchLegalDocs();
+  }, []);
 
   useEffect(() => {
     let interval;
@@ -310,7 +342,6 @@ const SignUp = () => {
           otpGenerated,
           password,
           username,
-          agreedToTerms: agreed,
         }
       );
 
@@ -638,210 +669,37 @@ const SignUp = () => {
                 </>
               ) : activeModal === "privacy" ? (
                 <>
-                  <p className="text-white/40 italic text-sm mb-4">Last Updated: {new Date().toLocaleDateString()}</p>
-                  <p className="mb-4">
-                    FairFare (“we”, “our”, or “us”) respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, and share your data when you use the FairFare mobile app, website, or related services (collectively, the “Service”).
-                  </p>
-                  <p className="mb-4">By using FairFare, you consent to the practices described in this Privacy Policy.</p>
-
-                  <div className="space-y-4">
-                    <section>
-                      <h3 className="font-bold text-white mb-2">1. Information We Collect</h3>
-                      <p>We may collect the following types of information:</p>
-                      <ul className="list-disc pl-5 space-y-1 mt-1">
-                        <li><strong>Personal Information:</strong> Name, email address, upi id, Profile picture (if uploaded), Login credentials (hashed passwords)</li>
-                        <li><strong>Payment & Transaction Data:</strong> Expense entries, amounts, and payment status, Third-party payment details (via integrated gateways, e.g., Razorpay, Google Pay), Notes or descriptions attached to transactions, transaction date</li>
-                        <li><strong>Device & Usage Data:</strong> IP address, device type, operating system, App usage logs, crash reports, analytics, Location data (if you enable location services)</li>
-                        <li><strong>Notifications:</strong> FCM (Firebase Cloud Messaging) tokens for push notifications, Preferences for notifications and alerts</li>
-                      </ul>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">2. How We Use Your Information</h3>
-                      <p>We use your information to:</p>
-                      <ul className="list-disc pl-5 space-y-1 mt-1">
-                        <li>Provide, maintain, and improve the Service</li>
-                        <li>Track and manage expenses and transactions</li>
-                        <li>Send notifications, reminders, or updates</li>
-                        <li>Prevent fraud, misuse, or illegal activity</li>
-                        <li>Analyze usage patterns to improve user experience</li>
-                      </ul>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">3. Sharing Your Information</h3>
-                      <p>We do not sell or rent your personal information. We may share data in limited cases:</p>
-                      <ul className="list-disc pl-5 space-y-1 mt-1">
-                        <li>With service providers who help us operate FairFare (e.g., cloud hosting, payment gateways, analytics providers)</li>
-                        <li>For legal reasons if required by law or to protect our rights</li>
-                        <li>In a business transfer if FairFare is acquired, merged, or sold</li>
-                      </ul>
-                      <p className="mt-1">All third-party partners are required to protect your data according to this policy.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">4. Data Security</h3>
-                      <p>We implement reasonable security measures to protect your information:</p>
-                      <ul className="list-disc pl-5 space-y-1 mt-1">
-                        <li>Encrypted storage and communication (HTTPS / TLS)</li>
-                        <li>Hashed passwords for accounts</li>
-                        <li>Limited internal access to personal data</li>
-                      </ul>
-                      <p className="mt-1">However, no method of transmission over the Internet or storage is 100% secure. We cannot guarantee absolute security.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">5. Data Retention</h3>
-                      <p>We retain your personal information as long as your account is active or as needed to provide the Service. Transaction data may be retained for legal, tax, or auditing purposes. You can request deletion of your account, and we will remove personal data where possible, subject to legal obligations.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">6. Your Rights</h3>
-                      <p>Depending on your location, you may have rights to:</p>
-                      <ul className="list-disc pl-5 space-y-1 mt-1">
-                        <li>Access or download your personal information</li>
-                        <li>Correct or update your data</li>
-                        <li>Request deletion of your account or information</li>
-                        <li>Opt out of marketing communications</li>
-                      </ul>
-                      <p className="mt-1">To exercise your rights, contact us at <a href="mailto:fairfare007@gmail.com" className="text-indigo-400 hover:underline">fairfare007@gmail.com</a>.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">7. Cookies and Analytics</h3>
-                      <p>We use analytics tools to monitor app usage and improve the Service. Cookies or similar technologies may be used on web versions for authentication or user preferences.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">8. Children’s Privacy</h3>
-                      <p>FairFare is not intended for children under 12. We do not knowingly collect data from children.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">9. Changes to This Policy</h3>
-                      <p>We may update this Privacy Policy from time to time. Changes will be posted with an updated “Last Updated” date. Your continued use of the Service after updates means you accept the revised policy.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">10. Contact Us</h3>
-                      <p>For questions or concerns about this Privacy Policy:</p>
-                      <p>📩 Email: <a href="mailto:fairfare007@gmail.com" className="text-indigo-400 hover:underline">fairfare007@gmail.com</a></p>
-                    </section>
-                  </div>
+                  {loadingDocs ? (
+                    <div className="flex items-center justify-center py-20">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+                    </div>
+                  ) : privacyContent ? (
+                    <div className="prose prose-invert max-w-none">
+                      <p className="text-white/40 italic text-sm mb-4">
+                        Version: {privacyContent.version} | Last Updated: {new Date(privacyContent.updatedAt).toLocaleDateString()}
+                      </p>
+                      <ReactMarkdown>{privacyContent.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-white/60 text-center py-10">No Privacy Policy available</p>
+                  )}
                 </>
               ) : (
                 <>
-                  <p className="text-white/40 italic text-sm mb-4">Last Updated: {new Date().toLocaleDateString()}</p>
-                  <p className="mb-4">
-                    Welcome to FairFare (“we”, “our”, or “us”). These Terms and Conditions (“Terms”) govern your use of the FairFare mobile application, website, and related services (collectively, the “Service”).
-                  </p>
-                  <p className="mb-4">By accessing or using FairFare, you agree to be bound by these Terms. If you do not agree, please do not use the Service.</p>
-
-                  <div className="space-y-4">
-                    <section>
-                      <h3 className="font-bold text-white mb-2">1. Eligibility</h3>
-                      <p>To use FairFare, you must:</p>
-                      <ul className="list-disc pl-5 space-y-1 mt-1">
-                        <li>Be at least 12 years old or have parental/guardian consent.</li>
-                        <li>Provide accurate and complete information during registration.</li>
-                        <li>Use the Service only for lawful purposes.</li>
-                      </ul>
-                      <p className="mt-1">We reserve the right to suspend or terminate any account that violates these conditions.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">2. Your Account</h3>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>You are responsible for maintaining the confidentiality of your account credentials.</li>
-                        <li>You agree to notify us immediately of any unauthorized access or security breach.</li>
-                        <li>We are not liable for any loss or damage arising from your failure to protect your credentials.</li>
-                      </ul>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">3. Use of Service</h3>
-                      <p>FairFare helps users split expenses, track balances, and manage shared payments with friends or groups.</p>
-                      <p className="mt-2">You agree not to:</p>
-                      <ul className="list-disc pl-5 space-y-1 mt-1">
-                        <li>Misuse the Service for fraudulent or illegal purposes.</li>
-                        <li>Upload harmful or malicious code.</li>
-                        <li>Interfere with the operation or integrity of FairFare.</li>
-                      </ul>
-                      <p className="mt-1">We reserve the right to limit or disable your access if we suspect misuse.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">4. Payments and Transactions</h3>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>FairFare is primarily a tool for expense tracking and management.</li>
-                        <li>FairFare does not hold, transfer, or process money directly unless integrated with authorized third-party payment gateways (e.g., Google Pay, Razorpay, Paytm).</li>
-                        <li>Any transactions between users are handled outside the app, or through such third parties.</li>
-                        <li>We are not responsible for payment disputes, failed transactions, or losses caused by user error or third-party failures.</li>
-                        <li>You agree to verify all transactions and use third-party payment services at your own risk.</li>
-                      </ul>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">5. Privacy and Data</h3>
-                      <p>Your privacy is important to us. Please review our Privacy Policy to understand how we collect, use, and protect your data. By using FairFare, you consent to our data practices as described in the Privacy Policy.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">6. Content and Ownership</h3>
-                      <ul className="list-disc pl-5 space-y-1">
-                        <li>All trademarks, logos, and content in FairFare are owned by us or licensed to us.</li>
-                        <li>You may not copy, distribute, modify, or create derivative works without our permission.</li>
-                        <li>You retain ownership of content you submit, but you grant us a license to use it for operating the Service.</li>
-                      </ul>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">7. Disclaimer of Warranties</h3>
-                      <p>FairFare is provided “as is” and “as available”. We make no guarantees that:</p>
-                      <ul className="list-disc pl-5 space-y-1 mt-1">
-                        <li>The Service will always be available, uninterrupted, or error-free.</li>
-                        <li>The data shown (balances, transactions, etc.) is always accurate or up to date.</li>
-                      </ul>
-                      <p className="mt-1">We disclaim all warranties, express or implied, including merchantability or fitness for a particular purpose.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">8. Limitation of Liability</h3>
-                      <p>To the maximum extent permitted by law, FairFare and its team are not liable for:</p>
-                      <ul className="list-disc pl-5 space-y-1 mt-1">
-                        <li>Any indirect, incidental, or consequential damages,</li>
-                        <li>Loss of data, reputation, or profits,</li>
-                        <li>Errors or inaccuracies in user-entered data,</li>
-                        <li>Third-party payment or service issues.</li>
-                      </ul>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">9. Termination</h3>
-                      <p>We may suspend or terminate your access to FairFare at any time, without notice, if:</p>
-                      <ul className="list-disc pl-5 space-y-1 mt-1">
-                        <li>You violate these Terms, or</li>
-                        <li>We are required by law or regulation.</li>
-                      </ul>
-                      <p className="mt-1">You may stop using FairFare at any time.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">10. Changes to Terms</h3>
-                      <p>We may update these Terms from time to time. When we do, we’ll update the “Last Updated” date above. Your continued use of FairFare after changes means you accept the revised Terms.</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">11. Governing Law</h3>
-                      <p>These Terms are governed by the laws of India, without regard to conflict of law principles. Any disputes will be subject to the exclusive jurisdiction of courts in [Your City, India].</p>
-                    </section>
-
-                    <section>
-                      <h3 className="font-bold text-white mb-2">12. Contact Us</h3>
-                      <p>If you have any questions or concerns, please contact us:</p>
-                      <p>📩 Email: <a href="mailto:fairfare007@gmail.com" className="text-indigo-400 hover:underline">fairfare007@gmail.com</a></p>
-                    </section>
-                  </div>
+                  {loadingDocs ? (
+                    <div className="flex items-center justify-center py-20">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+                    </div>
+                  ) : termsContent ? (
+                    <div className="prose prose-invert max-w-none">
+                      <p className="text-white/40 italic text-sm mb-4">
+                        Version: {termsContent.version} | Last Updated: {new Date(termsContent.updatedAt).toLocaleDateString()}
+                      </p>
+                      <ReactMarkdown>{termsContent.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-white/60 text-center py-10">No Terms & Conditions available</p>
+                  )}
                 </>
               )}
             </div>
