@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import logo from "../../public/newIconV3-192x192.png";
@@ -32,7 +32,9 @@ const PublicProfile = () => {
 
   const navigate = useNavigate();
   const { userId } = useParams();
+  const location = useLocation();
   const currentUserId = Cookies.get("id");
+  const fromTransactions = new URLSearchParams(location.search).get("from") === "transactions";
 
   useEffect(() => {
     async function fetchUser() {
@@ -374,6 +376,18 @@ const PublicProfile = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* Contextual banner when redirected from transaction history */}
+                {fromTransactions && !isFriend && currentUserId && currentUserId !== userId && (
+                  <div className="mb-6 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+                    <p className="text-sm text-amber-300 font-medium">
+                      🔗 You opened a shared transaction link
+                    </p>
+                    <p className="text-xs text-amber-400/70 mt-1">
+                      Add <strong className="text-white">{username}</strong> as a friend to start tracking expenses together.
+                    </p>
+                  </div>
+                )}
 
                 {/* Primary Action Button */}
                 <button
