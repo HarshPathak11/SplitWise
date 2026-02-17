@@ -211,7 +211,14 @@ const TransactionHistory = () => {
 
       // 2. Immediately set basic info from current user data
       const friend = user?.friends?.find((f) => f.friend?._id === friendId);
-      setFriendName(friend?.friend || { username: "Unknown" }); // Handle case where friend object might be missing
+
+      // If this person is not a friend, redirect to their public profile
+      if (!friend) {
+        navigate(`/public-profile/${friendId}?from=transactions`, { replace: true });
+        return;
+      }
+
+      setFriendName(friend?.friend || { username: "Unknown" });
       setNetBalance(friend?.balance || 0);
 
       // Only set global loading to false if this is the first load
