@@ -28,7 +28,7 @@ const Documentation = () => {
       title: "Event Management",
       description:
         "Planning a group trip or a night out? Create specialized event dashboards to budget, share expenses, and track real-time updates with your group.",
-      video: "TripsSectionVideo.mp4",
+      image: "TripsSection.png",
     },
     {
       id: 5,
@@ -42,7 +42,7 @@ const Documentation = () => {
       title: "Social Connections",
       description:
         "Finance is social. The Friends Section lets you manage connections, invite new peers, and settle up debts instantly without the awkward conversations.",
-      video: "FriendsSectionVideo.mp4",
+      image: "FriendsSection.png",
     },
     {
       id: 7,
@@ -112,9 +112,8 @@ const Documentation = () => {
                   transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
                 },
               }}
-              className={`flex flex-col lg:flex-row items-center gap-12 lg:gap-24 ${
-                index % 2 === 1 ? "lg:flex-row-reverse" : ""
-              }`}
+              className={`flex flex-col lg:flex-row items-center gap-12 lg:gap-24 ${index % 2 === 1 ? "lg:flex-row-reverse" : ""
+                }`}
             >
               {/* Visual Side (Video) */}
               <div className="w-full lg:w-1/2 group">
@@ -122,15 +121,23 @@ const Documentation = () => {
                   {/* Glow behind video */}
                   <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
 
-                  <div className="relative rounded-xl overflow-hidden aspect-video bg-slate-900">
-                    <video
-                      src={section.video}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
-                    />
+                  <div className="relative rounded-xl overflow-hidden bg-slate-900">
+                    {section.video ? (
+                      <video
+                        src={section.video}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+                      />
+                    ) : (
+                      <img
+                        src={section.image}
+                        alt={section.title}
+                        className="w-full h-auto object-contain opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+                      />
+                    )}
                     {/* Glass Overlay for sheen */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
                   </div>
