@@ -43,7 +43,7 @@ const ProfileEnhanced = () => {
   const userId = Cookies.get("id");
 
   useEffect(() => {
-    console.log("userId",userId);
+    // console.log("userId",userId);
 
     async function getDetails() {
       if (!user && userId) {
@@ -188,7 +188,7 @@ const ProfileEnhanced = () => {
     e.preventDefault();
 
     try {
-      const userId = getCookie("id");
+      const userId = Cookies.get("id");
       if (!userId) return;
 
       const response = await saveProfileFields(userId);
@@ -229,6 +229,7 @@ const ProfileEnhanced = () => {
   };
 
   const handleShareProfile = async () => {
+    const userId = Cookies.get("id");
     const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
     const message = `Hey! 👋
 

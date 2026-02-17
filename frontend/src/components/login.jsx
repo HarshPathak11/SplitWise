@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FaHome } from "react-icons/fa";
-import logo from "../../public/newIcon-192x192.png";
+import logo from "../../public/newIconV3-192x192.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 import { toast } from "react-hot-toast";
