@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { ShieldCheck } from "lucide-react";
-import { FaMagic, FaRobot } from "react-icons/fa";
+import ReactMarkdown from "react-markdown";
 import PropTypes from "prop-types";
-import api from "../utils/api";
+import { FaMagic, FaRobot } from "react-icons/fa";
 
 const PRIVACY_TEMPLATES = [
     // 1. Structured Cards
@@ -197,21 +197,22 @@ const TERMS_TEMPLATES = [
     </div>
 ];
 
-const TermsPopup = ({ user, setUser }) => {
+const TermsPopup = ({ isOpen, terms, onAccept }) => {
+    // Determine initial active term
+    const [activeTermIndex, setActiveTermIndex] = useState(0);
     const [isChecked, setIsChecked] = useState(false);
-    const [content, setContent] = useState("terms"); // 'terms' or 'privacy'
     const [loading, setLoading] = useState(false);
 
     // AI Summarization State
     const [isSummarizing, setIsSummarizing] = useState(false);
     const [showSummary, setShowSummary] = useState(false);
     const [thinkingText, setThinkingText] = useState("");
-    const [summaryTemplateIndex, setSummaryTemplateIndex] = useState(0);
 
-    const API_BASE = import.meta.env.VITE_API_BASE_URL;
+    // Make sure we have terms
+    const activeTerm = terms && terms.length > 0 ? terms[activeTermIndex] : null;
 
     useEffect(() => {
-        if (user && !user.agreedToTerms) {
+        if (isOpen) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "auto";
@@ -219,65 +220,24 @@ const TermsPopup = ({ user, setUser }) => {
         return () => {
             document.body.style.overflow = "auto";
         };
-    }, [user]);
+    }, [isOpen]);
 
-    // Reset summary state when switching tabs
+    // Reset check when switching tabs, BUT only if the new tab is not agreed yet.
     useEffect(() => {
+        // If the switched-to term is already agreed, we can auto-check or just ignore the checkbox logic
+        setIsChecked(false);
+        setShowSummary(false);
         setIsSummarizing(false);
-        setShowSummary(false);
-        setThinkingText("");
-    }, [content]);
+    }, [activeTermIndex]);
 
-    useEffect(() => {
-        let interval;
-        if (isSummarizing) {
-            const steps = [
-                "Reading document...",
-                "Analyzing legal clauses...",
-                "Extracting key points...",
-                "Simplifying language...",
-                "Finalizing summary...",
-            ];
-            let stepIndex = 0;
-            setThinkingText(steps[0]);
-
-            interval = setInterval(() => {
-                stepIndex++;
-                if (stepIndex < steps.length) {
-                    setThinkingText(steps[stepIndex]);
-                } else {
-                    clearInterval(interval);
-                    setIsSummarizing(false);
-                    setShowSummary(true);
-                }
-            }, 800);
-        }
-        return () => clearInterval(interval);
-    }, [isSummarizing]);
-
-    const handleSummarize = () => {
-        setIsSummarizing(true);
-        setShowSummary(false);
-        setSummaryTemplateIndex(Math.floor(Math.random() * 4));
-    };
-
-    const handleAccept = async () => {
-        if (!isChecked) return;
+    const handleAcceptClick = async () => {
+        if (!isChecked || !activeTerm || activeTerm.hasAgreed) return;
         setLoading(true);
         try {
-            const response = await api.put(`${API_BASE}/user/${user._id}`, {
-                agreedToTerms: true,
-            });
-
-            if (response.status === 200) {
-                const updatedUser = {
-                    ...user,
-                    agreedToTerms: true,
-                    updatedAt: response.data.user.updatedAt
-                };
-                setUser(updatedUser);
-                localStorage.setItem("user", JSON.stringify(updatedUser));
-            }
+            await onAccept(activeTerm._id);
+            // We don't reset index here anymore, we let the user see "Accepted" state
+            // or we could auto-advance to next unagreed term?
+            // Let's simpler: just mark it done.
         } catch (error) {
             console.error("Error accepting terms:", error);
         } finally {
@@ -285,8 +245,25 @@ const TermsPopup = ({ user, setUser }) => {
         }
     };
 
-    // Don't render if user data isn't loaded yet or if terms are already accepted
-    if (!user || user.agreedToTerms) return null;
+    // Simulated AI Summary logic
+    const handleSummarize = () => {
+        setIsSummarizing(true);
+        setShowSummary(false);
+        let steps = ["Reading...", "Analyzing...", "Summarizing..."];
+        let i = 0;
+        setThinkingText(steps[0]);
+        let interval = setInterval(() => {
+            i++;
+            if (i < steps.length) setThinkingText(steps[i]);
+            else {
+                clearInterval(interval);
+                setIsSummarizing(false);
+                setShowSummary(true);
+            }
+        }, 800);
+    };
+
+    if (!isOpen || !terms || terms.length === 0) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -303,10 +280,10 @@ const TermsPopup = ({ user, setUser }) => {
                             <div className="p-2 bg-indigo-500/10 rounded-lg">
                                 <ShieldCheck className="w-6 h-6 text-indigo-400" />
                             </div>
-                            <h2 className="text-xl font-bold text-white">Welcome to FairFare</h2>
+                            <h2 className="text-xl font-bold text-white">Terms & Privacy Update</h2>
                         </div>
                         <p className="text-zinc-400 text-sm">
-                            Please review and accept our policies to continue.
+                            Please review and accept the policies below to continue.
                         </p>
                     </div>
                     {!isSummarizing && !showSummary && (
@@ -314,37 +291,36 @@ const TermsPopup = ({ user, setUser }) => {
                             onClick={handleSummarize}
                             className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-full text-xs font-medium text-indigo-300 hover:text-indigo-200 transition-all"
                         >
-                            <FaMagic /> Summarize with AI
+                            <FaMagic /> Summarize
                         </button>
                     )}
                 </div>
 
-                {/* Tabs */}
-                <div className="flex border-b border-zinc-800 bg-zinc-900/30">
-                    <button
-                        onClick={() => setContent("terms")}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors ${content === "terms"
-                            ? "text-indigo-400 border-b-2 border-indigo-500 bg-indigo-500/5"
-                            : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
-                            }`}
-                    >
-                        Terms & Conditions
-                    </button>
-                    <button
-                        onClick={() => setContent("privacy")}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors ${content === "privacy"
-                            ? "text-indigo-400 border-b-2 border-indigo-500 bg-indigo-500/5"
-                            : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
-                            }`}
-                    >
-                        Privacy Policy
-                    </button>
-                </div>
+                {/* Tabs Navigation */}
+                {terms.length > 1 && (
+                    <div className="flex border-b border-zinc-800 bg-zinc-900/30">
+                        {terms.map((t, idx) => (
+                            <button
+                                key={t._id}
+                                onClick={() => setActiveTermIndex(idx)}
+                                className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${idx === activeTermIndex
+                                    ? "text-indigo-400 border-b-2 border-indigo-500 bg-indigo-500/5"
+                                    : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
+                                    }`}
+                            >
+                                {t.type === 'privacy' ? "Privacy Policy" : "Terms & Conditions"}
+                                <span className="text-xs opacity-50">v{t.version}</span>
+                                {t.hasAgreed && <ShieldCheck className="w-4 h-4 text-emerald-500" />}
+                            </button>
+                        ))}
+                    </div>
+                )}
 
                 {/* Content Area - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-6 bg-zinc-950/30 relative custom-scrollbar text-zinc-300 leading-relaxed">
+                <div className="flex-1 overflow-y-auto p-6 bg-zinc-950/30 relative custom-scrollbar text-zinc-300 leading-relaxed term-markdown">
                     {isSummarizing ? (
                         <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-300">
+                            {/* ... keeping the same loading UI ... */}
                             <div className="relative w-16 h-16 mb-6">
                                 <div className="absolute inset-0 bg-indigo-500/20 rounded-full animate-ping"></div>
                                 <div className="relative flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-full shadow-lg shadow-indigo-500/30">
@@ -359,275 +335,82 @@ const TermsPopup = ({ user, setUser }) => {
                             </p>
                         </div>
                     ) : showSummary ? (
-                        <>
-                            {content === "privacy" ? (
-                                <>
-                                    {PRIVACY_TEMPLATES[summaryTemplateIndex]}
-                                    <div className="pt-4 border-t border-white/10">
-                                        <button
-                                            onClick={() => setShowSummary(false)}
-                                            className="text-sm text-indigo-400 hover:text-indigo-300 underline underline-offset-4"
-                                        >
-                                            View Full Legal Text
-                                        </button>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    {TERMS_TEMPLATES[summaryTemplateIndex]}
-                                    <div className="pt-4 border-t border-white/10">
-                                        <button
-                                            onClick={() => setShowSummary(false)}
-                                            className="text-sm text-indigo-400 hover:text-indigo-300 underline underline-offset-4"
-                                        >
-                                            View Full Legal Text
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </>
-                    ) : content === "privacy" ? (
-                        <div className="space-y-4">
-                            <p className="text-zinc-500 italic text-sm mb-4">Last Updated: {new Date().toLocaleDateString()}</p>
-                            <p className="mb-4">
-                                FairFare (“we”, “our”, or “us”) respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, and share your data when you use the FairFare mobile app, website, or related services (collectively, the “Service”).
-                            </p>
-                            <p className="mb-4">By using FairFare, you consent to the practices described in this Privacy Policy.</p>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">1. Information We Collect</h3>
-                                <p>We may collect the following types of information:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li><strong>Personal Information:</strong> Name, email address, upi id, Profile picture (if uploaded), Login credentials (hashed passwords)</li>
-                                    <li><strong>Payment & Transaction Data:</strong> Expense entries, amounts, and payment status, Third-party payment details (via integrated gateways, e.g., Razorpay, Google Pay), Notes or descriptions attached to transactions, transaction date</li>
-                                    <li><strong>Device & Usage Data:</strong> IP address, device type, operating system, App usage logs, crash reports, analytics, Location data (if you enable location services)</li>
-                                    <li><strong>Notifications:</strong> FCM (Firebase Cloud Messaging) tokens for push notifications, Preferences for notifications and alerts</li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">2. How We Use Your Information</h3>
-                                <p>We use your information to:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>Provide, maintain, and improve the Service</li>
-                                    <li>Track and manage expenses and transactions</li>
-                                    <li>Send notifications, reminders, or updates</li>
-                                    <li>Prevent fraud, misuse, or illegal activity</li>
-                                    <li>Analyze usage patterns to improve user experience</li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">3. Sharing Your Information</h3>
-                                <p>We do not sell or rent your personal information. We may share data in limited cases:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>With service providers who help us operate FairFare (e.g., cloud hosting, payment gateways, analytics providers)</li>
-                                    <li>For legal reasons if required by law or to protect our rights</li>
-                                    <li>In a business transfer if FairFare is acquired, merged, or sold</li>
-                                </ul>
-                                <p className="mt-1">All third-party partners are required to protect your data according to this policy.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">4. Data Security</h3>
-                                <p>We implement reasonable security measures to protect your information:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>Encrypted storage and communication (HTTPS / TLS)</li>
-                                    <li>Hashed passwords for accounts</li>
-                                    <li>Limited internal access to personal data</li>
-                                </ul>
-                                <p className="mt-1">However, no method of transmission over the Internet or storage is 100% secure. We cannot guarantee absolute security.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">5. Data Retention</h3>
-                                <p>We retain your personal information as long as your account is active or as needed to provide the Service. Transaction data may be retained for legal, tax, or auditing purposes. You can request deletion of your account, and we will remove personal data where possible, subject to legal obligations.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">6. Your Rights</h3>
-                                <p>Depending on your location, you may have rights to:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>Access or download your personal information</li>
-                                    <li>Correct or update your data</li>
-                                    <li>Request deletion of your account or information</li>
-                                    <li>Opt out of marketing communications</li>
-                                </ul>
-                                <p className="mt-1">To exercise your rights, contact us at <a href="mailto:fairfare007@gmail.com" className="text-indigo-400 hover:underline">fairfare007@gmail.com</a>.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">7. Cookies and Analytics</h3>
-                                <p>We use analytics tools to monitor app usage and improve the Service. Cookies or similar technologies may be used on web versions for authentication or user preferences.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">8. Children’s Privacy</h3>
-                                <p>FairFare is not intended for children under 3. We do not knowingly collect data from children.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">9. Changes to This Policy</h3>
-                                <p>We may update this Privacy Policy from time to time. Changes will be posted with an updated “Last Updated” date. Your continued use of the Service after updates means you accept the revised policy.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">10. Contact Us</h3>
-                                <p>For questions or concerns about this Privacy Policy:</p>
-                                <p>📩 Email: <a href="mailto:fairfare007@gmail.com" className="text-indigo-400 hover:underline">fairfare007@gmail.com</a></p>
-                            </section>
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+                            <div className="flex items-center gap-3 text-amber-400 mb-2">
+                                <FaRobot className="text-xl" />
+                                <h3 className="text-lg font-bold">AI Summary</h3>
+                            </div>
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+                                <p className="text-white/80 leading-7 text-sm">
+                                    This is a new version ({term.version}) of the Terms and Conditions. Please review the changes carefully. Key updates often involve privacy, data usage, or liability clauses.
+                                    <br /><br />
+                                    <em>(Note: This is a simulated summary for the demo. In production, this would use an LLM API to summarize the actual markdown content above.)</em>
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowSummary(false)}
+                                className="text-sm text-indigo-400 hover:text-indigo-300 underline"
+                            >
+                                Back to Full Text
+                            </button>
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            <p className="text-zinc-500 italic text-sm mb-4">Last Updated: {new Date().toLocaleDateString()}</p>
-                            <p className="mb-4">
-                                Welcome to FairFare (“we”, “our”, or “us”). These Terms and Conditions (“Terms”) govern your use of the FairFare mobile application, website, and related services (collectively, the “Service”).
-                            </p>
-                            <p className="mb-4">By accessing or using FairFare, you agree to be bound by these Terms. If you do not agree, please do not use the Service.</p>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">1. Eligibility</h3>
-                                <p>To use FairFare, you must:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>Be at least 3 years old or have parental/guardian consent.</li>
-                                    <li>Provide accurate and complete information during registration.</li>
-                                    <li>Use the Service only for lawful purposes.</li>
-                                </ul>
-                                <p className="mt-1">We reserve the right to suspend or terminate any account that violates these conditions.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">2. Your Account</h3>
-                                <ul className="list-disc pl-5 space-y-1">
-                                    <li>You are responsible for maintaining the confidentiality of your account credentials.</li>
-                                    <li>You agree to notify us immediately of any unauthorized access or security breach.</li>
-                                    <li>We are not liable for any loss or damage arising from your failure to protect your credentials.</li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">3. Use of Service</h3>
-                                <p>FairFare helps users split expenses, track balances, and manage shared payments with friends or groups.</p>
-                                <p className="mt-2">You agree not to:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>Misuse the Service for fraudulent or illegal purposes.</li>
-                                    <li>Upload harmful or malicious code.</li>
-                                    <li>Interfere with the operation or integrity of FairFare.</li>
-                                </ul>
-                                <p className="mt-1">We reserve the right to limit or disable your access if we suspect misuse.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">4. Payments and Transactions</h3>
-                                <ul className="list-disc pl-5 space-y-1">
-                                    <li>FairFare is primarily a tool for expense tracking and management.</li>
-                                    <li>FairFare does not hold, transfer, or process money directly unless integrated with authorized third-party payment gateways.</li>
-                                    <li>Any transactions between users are handled outside the app, or through such third parties.</li>
-                                    <li>We are not responsible for payment disputes, failed transactions, or losses caused by user error or third-party failures.</li>
-                                    <li>You agree to verify all transactions and use third-party payment services at your own risk.</li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">5. Privacy and Data</h3>
-                                <p>Your privacy is important to us. Please review our Privacy Policy to understand how we collect, use, and protect your data. By using FairFare, you consent to our data practices as described in the Privacy Policy.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">6. Content and Ownership</h3>
-                                <ul className="list-disc pl-5 space-y-1">
-                                    <li>All trademarks, logos, and content in FairFare are owned by us or licensed to us.</li>
-                                    <li>You may not copy, distribute, modify, or create derivative works without our permission.</li>
-                                    <li>You retain ownership of content you submit, but you grant us a license to use it for operating the Service.</li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">7. Disclaimer of Warranties</h3>
-                                <p>FairFare is provided “as is” and “as available”. We make no guarantees that:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>The Service will always be available, uninterrupted, or error-free.</li>
-                                    <li>The data shown (balances, transactions, etc.) is always accurate or up to date.</li>
-                                </ul>
-                                <p className="mt-1">We disclaim all warranties, express or implied, including merchantability or fitness for a particular purpose.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">8. Limitation of Liability</h3>
-                                <p>To the maximum extent permitted by law, FairFare and its team are not liable for:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>Any indirect, incidental, or consequential damages,</li>
-                                    <li>Loss of data, reputation, or profits,</li>
-                                    <li>Errors or inaccuracies in user-entered data,</li>
-                                    <li>Third-party payment or service issues.</li>
-                                </ul>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">9. Termination</h3>
-                                <p>We may suspend or terminate your access to FairFare at any time, without notice, if:</p>
-                                <ul className="list-disc pl-5 space-y-1 mt-1">
-                                    <li>You violate these Terms, or</li>
-                                    <li>We are required by law or regulation.</li>
-                                </ul>
-                                <p className="mt-1">You may stop using FairFare at any time.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">10. Changes to Terms</h3>
-                                <p>We may update these Terms from time to time. When we do, we’ll update the “Last Updated” date above. Your continued use of FairFare after changes means you accept the revised Terms.</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">11. Governing Law</h3>
-                                <p>These Terms are governed by the laws of India, without regard to conflict of law principles. Any disputes will be subject to the exclusive jurisdiction of courts in [Your City, India].</p>
-                            </section>
-
-                            <section>
-                                <h3 className="font-bold text-white mb-2">12. Contact Us</h3>
-                                <p>If you have any questions or concerns, please contact us:</p>
-                                <p>📩 Email: <a href="mailto:fairfare007@gmail.com" className="text-indigo-400 hover:underline">fairfare007@gmail.com</a></p>
-                            </section>
+                        <div className="prose prose-invert prose-sm max-w-none">
+                            {/* Dynamic Content based on Active Tab */}
+                            <ReactMarkdown>{activeTerm ? activeTerm.content : ""}</ReactMarkdown>
                         </div>
                     )}
                 </div>
 
                 {/* Footer */}
                 <div className="p-6 border-t border-zinc-800 bg-zinc-900/50">
-                    <label className="flex items-start gap-3 cursor-pointer group">
-                        <div className="relative flex items-center">
-                            <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={(e) => setIsChecked(e.target.checked)}
-                                className="peer sr-only"
-                            />
-                            <div className={`w-5 h-5 rounded border transition-all ${isChecked
-                                ? "bg-indigo-500 border-indigo-500"
-                                : "bg-zinc-800 border-zinc-600 group-hover:border-zinc-500"
-                                }`}>
-                                {isChecked && (
-                                    <svg className="w-5 h-5 text-white p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                )}
-                            </div>
-                        </div>
-                        <div className="text-sm text-zinc-400 select-none">
-                            I have read and agree to the <span className="text-indigo-400 font-medium">Terms & Conditions</span> and <span className="text-indigo-400 font-medium">Privacy Policy</span>.
-                        </div>
-                    </label>
+                    {!activeTerm?.hasAgreed ? (
+                        <>
+                            <label className="flex items-start gap-3 cursor-pointer group">
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={(e) => setIsChecked(e.target.checked)}
+                                        className="peer sr-only"
+                                    />
+                                    <div className={`w-5 h-5 rounded border transition-all ${isChecked
+                                        ? "bg-indigo-500 border-indigo-500"
+                                        : "bg-zinc-800 border-zinc-600 group-hover:border-zinc-500"
+                                        }`}>
+                                        {isChecked && (
+                                            <svg className="w-5 h-5 text-white p-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="text-sm text-zinc-400 select-none">
+                                    I have read and agree to the <span className="text-white font-medium">
+                                        {activeTerm?.type === 'privacy' ? "Privacy Policy" : "Terms & Conditions"} (v{activeTerm?.version})
+                                    </span>.
+                                </div>
+                            </label>
 
-                    <button
-                        onClick={handleAccept}
-                        disabled={!isChecked || loading}
-                        className={`mt-6 w-full py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 ${isChecked && !loading
-                            ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 translate-y-0"
-                            : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                            }`}
-                    >
-                        {loading ? "Processing..." : "Accept & Continue"}
-                    </button>
+                            <button
+                                onClick={handleAcceptClick}
+                                disabled={!isChecked || loading}
+                                className={`mt-6 w-full py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 ${isChecked && !loading
+                                    ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 translate-y-0"
+                                    : "bg-zinc-800/50 text-zinc-500 cursor-not-allowed"
+                                    }`}
+                            >
+                                {loading ? "Accepting..." : `Accept ${activeTerm?.type === 'privacy' ? "Privacy Policy" : "Terms"}`}
+                            </button>
+                        </>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-2 space-y-2">
+                            <div className="p-3 bg-emerald-500/10 rounded-full">
+                                <ShieldCheck className="w-8 h-8 text-emerald-500" />
+                            </div>
+                            <p className="text-emerald-400 font-medium text-sm">You have accepted this document.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -641,13 +424,14 @@ const TermsPopup = ({ user, setUser }) => {
                     animation: pulse-slow 8s ease-in-out infinite;
                 }
             `}</style>
-        </div>
+        </div >
     );
 };
 
 TermsPopup.propTypes = {
-    user: PropTypes.object,
-    setUser: PropTypes.func,
+    isOpen: PropTypes.bool,
+    terms: PropTypes.array,
+    onAccept: PropTypes.func,
 };
 
 export default TermsPopup;

@@ -68,6 +68,17 @@ const userSchema = new mongoose.Schema(
     username: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     agreedToTerms: { type: Boolean, default: false },
+    legalAgreements: [
+      {
+        version: { type: String, required: true },
+        termsId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Terms",
+          required: true,
+        },
+        agreedAt: { type: Date, default: Date.now },
+      },
+    ],
     password: { type: String, required: true, select: false },
     fcmToken: { type: String, default: null },
     friends: [
@@ -99,6 +110,22 @@ const LabelCategorySchema = new mongoose.Schema({
 },
   { timestamps: true });
 
+// Terms Schema
+const termsSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: ["terms", "privacy"], default: "terms" },
+    version: { type: String, required: true },
+    content: { type: String, required: true }, // Markdown content
+    status: {
+      type: String,
+      enum: ["draft", "published", "archived"],
+      default: "draft",
+    },
+    isActive: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
 // Password hashing middleware
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -128,4 +155,6 @@ const Group = mongoose.model("Group", groupSchema);
 const FriendRequest = mongoose.model("FriendRequest", friendRequestSchema);
 const LabelCategory = mongoose.model("LabelCategory", LabelCategorySchema);
 
-export { User, Group, Expense, FriendRequest, LabelCategory };
+const Terms = mongoose.model("Terms", termsSchema);
+
+export { User, Group, Expense, FriendRequest, LabelCategory, Terms };
