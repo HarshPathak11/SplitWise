@@ -8,6 +8,7 @@ import { Forward } from "lucide-react";
 import { MdOutlineCurrencyExchange } from "react-icons/md";
 import Cookies from "js-cookie";
 import api from "../utils/api";
+import html2canvas from "html2canvas";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TransactionHistory = () => {
@@ -63,15 +64,28 @@ const TransactionHistory = () => {
         useCORS: true,
         logging: false,
         ignoreElements: (el) => el.tagName === "BUTTON",
-        // FIX FOR CUT OFF TEXT: Add padding during the clone phase
+        // FIX FOR SMALL SCREENSHOT: Enlarge the card in the clone phase
         onclone: (clonedDoc) => {
           const clonedElement = clonedDoc.getElementById(`tx-card-${txId}`);
           if (clonedElement) {
-            // Add extra padding to the bottom of the container to prevent clipping
-            clonedElement.style.paddingBottom = "10px";
-            // Ensure all text has enough line-height
-            const titles = clonedElement.querySelectorAll("h4, span");
-            titles.forEach((el) => (el.style.lineHeight = "1.4"));
+            clonedElement.style.overflow = "visible";
+            clonedElement.style.minWidth = "340px";
+            clonedElement.style.paddingTop = "36px";
+            clonedElement.style.paddingLeft = "24px";
+            clonedElement.style.paddingRight = "24px";
+            clonedElement.style.paddingBottom = "28px";
+            clonedElement.style.borderRadius = "16px";
+            // Remove the tight corner override that causes clipping
+            clonedElement.style.borderTopRightRadius = "16px";
+            clonedElement.style.borderTopLeftRadius = "16px";
+            // Scale up text for readability in shared image
+            const allText = clonedElement.querySelectorAll("h4, span, div");
+            allText.forEach((el) => {
+              el.style.lineHeight = "1.6";
+              el.style.overflow = "visible";
+              const currentSize = parseFloat(window.getComputedStyle(el).fontSize);
+              if (currentSize < 14) el.style.fontSize = `${currentSize * 1.3}px`;
+            });
           }
         },
       });
@@ -605,11 +619,22 @@ const TransactionHistory = () => {
                 return (
                   <div
                     key={tx._id}
-                    className={`flex w-full ${isUser ? "justify-end" : "justify-start"
+                    className={`flex w-full items-center group ${isUser ? "justify-end" : "justify-start"
                       } animate-in slide-in-from-bottom-2 duration-500`}
                   >
+                    {/* Forward button on the LEFT for user's transactions */}
+                    {isUser && (
+                      <button
+                        onClick={() => handleShareTransaction(tx._id, amount, friendName)}
+                        className="p-2 rounded-full text-zinc-500 hover:text-indigo-400 hover:bg-white/5 transition-all opacity-60 group-hover:opacity-100 mr-1 flex-shrink-0"
+                        title="Share Receipt"
+                      >
+                        <Forward size={18} className="ml-0.5" />
+                      </button>
+                    )}
+
                     {/* Digital Receipt Bubble */}
-                    <div className={`relative max-w-[85%] sm:max-w-xs group`}>
+                    <div className={`relative max-w-[85%] sm:max-w-xs`}>
                       {/* Visual Connector Line to Side */}
                       <div
                         className={`absolute top-4 w-2 h-[1px] ${isUser
@@ -619,6 +644,7 @@ const TransactionHistory = () => {
                       ></div>
 
                       <div
+                        id={`tx-card-${tx._id}`}
                         className={`
                         relative p-4 rounded-xl border backdrop-blur-md shadow-lg transition-all duration-300
                         ${isUser
@@ -672,6 +698,17 @@ const TransactionHistory = () => {
                         ></div>
                       </div>
                     </div>
+
+                    {/* Forward button on the RIGHT for friend's transactions */}
+                    {!isUser && (
+                      <button
+                        onClick={() => handleShareTransaction(tx._id, amount, friendName)}
+                        className="p-2 rounded-full text-zinc-500 hover:text-indigo-400 hover:bg-white/5 transition-all opacity-60 group-hover:opacity-100 ml-1 flex-shrink-0"
+                        title="Share Receipt"
+                      >
+                        <Forward size={18} className="ml-0.5" />
+                      </button>
+                    )}
                   </div>
                 );
               })}
