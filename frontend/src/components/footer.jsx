@@ -60,7 +60,7 @@ const Footer = () => {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-16 lg:gap-24">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-16 lg:gap-24">
           {/* LEFT: Brand & Mission */}
           <div className="lg:w-1/3 space-y-8">
             <div>
@@ -75,41 +75,6 @@ const Footer = () => {
                 believe financial clarity strengthens friendships.
               </p>
             </div>
-
-            {/* --- FUNCTIONAL NEWSLETTER SECTION --- */}
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-              <h4 className="text-sm font-semibold text-white mb-2">
-                Join the Community
-              </h4>
-              <p className="text-xs text-slate-400 mb-3">
-                Stay updated with the latest features.
-              </p>
-
-              {subscribeStatus === "success" ? (
-                <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">
-                  <span className="text-lg">✓</span>
-                  <span className="text-sm font-medium">Welcome aboard!</span>
-                </div>
-              ) : (
-                <form onSubmit={handleSubscribe} className="flex gap-2">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    className="bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 w-full transition-colors"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    disabled={subscribeStatus === "loading"}
-                    className="bg-white text-black px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-50 transition-colors disabled:opacity-50"
-                  >
-                    {subscribeStatus === "loading" ? "..." : "Join"}
-                  </button>
-                </form>
-              )}
-            </div>
           </div>
 
           {/* RIGHT: The Engineers */}
@@ -122,7 +87,11 @@ const Footer = () => {
               {team.map((member, index) => (
                 <div
                   key={index}
-                  className="group relative flex items-center gap-4 p-4 rounded-xl bg-slate-900/50 border border-white/10 hover:border-indigo-500/30 hover:bg-slate-800/50 transition-all duration-300"
+                  className={`group relative flex items-center gap-4 p-4 rounded-xl bg-slate-900/50 border border-white/10 hover:border-indigo-500/30 hover:bg-slate-800/50 transition-all duration-300 ${
+                    index === 2
+                      ? "md:col-span-2 md:w-[calc(50%_-_0.75rem)] md:mx-auto"
+                      : ""
+                  }`}
                 >
                   {/* Avatar */}
                   <div className="relative">
@@ -176,53 +145,15 @@ const Footer = () => {
                   </div>
                 </div>
               ))}
-
-              {/* --- FUNCTIONAL JOIN TEAM LINK --- */}
-              {/* Now opens Mail client to send email to you */}
-              <a
-                href="mailto:careers@fairfare.app?subject=I want to join the team!"
-                className="flex items-center justify-center gap-3 p-4 rounded-xl border border-dashed border-white/10 hover:border-white/20 hover:bg-white/5 transition-all duration-300 cursor-pointer group"
-              >
-                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ArrowUpRight size={20} className="text-slate-400" />
-                </div>
-                <span className="text-slate-500 text-sm font-medium group-hover:text-white transition-colors">
-                  Join the team
-                </span>
-              </a>
             </div>
           </div>
         </div>
 
         {/* Footer Bottom Bar */}
-        <div className="mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="mt-20 text-center">
           <p className="text-slate-500 text-xs">
             &copy; 2025 FairFare Inc. All rights reserved.
           </p>
-
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <div className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </div>
-              <span className="text-[10px] font-medium text-emerald-400 uppercase tracking-wider">
-                Systems Normal
-              </span>
-            </div>
-
-            <div className="flex gap-6 text-xs text-slate-500 font-medium">
-              <a href="#" className="hover:text-white transition-colors">
-                Privacy
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                Terms
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                Security
-              </a>
-            </div>
-          </div>
         </div>
       </div>
     </footer>
