@@ -54,7 +54,7 @@ const TransactionHistory = () => {
     const element = document.getElementById(`tx-card-${txId}`);
     if (!element) return;
 
-    const shareLink = `https://your-app-link.com/transaction/${txId}`;
+    const shareLink = `https://fair-fare-phi.vercel.app/transaction-history/${friendId}#${txId}`;
     const shareText = `Hey! Just a friendly reminder about the transaction of ₹${amount}. You can check the details here: ${shareLink}`;
 
     try {
@@ -130,11 +130,29 @@ const TransactionHistory = () => {
   };
 
   useEffect(() => {
-    if (!transactions) return;
-    requestAnimationFrame(() => {
-      scrollToBottom();
-      handleScroll();
-    });
+    if (!transactions || transactions.length === 0) return;
+
+    const hash = window.location.hash.replace("#", "");
+    if (hash) {
+      // Scroll to the specific transaction from the URL hash
+      requestAnimationFrame(() => {
+        const target = document.getElementById(`tx-card-${hash}`);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Brief highlight effect
+          target.style.transition = "box-shadow 0.3s ease";
+          target.style.boxShadow = "0 0 0 2px #818cf8, 0 0 20px rgba(129,140,248,0.3)";
+          setTimeout(() => {
+            target.style.boxShadow = "";
+          }, 3000);
+        }
+      });
+    } else {
+      requestAnimationFrame(() => {
+        scrollToBottom();
+        handleScroll();
+      });
+    }
   }, [transactions]);
 
   useEffect(() => {
