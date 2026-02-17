@@ -1,11 +1,8 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { FaArrowDown, FaBell, FaCopy } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
 import { Forward } from "lucide-react";
-import { MdOutlineCurrencyExchange } from "react-icons/md";
 import Cookies from "js-cookie";
 import api from "../utils/api";
 import html2canvas from "html2canvas";
@@ -14,6 +11,32 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const TransactionHistory = () => {
   const { friendId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle shared links: if friendId is the logged-in user, swap with sharer's ID
+  useEffect(() => {
+    const currentUserId = Cookies.get("id");
+    if (currentUserId && friendId === currentUserId) {
+      // Try getting from location.search first (standard query param)
+      let sharerId = new URLSearchParams(location.search).get("sharer");
+      
+      // Fallback: Check if it's in the hash (e.g. if using HashRouter or weird URL formation)
+      if (!sharerId && location.hash.includes("?")) {
+        const hashParams = new URLSearchParams(location.hash.split("?")[1]);
+        sharerId = hashParams.get("sharer");
+      }
+
+      console.log("Sharer ID found:", sharerId); // Debug log
+
+      if (sharerId) {
+        // Redirect to the correct transaction history (with the sharer as the friend)
+        // Ensure we preserve the transaction hash ID (the part after the last #)
+        const txHash = location.hash.split("?")[0]; 
+        navigate(`/transaction-history/${sharerId}${txHash}`, { replace: true });
+        return;
+      }
+    }
+  }, [friendId, location]);
 
   const [transactions, setTransactions] = useState([]);
   const [friendName, setFriendName] = useState("");
@@ -54,7 +77,7 @@ const TransactionHistory = () => {
     const element = document.getElementById(`tx-card-${txId}`);
     if (!element) return;
 
-    const shareLink = `https://fair-fare-phi.vercel.app/transaction-history/${friendId}#${txId}`;
+    const shareLink = `https://fair-fare-phi.vercel.app/transaction-history/${friendId}?sharer=${userId}#${txId}`;
     const shareText = `Hey! Just a friendly reminder about the transaction of ₹${amount}. You can check the details here: ${shareLink}`;
 
     try {
@@ -213,7 +236,10 @@ const TransactionHistory = () => {
       const friend = user?.friends?.find((f) => f.friend?._id === friendId);
 
       // If this person is not a friend, redirect to their public profile
+      // BUT first check if it's a self-share link (friendId === currentUserId)
+      // If so, let the useEffect handle the redirect to the sharerId
       if (!friend) {
+        if (friendId === currentUserId) return; 
         navigate(`/public-profile/${friendId}?from=transactions`, { replace: true });
         return;
       }
@@ -252,7 +278,7 @@ const TransactionHistory = () => {
 
   useEffect(() => {
     fetchData(storedUser);
-  }, []);
+  }, [friendId]);
 
   const confirmPaid = () => {
     if (amount === "" || amount === 0) {
@@ -478,7 +504,7 @@ const TransactionHistory = () => {
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/dash")}
               className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             >
               <svg

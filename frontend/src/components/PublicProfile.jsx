@@ -245,7 +245,7 @@ const PublicProfile = () => {
               The profile you are looking for does not exist or is private.
             </p>
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/dash")}
               className="w-full px-4 py-2.5 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 transition-colors"
             >
               Return to Dashboard
@@ -258,7 +258,7 @@ const PublicProfile = () => {
           {/* TOP NAVIGATION (Simplified) */}
           <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-10">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => fromTransactions ? navigate("/dash") : navigate(-1)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition-all text-sm font-medium"
             >
               <ArrowLeft className="w-4 h-4" />
