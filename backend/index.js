@@ -9,7 +9,9 @@ import userRoutes from "./routes/user.js";
 import groupRoutes from "./routes/group.js";
 import expenseRoutes from "./routes/expense.js";
 import promoRoutes from "./routes/promo.js";
+import termsRoutes from "./routes/terms.js";
 import session from "express-session";
+import { syncLegalDocuments } from "./utils/legalLoader.js";
 
 const app = express();
 
@@ -49,6 +51,9 @@ app.use("/expenses", expenseRoutes);
 // Promo notification route
 app.use("/promo", promoRoutes);
 
+// Terms & Conditions - Legal Versioning
+app.use("/terms", termsRoutes);
+
 // ✅ Self-ping function to prevent Render sleeping
 function keepServerAwake() {
   setInterval(() => {
@@ -61,6 +66,11 @@ function keepServerAwake() {
 
 keepServerAwake();
 
-app.listen(8000, () => {
-  console.log("Server running on PORT:8000");
+connectDB().then(() => {
+    // Sync legal docs
+    syncLegalDocuments();
+    
+    app.listen(8000, () => {
+        console.log("Server running on PORT:8000");
+    });
 });
