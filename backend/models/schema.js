@@ -67,11 +67,10 @@ const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    agreedToTerms: { type: Boolean, default: false },
     legalAgreements: [
       {
         version: { type: String, required: true },
-        termsId: {
+        documentId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Terms",
           required: true,
@@ -113,7 +112,7 @@ const LabelCategorySchema = new mongoose.Schema({
 // Terms Schema
 const termsSchema = new mongoose.Schema(
   {
-    type: { type: String, enum: ["terms", "privacy"], default: "terms" },
+    type: { type: String, enum: ["terms", "privacy"], required: true },
     version: { type: String, required: true },
     content: { type: String, required: true }, // Markdown content
     status: {
@@ -122,6 +121,7 @@ const termsSchema = new mongoose.Schema(
       default: "draft",
     },
     isActive: { type: Boolean, default: false },
+    publishedAt: { type: Date, default: null }, // When the document was published
   },
   { timestamps: true }
 );

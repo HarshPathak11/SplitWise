@@ -1,4 +1,4 @@
-import { User, Expense, FriendRequest } from "../models/schema.js";
+import { User, Group, Expense, Terms } from "../models/schema.js";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import {
@@ -77,7 +77,7 @@ const sendOtp = async (req, res) => {
 
 // Verify OTP and create user
 const verifyOtp = async (req, res) => {
-  const { otp, username, email, password, otpGenerated, referId, agreedToTerms } = req.body;
+  const { otp, username, email, password, otpGenerated, referId } = req.body;
 
   if (!otp || !email || !otpGenerated || !username || !password) {
     return res.status(400).json({ message: "Incomplete data received" });
@@ -116,7 +116,6 @@ const verifyOtp = async (req, res) => {
       username: cleanUsername,
       email,
       password: cleanPassword, // schema middleware handles hashing
-      agreedToTerms: agreedToTerms,
     });
 
     if (referId) {
@@ -135,6 +134,21 @@ const verifyOtp = async (req, res) => {
         { $push: { friends: { friend: referId, balance: 0 } } }
       );
     }
+
+    // Automatically record agreement to all active legal documents
+    const activeTerms = await Terms.find({ isActive: true });
+    const legalAgreements = activeTerms.map(term => ({
+      version: term.version,
+      documentId: term._id,
+      agreedAt: new Date(),
+    }));
+
+    if (legalAgreements.length > 0) {
+      await User.findByIdAndUpdate(newUser._id, {
+        $set: { legalAgreements }
+      });
+    }
+
     const token = signAccessToken(newUser._id);
 
     return res.status(200).json({ id: newUser._id, token });
@@ -481,7 +495,7 @@ const userDetails = async (req, res) => {
         fcmToken: 1,
         profilePhotoUrl: 1,
         updatedAt: 1,
-        agreedToTerms: 1,
+
       })
       .lean();
     // console.log(user.friends) // exclude sensitive fields
@@ -591,7 +605,7 @@ const updateUserProfile = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    const { username, upiId, agreedToTerms } = req.body;
+    const { username, upiId } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
@@ -600,7 +614,7 @@ const updateUserProfile = async (req, res) => {
     const updateData = {};
     if (username !== undefined) updateData.username = username;
     if (upiId !== undefined) updateData.upiId = upiId;
-    if (agreedToTerms !== undefined) updateData.agreedToTerms = agreedToTerms;
+
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
 

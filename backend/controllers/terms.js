@@ -49,9 +49,10 @@ export const publishTerm = async (req, res) => {
       { $set: { isActive: false, status: "archived" } }
     );
 
-    // Publish new term
+    // Publish new term with timestamp
     termToPublish.isActive = true;
     termToPublish.status = "published";
+    termToPublish.publishedAt = new Date();
     await termToPublish.save();
 
     res.status(200).json({ message: "Term published successfully", term: termToPublish });
@@ -107,7 +108,7 @@ export const checkTermsStatus = async (req, res) => {
     // 3. Map all active documents to include 'hasAgreed' status
     const termsStatus = activeDocs.map((doc) => {
       const hasAgreed = user.legalAgreements && user.legalAgreements.some(
-        (agreement) => agreement.termsId.toString() === doc._id.toString()
+        (agreement) => agreement.documentId.toString() === doc._id.toString()
       );
       // Return a plain object with the doc fields + hasAgreed
       return {
@@ -156,24 +157,13 @@ export const acceptTerms = async (req, res) => {
       $addToSet: {
         legalAgreements: {
           version: term.version,
-          termsId: term._id,
+          documentId: term._id,
           agreedAt: new Date(),
         },
       },
     });
 
-    // Check if user has now agreed to ALL active terms
-    const activeTerms = await Terms.find({ isActive: true });
-    // Fetch updated user
-    const updatedUser = await User.findById(userId).select("legalAgreements");
-    
-    const allAgreed = activeTerms.every(activeDoc => 
-        updatedUser.legalAgreements.some(ua => ua.termsId.toString() === activeDoc._id.toString())
-    );
-
-    if (allAgreed) {
-        await User.findByIdAndUpdate(userId, { agreedToTerms: true }); 
-    }
+    // legalAgreements array is now the single source of truth for tracking user consent
 
     res.status(200).json({ message: "Terms accepted successfully" });
   } catch (error) {
