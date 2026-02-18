@@ -9,9 +9,7 @@ import {
   Lock,
   Mail,
   CreditCard,
-  Crown,
-  ShieldCheck,
-  Sparkles,
+  Crown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
