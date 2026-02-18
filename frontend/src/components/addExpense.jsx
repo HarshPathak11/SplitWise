@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mic, Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -24,6 +24,17 @@ const AddExpense = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [calcExpr, setCalcExpr] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const recognitionRef = useRef(null); // Ref to store recognition instance
+
+  const handleStopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      // The onend event will handle resetting state, but we can force it here for immediate feedback if needed
+      // setIsListening(false); 
+    }
+  };
 
   // Determine groupId: either from prop or from localStorage ("currentGroup")
   const currentGroup = JSON.parse(
@@ -229,6 +240,169 @@ const AddExpense = () => {
       ? (parseFloat(mainAmount || 0) / selected.length).toFixed(2)
       : 0;
 
+  const handleVoiceInput = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      toast.error("Voice recognition not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition; // Store instance in ref
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      toast.loading("Listening...", { id: "voice-toast" });
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+      toast.success(`Heard: "${transcript}"`, { id: "voice-toast" });
+      setIsListening(false); // Stop listening UI
+      setIsProcessingVoice(true); // Start processing UI immediately to prevent flicker
+      processVoiceExpense(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      console.error("Voice error:", event.error);
+      toast.error("Error capturing voice.", { id: "voice-toast" });
+    };
+
+    recognition.start();
+  };
+
+  const processVoiceExpense = async (transcript) => {
+    // setIsProcessingVoice(true); // Already set in onresult
+    const toastId = toast.loading("Analyzing expense...");
+
+    // Safety Timeout (15 seconds)
+    const safetyTimeout = setTimeout(() => {
+        setIsProcessingVoice(false);
+        toast.error("AI is taking too long. Please try again.", { id: toastId });
+    }, 15000);
+
+    try {
+      const { data } = await api.post("/ai/parse-expense", {
+        text: transcript,
+      });
+
+      // 1. Amount
+      if (data.amount) setMainAmount(data.amount.toString());
+
+      // 2. Title
+      if (data.title) setTitle(data.title);
+
+      // 3. Paid By
+      if (data.paidBy) {
+        if (data.paidBy === "current_user") {
+          const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+          if (storedUser._id) setPaidBy(storedUser._id);
+        } else {
+          // Fuzzy match name in members list
+          const payer = members.find((m) =>
+            m.username.toLowerCase().includes(data.paidBy.toLowerCase())
+          );
+          if (payer) setPaidBy(payer._id);
+        }
+      }
+
+      // 4. Split Mode & Details
+      if (data.splitMode === "unequally") {
+        setSplitMode("unequally");
+        if (data.splitDetails && Array.isArray(data.splitDetails)) {
+          const newAmounts = {};
+          const newSelected = [];
+
+          data.splitDetails.forEach((detail) => {
+            let memberId;
+            if (detail.name === "current_user" || detail.name === "me" || detail.name === "I") {
+              const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+              memberId = storedUser._id;
+            } else {
+              const friend = members.find((m) =>
+                m.username.toLowerCase().includes(detail.name.toLowerCase())
+              );
+              if (friend) memberId = friend._id;
+            }
+
+            if (memberId) {
+              newAmounts[memberId] = detail.amount.toString();
+              newSelected.push(memberId);
+            }
+          });
+
+          if (newSelected.length > 0) {
+            setSelected(newSelected);
+            setAmounts(newAmounts);
+            toast.success("Split unequally!", { id: toastId });
+          }
+        }
+      } else {
+        setSplitMode("equally");
+        // 5. Split Participants (Only for Equal Split usually, but can be used for Unequal if amounts not specified)
+        if (data.splitWith && Array.isArray(data.splitWith)) {
+            if (
+            data.splitWith.includes("ALL") ||
+            data.splitWith.includes("everyone")
+            ) {
+            const allIds = members.map((m) => m._id);
+            setSelected(allIds);
+            toast.success("Selected everyone!", { id: toastId });
+            } else {
+            const newSelected = [];
+            data.splitWith.forEach((name) => {
+                const friend = members.find((m) =>
+                m.username.toLowerCase().includes(name.toLowerCase())
+                );
+                if (friend) newSelected.push(friend._id);
+            });
+
+            if (newSelected.length > 0) {
+                setSelected(newSelected);
+                toast.success(`Selected ${newSelected.length} people`, {
+                id: toastId,
+                });
+            }
+            }
+        } else if (data.friendName && !data.splitDetails) {
+            // Fallback for simple case
+            const friend = members.find(
+            (m) =>
+                m.username.toLowerCase().includes(data.friendName.toLowerCase())
+            );
+
+            if (friend) {
+            if (!selected.includes(friend._id)) {
+                setSelected((prev) => [...prev, friend._id]);
+            }
+            toast.success(`Selected ${friend.username}`, { id: toastId });
+            }
+        } else if (!data.splitDetails) {
+             toast.success("Expense details filled!", { id: toastId });
+        }
+      }
+
+    } catch (err) {
+      console.error(err);
+      const errorMsg =
+        err.response?.data?.error || "Failed to parse voice command.";
+      toast.error(errorMsg, { id: toastId });
+    } finally {
+      clearTimeout(safetyTimeout);
+      setIsProcessingVoice(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 flex flex-col relative">
       {/* --- BACKGROUND FX --- */}
@@ -273,6 +447,28 @@ const AddExpense = () => {
                 autoFocus
               />
             </div>
+
+            {/* Voice Command Button (Emergency Style) */}
+            <button
+                type="button"
+                onClick={handleVoiceInput}
+                disabled={isListening || isProcessingVoice}
+                className={`mt-8 w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl ${
+                  isListening
+                    ? "bg-red-500 animate-pulse ring-4 ring-red-500/50 shadow-[0_0_50px_rgba(220,38,38,0.6)] scale-110"
+                    : "bg-gradient-to-br from-red-600 to-red-800 text-white hover:scale-110 hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] border-4 border-red-900/30 active:scale-95"
+                }`}
+                title="Use Voice Command"
+            >
+                {isProcessingVoice ? (
+                  <Loader2 className="w-8 h-8 animate-spin text-white/90" />
+                ) : (
+                  <Mic className={`w-8 h-8 text-white drop-shadow-md ${isListening ? "animate-bounce" : ""}`} />
+                )}
+            </button>
+            <p className="text-zinc-500 text-xs mt-3 font-medium tracking-wide uppercase opacity-60">
+                Tap to Speak
+            </p>
           </div>
 
           {/* 2. DETAILS CARD (Title & Payer) */}
@@ -519,6 +715,69 @@ const AddExpense = () => {
           </button>
         </div>
       </div>
+      {/* --- VOICE LISTENING MODAL --- */}
+      {isListening && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative">
+            {/* Pulsing Circles */}
+            <div className="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-75 blur-xl"></div>
+            <div className="absolute inset-0 bg-cyan-500 rounded-full animate-ping delay-75 opacity-50 blur-lg"></div>
+            
+            {/* Main Mic Icon */}
+            <div className="relative w-24 h-24 bg-gradient-to-br from-indigo-600 to-cyan-500 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/10">
+              <Mic className="w-10 h-10 text-white animate-bounce" />
+            </div>
+          </div>
+          
+          <h3 className="mt-8 text-2xl font-bold text-white tracking-tight animate-pulse">
+            Listening...
+          </h3>
+          <p className="text-zinc-400 mt-2 text-sm italic">
+            Say "Dinner 500 paid by Rahul split with everyone"
+          </p>
+          
+          <div className="flex flex-col items-center gap-4 mt-8 w-full max-w-xs">
+              <button 
+                onClick={handleStopListening}
+                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-full font-bold shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              >
+                <div className="w-4 h-4 bg-white rounded-sm"></div>
+                Stop Listening
+              </button>
+
+              <button 
+                onClick={() => {
+                    if (recognitionRef.current) recognitionRef.current.abort();
+                    setIsListening(false);
+                    toast.dismiss("voice-toast");
+                }}
+                className="text-zinc-500 hover:text-white text-sm transition-colors py-2 px-4"
+              >
+                Cancel
+              </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- PROCESSING MODAL --- */}
+      {isProcessingVoice && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+             <div className="relative mb-8 w-24 h-24 animate-glow-pulse">
+                <div className="absolute inset-0 border-4 border-indigo-500/30 rounded-full"></div>
+                <div className="absolute inset-0 border-t-4 border-cyan-400 rounded-full animate-spin"></div>
+                <div className="absolute inset-2 border-b-4 border-indigo-400 rounded-full animate-spin-reverse"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                   <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+                </div>
+             </div>
+             <h3 className="text-2xl font-bold text-white tracking-tight animate-pulse text-center px-4">
+               Fair AI is working for you... 🤖
+             </h3>
+             <p className="text-zinc-400 mt-4 text-sm max-w-xs text-center">
+                Decoding your expense details. Just a moment!
+             </p>
+        </div>
+      )}
     </div>
   );
 };

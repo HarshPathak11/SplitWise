@@ -9,6 +9,7 @@ import userRoutes from "./routes/user.js";
 import groupRoutes from "./routes/group.js";
 import expenseRoutes from "./routes/expense.js";
 import promoRoutes from "./routes/promo.js";
+import aiRoutes from "./routes/ai.js";
 import session from "express-session";
 
 const app = express();
@@ -17,11 +18,11 @@ const allowedOrigins = process.env.ORIGIN.split(",");
 
 app.use(express.json({ extended: true }));
 app.use(
-    cors({
-      origin: allowedOrigins,
-      methods: ['GET', 'POST', 'PUT', 'DELETE'],
-      credentials: true // Allow credentials (cookies, authorization headers, etc.)
-}));
+  cors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true // Allow credentials (cookies, authorization headers, etc.)
+  }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'defaultsecret',
   resave: false,
@@ -48,6 +49,9 @@ app.use("/expenses", expenseRoutes);
 
 // Promo notification route
 app.use("/promo", promoRoutes);
+
+// AI route
+app.use("/ai", aiRoutes);
 
 // ✅ Self-ping function to prevent Render sleeping
 function keepServerAwake() {
