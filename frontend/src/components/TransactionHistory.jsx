@@ -12,32 +12,6 @@ const TransactionHistory = () => {
   const { friendId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Handle shared links: if friendId is the logged-in user, swap with sharer's ID
-  useEffect(() => {
-    const currentUserId = Cookies.get("id");
-    if (currentUserId && friendId === currentUserId) {
-      // Try getting from location.search first (standard query param)
-      let sharerId = new URLSearchParams(location.search).get("sharer");
-      
-      // Fallback: Check if it's in the hash (e.g. if using HashRouter or weird URL formation)
-      if (!sharerId && location.hash.includes("?")) {
-        const hashParams = new URLSearchParams(location.hash.split("?")[1]);
-        sharerId = hashParams.get("sharer");
-      }
-
-      console.log("Sharer ID found:", sharerId); // Debug log
-
-      if (sharerId) {
-        // Redirect to the correct transaction history (with the sharer as the friend)
-        // Ensure we preserve the transaction hash ID (the part after the last #)
-        const txHash = location.hash.split("?")[0]; 
-        navigate(`/transaction-history/${sharerId}${txHash}`, { replace: true });
-        return;
-      }
-    }
-  }, [friendId, location]);
-
   const [transactions, setTransactions] = useState([]);
   const [friendName, setFriendName] = useState("");
   const [netBalance, setNetBalance] = useState(0);
@@ -57,6 +31,30 @@ const TransactionHistory = () => {
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const userId = storedUser?._id;
 
+  // Handle shared links: if friendId is the logged-in user, swap with sharer's ID
+  useEffect(() => {
+    const currentUserId = Cookies.get("id");
+    if (currentUserId && friendId === currentUserId) {
+      // Try getting from location.search first (standard query param)
+      let sharerId = new URLSearchParams(location.search).get("sharer");
+
+      // Fallback: Check if it's in the hash (e.g. if using HashRouter or weird URL formation)
+      if (!sharerId && location.hash.includes("?")) {
+        const hashParams = new URLSearchParams(location.hash.split("?")[1]);
+        sharerId = hashParams.get("sharer");
+      }
+
+      if (sharerId) {
+        // Redirect to the correct transaction history (with the sharer as the friend)
+        // Ensure we preserve the transaction hash ID (the part after the last #)
+        const txHash = location.hash.split("?")[0];
+        navigate(`/transaction-history/${sharerId}${txHash}`, { replace: true });
+        return;
+      }
+    }
+  }, [friendId, location]);
+
+
   const handleScroll = () => {
     const el = chatContainerRef.current;
     if (!el) return;
@@ -73,12 +71,15 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleShareTransaction = async (txId, amount, friendName) => {
+  const handleShareTransaction = async (txId, amount, friendName, payerUpi) => {
     const element = document.getElementById(`tx-card-${txId}`);
     if (!element) return;
 
     const shareLink = `https://fair-fare-phi.vercel.app/transaction-history/${friendId}?sharer=${userId}#${txId}`;
-    const shareText = `Hey! Just a friendly reminder about the transaction of ₹${amount}. You can check the details here: ${shareLink}`;
+    let shareText = `Hey! Just a friendly reminder about the transaction of ₹${amount}. You can check the details here: ${shareLink}`;
+    if (payerUpi) {
+      shareText += `\n\nPay to UPI: ${payerUpi}`;
+    }
 
     try {
       const canvas = await html2canvas(element, {
@@ -239,7 +240,7 @@ const TransactionHistory = () => {
       // BUT first check if it's a self-share link (friendId === currentUserId)
       // If so, let the useEffect handle the redirect to the sharerId
       if (!friend) {
-        if (friendId === currentUserId) return; 
+        if (friendId === currentUserId) return;
         navigate(`/public-profile/${friendId}?from=transactions`, { replace: true });
         return;
       }
@@ -253,7 +254,7 @@ const TransactionHistory = () => {
       // 3. Fetch remote data (Transactions & Last Seen)
       if (!silent) setTxLoading(true);
       const txRes = await api.get(`${API_BASE}/expenses/${currentUserId}/${friendId}`);
-
+      
       // Sort & Process transactions
       const sortedTransactions = txRes.data.expenses.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -577,8 +578,8 @@ const TransactionHistory = () => {
               onClick={confirmSettle}
               disabled={loading || txLoading}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-900/30 transition-all duration-300 group whitespace-nowrap ${loading || txLoading
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:from-indigo-500 hover:to-violet-500 active:scale-95'
+                ? 'opacity-50 cursor-not-allowed'
+                : 'hover:from-indigo-500 hover:to-violet-500 active:scale-95'
                 }`}
               title="Settle Up"
             >
@@ -676,7 +677,7 @@ const TransactionHistory = () => {
                     {/* Forward button on the LEFT for user's transactions */}
                     {isUser && (
                       <button
-                        onClick={() => handleShareTransaction(tx._id, amount, friendName)}
+                        onClick={() => handleShareTransaction(tx._id, amount, friendName, tx.paidBy._id === userId ? storedUser?.upiId : friendName?.upiId)}
                         className="p-2 rounded-full text-zinc-500 hover:text-indigo-400 hover:bg-white/5 transition-all opacity-60 group-hover:opacity-100 mr-1 flex-shrink-0"
                         title="Share Receipt"
                       >
@@ -753,7 +754,7 @@ const TransactionHistory = () => {
                     {/* Forward button on the RIGHT for friend's transactions */}
                     {!isUser && (
                       <button
-                        onClick={() => handleShareTransaction(tx._id, amount, friendName)}
+                        onClick={() => handleShareTransaction(tx._id, amount, friendName, tx.paidBy._id === userId ? storedUser?.upiId : friendName?.upiId)}
                         className="p-2 rounded-full text-zinc-500 hover:text-indigo-400 hover:bg-white/5 transition-all opacity-60 group-hover:opacity-100 ml-1 flex-shrink-0"
                         title="Share Receipt"
                       >
