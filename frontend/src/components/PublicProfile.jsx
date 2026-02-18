@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import axios from "axios";
 import Cookies from "js-cookie";
-import logo from "../../public/newIconV3-192x192.png";
+const logo = "/newIconV3-192x192.png";
 import { toast } from "react-hot-toast";
-import userIcon from "../../public/userIcon.png";
+const userIcon = "/userIcon.png";
 import Swal from "sweetalert2";
 import {
   ArrowLeft,
@@ -29,6 +28,7 @@ const PublicProfile = () => {
   const [requestSent, setRequestSent] = useState(false);
   const [hasError, setHasError] = React.useState(false);
   const [friendId, setFriendId] = useState(null);
+  const [showPhoto, setShowPhoto] = useState(false);
 
   const navigate = useNavigate();
   const { userId } = useParams();
@@ -313,7 +313,8 @@ const PublicProfile = () => {
                     <img
                       src={profilePhotoUrl || userIcon}
                       alt="Profile"
-                      className="w-full h-full rounded-full object-cover bg-slate-800"
+                      onClick={() => setShowPhoto(true)}
+                      className="w-full h-full rounded-full object-cover bg-slate-800 cursor-pointer hover:opacity-90 transition-opacity"
                     />
                     {/* Verified Tick */}
                     <div className="absolute bottom-1 right-1 bg-indigo-500 text-white p-1 rounded-full border-[3px] border-slate-900">
@@ -445,6 +446,18 @@ const PublicProfile = () => {
               </p>
             </div>
           </div>
+        </div>
+      )}
+      {showPhoto && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-zoom-out"
+          onClick={() => setShowPhoto(false)}
+        >
+          <img
+            src={profilePhotoUrl || userIcon}
+            alt="Enlarged Profile"
+            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-300"
+          />
         </div>
       )}
     </>
