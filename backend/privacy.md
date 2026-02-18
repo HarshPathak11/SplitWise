@@ -23,7 +23,7 @@ d. Notifications
 FCM (Firebase Cloud Messaging) tokens for push notifications
 Preferences for notifications and alerts
 
-2. How We Use Your Information
+# 2. How We Use Your Information
 We use your information to:
 Provide, maintain, and improve the Service
 Track and manage expenses and transactions
