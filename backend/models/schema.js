@@ -85,6 +85,11 @@ const userSchema = new mongoose.Schema(
     profilePhotoUrl: { type: String, default: null }, // secure_url from Cloudinary
     profilePhotoId:  { type: String, default: null }, // public_id used for deletion
     lastActive: { type: Date, default: null },
+    gender: { 
+      type: String, 
+      enum: ['Male', 'Female', 'Do not disclose'], 
+      default: 'Do not disclose' 
+    },
   },
   { timestamps: true }
 );
