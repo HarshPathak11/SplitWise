@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../utils/api";
 import { toast } from "react-hot-toast";
@@ -8,6 +8,8 @@ import {
   Plus,
   Filter,
   Receipt,
+  Mic,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -25,6 +27,9 @@ const PersonalExpense = () => {
   });
   const [errors, setErrors] = useState({});
   const [deleteConfirm, setDeleteConfirm] = useState(null); // holds expense to confirm delete
+  const [isListening, setIsListening] = useState(false);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const recognitionRef = useRef(null);
 
   const fetchExpenses = async () => {
     try {
@@ -110,6 +115,87 @@ const PersonalExpense = () => {
     (sum, expense) => sum + expense.amount,
     0,
   );
+
+  const handleStopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+  };
+
+  const handleVoiceInput = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      toast.error("Voice recognition not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      toast.loading("Listening...", { id: "voice-toast" });
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+      toast.success(`Heard: "${transcript}"`, { id: "voice-toast" });
+      setIsListening(false);
+      setIsProcessingVoice(true);
+      processVoiceExpense(transcript);
+    };
+
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      console.error("Voice error:", event.error);
+      toast.error("Error capturing voice.", { id: "voice-toast" });
+    };
+
+    recognition.start();
+  };
+
+  const processVoiceExpense = async (transcript) => {
+    const toastId = toast.loading("Analyzing expense...");
+
+    const safetyTimeout = setTimeout(() => {
+      setIsProcessingVoice(false);
+      toast.error("AI is taking too long. Please try again.", { id: toastId });
+    }, 15000);
+
+    try {
+      const { data } = await api.post("/ai/parse-expense", {
+        text: transcript,
+      });
+
+      const updatedExpense = { ...newExpense };
+
+      if (data.amount) updatedExpense.amount = data.amount.toString();
+      if (data.title) updatedExpense.description = data.title;
+      // Note: The AI endpoint might not return date/time for personal expenses standardly,
+      // but if it did, we could map it here. For now, we stick to amount and description.
+
+      setNewExpense(updatedExpense);
+      toast.success("Expense details filled!", { id: toastId });
+
+    } catch (err) {
+      console.error(err);
+      const errorMsg =
+        err.response?.data?.error || "Failed to parse voice command.";
+      toast.error(errorMsg, { id: toastId });
+    } finally {
+      clearTimeout(safetyTimeout);
+      setIsProcessingVoice(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-2 md:p-4 relative selection:bg-indigo-500/30 font-sans overflow-auto">
@@ -279,6 +365,29 @@ const PersonalExpense = () => {
             </div>
           </div>
 
+          {/* Voice Button (Large Red Style) */}
+          <div className="flex flex-col items-center justify-center mt-6 mb-2">
+            <button
+              type="button"
+              onClick={handleVoiceInput}
+              disabled={isListening || isProcessingVoice}
+              className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl ${isListening
+                  ? "bg-red-500 animate-pulse ring-4 ring-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.6)] scale-110"
+                  : "bg-gradient-to-br from-red-600 to-red-800 text-white hover:scale-110 hover:shadow-[0_0_20px_rgba(220,38,38,0.5)] border-4 border-red-900/30 active:scale-95"
+                }`}
+              title="Use Voice Command"
+            >
+              {isProcessingVoice ? (
+                <Loader2 className="w-6 h-6 animate-spin text-white/90" />
+              ) : (
+                <Mic className={`w-6 h-6 text-white drop-shadow-md ${isListening ? "animate-bounce" : ""}`} />
+              )}
+            </button>
+            <p className="text-zinc-500 text-[10px] mt-2 font-medium tracking-wide uppercase opacity-60">
+              Tap to Speak
+            </p>
+          </div>
+
           {/* Expenses List & Stats - Right Column */}
           <div className="lg:col-span-8 flex flex-col gap-4 overflow-visible">
             {/* Stats Card */}
@@ -440,6 +549,64 @@ const PersonalExpense = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* --- VOICE LISTENING MODAL --- */}
+      {isListening && (
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative">
+            <div className="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-75 blur-xl"></div>
+            <div className="absolute inset-0 bg-cyan-500 rounded-full animate-ping delay-75 opacity-50 blur-lg"></div>
+            <div className="relative w-24 h-24 bg-gradient-to-br from-indigo-600 to-cyan-500 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/10">
+              <Mic className="w-10 h-10 text-white animate-bounce" />
+            </div>
+          </div>
+          <h3 className="mt-8 text-2xl font-bold text-white tracking-tight animate-pulse">
+            Listening...
+          </h3>
+          <p className="text-zinc-400 mt-2 text-sm italic">
+            Say "Groceries 500"
+          </p>
+          <div className="flex flex-col items-center gap-4 mt-8 w-full max-w-xs">
+            <button
+              onClick={handleStopListening}
+              className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-full font-bold shadow-lg transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+            >
+              <div className="w-4 h-4 bg-white rounded-sm"></div>
+              Stop Listening
+            </button>
+            <button
+              onClick={() => {
+                if (recognitionRef.current) recognitionRef.current.abort();
+                setIsListening(false);
+                toast.dismiss("voice-toast");
+              }}
+              className="text-zinc-500 hover:text-white text-sm transition-colors py-2 px-4"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- PROCESSING MODAL --- */}
+      {isProcessingVoice && (
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative mb-8 w-24 h-24 animate-glow-pulse">
+            <div className="absolute inset-0 border-4 border-indigo-500/30 rounded-full"></div>
+            <div className="absolute inset-0 border-t-4 border-cyan-400 rounded-full animate-spin"></div>
+            <div className="absolute inset-2 border-b-4 border-indigo-400 rounded-full animate-spin-reverse"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-white tracking-tight animate-pulse text-center px-4">
+            Processing... 🤖
+          </h3>
+          <p className="text-zinc-400 mt-4 text-sm max-w-xs text-center">
+            Decoding your expense details.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
