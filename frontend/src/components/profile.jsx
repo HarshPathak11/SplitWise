@@ -17,6 +17,18 @@ import toast from "react-hot-toast";
 import { authFetch } from "../utils/authFetch";
 import api from "../utils/api";
 
+// Import avatars directly
+import m1 from "../assets/avatars/Male/1.jpeg";
+import m2 from "../assets/avatars/Male/2.jpeg";
+import m3 from "../assets/avatars/Male/3.jpeg";
+import m4 from "../assets/avatars/Male/4.jpeg";
+import m5 from "../assets/avatars/Male/5.jpeg";
+
+import f1 from "../assets/avatars/Female/1.jpeg";
+import f2 from "../assets/avatars/Female/2.jpeg";
+import f3 from "../assets/avatars/Female/3.jpeg";
+import f4 from "../assets/avatars/Female/4.jpeg";
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ProfileEnhanced = () => {
@@ -24,6 +36,7 @@ const ProfileEnhanced = () => {
     username: "",
     email: "",
     upiId: "",
+    gender: "",
   });
   const [isUsernameAvailable, setIsUsernameAvailable] = useState(true);
   const [checkingUsername, setCheckingUsername] = useState(false);
@@ -36,6 +49,9 @@ const ProfileEnhanced = () => {
   const [uploading, setUploading] = useState(false);
   const [isHoveringPhoto, setIsHoveringPhoto] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  const maleAvatars = [m1, m2, m3, m4, m5];
+  const femaleAvatars = [f1, f2, f3, f4];
 
   const navigate = useNavigate();
   const userId = Cookies.get("id");
@@ -129,6 +145,10 @@ const ProfileEnhanced = () => {
     setProfile({ ...profile, [name]: value });
   };
 
+  const handleGenderChange = (value) => {
+    setProfile({ ...profile, gender: value });
+  };
+
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
@@ -146,6 +166,31 @@ const ProfileEnhanced = () => {
     reader.readAsDataURL(selected);
   };
 
+  const handleAvatarSelect = async (avatarPath) => {
+    try {
+      const response = await fetch(avatarPath);
+      const blob = await response.blob();
+      const file = new File([blob], "avatar.jpeg", { type: "image/jpeg" });
+      
+      setFile(file);
+      const reader = new FileReader();
+      reader.onload = (ev) => setPreview(ev.target?.result);
+      reader.readAsDataURL(file);
+      
+      // Optional: Automatically upload when selected? 
+      // For now, let's just set it as the file to be uploaded when they click "Update Profile"
+      // or we can simulate the upload immediately if preferred. 
+      // The user request didn't specify immediate upload, but typical "choose avatar" flows might expect it.
+      // However, the current flow requires hitting "Update Profile" to save changes (including photo).
+      // So setting `file` state is consistent with existing behavior.
+      toast.success("Avatar selected! Click 'Update Profile' to save.");
+
+    } catch (error) {
+      console.error("Error loading avatar:", error);
+      toast.error("Failed to load avatar");
+    }
+  };
+
   const saveProfileFields = async (userId) => {
     profile.username = profile.username.trim();
     if (!profile.username) {
@@ -158,6 +203,7 @@ const ProfileEnhanced = () => {
       body: JSON.stringify({
         username: profile.username,
         upiId: profile.upiId,
+        gender: profile.gender,
       }),
     });
   };
@@ -212,6 +258,7 @@ const ProfileEnhanced = () => {
           username: fetchedUser.username || "",
           upiId: fetchedUser.upiId || "",
           email: fetchedUser.email || "",
+          gender: fetchedUser.gender || "Do not disclose",
         });
         setUsername(fetchedUser.username || "");
         if (fetchedUser.profilePhotoUrl)
@@ -376,6 +423,77 @@ Let's split and share smarter with FairFare! 💸`;
                   <Upload className="w-4 h-4" />
                 </label>
               </div>
+            </div>
+
+            {/* --- DEFAULT AVATAR SELECTION --- */}
+            <div className="mb-10 space-y-4">
+               <div className="flex flex-col items-center gap-4">
+                 
+                 {/* Gender Selection - Using profile.gender state now */}
+                 <div className="flex flex-col items-center gap-2">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                        Gender
+                    </label>
+                    <div className="flex p-1 bg-zinc-900/60 rounded-xl border border-white/5">
+                        {["Male", "Female", "Do not disclose"].map((g) => (
+                            <button
+                            key={g}
+                            type="button"
+                            onClick={() => handleGenderChange(g)}
+                            className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300 ${
+                                (profile.gender === g || (!profile.gender && g === "Do not disclose"))
+                                ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-lg shadow-indigo-500/10"
+                                : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
+                            }`}
+                            >
+                            {g}
+                            </button>
+                        ))}
+                    </div>
+                 </div>
+
+                 <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mt-2">
+                   Choose a Default Avatar
+                 </h3>
+
+                 {/* Avatar Grid - dependent on profile.gender */}
+                 <div className="flex flex-wrap justify-center gap-4 py-2">
+
+                   {(profile.gender === "Male" || profile.gender === "Do not disclose" || !profile.gender) &&
+                     maleAvatars.map((path, i) => (
+                       <button
+                         key={`male-${i}`}
+                         type="button"
+                         onClick={() => handleAvatarSelect(path)}
+                         className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-transparent hover:border-indigo-500 hover:scale-110 transition-all duration-300 group"
+                       >
+                         <img
+                           src={path}
+                           alt={`Male Avatar ${i + 1}`}
+                           className="w-full h-full object-cover"
+                         />
+                         <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                       </button>
+                     ))}
+                   
+                   {(profile.gender === "Female" || profile.gender === "Do not disclose" || !profile.gender) &&
+                     femaleAvatars.map((path, i) => (
+                       <button
+                         key={`female-${i}`}
+                         type="button"
+                         onClick={() => handleAvatarSelect(path)}
+                         className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-transparent hover:border-fuchsia-500 hover:scale-110 transition-all duration-300 group"
+                       >
+                         <img
+                           src={path}
+                           alt={`Female Avatar ${i + 1}`}
+                           className="w-full h-full object-cover"
+                         />
+                         <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
+                       </button>
+                     ))}
+                 </div>
+               </div>
             </div>
 
             {/* --- HEADER TEXT --- */}
