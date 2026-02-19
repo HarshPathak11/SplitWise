@@ -88,7 +88,7 @@ const SignUp = () => {
           });
         }
 
-        navigate("/profile");
+        navigate("/setup-profile");
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);

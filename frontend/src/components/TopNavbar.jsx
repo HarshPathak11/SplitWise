@@ -9,7 +9,7 @@ import dashboardLogoNew from "../../public/dashboardLogoNew.png";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-const TopNavbar = () => {
+const TopNavbar = ({ user }) => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -79,10 +79,14 @@ const TopNavbar = () => {
         <div className="flex items-center gap-2">
           <Link to="/profile">
             <button
-              className="p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
+              className="relative p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
               title="Edit Profile"
             >
               <FaUser className="text-lg" />
+              {/* Notification Dot for Missing Gender */}
+              {user && !user.gender && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
+              )}
             </button>
           </Link>
 

@@ -85,10 +85,10 @@ const userSchema = new mongoose.Schema(
     profilePhotoUrl: { type: String, default: null }, // secure_url from Cloudinary
     profilePhotoId:  { type: String, default: null }, // public_id used for deletion
     lastActive: { type: Date, default: null },
-    gender: { 
-      type: String, 
-      enum: ['Male', 'Female', 'Do not disclose'], 
-      default: 'Do not disclose' 
+    gender: {
+      type: String,
+      enum: ['Male', 'Female', 'Do not disclose'],
+      // default: 'Do not disclose' // Removed default to force selection
     },
   },
   { timestamps: true }
@@ -100,7 +100,7 @@ const LabelCategorySchema = new mongoose.Schema({
   category: String,
   subcategory: String,
 },
-{ timestamps: true });
+  { timestamps: true });
 
 // Password hashing middleware
 userSchema.pre("save", async function (next) {
