@@ -16,18 +16,7 @@ import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import { authFetch } from "../utils/authFetch";
 import api from "../utils/api";
-
-// Import avatars directly
-import m1 from "../assets/avatars/Male/1.jpeg";
-import m2 from "../assets/avatars/Male/2.jpeg";
-import m3 from "../assets/avatars/Male/3.jpeg";
-import m4 from "../assets/avatars/Male/4.jpeg";
-import m5 from "../assets/avatars/Male/5.jpeg";
-
-import f1 from "../assets/avatars/Female/1.jpeg";
-import f2 from "../assets/avatars/Female/2.jpeg";
-import f3 from "../assets/avatars/Female/3.jpeg";
-import f4 from "../assets/avatars/Female/4.jpeg";
+import AvatarSelector from "./AvatarSelector";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -50,9 +39,7 @@ const ProfileEnhanced = () => {
   const [isHoveringPhoto, setIsHoveringPhoto] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  const maleAvatars = [m1, m2, m3, m4, m5];
-  const femaleAvatars = [f1, f2, f3, f4];
-
+  
   const navigate = useNavigate();
   const userId = Cookies.get("id");
 
@@ -231,6 +218,11 @@ const ProfileEnhanced = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!profile.gender) {
+      toast.error("Please select a gender");
+      return;
+    }
+
     try {
       const userId = Cookies.get("id");
       if (!userId) return;
@@ -329,23 +321,34 @@ Let's split and share smarter with FairFare! 💸`;
       </div>
 
       {/* --- NAVIGATION --- */}
-      <button
-        onClick={() => navigate("/dash")}
-        className="fixed top-6 left-6 z-50 group"
-      >
-        <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
-          <ArrowLeft className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
-        </div>
-      </button>
+      {/* Only show Back/Share if gender is selected AND SAVED (persisted in user object) */}
+      {user?.gender ? (
+        <>
+          <button
+            onClick={() => navigate("/dash")}
+            className="fixed top-6 left-6 z-50 group"
+          >
+            <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
+              <ArrowLeft className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+            </div>
+          </button>
 
-      <button
-        onClick={handleShareProfile}
-        className="fixed top-6 right-6 z-50 group"
-      >
-        <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
-          <Share2 className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+          <button
+            onClick={handleShareProfile}
+            className="fixed top-6 right-6 z-50 group"
+          >
+            <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
+              <Share2 className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+            </div>
+          </button>
+        </>
+      ) : (
+        <div className="fixed top-6 left-6 z-50">
+            <p className="text-red-500 font-bold text-sm bg-black/50 px-3 py-2 rounded-xl backdrop-blur-md border border-red-500/30 shadow-lg animate-pulse">
+                Please select Gender & Update Profile to exit
+            </p>
         </div>
-      </button>
+      )}
 
       {/* --- MAIN CARD --- */}
       <div className="relative pt-6 px-2 z-10 w-full max-w-2xl">
@@ -427,73 +430,11 @@ Let's split and share smarter with FairFare! 💸`;
 
             {/* --- DEFAULT AVATAR SELECTION --- */}
             <div className="mb-10 space-y-4">
-               <div className="flex flex-col items-center gap-4">
-                 
-                 {/* Gender Selection - Using profile.gender state now */}
-                 <div className="flex flex-col items-center gap-2">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">
-                        Gender
-                    </label>
-                    <div className="flex p-1 bg-zinc-900/60 rounded-xl border border-white/5">
-                        {["Male", "Female", "Do not disclose"].map((g) => (
-                            <button
-                            key={g}
-                            type="button"
-                            onClick={() => handleGenderChange(g)}
-                            className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-300 ${
-                                (profile.gender === g || (!profile.gender && g === "Do not disclose"))
-                                ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shadow-lg shadow-indigo-500/10"
-                                : "text-zinc-500 hover:text-zinc-300 hover:bg-white/5"
-                            }`}
-                            >
-                            {g}
-                            </button>
-                        ))}
-                    </div>
-                 </div>
-
-                 <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mt-2">
-                   Choose a Default Avatar
-                 </h3>
-
-                 {/* Avatar Grid - dependent on profile.gender */}
-                 <div className="flex flex-wrap justify-center gap-4 py-2">
-
-                   {(profile.gender === "Male" || profile.gender === "Do not disclose" || !profile.gender) &&
-                     maleAvatars.map((path, i) => (
-                       <button
-                         key={`male-${i}`}
-                         type="button"
-                         onClick={() => handleAvatarSelect(path)}
-                         className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-transparent hover:border-indigo-500 hover:scale-110 transition-all duration-300 group"
-                       >
-                         <img
-                           src={path}
-                           alt={`Male Avatar ${i + 1}`}
-                           className="w-full h-full object-cover"
-                         />
-                         <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
-                       </button>
-                     ))}
-                   
-                   {(profile.gender === "Female" || profile.gender === "Do not disclose" || !profile.gender) &&
-                     femaleAvatars.map((path, i) => (
-                       <button
-                         key={`female-${i}`}
-                         type="button"
-                         onClick={() => handleAvatarSelect(path)}
-                         className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-transparent hover:border-fuchsia-500 hover:scale-110 transition-all duration-300 group"
-                       >
-                         <img
-                           src={path}
-                           alt={`Female Avatar ${i + 1}`}
-                           className="w-full h-full object-cover"
-                         />
-                         <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
-                       </button>
-                     ))}
-                 </div>
-               </div>
+               <AvatarSelector 
+                 gender={profile.gender} 
+                 setGender={(g) => handleGenderChange(g)} 
+                 onSelectAvatar={handleAvatarSelect} 
+               />
             </div>
 
             {/* --- HEADER TEXT --- */}
@@ -580,16 +521,22 @@ Let's split and share smarter with FairFare! 💸`;
 
               {/* Bottom Actions */}
               <div className="pt-4 flex flex-col gap-4">
+                {!profile.gender && (
+                    <p className="text-red-400 text-xs text-center font-bold uppercase tracking-wider animate-pulse">
+                        ⚠️ Select Gender to Unlock Exit
+                    </p>
+                )}
                 <button
                   type="submit"
                   disabled={
                     !profile.upiId ||
                     uploading ||
                     !isUsernameAvailable ||
-                    checkingUsername
+                    checkingUsername ||
+                    !profile.gender
                   }
                   className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 active:scale-[0.98] ${
-                    !profile.upiId || uploading
+                    !profile.upiId || uploading || !profile.gender
                       ? "bg-zinc-800 text-zinc-600 cursor-not-allowed border border-white/5"
                       : "bg-indigo-400/70 text-zinc-950 hover:bg-white hover:shadow-zinc-500/10"
                   }`}

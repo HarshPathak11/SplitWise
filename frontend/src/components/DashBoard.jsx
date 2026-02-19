@@ -103,7 +103,7 @@ const Dashboard = () => {
           <div className="lg:col-span-7 flex flex-col gap-6">
             {/* Header Area */}
             <div className="pl-1">
-              <TopNavbar />
+              <TopNavbar user={user} />
             </div>
 
             {/* Main Card Wrapper - Giving it a 'Premium Device' feel */}
