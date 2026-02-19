@@ -29,6 +29,7 @@ import Analytics from "./components/Analytics";
 import Subcategories from "./components/Subcategories";
 import Expenses from "./components/Expenses";
 import AllFriends from "./components/AllFriends";
+import PersonalExpense from "./components/PersonalExpense";
 
 const router = createBrowserRouter([
   {
@@ -88,6 +89,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <AddExpense />
+          </ProtectedRoute>
+        ),
+      },
+      {
+path: "personal-expenses",
+        element: (
+          <ProtectedRoute>
+            <PersonalExpense />
           </ProtectedRoute>
         ),
       },
