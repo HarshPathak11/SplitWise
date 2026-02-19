@@ -1,13 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const MODELS = [
-  "gemini-2.0-flash-lite",  // Primary: Lite (Fastest)
-  "gemini-flash-latest",    // Backup 1: Stable Flash (Very Fast)
-  "gemini-2.0-flash",       // Backup 2: 2.0 Flash (Preview)
-  "gemini-2.5-flash",       // Backup 3: Experimental Flash
-  "gemini-2.5-flash-lite",  // Backup 4: Experimental Flash Lite
-  "gemini-2.5-pro",         // Backup 5: Pro
-  "gemini-pro-latest",      // Backup 6: Stable Pro
+  "gemini-2.0-flash-lite", // Primary: Fastest & Cheapest
+  "gemini-2.0-flash-lite-001", // Versioned Lite
+  "gemini-2.5-flash-lite", // Newer Lite
+  "gemini-flash-lite-latest", // Generic Lite alias
+  "gemini-2.0-flash",      // Standard Flash (2.0)
+  "gemini-2.5-flash",      // Standard Flash (2.5)
+  "gemini-flash-latest",   // Generic Flash alias
+  "gemini-1.5-flash",      // Fallback Flash (1.5)
+  "gemini-1.5-flash-latest", // Fallback Flash (1.5 latest)
 ];
 
 let currentModelIndex = 0;
@@ -60,17 +62,22 @@ export const parseExpense = async (req, res) => {
         // console.log(`Attempting with model: ${modelName}`); // Debug log
         const model = genAI.getGenerativeModel({ model: modelName });
         const result = await model.generateContent(prompt);
-        const response = await result.response;
+        const response = result.response;
         textResult = response.text();
         successful = true;
         break; // Success! Exit loop
       } catch (apiError) {
-        // Handle quota exhaustion (429 error)
-        if (apiError.message.includes("429") && apiError.message.includes("quota")) {
-          console.warn(`⚠️ Quota exceeded for ${modelName}. Switching to next model...`);
+
+        // Handle quota exhaustion (429) OR server overload (503) OR internal error (500)
+        if (
+          (apiError.message.includes("429") && apiError.message.includes("quota")) ||
+          apiError.message.includes("503") ||
+          apiError.message.includes("500")
+        ) {
+          console.warn(`⚠️ Issue with model ${modelName} (${apiError.message.split(']')[0]}). Switching to next model...`);
           currentModelIndex++; // Move to next model for this and future requests
         } else {
-          throw apiError; // Throw other errors (e.g. 500, invalid arg) immediately
+          throw apiError; // Throw other errors (e.g. invalid arg) immediately
         }
       }
     }
