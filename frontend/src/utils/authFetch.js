@@ -7,10 +7,14 @@ export async function authFetch(url, options = {}) {
 
   const headers = {
     ...(options.headers || {}),
-    "Content-Type": "application/json",
     Authorization: token ? `Bearer ${token}` : "", // attach JWT
-    id : id
+    id: id,
   };
+
+  // Only add Content-Type: application/json if it's not FormData
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
 
   const response = await fetch(url, { ...options, headers });
 
