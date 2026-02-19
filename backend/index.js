@@ -11,7 +11,6 @@ import expenseRoutes from "./routes/expense.js";
 import promoRoutes from "./routes/promo.js";
 import termsRoutes from "./routes/terms.js";
 import session from "express-session";
-import { syncLegalDocuments } from "./utils/legalLoader.js";
 
 const app = express();
 
@@ -67,8 +66,6 @@ function keepServerAwake() {
 keepServerAwake();
 
 connectDB().then(() => {
-    // Sync legal docs
-    syncLegalDocuments();
     
     app.listen(8000, () => {
         console.log("Server running on PORT:8000");
