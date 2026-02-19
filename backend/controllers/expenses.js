@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Expense, User } from "../models/schema.js";
 
 const getUserFriendExpenses = async (req, res) => {
@@ -67,4 +68,87 @@ const getUserFriendExpenses = async (req, res) => {
   }
 };
 
-export { getUserFriendExpenses };
+const createPersonalExpense = async (req, res) => {
+  const session = await mongoose.startSession();
+  try {
+    const { description, amount, date } = req.body;
+    const userId = req.user.id;
+
+    if (!description || !amount) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    let newExpense;
+
+    await session.withTransaction(async () => {
+      newExpense = new Expense({
+        title: description,
+        amount: parseFloat(amount.toFixed(2)),
+        date: date || Date.now(),
+        paidBy: userId
+      });
+
+      await newExpense.save({ session });
+      await User.findByIdAndUpdate(userId, {
+        $push: { recentExpense: newExpense._id }
+      }, { session });
+    });
+
+    res.status(201).json(newExpense);
+  } catch (error) {
+    console.error("Error creating personal expense:", error);
+    res.status(500).json({ message: "Server error" });
+  } finally {
+    session.endSession();
+  }
+};
+
+const getPersonalExpenses = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const expenses = await Expense.find({
+      paidBy: userId,
+      owedBy: {$size: 0},
+    }).sort({ date: -1 });
+
+    res.status(200).json(expenses);
+  } catch (error) {
+    console.error("Error fetching personal expenses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const deletePersonalExpense = async (req, res) => {
+  const session = await mongoose.startSession();
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const expense = await Expense.findOne({ _id: id, paidBy: userId });
+
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found or unauthorized" });
+    }
+
+    await session.withTransaction(async () => {
+      await Expense.findByIdAndDelete(id, { session });
+      await User.findByIdAndUpdate(userId, {
+        $pull: { recentExpense: id }
+      }, { session });
+    });
+
+    res.status(200).json({ message: "Expense deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting personal expense:", error);
+    res.status(500).json({ message: "Server error" });
+  } finally {
+    session.endSession();
+  }
+};
+
+export {
+  getUserFriendExpenses,
+  createPersonalExpense,
+  getPersonalExpenses,
+  deletePersonalExpense
+};

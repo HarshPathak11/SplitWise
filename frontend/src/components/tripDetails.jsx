@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Check, X } from "lucide-react";
+import { ArrowLeft, Pencil, Check, X, ArrowUpRight } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import { FaChartBar } from "react-icons/fa";
 import { useParams } from "react-router-dom";
@@ -434,6 +434,7 @@ const TripDetails = () => {
                                   ? member
                                   : member?.username}
                               </span>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-zinc-500 group-hover:text-indigo-400 transition-colors" />
                             </div>
                           </Link>
                         )}
