@@ -41,10 +41,23 @@ const getUserFriendExpenses = async (req, res) => {
       groupName: exp.group?.name || null, // null means no group assigned
     }));
 
+    // Fetch friend's activity status
+    const friend = await User.findById(friendId).select("lastActive updatedAt").lean();
+
+    const friendActivity = {};
+    if (friend) {
+      if (friend.lastActive) {
+        friendActivity.lastAtive = friend.lastActive;
+      } else {
+        friendActivity.updatedAt = friend.updatedAt;
+      }
+    }
+
     return res.status(200).json({
       status: "Success",
       count: expensesWithGroupName.length,
       expenses: expensesWithGroupName,
+      ...friendActivity,
     });
   } catch (error) {
     console.error(error);

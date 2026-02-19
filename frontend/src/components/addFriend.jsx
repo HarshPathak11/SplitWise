@@ -24,7 +24,14 @@ import api from "../utils/api";
 const AddFriend = () => {
   const navigate = useNavigate();
 
-  const [friends, setFriends] = useState([]); // Selected friends to add
+  const [friends, setFriends] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("selectedFriends");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [requests, setRequests] = useState([]);
@@ -103,6 +110,11 @@ const AddFriend = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Sync selected friends to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem("selectedFriends", JSON.stringify(friends));
+  }, [friends]);
 
   const respond = async (fromUserId, action) => {
     try {
@@ -219,6 +231,7 @@ const AddFriend = () => {
     setFriends((prev) => [
       ...prev,
       {
+        _id: userObj._id,
         email: userObj.email,
         name: userObj.username,
         profilePhotoUrl: userObj.profilePhotoUrl,
@@ -261,6 +274,7 @@ const AddFriend = () => {
         });
 
         setFriends([]);
+        sessionStorage.removeItem("selectedFriends");
       } else {
         toast.error(`Failed to add friends: ${response.data.message}`);
       }
@@ -301,7 +315,10 @@ const AddFriend = () => {
       {/* --- TOP NAVIGATION BAR --- */}
       <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-50">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            sessionStorage.removeItem("selectedFriends");
+            navigate(-1);
+          }}
           className="group flex items-center justify-center w-12 h-12 rounded-full bg-slate-900/50 backdrop-blur-md border border-white/10 text-slate-400 hover:text-white hover:border-white/30 transition-all duration-300 shadow-xl"
           title="Back"
         >
@@ -541,7 +558,10 @@ const AddFriend = () => {
                     key={index}
                     className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-slate-800/50 to-slate-900/50 border border-white/5 group hover:border-white/10 transition-all"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className="flex items-center gap-3 min-w-0 cursor-pointer"
+                      onClick={() => navigate(`/public-profile/${friend._id}`)}
+                    >
                       <div className="relative">
                         <img
                           src={friend.profilePhotoUrl}
@@ -553,7 +573,7 @@ const AddFriend = () => {
                         </div>
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-sm text-white truncate">
+                        <p className="font-bold text-sm text-white truncate hover:text-cyan-400 transition-colors">
                           {friend.name ?? friend.username}
                         </p>
                         <p className="text-xs text-slate-400 truncate">
