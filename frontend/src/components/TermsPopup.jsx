@@ -342,7 +342,7 @@ const TermsPopup = ({ isOpen, terms, onAccept }) => {
                             </div>
                             <div className="bg-white/5 border border-white/10 rounded-xl p-5">
                                 <p className="text-white/80 leading-7 text-sm">
-                                    This is a new version ({term.version}) of the Terms and Conditions. Please review the changes carefully. Key updates often involve privacy, data usage, or liability clauses.
+                                    This is a new version of the Terms and Conditions. Please review the changes carefully. Key updates often involve privacy, data usage, or liability clauses.
                                     <br /><br />
                                     <em>(Note: This is a simulated summary for the demo. In production, this would use an LLM API to summarize the actual markdown content above.)</em>
                                 </p>
