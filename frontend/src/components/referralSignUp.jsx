@@ -93,7 +93,7 @@ const ReferralSignUp = () => {
             sameSite: "strict",
           });
         }
-        navigate("/profile");
+        navigate("/setup-profile");
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);

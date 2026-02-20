@@ -13,13 +13,10 @@ const NotificationBanner = () => {
     // Detect platform: check for mobile devices first, fallback to desktop
     const ua = navigator.userAgent || "";
     if (/iPad|iPhone|iPod/.test(ua)) {
-      console.log("ios");
       setPlatform("ios");
     } else if (/Android/.test(ua)) {
-      console.log("android");
       setPlatform("android");
     } else {
-      console.log("desktop");
       setPlatform("desktop");
     }
 
