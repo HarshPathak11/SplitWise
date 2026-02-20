@@ -10,196 +10,85 @@ import ReactMarkdown from "react-markdown";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PRIVACY_TEMPLATES = [
-  // 1. Structured Cards
-  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p1">
-    <div className="flex items-center gap-3 text-emerald-400 mb-2">
-      <FaMagic className="text-xl" />
-      <h3 className="text-lg font-bold">AI Summary: Key Highlights</h3>
-    </div>
-    <div className="space-y-4 text-white/90">
-      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-        <h4 className="font-semibold text-white mb-2">📊 Data We Collect</h4>
-        <p className="text-sm text-white/70">
-          We collect essential details like Name, Email, UPI ID, and device info to make the app work smoothly.
-        </p>
-      </div>
-      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-        <h4 className="font-semibold text-white mb-2">🛡️ How We Use It</h4>
-        <p className="text-sm text-white/70">
-          Your data is used to track expenses, prevent fraud, and send you important updates. We don't sell your data.
-        </p>
-      </div>
-      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-        <h4 className="font-semibold text-white mb-2">🔒 Security & Sharing</h4>
-        <p className="text-sm text-white/70">
-          We use strong encryption and only share data with necessary service providers (like payment processors).
-        </p>
-      </div>
-    </div>
-  </div>,
+    // Template 1 (Short Version)
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p1">
+        <div className="flex items-center gap-3 text-emerald-400 mb-2">
+            <FaMagic className="text-xl" />
+            <h3 className="text-lg font-bold">AI Summary: Short Version</h3>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+            <p className="text-white/80 leading-7 text-sm">
+                FairFare collects basic personal information such as your name, email, UPI ID, and expense-related data to provide and improve its services. Device and usage information may also be collected for analytics and performance monitoring. Your data is used to manage transactions, send notifications, prevent misuse, and enhance user experience. FairFare does not sell personal information and only shares data with trusted service providers or when legally required. Security measures such as encryption and password protection are implemented, although absolute security cannot be guaranteed. Users may request access, correction, or deletion of their data by contacting support.
+            </p>
+        </div>
+    </div>,
 
-  // 2. Simple List
-  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p2">
-    <div className="flex items-center gap-3 text-blue-400 mb-2">
-      <FaRobot className="text-xl" />
-      <h3 className="text-lg font-bold">AI Breakdown: What to Know</h3>
-    </div>
-    <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-4">
-      <ul className="space-y-3 text-sm text-white/80">
-        <li className="flex gap-3">
-          <span className="text-blue-400 font-bold">1.</span>
-          <span><strong>Identity:</strong> We need your name, email, and UPI ID to create your profile and handle splits.</span>
-        </li>
-        <li className="flex gap-3">
-          <span className="text-blue-400 font-bold">2.</span>
-          <span><strong>Privacy First:</strong> We do NOT sell your personal data to advertisers. Never.</span>
-        </li>
-        <li className="flex gap-3">
-          <span className="text-blue-400 font-bold">3.</span>
-          <span><strong>Security:</strong> Your passwords are hashed, and connections are encrypted.</span>
-        </li>
-        <li className="flex gap-3">
-          <span className="text-blue-400 font-bold">4.</span>
-          <span><strong>Control:</strong> You can request to delete your account and data at any time.</span>
-        </li>
-      </ul>
-    </div>
-  </div>,
+    // Template 2 (User-Friendly Version)
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p2">
+        <div className="flex items-center gap-3 text-blue-400 mb-2">
+            <FaRobot className="text-xl" />
+            <h3 className="text-lg font-bold">AI Summary: User-Friendly Version</h3>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+            <p className="text-white/80 leading-7 text-sm">
+                FairFare gathers only the information necessary to help users track and split expenses effectively. This includes account details, transaction records, and limited technical data like device information and app usage. The information is used to operate the platform, send reminders, and improve functionality. Personal data is never sold and is shared only with essential service partners or when required by law. Data is stored securely and retained only as long as necessary. Users have the right to access, update, or request deletion of their information at any time.
+            </p>
+        </div>
+    </div>,
 
-  // 3. Q&A Style
-  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p3">
-    <div className="flex items-center gap-3 text-purple-400 mb-2">
-      <FaMagic className="text-xl" />
-      <h3 className="text-lg font-bold">AI Insights: Common Questions</h3>
+    // Template 3 (Compact Legal Version)
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p3">
+        <div className="flex items-center gap-3 text-purple-400 mb-2">
+            <FaMagic className="text-xl" />
+            <h3 className="text-lg font-bold">AI Summary: Compact Legal Version</h3>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+            <p className="text-white/80 leading-7 text-sm">
+                FairFare collects personal, transactional, and technical data to deliver and maintain its expense-management services. Information is processed for service functionality, communication, fraud prevention, and analytics. Data may be shared with authorized service providers or legal authorities when necessary but is never sold. Reasonable security safeguards are applied, and information is retained only for operational or legal purposes. Users may exercise rights relating to access, correction, or deletion of their personal data by contacting FairFare.
+            </p>
+        </div>
     </div>
-    <div className="grid gap-4">
-      <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-        <h4 className="text-purple-300font-medium mb-1 text-sm">What do you track?</h4>
-        <p className="text-white/70 text-sm">Mainly your expense entries, groups, and basic profile info to keep your balances accurate.</p>
-      </div>
-      <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-        <h4 className="text-purple-300 font-medium mb-1 text-sm">Is my payment info safe?</h4>
-        <p className="text-white/70 text-sm">We don't store raw card details. We use secure third-party gateways for any transaction processing.</p>
-      </div>
-      <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-        <h4 className="text-purple-300 font-medium mb-1 text-sm">Can I leave?</h4>
-        <p className="text-white/70 text-sm">Yes. You can delete your account anytime, and we'll remove your personal data.</p>
-      </div>
-    </div>
-  </div>,
-
-  // 4. "The Gist" (Short paragraph)
-  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p4">
-    <div className="flex items-center gap-3 text-amber-400 mb-2">
-      <FaRobot className="text-xl" />
-      <h3 className="text-lg font-bold">AI Summary: The Gist</h3>
-    </div>
-    <div className="bg-gradient-to-br from-white/10 to-white/5 border border-white/10 rounded-xl p-6">
-      <p className="text-white/80 leading-relaxed text-sm">
-        FairFare collects standard user information (Name, Email, UPI) to facilitate expense splitting. We prioritize your privacy by <strong>hashing passwords</strong> and <strong>encrypting data</strong>. We do <em>not</em> sell your data. We only share necessary information with service providers (like cloud hosting) to keep the app running. You retain full rights to your data and can opt-out or delete your account whenever you wish.
-      </p>
-    </div>
-  </div>
 ];
 
 const TERMS_TEMPLATES = [
-  // 1. Structured Cards
-  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t1">
-    <div className="flex items-center gap-3 text-emerald-400 mb-2">
-      <FaMagic className="text-xl" />
-      <h3 className="text-lg font-bold">AI Summary: Key Rules</h3>
-    </div>
-    <div className="space-y-4 text-white/90">
-      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-        <h4 className="font-semibold text-white mb-2">✅ Eligibility & Account</h4>
-        <p className="text-sm text-white/70">
-          You must be 12+ to use FairFare. Keep your login details secret - you are responsible for your account.
-        </p>
-      </div>
-      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-        <h4 className="font-semibold text-white mb-2">💳 Payments</h4>
-        <p className="text-sm text-white/70">
-          We help track expenses but don't hold money directly. Payments are handled by third-party apps like GPay or Razorpay.
-        </p>
-      </div>
-      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-        <h4 className="font-semibold text-white mb-2">⚖️ Liability</h4>
-        <p className="text-sm text-white/70">
-          The app is provided "as is". We aren't liable for user errors or third-party payment failures.
-        </p>
-      </div>
-    </div>
-  </div>,
+    // Template 1 (Short Version)
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t1">
+        <div className="flex items-center gap-3 text-emerald-400 mb-2">
+            <FaMagic className="text-xl" />
+            <h3 className="text-lg font-bold">AI Summary: Short Version</h3>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+            <p className="text-white/80 leading-7 text-sm">
+                By using FairFare, users agree to follow the platform’s rules and use the service only for lawful purposes. Users are responsible for maintaining account security and ensuring accurate information. FairFare provides tools for tracking and splitting expenses but does not directly process payments. The service is provided as is, without guarantees of uninterrupted operation or absolute accuracy. FairFare is not liable for payment disputes, user errors, or third-party service failures.
+            </p>
+        </div>
+    </div>,
 
-  // 2. Do's and Don'ts
-  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t2">
-    <div className="flex items-center gap-3 text-rose-400 mb-2">
-      <FaRobot className="text-xl" />
-      <h3 className="text-lg font-bold">AI Analysis: Do's & Don'ts</h3>
-    </div>
-    <div className="grid grid-cols-1 gap-4">
-      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
-        <h4 className="text-emerald-400 font-bold mb-2 text-sm uppercase">Do's</h4>
-        <ul className="text-sm text-white/70 space-y-2 list-disc pl-4">
-          <li>Provide accurate information.</li>
-          <li>Keep your password safe.</li>
-          <li>Verify transaction details before paying.</li>
-        </ul>
-      </div>
-      <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4">
-        <h4 className="text-rose-400 font-bold mb-2 text-sm uppercase">Don'ts</h4>
-        <ul className="text-sm text-white/70 space-y-2 list-disc pl-4">
-          <li>Use the app for illegal activities.</li>
-          <li>Share your account credentials.</li>
-          <li>Upload malicious code or spam.</li>
-        </ul>
-      </div>
-    </div>
-  </div>,
+    // Template 2 (User-Friendly Version)
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t2">
+        <div className="flex items-center gap-3 text-rose-400 mb-2">
+            <FaRobot className="text-xl" />
+            <h3 className="text-lg font-bold">AI Summary: User-Friendly Version</h3>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+            <p className="text-white/80 leading-7 text-sm">
+                FairFare allows users to manage shared expenses and track balances with friends or groups. Users must be eligible to use the service, protect their account credentials, and avoid misuse or illegal activity. Payments between users are handled externally or through third-party services, and FairFare is not responsible for transaction disputes. The platform may suspend accounts that violate its rules. Continued use of the service means acceptance of any updated terms.
+            </p>
+        </div>
+    </div>,
 
-  // 3. User Responsibility Focus
-  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t3">
-    <div className="flex items-center gap-3 text-cyan-400 mb-2">
-      <FaMagic className="text-xl" />
-      <h3 className="text-lg font-bold">AI Brief: Your Responsibilities</h3>
+    // Template 3 (Compact Legal Version)
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t3">
+        <div className="flex items-center gap-3 text-cyan-400 mb-2">
+            <FaMagic className="text-xl" />
+            <h3 className="text-lg font-bold">AI Summary: Compact Legal Version</h3>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+            <p className="text-white/80 leading-7 text-sm">
+                These Terms govern access to and use of FairFare services. Users must comply with eligibility requirements, maintain account security, and use the platform lawfully. FairFare functions as an expense-tracking tool and does not assume responsibility for external payment transactions. The service is provided without warranties, and liability is limited to the extent permitted by law. FairFare may suspend or terminate access for violations, and all disputes are governed by Indian law under the jurisdiction of New Delhi courts.
+            </p>
+        </div>
     </div>
-    <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-5">
-      <div>
-        <h4 className="flex items-center gap-2 text-white font-medium mb-1">
-          <span className="text-cyan-400">01.</span> Account Security
-        </h4>
-        <p className="text-xs text-white/60 pl-6">You are responsible for any activity that happens under your account. Notify us immediately of unauthorized access.</p>
-      </div>
-      <div>
-        <h4 className="flex items-center gap-2 text-white font-medium mb-1">
-          <span className="text-cyan-400">02.</span> Payment Risks
-        </h4>
-        <p className="text-xs text-white/60 pl-6">FairFare tracks debts but doesn't process the money. You assume the risk for third-party transactions (UPI/Banks).</p>
-      </div>
-      <div>
-        <h4 className="flex items-center gap-2 text-white font-medium mb-1">
-          <span className="text-cyan-400">03.</span> Content Ownership
-        </h4>
-        <p className="text-xs text-white/60 pl-6">You own what you post, but you give us a license to display it to your friends for the app to function.</p>
-      </div>
-    </div>
-  </div>,
-
-  // 4. TL;DR Paragraph
-  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t4">
-    <div className="flex items-center gap-3 text-orange-400 mb-2">
-      <FaRobot className="text-xl" />
-      <h3 className="text-lg font-bold">AI Summary: TL;DR</h3>
-    </div>
-    <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-      <p className="text-white/80 leading-7 text-sm">
-        By using FairFare, you agree that you are <strong>over 12 years old</strong> and will use the app legally. We provide the platform for tracking expenses "as is", meaning we aren't liable if a third-party payment fails or if data has minor inaccuracies. Basically: <strong>be honest, keep your password safe, and double-check your payments</strong>. We can ban users who violate these rules.
-      </p>
-    </div>
-    <div className="text-center">
-      <p className="text-xs text-white/30">Terms last updated recently.</p>
-    </div>
-  </div>
 ];
 
 const SignUp = () => {
@@ -289,7 +178,7 @@ const SignUp = () => {
   const handleSummarize = () => {
     setIsSummarizing(true);
     setShowSummary(false);
-    setSummaryTemplateIndex(Math.floor(Math.random() * 4));
+    setSummaryTemplateIndex(Math.floor(Math.random() * 3));
   };
 
   const handleOtpSend = async () => {
@@ -675,9 +564,15 @@ const SignUp = () => {
                     </div>
                   ) : privacyContent ? (
                     <div className="prose prose-invert max-w-none">
-                      <p className="text-white/40 italic text-sm mb-4">
-                        Version: {privacyContent.version} | Last Updated: {new Date(privacyContent.updatedAt).toLocaleDateString()}
-                      </p>
+                      <div className="text-xs text-white/40 mb-6 pb-4 border-b border-white/10">
+                        Version: {privacyContent.version} | Last updated: {new Date(privacyContent.updatedAt).toLocaleString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
                       <ReactMarkdown>{privacyContent.content}</ReactMarkdown>
                     </div>
                   ) : (
@@ -692,9 +587,15 @@ const SignUp = () => {
                     </div>
                   ) : termsContent ? (
                     <div className="prose prose-invert max-w-none">
-                      <p className="text-white/40 italic text-sm mb-4">
-                        Version: {termsContent.version} | Last Updated: {new Date(termsContent.updatedAt).toLocaleDateString()}
-                      </p>
+                      <div className="text-xs text-white/40 mb-6 pb-4 border-b border-white/10">
+                        Version: {termsContent.version} | Last updated: {new Date(termsContent.updatedAt).toLocaleString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
                       <ReactMarkdown>{termsContent.content}</ReactMarkdown>
                     </div>
                   ) : (
