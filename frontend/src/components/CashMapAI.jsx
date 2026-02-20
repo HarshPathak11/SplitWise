@@ -223,7 +223,7 @@ function CashMapAI() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-slate-950 text-white overflow-hidden relative font-sans">
+    <div className="flex flex-col min-h-screen bg-slate-950 text-white overflow-hidden relative font-sans">
       {/* --- PREMIUM ATMOSPHERIC BACKGROUND --- */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         {/* Background Gradients (Enhanced, Subtler Colors) */}

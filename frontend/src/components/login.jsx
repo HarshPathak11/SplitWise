@@ -69,7 +69,7 @@ const LogIn = () => {
       }
     } catch (error) {
       console.error("Error logging in:", error);
-      toast.error("Login failed");
+      toast.error(error.response?.data?.message || "Login failed");
     } finally {
       setLoading(false); // Stop loading
     }

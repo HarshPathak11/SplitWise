@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Expense, User } from "../models/schema.js";
 
 const getUserFriendExpenses = async (req, res) => {
@@ -40,10 +41,23 @@ const getUserFriendExpenses = async (req, res) => {
       groupName: exp.group?.name || null, // null means no group assigned
     }));
 
+    // Fetch friend's activity status
+    const friend = await User.findById(friendId).select("lastActive updatedAt").lean();
+
+    const friendActivity = {};
+    if (friend) {
+      if (friend.lastActive) {
+        friendActivity.lastAtive = friend.lastActive;
+      } else {
+        friendActivity.updatedAt = friend.updatedAt;
+      }
+    }
+
     return res.status(200).json({
       status: "Success",
       count: expensesWithGroupName.length,
       expenses: expensesWithGroupName,
+      ...friendActivity,
     });
   } catch (error) {
     console.error(error);
@@ -55,34 +69,37 @@ const getUserFriendExpenses = async (req, res) => {
 };
 
 const createPersonalExpense = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
-    const { description, amount, date, category } = req.body;
+    const { description, amount, date } = req.body;
     const userId = req.user.id;
 
-    if (!description || !amount || !category) {
+    if (!description || !amount) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const newExpense = new Expense({
-      title: description,
-      amount,
-      date: date || Date.now(),
-      category,
-      paidBy: userId,
-      owedBy: [{ user: userId, amount }],
-    });
+    let newExpense;
 
-    await newExpense.save();
+    await session.withTransaction(async () => {
+      newExpense = new Expense({
+        title: description,
+        amount: parseFloat(amount.toFixed(2)),
+        date: date || Date.now(),
+        paidBy: userId
+      });
 
-    // Add to user's recent expenses
-    await User.findByIdAndUpdate(userId, {
-      $push: { recentExpense: newExpense._id }
+      await newExpense.save({ session });
+      await User.findByIdAndUpdate(userId, {
+        $push: { recentExpense: newExpense._id }
+      }, { session });
     });
 
     res.status(201).json(newExpense);
   } catch (error) {
     console.error("Error creating personal expense:", error);
     res.status(500).json({ message: "Server error" });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -91,9 +108,7 @@ const getPersonalExpenses = async (req, res) => {
     const userId = req.user.id;
     const expenses = await Expense.find({
       paidBy: userId,
-      "owedBy.0.user": userId,
-      "owedBy.1": { $exists: false },
-      group: { $exists: false }
+      owedBy: {$size: 0},
     }).sort({ date: -1 });
 
     res.status(200).json(expenses);
@@ -104,6 +119,7 @@ const getPersonalExpenses = async (req, res) => {
 };
 
 const deletePersonalExpense = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -114,17 +130,19 @@ const deletePersonalExpense = async (req, res) => {
       return res.status(404).json({ message: "Expense not found or unauthorized" });
     }
 
-    await Expense.findByIdAndDelete(id);
-
-    // Remove from user's recent expenses
-    await User.findByIdAndUpdate(userId, {
-      $pull: { recentExpense: id }
+    await session.withTransaction(async () => {
+      await Expense.findByIdAndDelete(id, { session });
+      await User.findByIdAndUpdate(userId, {
+        $pull: { recentExpense: id }
+      }, { session });
     });
 
     res.status(200).json({ message: "Expense deleted successfully" });
   } catch (error) {
     console.error("Error deleting personal expense:", error);
     res.status(500).json({ message: "Server error" });
+  } finally {
+    session.endSession();
   }
 };
 

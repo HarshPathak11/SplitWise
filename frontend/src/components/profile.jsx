@@ -9,9 +9,7 @@ import {
   Lock,
   Mail,
   CreditCard,
-  Crown,
-  ShieldCheck,
-  Sparkles,
+  Crown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
@@ -43,7 +41,7 @@ const ProfileEnhanced = () => {
   const userId = Cookies.get("id");
 
   useEffect(() => {
-    console.log("userId",userId);
+    // console.log("userId",userId);
 
     async function getDetails() {
       if (!user && userId) {

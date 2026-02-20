@@ -371,140 +371,122 @@ const addExpenseController = async (req, res) => {
 
   // Start a transaction session
   const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
-    // Build the owedBy array for the expense document
-    let owedByArray = [];
+    let savedExpense = null;
 
-    if (splitMode === "equally") {
-      // Equal splitting: Divide the amount evenly among all involved members.
-      // Note: Even if the payer is in involvedMembers, that's fine; we’ll skip balance updates for self-payments.
-      const share = parseFloat(amount) / involvedMembers.length;
-      owedByArray = involvedMembers.map((memberId) => ({
-        user: memberId,
-        amount: parseFloat(share.toFixed(2)),
-      }));
-    } else if (splitMode === "unequally") {
-      // Unequal splitting: Ensure provided custom amounts add up correctly.
-      const totalCustom = Object.values(customAmounts).reduce(
-        (sum, val) => sum + parseFloat(val || 0),
-        0
-      );
+    await session.withTransaction(async () => {
+      // Build the owedBy array for the expense document
+      let owedByArray = [];
 
-      if (
-        parseFloat(totalCustom.toFixed(2)) !==
-        parseFloat(parseFloat(amount).toFixed(2))
-      ) {
-        throw new Error(
-          "Total of custom amounts does not match the expense amount."
+      if (splitMode === "equally") {
+        const share = parseFloat(amount) / involvedMembers.length;
+        owedByArray = involvedMembers.map((memberId) => ({
+          user: memberId,
+          amount: parseFloat(share.toFixed(2)),
+        }));
+      } else if (splitMode === "unequally") {
+        const totalCustom = Object.values(customAmounts).reduce(
+          (sum, val) => sum + parseFloat(val || 0),
+          0
+        );
+
+        if (
+          parseFloat(totalCustom.toFixed(2)) !==
+          parseFloat(parseFloat(amount).toFixed(2))
+        ) {
+          throw new Error(
+            "Total of custom amounts does not match the expense amount."
+          );
+        }
+
+        owedByArray = involvedMembers.map((memberId) => ({
+          user: memberId,
+          amount: parseFloat(parseFloat(customAmounts[memberId]).toFixed(2)),
+        }));
+      } else {
+        throw new Error("Invalid split mode provided.");
+      }
+
+      // Create a new Expense document
+      const newExpense = new Expense({
+        title,
+        amount: parseFloat(amount),
+        paidBy,
+        owedBy: owedByArray,
+        group: groupId || null,
+      });
+
+      // Save the new expense within the transaction
+      await newExpense.save({ session });
+
+      if (groupId) {
+        await Group.findByIdAndUpdate(
+          groupId,
+          {
+            $push: { expenses: newExpense._id },
+            $inc: { tripTotal: newExpense.amount },
+          },
+          { session }
         );
       }
 
-      owedByArray = involvedMembers.map((memberId) => ({
-        user: memberId,
-        amount: parseFloat(parseFloat(customAmounts[memberId]).toFixed(2)),
-      }));
-    } else {
-      throw new Error("Invalid split mode provided.");
-    }
+      await User.findByIdAndUpdate(
+        paidBy,
+        { $push: { recentExpense: newExpense._id } },
+        { session }
+      );
 
-    // Create a new Expense document (from the Expense collection)
-    const newExpense = new Expense({
-      title,
-      amount: parseFloat(amount),
-      paidBy,
-      owedBy: owedByArray,
-      group: groupId || null,
+      // Update friend balances
+      for (const owed of owedByArray) {
+        if (owed.user.toString() === paidBy.toString()) continue;
+
+        await User.updateOne(
+          { _id: paidBy, "friends.friend": owed.user },
+          { $inc: { "friends.$.balance": owed.amount } },
+          { session }
+        );
+
+        await User.updateOne(
+          { _id: owed.user, "friends.friend": paidBy },
+          { $inc: { "friends.$.balance": -owed.amount } },
+          { session }
+        );
+      }
+      savedExpense = newExpense;
     });
 
-    // Save the new expense within the transaction
-    await newExpense.save({ session });
+    // Send Notification AFTER transaction commit
+    if (savedExpense) {
+      const userIds = savedExpense.owedBy.map((owed) => owed.user);
+      if (!userIds.some(id => id.toString() === paidBy.toString())) {
+        userIds.push(paidBy);
+      }
 
-    // -------------------------------
-    // Update Group and User by pushing the entire expense document as an embedded subdocument.
-    // Since the Group.expenses and User.recentExpense fields are defined using expenseSchema,
-    // pushing newExpense.toObject() embeds the complete expense data (with createdAt, updatedAt, etc.).
-    // -------------------------------
-    if (groupId) {
-      await Group.findByIdAndUpdate(
-        groupId,
-        {
-          $push: { expenses: newExpense._id },
-          $inc: { tripTotal: newExpense.amount }, // 👈 increment tripTotal
-        },
-        { session }
-      );
-    }
-
-    await User.findByIdAndUpdate(
-      paidBy,
-      { $push: { recentExpense: newExpense._id } },
-      { session }
-    );
-
-    // -------------------------------
-    // Update friend balances:
-    // For each owedBy entry, if the owed user is not the payer, update balances.
-    // In the payer's document, increase the balance for that friend.
-    // In the friend's document, decrease the balance for the payer.
-    // -------------------------------
-    for (const owed of owedByArray) {
-      if (owed.user.toString() === paidBy.toString()) continue; // Skip self-payment
-
-      // Update payer's record: increment the balance for this friend
-      await User.updateOne(
-        { _id: paidBy, "friends.friend": owed.user },
-        { $inc: { "friends.$.balance": owed.amount } },
-        { session }
+      const users = await User.find(
+        { _id: { $in: userIds } },
+        "fcmToken username"
       );
 
-      // Update the friend's record: decrement the balance for the payer
-      await User.updateOne(
-        { _id: owed.user, "friends.friend": paidBy },
-        { $inc: { "friends.$.balance": -owed.amount } },
-        { session }
-      );
+      const tokens = users.map((u) => u.fcmToken).filter(Boolean);
+
+      if (tokens.length > 0) {
+        const payerUser = users.find((u) => u._id.toString() === paidBy.toString());
+        const notificationTitle = "Tap to see";
+        const body = `${savedExpense.title} expense has been paid by ${
+          payerUser?.username || "Someone"
+        }. \nAmount: ${savedExpense.amount}`;
+
+        await sendMultipleNotifications(tokens, notificationTitle, body);
+      }
     }
 
-    // Send Notification to all owedBy users (including payer)
-    const userIds = owedByArray.map((owed) => owed.user);
-    // include payer as well if not already in owedByArray
-    if (!userIds.includes(paidBy)) {
-      userIds.push(paidBy);
-    }
-
-    // Fetch their FCM tokens from User collection
-    const users = await User.find(
-      { _id: { $in: userIds } },
-      "fcmToken username"
-    );
-
-    // Extract tokens
-    const tokens = users.map((u) => u.fcmToken).filter(Boolean);
-
-    // Prepare notification
-    if (tokens.length > 0) {
-      const payer = users.find((u) => u._id.toString() === paidBy.toString());
-      const title = "Tap to see";
-      const body = `${newExpense.title} expense has been paid by ${
-        payer?.username || "Someone"
-      }. \nAmount: ${newExpense.amount}`;
-
-      await sendMultipleNotifications(tokens, title, body);
-    }
-
-    // Commit transaction if all operations succeed
-    await session.commitTransaction();
-    session.endSession();
-
-    return res.status(200).json({ success: true, expense: newExpense });
+    return res.status(200).json({ success: true, expense: savedExpense });
   } catch (error) {
-    // Abort transaction on error
-    await session.abortTransaction();
-    session.endSession();
     console.error("Error in addExpenseController:", error);
     return res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -600,131 +582,123 @@ const addafterDeleteExpenseController = async (req, res) => {
   }
 
   const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
-    // Build owedBy array
-    let owedByArray = [];
-    if (splitMode === "equally") {
-      const share = parseFloat(amount) / involvedMembers.length;
-      owedByArray = involvedMembers.map((memberId) => ({
-        user: memberId,
-        amount: parseFloat(share.toFixed(2)),
-      }));
-    } else if (splitMode === "unequally") {
-      const totalCustom = Object.values(customAmounts).reduce(
-        (sum, val) => sum + parseFloat(val || 0),
-        0
-      );
+    let savedExpense = null;
 
-      if (
-        parseFloat(totalCustom.toFixed(2)) !==
-        parseFloat(parseFloat(amount).toFixed(2))
-      ) {
-        throw new Error(
-          "Total of custom amounts does not match the expense amount."
+    await session.withTransaction(async () => {
+      // Build owedBy array
+      let owedByArray = [];
+      if (splitMode === "equally") {
+        const share = parseFloat(amount) / involvedMembers.length;
+        owedByArray = involvedMembers.map((memberId) => ({
+          user: memberId,
+          amount: parseFloat(share.toFixed(2)),
+        }));
+      } else if (splitMode === "unequally") {
+        const totalCustom = Object.values(customAmounts).reduce(
+          (sum, val) => sum + parseFloat(val || 0),
+          0
         );
+
+        if (
+          parseFloat(totalCustom.toFixed(2)) !==
+          parseFloat(parseFloat(amount).toFixed(2))
+        ) {
+          throw new Error(
+            "Total of custom amounts does not match the expense amount."
+          );
+        }
+
+        owedByArray = involvedMembers.map((memberId) => ({
+          user: memberId,
+          amount: parseFloat(parseFloat(customAmounts[memberId]).toFixed(2)),
+        }));
+      } else {
+        throw new Error("Invalid split mode provided.");
       }
 
-      owedByArray = involvedMembers.map((memberId) => ({
-        user: memberId,
-        amount: parseFloat(parseFloat(customAmounts[memberId]).toFixed(2)),
-      }));
-    } else {
-      throw new Error("Invalid split mode provided.");
-    }
+      // Create new Expense
+      const expenseData = {
+        title,
+        amount: parseFloat(amount),
+        paidBy,
+        owedBy: owedByArray,
+        group: groupId || null,
+      };
+      if (clientCreatedAt) {
+        expenseData.createdAt = new Date(clientCreatedAt);
+      }
 
-    // Create new Expense (possibly overriding createdAt if provided)
-    const expenseData = {
-      title,
-      amount: parseFloat(amount),
-      paidBy,
-      owedBy: owedByArray,
-      group: groupId || null,
-    };
-    if (clientCreatedAt) {
-      expenseData.createdAt = new Date(clientCreatedAt);
-      // updatedAt will be set automatically
-    }
-
-    const newExpense = new Expense(expenseData);
-    await newExpense.save({ session });
-
-    // 1) Update Group (if any)
-    if (groupId) {
-      await Group.findByIdAndUpdate(
-        groupId,
-        {
-          $push: { expenses: newExpense._id },
-          $inc: { tripTotal: newExpense.amount },
-        },
-        { session }
-      );
-    }
-
-    // 2) Update payer's recentExpense
-    await User.findByIdAndUpdate(
-      paidBy,
-      { $push: { recentExpense: newExpense._id } },
-      { session, select: false }
-    );
-
-    // 3) Update friend balances
-    for (const owed of owedByArray) {
-      if (owed.user.toString() === paidBy.toString()) continue;
-      // Payer's friend subdocument: increment by owed.amount
-      await User.updateOne(
-        { _id: paidBy, "friends.friend": owed.user },
-        { $inc: { "friends.$.balance": owed.amount } },
-        { session }
-      );
-      // Friend's friend subdocument: decrement by owed.amount
-      await User.updateOne(
-        { _id: owed.user, "friends.friend": paidBy },
-        { $inc: { "friends.$.balance": -owed.amount } },
-        { session }
-      );
-    }
-
-    await session.commitTransaction();
-    session.endSession();
-
-    // ✅ Send notifications after successful edit
-    try {
-      let notifyUsers = [];
+      const newExpense = new Expense(expenseData);
+      await newExpense.save({ session });
 
       if (groupId) {
-        // If it's a group expense → notify all group members
-        const group = await Group.findById(groupId).populate(
-          "members",
-          "fcmToken username"
-        );
-        notifyUsers = group.members;
-      } else {
-        // If it's a non-group expense → notify only involved members
-        notifyUsers = await User.find(
-          { _id: { $in: involvedMembers } },
-          "fcmToken username"
+        await Group.findByIdAndUpdate(
+          groupId,
+          {
+            $push: { expenses: newExpense._id },
+            $inc: { tripTotal: newExpense.amount },
+          },
+          { session }
         );
       }
 
-      // Collect tokens
-      const tokens = notifyUsers.map((u) => u.fcmToken).filter(Boolean); // remove null/undefined
+      await User.findByIdAndUpdate(
+        paidBy,
+        { $push: { recentExpense: newExpense._id } },
+        { session, select: false }
+      );
 
-      if (tokens.length > 0) {
-        const body = `Expense "${title}" has been updated for ₹${amount}.`;
-        await sendMultipleNotifications(tokens, title, body);
+      for (const owed of owedByArray) {
+        if (owed.user.toString() === paidBy.toString()) continue;
+        await User.updateOne(
+          { _id: paidBy, "friends.friend": owed.user },
+          { $inc: { "friends.$.balance": owed.amount } },
+          { session }
+        );
+        await User.updateOne(
+          { _id: owed.user, "friends.friend": paidBy },
+          { $inc: { "friends.$.balance": -owed.amount } },
+          { session }
+        );
       }
-    } catch (notifyErr) {
-      console.error("Error sending expense edited notification:", notifyErr);
+      savedExpense = newExpense;
+    });
+
+    // Send notifications AFTER commit
+    if (savedExpense) {
+      try {
+        let notifyUsers = [];
+        if (groupId) {
+          const group = await Group.findById(groupId).populate(
+            "members",
+            "fcmToken username"
+          );
+          notifyUsers = group.members;
+        } else {
+          notifyUsers = await User.find(
+            { _id: { $in: involvedMembers } },
+            "fcmToken username"
+          );
+        }
+
+        const tokens = notifyUsers.map((u) => u.fcmToken).filter(Boolean);
+        if (tokens.length > 0) {
+          const notificationBody = `Expense "${title}" has been updated for ₹${amount}.`;
+          await sendMultipleNotifications(tokens, title, notificationBody);
+        }
+      } catch (notifyErr) {
+        console.error("Error sending expense edited notification:", notifyErr);
+      }
     }
 
-    return res.status(200).json({ success: true, expense: newExpense });
+    return res.status(200).json({ success: true, expense: savedExpense });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    console.error("Error in addExpenseController:", error);
+    console.error("Error in addafterDeleteExpenseController:", error);
     return res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -736,68 +710,71 @@ const deleteExpenseController = async (req, res) => {
   const { action } = req.body;
 
   const session = await mongoose.startSession();
-  session.startTransaction();
 
   try {
-    // 1) Load the existing expense (including owedBy, paidBy, amount, group)
-    const expense = await Expense.findById(expenseId).session(session);
-    if (!expense) {
-      await session.abortTransaction();
-      session.endSession();
-      return res
-        .status(404)
-        .json({ success: false, message: "Expense not found" });
-    }
+    let deletedExpense = null;
 
-    const { paidBy, owedBy, amount, group: groupId } = expense;
+    await session.withTransaction(async () => {
+      // 1) Load the existing expense
+      const expense = await Expense.findById(expenseId).session(session);
+      if (!expense) {
+        deletedExpense = null;
+        return;
+      }
+      deletedExpense = expense.toObject();
 
-    // 2) Reverse each balance update
-    for (const owed of owedBy) {
-      const owedUserId = owed.user.toString();
-      const payerId = paidBy.toString();
-      const owedAmount = owed.amount;
+      const { paidBy, owedBy, amount, group: groupId } = expense;
 
-      if (owedUserId === payerId) continue;
+      // 2) Reverse each balance update
+      for (const owed of owedBy) {
+        const owedUserId = owed.user.toString();
+        const payerId = paidBy.toString();
+        const owedAmount = owed.amount;
 
-      // In payer's document: decrement that friend's balance by owedAmount
+        if (owedUserId === payerId) continue;
+
+        await User.updateOne(
+          { _id: paidBy, "friends.friend": owed.user },
+          { $inc: { "friends.$.balance": -owedAmount } },
+          { session }
+        );
+        await User.updateOne(
+          { _id: owed.user, "friends.friend": paidBy },
+          { $inc: { "friends.$.balance": owedAmount } },
+          { session }
+        );
+      }
+
+      // 3) Remove from payer's recentExpense
       await User.updateOne(
-        { _id: paidBy, "friends.friend": owed.user },
-        { $inc: { "friends.$.balance": -owedAmount } },
+        { _id: paidBy },
+        { $pull: { recentExpense: expenseId } },
         { session }
       );
-      // In friend's document: increment payer's balance by owedAmount
-      await User.updateOne(
-        { _id: owed.user, "friends.friend": paidBy },
-        { $inc: { "friends.$.balance": owedAmount } },
-        { session }
-      );
+
+      // 4) If part of a group, remove from Group.expenses and decrement tripTotal
+      if (groupId) {
+        await Group.updateOne(
+          { _id: groupId },
+          {
+            $pull: { expenses: expenseId },
+            $inc: { tripTotal: -amount },
+          },
+          { session }
+        );
+      }
+
+      // 5) Delete the Expense document itself
+      await Expense.deleteOne({ _id: expenseId }, { session });
+    });
+
+    if (!deletedExpense) {
+      return res.status(404).json({ success: false, message: "Expense not found" });
     }
 
-    // 3) Remove from payer's recentExpense
-    await User.updateOne(
-      { _id: paidBy },
-      { $pull: { recentExpense: { _id: expenseId } } },
-      { session }
-    );
-
-    // 4) If part of a group, remove from Group.expenses and decrement tripTotal
-    if (groupId) {
-      await Group.updateOne(
-        { _id: groupId },
-        {
-          $pull: { expenses: { _id: expenseId } },
-          $inc: { tripTotal: -amount },
-        },
-        { session }
-      );
-    }
-
-    // 5) Delete the Expense document itself
-    await Expense.deleteOne({ _id: expenseId }, { session });
-
-    // 6) 🔔 Notify group members about the deleted expense
-    if (groupId && action !== "edit") {
-      const group = await Group.findById(groupId).populate(
+    // 6) 🔔 Notify group members AFTER commit
+    if (deletedExpense.group && action !== "edit") {
+      const group = await Group.findById(deletedExpense.group).populate(
         "members",
         "fcmToken username"
       );
@@ -805,20 +782,18 @@ const deleteExpenseController = async (req, res) => {
         const tokens = group.members.map((m) => m.fcmToken).filter(Boolean);
         if (tokens.length > 0) {
           const title = "Expense Deleted";
-          const body = `An expense "${expense.title}" of amount ₹${expense.amount} has been deleted from group "${group.name}".`;
+          const body = `An expense "${deletedExpense.title}" of amount ₹${deletedExpense.amount} has been deleted from group "${group.name}".`;
           await sendMultipleNotifications(tokens, title, body);
         }
       }
     }
 
-    await session.commitTransaction();
-    session.endSession();
     return res.status(200).json({ success: true, message: "Expense deleted" });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
     console.error("Error in deleteExpenseController:", error);
     return res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -1070,6 +1045,50 @@ const getAllExpensesForASubcategoryInGroup = async (req, res) => {
   }
 };
 
+const updateGroupDetails = async (req, res) => {
+  const { id } = req.params;
+  const { name, description, userId } = req.body;
+
+  if (!name || name.trim().length === 0) {
+    return res.status(400).json({ message: "Trip name is required." });
+  }
+
+  const session = await mongoose.startSession();
+
+  try {
+    let updatedGroup = null;
+
+    await session.withTransaction(async () => {
+      // Single atomic findOneAndUpdate — combines membership check + update
+      // No separate read, so no write conflict possible
+      const updateFields = { name: name.trim() };
+      if (description !== undefined) {
+        updateFields.description = description.trim();
+      }
+
+      updatedGroup = await Group.findOneAndUpdate(
+        { _id: id, members: userId }, // query: group exists AND user is a member
+        { $set: updateFields },
+        { new: true, session }
+      );
+
+      if (!updatedGroup) {
+        throw new Error("NOT_FOUND_OR_NOT_MEMBER");
+      }
+    });
+
+    return res.status(200).json({ message: "Group updated successfully.", group: updatedGroup });
+  } catch (error) {
+    if (error.message === "NOT_FOUND_OR_NOT_MEMBER") {
+      return res.status(403).json({ message: "Group not found or you are not a member." });
+    }
+    console.error("Error updating group details:", error);
+    return res.status(500).json({ message: "Server error" });
+  } finally {
+    await session.endSession();
+  }
+};
+
 export {
   createGroup,
   getGroupDetails,
@@ -1086,4 +1105,5 @@ export {
   getSubCategoriesForGroup,
   getAllExpensesForASubcategoryInGroup,
   getGroupExpenses,
+  updateGroupDetails,
 };

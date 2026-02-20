@@ -187,16 +187,19 @@ const SignUp = () => {
       return;
     }
 
-    if (!agreed) {
-      toast.error("Please agree to the Terms and Privacy Policy.");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address.");
       return;
     }
+
+    if (!agreed) {
+      toast.error("Please agree to the Terms and Privacy Policy.");
 
     setLoading(true);
     try {
       const response = await axios.post(
         `${API_BASE}/user/send-otp`,
-        // "//http://localhost:8000/user/send-otp",
         {
           email,
           username,
@@ -211,9 +214,10 @@ const SignUp = () => {
       if (error.response && error.response.status === 410) {
         toast.error("Email already Taken!");
       } else if (error.response && error.response.status === 400) {
-        toast.error("Username already Taken!");
+        toast.error(error.response.data?.message || "Invalid request.");
       } else {
         toast.error("Failed to send OTP.");
+        console.log(error);
       }
     } finally {
       setLoading(false);
@@ -224,7 +228,6 @@ const SignUp = () => {
     try {
       const response = await axios.post(
         `${API_BASE}/user/verify-otp`,
-        // "//http://localhost:8000/user/verify-otp",
         {
           email,
           otp,
@@ -253,7 +256,7 @@ const SignUp = () => {
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
-      alert("OTP verification failed.");
+      toast.error("OTP verification failed.");
     }
   };
 
@@ -318,7 +321,7 @@ const SignUp = () => {
                 </label>
                 <input
                   value={username}
-                  onChange={(e) => setUserName(e.target.value)}
+                  onChange={(e) => setUserName(e.target.value.trim())}
                   type="text"
                   placeholder="John Doe"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all"
@@ -332,7 +335,7 @@ const SignUp = () => {
                 </label>
                 <input
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.trim())}
                   type="email"
                   placeholder="name@example.com"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all"
@@ -347,7 +350,7 @@ const SignUp = () => {
                 <div className="relative">
                   <input
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value.trim())}
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-all pr-10"
