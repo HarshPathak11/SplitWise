@@ -223,6 +223,7 @@ const SignUp = () => {
       setLoading(false);
     }
   };
+}
 
   const handleOtpVerify = async () => {
     try {
