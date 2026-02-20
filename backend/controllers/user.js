@@ -505,6 +505,7 @@ const userDetails = async (req, res) => {
         requests: 1,
         fcmToken: 1,
         profilePhotoUrl: 1,
+        gender: 1,
         updatedAt: 1,
       })
       .lean();
@@ -644,7 +645,7 @@ const updateUserProfile = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    const { username, upiId } = req.body;
+    const { username, upiId, gender } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
@@ -653,6 +654,7 @@ const updateUserProfile = async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(userId, {
       username,
       upiId,
+      gender,
     });
 
     if (!updatedUser) {
