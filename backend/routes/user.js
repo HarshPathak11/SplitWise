@@ -25,6 +25,8 @@ import {
   notifyFriend,
   uploadProfilePhoto,
   getUserLastUpdatedAt,
+  checkFriendRequestStatus,
+  publicUserDetails,
 } from "../controllers/user.js";
 import upload from "../middleware/multer.js";
 import {auth} from "../middleware/auth.js";
@@ -60,7 +62,9 @@ router.put('/:id/photo',  upload.single('profilePhoto'),uploadProfilePhoto);
 //GET routes
 router.get('/search',auth, getUsernames);
 router.get("/friend-requests/:userId",auth, listFriendRequests);
+router.get("/friend-request-status/:fromUserId/:toUserId", auth, checkFriendRequestStatus);
 router.get("/last-updated-at/:id",auth, getUserLastUpdatedAt);
+router.get("/public/:id", publicUserDetails);
 router.get("/:id", auth ,userDetails);
 
 //DELETE routes
