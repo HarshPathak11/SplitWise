@@ -1,77 +1,115 @@
-# Privacy Policy (Version 1.0.0)
+# 🔐 Privacy Policy
 
-# FairFare (“we”, “our”, or “us”) 
-respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, and share your data when you use the FairFare mobile app, website, or related services (collectively, the “Service”).
+
+## FairFare
+
+**FairFare (“we”, “our”, or “us”)** respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, and share your data when you use the **FairFare mobile application, website, or related services** (collectively referred to as the **“Service”**).
 
 By using FairFare, you consent to the practices described in this Privacy Policy.
 
-# 1. Information We Collect
-We may collect the following types of information:
-a. Personal Information
-Name, email address, UPI ID
-Profile picture (if uploaded)
-Login credentials (hashed passwords)
-b. Payment & Transaction Data
-Expense entries, amounts, and payment status
-Third-party payment details, if provided.
-Notes or descriptions attached to transactions, transaction date
-c. Device & Usage Data
-IP address, device type, operating system
-App usage logs, crash reports, analytics
-Location data (if you enable location services)
-d. Notifications
-FCM (Firebase Cloud Messaging) tokens for push notifications
-Preferences for notifications and alerts
 
-# 2. How We Use Your Information
-We use your information to:
-Provide, maintain, and improve the Service
-Track and manage expenses and transactions
-Send notifications, reminders, or updates
-Prevent fraud, misuse, or illegal activity
-Analyze usage patterns to improve user experience
+## 📘 1. Information We Collect
 
-# 3. Sharing Your Information
-We do not sell or rent your personal information. We may share data in limited cases:
-With service providers who help us operate FairFare (e.g., cloud hosting, payment gateways, analytics providers)
-For legal reasons, if required by law, or to protect our rights
-In a business transfer if FairFare is acquired, merged, or sold
-All third-party partners are required to protect your data according to this policy.
+We may collect the following categories of information:
 
-# 4. Data Security
-We implement reasonable security measures to protect your information:
-Encrypted storage and communication (HTTPS / TLS)
-Hashed passwords for accounts
-Limited internal access to personal data
-However, no method of transmission over the Internet or storage is 100% secure. We cannot guarantee absolute security.
+### 👤 a. Personal Information
+- Name and email address  
+- UPI ID  
+- Profile picture (if uploaded)  
+- Login credentials (stored as hashed passwords)
 
-# 5. Data Retention
-We retain your personal information as long as your account is active or as needed to provide the Service.
-Transaction data may be retained for legal, tax, or auditing purposes.
-You can request deletion of your account, and we will remove personal data where possible, subject to legal obligations.
+### 💳 b. Payment & Transaction Data
+- Expense entries and transaction amounts  
+- Payment status information  
+- Notes or descriptions attached to transactions  
+- Transaction dates
 
-# 6. Your Rights
-Depending on your location, you may have rights to:
-Access or download your personal information
-Correct or update your data
-Request deletion of your account or information
-Opt out of marketing communications
-To exercise your rights, contact us at [fairfare007@gmai.com].
+### 💻 c. Device & Usage Data
+- Device type
+- App usage logs, analytics data, and crash reports  
+- Location data (only if location services are enabled)
 
-# 7. Cookies and Analytics
-We use analytics tools to monitor app usage and improve the Service.
-Cookies or similar technologies may be used on web versions for authentication or user preferences.
+### 🔔 d. Notifications
+- Firebase Cloud Messaging (FCM) tokens  
+- Notification and alert preferences
 
-# 8. Children’s Privacy
-FairFare is not intended for children under 12.
-We do not knowingly collect data from children.
 
-# 9. Changes to This Policy
-We may update this Privacy Policy from time to time.
-Changes will be posted with an updated “Last Updated” date.
-Your continued use of the Service after updates means you accept the revised policy.
+## ⚙️ 2. How We Use Your Information
 
-# 10. Contact Us
-For questions or concerns about this Privacy Policy:
-📩 Email: [fairfare007@gmai.com]
-🌐 Website: [https://fair-fare-phi.vercel.app/]
+Your information is used to:
+
+- Provide, maintain, and improve the Service  
+- Track and manage shared expenses and transactions  
+- Send reminders, alerts, and service notifications  
+- Detect and prevent fraud, misuse, or illegal activity  
+- Analyze usage trends to enhance user experience
+
+
+## 🤝 3. Sharing Your Information
+
+We **do not sell or rent** your personal information.
+
+Data may be shared only in the following situations:
+
+- With trusted service providers supporting FairFare operations (such as cloud hosting, analytics services, and payment processors)
+- When required by law or necessary to protect legal rights
+- During business transfers such as mergers, acquisitions, or asset sales
+
+All third-party partners are required to safeguard your information in accordance with this policy.
+
+
+## 🛡️ 4. Data Security
+
+We implement reasonable safeguards to protect your data, including:
+
+- Encrypted communication (HTTPS / TLS)
+- Secure password hashing
+- Restricted internal access to personal information
+
+Despite these measures, no online transmission or storage system can be guaranteed to be completely secure.
+
+
+## 🗂️ 5. Data Retention
+
+- Personal data is retained while your account remains active or as required to provide the Service.
+- Transaction records may be retained for legal, tax, or auditing purposes.
+
+
+## 👨⚖️ 6. Your Rights
+
+Depending on applicable laws and your location, you may have the right to: Correct or update your information
+
+To exercise the rights, contact:
+
+📩 **fairfare007@gmai.com**
+
+
+## 🍪 7. Cookies and Analytics
+
+- Analytics tools are used to understand usage patterns and improve the Service.
+- Cookies or similar technologies may be used on web versions for authentication and user preferences.
+
+
+## 👶 8. Children’s Privacy
+
+FairFare is **not intended for children under the age of 12**.  
+We do not knowingly collect personal information from children.
+
+
+## 🔄 9. Changes to This Policy
+
+This Privacy Policy may be updated periodically.
+
+- Updates will include a revised **“Last Updated”** date.
+- Continued use of the Service after changes indicates acceptance of the updated policy.
+
+
+## 📬 10. Contact Us
+
+For questions or concerns regarding this Privacy Policy:
+
+- 📩 **Email:** fairfare007@gmai.com  
+- 🌐 **Website:** https://fair-fare-phi.vercel.app/
+
+
+© 2026 FairFare. All rights reserved.
