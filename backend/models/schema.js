@@ -78,6 +78,8 @@ const userSchema = new mongoose.Schema(
         agreedAt: { type: Date, default: Date.now },
       },
     ],
+    googleId: { type: String, default: null },
+    authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
     password: { type: String, required: true, select: false },
     fcmToken: { type: String, default: null },
     friends: [
@@ -112,7 +114,7 @@ const LabelCategorySchema = new mongoose.Schema({
   category: String,
   subcategory: String,
 },
-    { timestamps: true });
+  { timestamps: true });
 
 // Terms Schema
 const termsSchema = new mongoose.Schema(

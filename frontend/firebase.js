@@ -1,6 +1,7 @@
 // Import Firebase functions
 import { initializeApp } from "firebase/app";
 import { getMessaging } from "firebase/messaging";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 // Your Firebase config (use the one you pasted)
 const firebaseConfig = {
@@ -18,5 +19,7 @@ const app = initializeApp(firebaseConfig);
 
 // 🔔 Add Messaging (for notifications)
 const messaging = getMessaging(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
-export { app, messaging };
+export { app, messaging, auth, googleProvider };
