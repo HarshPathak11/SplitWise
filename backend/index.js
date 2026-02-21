@@ -10,6 +10,7 @@ import groupRoutes from "./routes/group.js";
 import expenseRoutes from "./routes/expense.js";
 import promoRoutes from "./routes/promo.js";
 import termsRoutes from "./routes/terms.js";
+import aiRoutes from "./routes/ai.js";
 import session from "express-session";
 
 const app = express();
@@ -18,11 +19,11 @@ const allowedOrigins = process.env.ORIGIN.split(",");
 
 app.use(express.json({ extended: true }));
 app.use(
-    cors({
-      origin: allowedOrigins,
-      methods: ['GET', 'POST', 'PUT', 'DELETE'],
-      credentials: true // Allow credentials (cookies, authorization headers, etc.)
-}));
+  cors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true // Allow credentials (cookies, authorization headers, etc.)
+  }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'defaultsecret',
   resave: false,
@@ -53,6 +54,9 @@ app.use("/promo", promoRoutes);
 // Terms & Conditions - Legal Versioning
 app.use("/terms", termsRoutes);
 
+// AI Features
+app.use("/ai", aiRoutes);
+
 // ✅ Self-ping function to prevent Render sleeping
 function keepServerAwake() {
   setInterval(() => {
@@ -66,8 +70,8 @@ function keepServerAwake() {
 keepServerAwake();
 
 connectDB().then(() => {
-    
-    app.listen(8000, () => {
-        console.log("Server running on PORT:8000");
-    });
+
+  app.listen(8000, () => {
+    console.log("Server running on PORT:8000");
+  });
 });
