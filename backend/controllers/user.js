@@ -1,4 +1,4 @@
-import { User, Group, Expense, Terms } from "../models/schema.js";
+import { User, Group, Expense, Terms, FriendRequest } from "../models/schema.js";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import {
