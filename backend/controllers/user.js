@@ -1,4 +1,4 @@
-import { User, Group, Expense, Terms } from "../models/schema.js";
+import { User, Group, Expense, Terms, FriendRequest } from "../models/schema.js";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import {
@@ -106,12 +106,12 @@ const sendOtp = async (req, res) => {
 // Verify OTP and create user
 const verifyOtp = async (req, res) => {
   let { otp, username, email, password, otpGenerated, referId } = req.body;
-  username=username.trim();
-  email=email.trim();
-  password=password.trim();
-  otp=otp.trim();
-  otpGenerated=otpGenerated.trim();
-  referId= referId!=null ? referId.trim() : null;
+  username = username.trim();
+  email = email.trim();
+  password = password.trim();
+  otp = otp.trim();
+  otpGenerated = otpGenerated.trim();
+  referId = referId != null ? referId.trim() : null;
 
   if (!otp || !email || !otpGenerated || !username || !password) {
     return res.status(400).json({ message: "Incomplete data received" });
@@ -1448,6 +1448,117 @@ const checkFriendRequestStatus = async (req, res) => {
   }
 };
 
+const googleAuth = async (req, res) => {
+  try {
+    const { idToken, referId } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ message: "Google ID token is required" });
+    }
+
+    const admin = (await import("../firebaseAdmin.js")).default;
+
+    // Verify the Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { uid, email, name, picture } = decodedToken;
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // User exists, just log them in
+      // If they were previously local, update auth provider and googleId if missing
+      if (!user.googleId) {
+        user.googleId = uid;
+        user.authProvider = "google";
+        if (picture && !user.profilePhotoUrl) {
+          user.profilePhotoUrl = picture;
+        }
+        await user.save();
+      }
+
+      const userWithoutPassword = { ...user.toObject() };
+      delete userWithoutPassword.password;
+      const token = signAccessToken(user._id);
+
+      return res.status(200).json({
+        message: "Google login successful",
+        user: userWithoutPassword,
+        token,
+        id: user._id, // Required by frontend to set cookies correctly
+      });
+    }
+
+    // User doesn't exist, create a new one
+    // Clean username (use email prefix if name is empty)
+    let baseUsername = (name || email.split("@")[0]).trim();
+    let uniqueUsername = baseUsername;
+    let counter = 1;
+
+    // Ensure unique username
+    while (await User.findOne({ username: uniqueUsername })) {
+      uniqueUsername = `${baseUsername}${counter}`;
+      counter++;
+    }
+
+    // Generate a secure random password for Google-auth users
+    const crypto = await import('crypto');
+    const randomPassword = crypto.randomBytes(16).toString('hex');
+
+    const newUser = await User.create({
+      username: uniqueUsername,
+      email,
+      password: randomPassword,
+      googleId: uid,
+      authProvider: "google",
+      profilePhotoUrl: picture || null,
+    });
+
+    if (referId) {
+      const referUser = await User.findById(referId);
+      if (referUser) {
+        await User.updateOne(
+          { _id: referId },
+          { $push: { friends: { friend: newUser._id, balance: 0 } } }
+        );
+        await User.updateOne(
+          { _id: newUser._id },
+          { $push: { friends: { friend: referId, balance: 0 } } }
+        );
+      }
+    }
+
+    // Automatically record agreement to all active legal documents
+    const activeTerms = await Terms.find({ isActive: true });
+    const legalAgreements = activeTerms.map((term) => ({
+      version: term.version,
+      documentId: term._id,
+      agreedAt: new Date(),
+    }));
+
+    if (legalAgreements.length > 0) {
+      await User.findByIdAndUpdate(newUser._id, {
+        $set: { legalAgreements },
+      });
+    }
+
+    const userWithoutPassword = { ...newUser.toObject() };
+    delete userWithoutPassword.password;
+    const token = signAccessToken(newUser._id);
+
+    return res.status(200).json({
+      message: "Google signup successful",
+      user: userWithoutPassword,
+      token,
+      id: newUser._id // return id for backwards compatibility if frontend expects it
+    });
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    return res.status(500).json({
+      message: "Authentication failed",
+      error: error.message,
+    });
+  }
+};
+
 export {
   sendOtp,
   userLogin,
@@ -1476,4 +1587,5 @@ export {
   getUserLastUpdatedAt,
   checkFriendRequestStatus,
   publicUserDetails,
+  googleAuth,
 };

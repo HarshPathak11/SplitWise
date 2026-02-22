@@ -40,6 +40,8 @@ const groupSchema = new mongoose.Schema(
     tripTotal: { type: Number, default: 0 },
     expenses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Expense" }],
     hiddenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // users who archived this group
+    bannerUrl: { type: String, default: null }, // secure_url from Cloudinary
+    bannerId: { type: String, default: null }, // public_id used for deletion
   },
   { timestamps: true }
 );
@@ -79,6 +81,8 @@ const userSchema = new mongoose.Schema(
         agreedAt: { type: Date, default: Date.now },
       },
     ],
+    googleId: { type: String, default: null },
+    authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
     password: { type: String, required: true, select: false },
     fcmToken: { type: String, default: null },
     friends: [
@@ -113,7 +117,7 @@ const LabelCategorySchema = new mongoose.Schema({
   category: String,
   subcategory: String,
 },
-    { timestamps: true });
+  { timestamps: true });
 
 // Terms Schema
 const termsSchema = new mongoose.Schema(
