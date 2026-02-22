@@ -1,35 +1,30 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import TripCard from "./tripCard"; // adjust path as needed
+import TripCard from "./tripCard";
+import api from "../utils/api";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TripsSection = (user) => {
   const navigate = useNavigate();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // // Fetch trips for the current user
   useEffect(() => {
     const fetchTrips = async () => {
       try {
-        const userId = Cookies.get("id"); // user ID stored in cookies as "id"
-
+        const userId = Cookies.get("id");
         if (!userId) {
           console.error("User ID not found in cookies.");
           return;
         }
 
-        const response = user?.user?.groups || [];
-        // console.log("Fetched trips data:", response);
+        // Fetch only the 3 most recent active groups — backend sorts and limits
+        const res = await api.get(`${API_BASE}/group/user-groups/${userId}?limit=3`);
 
-        if (Array.isArray(response)) {
-          // Sort expenses by updatedAt in descending order (most recent first)
-          const sortedTrips = [...response].sort(
-            (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
-          );
-          // Take the top 4 expenses after sorting.
-          const topTrips = sortedTrips.slice(0, 3);
-          setTrips(topTrips);
+        if (Array.isArray(res.data)) {
+          setTrips(res.data);
         }
       } catch (error) {
         console.error("Error fetching trips:", error);
@@ -38,7 +33,7 @@ const TripsSection = (user) => {
       }
     };
     fetchTrips();
-  }, [user]);
+  }, [user]); // re-run when user prop changes (e.g. after login)
 
   const handleTripClick = (trip) => {
     navigate(`/tripDetails/${trip._id}`);
@@ -94,7 +89,11 @@ const TripsSection = (user) => {
       {/* --- Trips List Container --- */}
       {/* 'min-h-0' fixes flexbox scrolling issues on some mobile browsers */}
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 -mr-1 space-y-3 custom-scrollbar">
-        {trips && trips.length > 0 ? (
+        {loading ? (
+          <div className="h-32 flex items-center justify-center">
+            <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : trips && trips.length > 0 ? (
           trips.map((trip) => (
             <TripCard
               key={trip._id}
