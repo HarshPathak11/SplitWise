@@ -1526,20 +1526,6 @@ const googleAuth = async (req, res) => {
       }
     }
 
-    // Automatically record agreement to all active legal documents
-    const activeTerms = await Terms.find({ isActive: true });
-    const legalAgreements = activeTerms.map((term) => ({
-      version: term.version,
-      documentId: term._id,
-      agreedAt: new Date(),
-    }));
-
-    if (legalAgreements.length > 0) {
-      await User.findByIdAndUpdate(newUser._id, {
-        $set: { legalAgreements },
-      });
-    }
-
     const userWithoutPassword = { ...newUser.toObject() };
     delete userWithoutPassword.password;
     const token = signAccessToken(newUser._id);
