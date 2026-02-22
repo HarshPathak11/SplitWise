@@ -7,88 +7,91 @@ import { FaHome } from "react-icons/fa";
 import { FaEye, FaEyeSlash, FaRobot, FaMagic } from "react-icons/fa";
 import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
+import { auth, googleProvider } from "../../firebase";
+import { signInWithPopup } from "firebase/auth";
+import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PRIVACY_TEMPLATES = [
-    // Template 1 (Short Version)
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p1">
-        <div className="flex items-center gap-3 text-emerald-400 mb-2">
-            <FaMagic className="text-xl" />
-            <h3 className="text-lg font-bold">AI Summary: Short Version</h3>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-            <p className="text-white/80 leading-7 text-sm">
-                FairFare collects basic personal information such as your name, email, UPI ID, and expense-related data to provide and improve its services. Device and usage information may also be collected for analytics and performance monitoring. Your data is used to manage transactions, send notifications, prevent misuse, and enhance user experience. FairFare does not sell personal information and only shares data with trusted service providers or when legally required. Security measures such as encryption and password protection are implemented, although absolute security cannot be guaranteed. Users may request access, correction, or deletion of their data by contacting support.
-            </p>
-        </div>
-    </div>,
-
-    // Template 2 (User-Friendly Version)
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p2">
-        <div className="flex items-center gap-3 text-blue-400 mb-2">
-            <FaRobot className="text-xl" />
-            <h3 className="text-lg font-bold">AI Summary: User-Friendly Version</h3>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-            <p className="text-white/80 leading-7 text-sm">
-                FairFare gathers only the information necessary to help users track and split expenses effectively. This includes account details, transaction records, and limited technical data like device information and app usage. The information is used to operate the platform, send reminders, and improve functionality. Personal data is never sold and is shared only with essential service partners or when required by law. Data is stored securely and retained only as long as necessary. Users have the right to access, update, or request deletion of their information at any time.
-            </p>
-        </div>
-    </div>,
-
-    // Template 3 (Compact Legal Version)
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p3">
-        <div className="flex items-center gap-3 text-purple-400 mb-2">
-            <FaMagic className="text-xl" />
-            <h3 className="text-lg font-bold">AI Summary: Compact Legal Version</h3>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-            <p className="text-white/80 leading-7 text-sm">
-                FairFare collects personal, transactional, and technical data to deliver and maintain its expense-management services. Information is processed for service functionality, communication, fraud prevention, and analytics. Data may be shared with authorized service providers or legal authorities when necessary but is never sold. Reasonable security safeguards are applied, and information is retained only for operational or legal purposes. Users may exercise rights relating to access, correction, or deletion of their personal data by contacting FairFare.
-            </p>
-        </div>
+  // Template 1 (Short Version)
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p1">
+    <div className="flex items-center gap-3 text-emerald-400 mb-2">
+      <FaMagic className="text-xl" />
+      <h3 className="text-lg font-bold">AI Summary: Short Version</h3>
     </div>
+    <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+      <p className="text-white/80 leading-7 text-sm">
+        FairFare collects basic personal information such as your name, email, UPI ID, and expense-related data to provide and improve its services. Device and usage information may also be collected for analytics and performance monitoring. Your data is used to manage transactions, send notifications, prevent misuse, and enhance user experience. FairFare does not sell personal information and only shares data with trusted service providers or when legally required. Security measures such as encryption and password protection are implemented, although absolute security cannot be guaranteed. Users may request access, correction, or deletion of their data by contacting support.
+      </p>
+    </div>
+  </div>,
+
+  // Template 2 (User-Friendly Version)
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p2">
+    <div className="flex items-center gap-3 text-blue-400 mb-2">
+      <FaRobot className="text-xl" />
+      <h3 className="text-lg font-bold">AI Summary: User-Friendly Version</h3>
+    </div>
+    <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+      <p className="text-white/80 leading-7 text-sm">
+        FairFare gathers only the information necessary to help users track and split expenses effectively. This includes account details, transaction records, and limited technical data like device information and app usage. The information is used to operate the platform, send reminders, and improve functionality. Personal data is never sold and is shared only with essential service partners or when required by law. Data is stored securely and retained only as long as necessary. Users have the right to access, update, or request deletion of their information at any time.
+      </p>
+    </div>
+  </div>,
+
+  // Template 3 (Compact Legal Version)
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p3">
+    <div className="flex items-center gap-3 text-purple-400 mb-2">
+      <FaMagic className="text-xl" />
+      <h3 className="text-lg font-bold">AI Summary: Compact Legal Version</h3>
+    </div>
+    <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+      <p className="text-white/80 leading-7 text-sm">
+        FairFare collects personal, transactional, and technical data to deliver and maintain its expense-management services. Information is processed for service functionality, communication, fraud prevention, and analytics. Data may be shared with authorized service providers or legal authorities when necessary but is never sold. Reasonable security safeguards are applied, and information is retained only for operational or legal purposes. Users may exercise rights relating to access, correction, or deletion of their personal data by contacting FairFare.
+      </p>
+    </div>
+  </div>
 ];
 
 const TERMS_TEMPLATES = [
-    // Template 1 (Short Version)
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t1">
-        <div className="flex items-center gap-3 text-emerald-400 mb-2">
-            <FaMagic className="text-xl" />
-            <h3 className="text-lg font-bold">AI Summary: Short Version</h3>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-            <p className="text-white/80 leading-7 text-sm">
-                By using FairFare, users agree to follow the platform’s rules and use the service only for lawful purposes. Users are responsible for maintaining account security and ensuring accurate information. FairFare provides tools for tracking and splitting expenses but does not directly process payments. The service is provided as is, without guarantees of uninterrupted operation or absolute accuracy. FairFare is not liable for payment disputes, user errors, or third-party service failures.
-            </p>
-        </div>
-    </div>,
-
-    // Template 2 (User-Friendly Version)
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t2">
-        <div className="flex items-center gap-3 text-rose-400 mb-2">
-            <FaRobot className="text-xl" />
-            <h3 className="text-lg font-bold">AI Summary: User-Friendly Version</h3>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-            <p className="text-white/80 leading-7 text-sm">
-                FairFare allows users to manage shared expenses and track balances with friends or groups. Users must be eligible to use the service, protect their account credentials, and avoid misuse or illegal activity. Payments between users are handled externally or through third-party services, and FairFare is not responsible for transaction disputes. The platform may suspend accounts that violate its rules. Continued use of the service means acceptance of any updated terms.
-            </p>
-        </div>
-    </div>,
-
-    // Template 3 (Compact Legal Version)
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t3">
-        <div className="flex items-center gap-3 text-cyan-400 mb-2">
-            <FaMagic className="text-xl" />
-            <h3 className="text-lg font-bold">AI Summary: Compact Legal Version</h3>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-5">
-            <p className="text-white/80 leading-7 text-sm">
-                These Terms govern access to and use of FairFare services. Users must comply with eligibility requirements, maintain account security, and use the platform lawfully. FairFare functions as an expense-tracking tool and does not assume responsibility for external payment transactions. The service is provided without warranties, and liability is limited to the extent permitted by law. FairFare may suspend or terminate access for violations, and all disputes are governed by Indian law under the jurisdiction of New Delhi courts.
-            </p>
-        </div>
+  // Template 1 (Short Version)
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t1">
+    <div className="flex items-center gap-3 text-emerald-400 mb-2">
+      <FaMagic className="text-xl" />
+      <h3 className="text-lg font-bold">AI Summary: Short Version</h3>
     </div>
+    <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+      <p className="text-white/80 leading-7 text-sm">
+        By using FairFare, users agree to follow the platform’s rules and use the service only for lawful purposes. Users are responsible for maintaining account security and ensuring accurate information. FairFare provides tools for tracking and splitting expenses but does not directly process payments. The service is provided as is, without guarantees of uninterrupted operation or absolute accuracy. FairFare is not liable for payment disputes, user errors, or third-party service failures.
+      </p>
+    </div>
+  </div>,
+
+  // Template 2 (User-Friendly Version)
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t2">
+    <div className="flex items-center gap-3 text-rose-400 mb-2">
+      <FaRobot className="text-xl" />
+      <h3 className="text-lg font-bold">AI Summary: User-Friendly Version</h3>
+    </div>
+    <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+      <p className="text-white/80 leading-7 text-sm">
+        FairFare allows users to manage shared expenses and track balances with friends or groups. Users must be eligible to use the service, protect their account credentials, and avoid misuse or illegal activity. Payments between users are handled externally or through third-party services, and FairFare is not responsible for transaction disputes. The platform may suspend accounts that violate its rules. Continued use of the service means acceptance of any updated terms.
+      </p>
+    </div>
+  </div>,
+
+  // Template 3 (Compact Legal Version)
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="t3">
+    <div className="flex items-center gap-3 text-cyan-400 mb-2">
+      <FaMagic className="text-xl" />
+      <h3 className="text-lg font-bold">AI Summary: Compact Legal Version</h3>
+    </div>
+    <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+      <p className="text-white/80 leading-7 text-sm">
+        These Terms govern access to and use of FairFare services. Users must comply with eligibility requirements, maintain account security, and use the platform lawfully. FairFare functions as an expense-tracking tool and does not assume responsibility for external payment transactions. The service is provided without warranties, and liability is limited to the extent permitted by law. FairFare may suspend or terminate access for violations, and all disputes are governed by Indian law under the jurisdiction of New Delhi courts.
+      </p>
+    </div>
+  </div>
 ];
 
 const SignUp = () => {
@@ -196,34 +199,34 @@ const SignUp = () => {
     if (!agreed) {
       toast.error("Please agree to the Terms and Privacy Policy.");
 
-    setLoading(true);
-    try {
-      const response = await axios.post(
-        `${API_BASE}/user/send-otp`,
-        {
-          email,
-          username,
-        }
-      );
+      setLoading(true);
+      try {
+        const response = await axios.post(
+          `${API_BASE}/user/send-otp`,
+          {
+            email,
+            username,
+          }
+        );
 
-      if (response.status === 200) {
-        setOtpSent(response.data.otp);
-        setOtpGenerated(response.data.otp);
+        if (response.status === 200) {
+          setOtpSent(response.data.otp);
+          setOtpGenerated(response.data.otp);
+        }
+      } catch (error) {
+        if (error.response && error.response.status === 410) {
+          toast.error("Email already Taken!");
+        } else if (error.response && error.response.status === 400) {
+          toast.error(error.response.data?.message || "Invalid request.");
+        } else {
+          toast.error("Failed to send OTP.");
+          console.log(error);
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      if (error.response && error.response.status === 410) {
-        toast.error("Email already Taken!");
-      } else if (error.response && error.response.status === 400) {
-        toast.error(error.response.data?.message || "Invalid request.");
-      } else {
-        toast.error("Failed to send OTP.");
-        console.log(error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-}
+    };
+  }
 
   const handleOtpVerify = async () => {
     try {
@@ -258,6 +261,40 @@ const SignUp = () => {
     } catch (error) {
       console.error("Error verifying OTP:", error);
       toast.error("OTP verification failed.");
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    try {
+      setLoading(true);
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
+
+      const response = await api.post(`/user/google-auth`, {
+        idToken,
+      });
+
+      if (response.status === 200) {
+        const { id, token } = response.data;
+
+        // Set cookies
+        if (id) Cookies.set("id", id, { expires: 7 });
+        if (token) {
+          Cookies.set("authToken", token, {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        }
+
+        toast.success("Successfully authenticated with Google!");
+        navigate("/setup-profile");
+      }
+    } catch (error) {
+      console.error("Google Auth Error:", error);
+      toast.error(error.response?.data?.message || "Google Authentication failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -477,6 +514,31 @@ const SignUp = () => {
                 Log In
               </Link>
             </div>
+
+            {/* OR Divider */}
+            <div className={`relative flex items-center py-2 transition-all duration-500 ${otpSent ? "opacity-30 pointer-events-none grayscale" : "opacity-100"}`}>
+              <div className="flex-grow border-t border-white/10"></div>
+              <span className="flex-shrink-0 mx-4 text-white/30 text-xs font-medium uppercase tracking-widest">
+                OR
+              </span>
+              <div className="flex-grow border-t border-white/10"></div>
+            </div>
+
+            {/* Google Signup Button */}
+            <button
+              onClick={handleGoogleAuth}
+              disabled={loading || otpSent}
+              className={`relative w-full overflow-hidden rounded-xl py-3.5 px-4 font-semibold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-3 border border-white/10 bg-white/5 hover:bg-white/10
+                ${(loading || otpSent) ? "opacity-50 cursor-not-allowed" : "hover:-translate-y-0.5"}`}
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+              </svg>
+              <span className="text-white/90 font-medium">Continue with Google</span>
+            </button>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Check, X, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, Pencil, Check, X, ArrowUpRight, Image as ImageIcon, Camera, Loader2 } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import { FaChartBar } from "react-icons/fa";
 import { useParams } from "react-router-dom";
@@ -8,6 +8,23 @@ import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+// Helper to generate a unique, vibrant mesh gradient based on string hash
+const generateGradient = (str) => {
+  if (!str) return "linear-gradient(135deg, #1e1b4b, #18181b)";
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const colors = [
+    `hsl(${Math.abs(hash % 360)}, 70%, 40%)`,
+    `hsl(${Math.abs((hash * 1.5) % 360)}, 65%, 35%)`,
+    `hsl(${Math.abs((hash * 2) % 360)}, 60%, 25%)`,
+  ];
+
+  return `linear-gradient(135deg, ${colors[0]}, ${colors[1]}, ${colors[2]})`;
+};
 
 const TripDetails = () => {
   const navigate = useNavigate();
@@ -30,6 +47,8 @@ const TripDetails = () => {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const fileInputRef = useRef(null);
 
   const startEditing = () => {
     setEditName(tripDetails?.name || "");
@@ -77,6 +96,43 @@ const TripDetails = () => {
     }
   };
 
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Basic validation
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please upload an image file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("banner", file);
+
+    setIsUploadingBanner(true);
+    try {
+      const res = await api.put(`${API_BASE}/group/${tripId}/banner`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (res.status === 200) {
+        setTripDetails(prev => ({
+          ...prev,
+          bannerUrl: res.data.group.bannerUrl,
+          bannerId: res.data.group.bannerId
+        }));
+        toast.success("Banner updated successfully!");
+      }
+    } catch (err) {
+      console.error("Banner upload error:", err);
+      toast.error("Failed to upload banner.");
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
+
   //Fetching group Meta Data
   useEffect(() => {
     const fetchMeta = async () => {
@@ -84,6 +140,7 @@ const TripDetails = () => {
       try {
         const res = await api.get(`${API_BASE}/group/get-group/${tripId}`);
         setTripDetails(res.data);
+        console.log(res.data);
 
         localStorage.setItem("currentGroup", JSON.stringify(res.data));
 
@@ -324,11 +381,57 @@ const TripDetails = () => {
         </div>
 
         {/* --- HERO SECTION: Compact Mission Brief --- */}
-        <div className="relative bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-xl mb-6">
-          {/* Subtle Top Glow */}
-          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500/50 to-indigo-500/0"></div>
+        <div className="relative bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-xl mb-6 group/banner-container">
 
-          <div className="px-5 py-5 sm:px-6 sm:py-6">
+          {/* Banner Image Area */}
+          <div className="relative h-40 sm:h-56 w-full overflow-hidden bg-zinc-800">
+            {tripDetails?.bannerUrl ? (
+              <img
+                src={tripDetails.bannerUrl}
+                alt="Trip Banner"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover/banner-container:scale-105"
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center opacity-80"
+                style={{ background: generateGradient(tripDetails?.name) }}
+              >
+                <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"></div>
+                <ImageIcon className="w-12 h-12 text-white/20 relative z-10" />
+              </div>
+            )}
+
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
+
+            {/* Change Banner Action */}
+            <div className="absolute top-4 right-4 opacity-0 group-hover/banner-container:opacity-100 transition-opacity duration-300">
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleBannerUpload}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingBanner}
+                className="flex items-center gap-2 px-3 py-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white transition-all active:scale-95"
+              >
+                {isUploadingBanner ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Camera className="w-3.5 h-3.5" />
+                )}
+                {tripDetails?.bannerUrl ? "Change Cover" : "Add Cover"}
+              </button>
+            </div>
+          </div>
+
+          <div className="px-5 py-5 sm:px-6 sm:py-6 relative">
+            {/* Subtle Top Glow */}
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500/50 to-indigo-500/0"></div>
+
             {loading ? (
               <div className="animate-pulse flex justify-between items-center">
                 <div className="space-y-2 w-1/2">
