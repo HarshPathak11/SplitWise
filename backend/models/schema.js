@@ -39,6 +39,8 @@ const groupSchema = new mongoose.Schema(
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     tripTotal: { type: Number, default: 0 },
     expenses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Expense" }],
+    bannerUrl: { type: String, default: null }, // secure_url from Cloudinary
+    bannerId: { type: String, default: null }, // public_id used for deletion
   },
   { timestamps: true }
 );
