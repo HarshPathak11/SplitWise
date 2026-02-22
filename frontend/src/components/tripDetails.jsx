@@ -4,6 +4,7 @@ import { ArrowLeft, Pencil, Check, X, ArrowUpRight } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import { FaChartBar } from "react-icons/fa";
 import { useParams } from "react-router-dom";
+import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -17,6 +18,8 @@ const TripDetails = () => {
   const [loading, setLoading] = useState(true); // Loading state for the GET request
   const [expenses, setExpenses] = useState([]);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
+  const [showArchiveConfirmation, setShowArchiveConfirmation] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const [cursor, setCursor] = useState(null);
   const [loadingExpenses, setLoadingExpenses] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -227,6 +230,39 @@ const TripDetails = () => {
       toast.error("An error occurred while leaving the group.");
     }
   };
+  // true if the current user is in this group's hiddenBy list
+  const isArchived = (() => {
+    const userId = Cookies.get("id");
+    return (tripDetails?.hiddenBy || []).some(
+      (id) => id === userId || id?.toString?.() === userId
+    );
+  })();
+
+  const handleToggleArchive = async () => {
+    setIsArchiving(true);
+    try {
+      const userId = Cookies.get("id");
+      if (isArchived) {
+        await api.put(`${API_BASE}/group/unarchive/${tripId}`, { userId });
+        // Refresh group data so isArchived recalculates
+        const res = await api.get(`${API_BASE}/group/get-group/${tripId}`);
+        setTripDetails(res.data);
+        toast.success("Group unarchived! It's back in your trips list.");
+      } else {
+        await api.put(`${API_BASE}/group/archive/${tripId}`, { userId });
+        toast.success("Group archived. Find it anytime in Archived Trips.");
+        localStorage.removeItem("tripMembers");
+        localStorage.removeItem("currentGroup");
+        navigate("/dash");
+      }
+    } catch (err) {
+      console.error("Archive toggle error:", err);
+      toast.error(isArchived ? "Failed to unarchive group." : "Failed to archive group.");
+    } finally {
+      setIsArchiving(false);
+      setShowArchiveConfirmation(false);
+    }
+  };
 
   const handleDeleteExpense = (deletedExpenseId) => {
     // 2a) Filter it out of local `expenses`
@@ -267,12 +303,24 @@ const TripDetails = () => {
             </span>
           </button>
 
-          <button
-            onClick={() => setShowLeaveConfirmation(true)}
-            className="text-xs font-bold text-red-500 hover:text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors uppercase tracking-wider border border-transparent hover:border-red-500/20"
-          >
-            Leave Group
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowArchiveConfirmation(true)}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors uppercase tracking-wider border border-transparent ${
+                isArchived
+                  ? "text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20"
+                  : "text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/20"
+              }`}
+            >
+              {isArchived ? "Unarchive" : "Archive"}
+            </button>
+            <button
+              onClick={() => setShowLeaveConfirmation(true)}
+              className="text-xs font-bold text-red-500 hover:text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors uppercase tracking-wider border border-transparent hover:border-red-500/20"
+            >
+              Leave Group
+            </button>
+          </div>
         </div>
 
         {/* --- HERO SECTION: Compact Mission Brief --- */}
@@ -559,6 +607,61 @@ const TripDetails = () => {
                   className="flex-1 py-2.5 rounded-lg bg-red-600 text-white font-bold hover:bg-red-500 shadow-lg shadow-red-900/20 transition-all"
                 >
                   Leave Group
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- ARCHIVE / UNARCHIVE CONFIRMATION MODAL --- */}
+        {showArchiveConfirmation && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
+            <div className={`bg-zinc-900 p-6 rounded-2xl max-w-sm w-full shadow-2xl border ${
+              isArchived ? "border-emerald-500/30 shadow-emerald-900/10" : "border-amber-500/30 shadow-amber-900/10"
+            }`}>
+              {/* Icon */}
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 border ${
+                isArchived ? "bg-emerald-500/10 border-emerald-500/20" : "bg-amber-500/10 border-amber-500/20"
+              }`}>
+                <svg className={`w-6 h-6 ${isArchived ? "text-emerald-400" : "text-amber-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  {isArchived ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  )}
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-1">
+                {isArchived ? "Unarchive this group?" : "Archive this group?"}
+              </h3>
+              <p className="text-zinc-400 text-sm mb-3 leading-relaxed">
+                {isArchived
+                  ? "This group will be restored to your active trips list. Everything is still intact."
+                  : <>This group will be hidden from your dashboard and trips list. <span className="text-zinc-200 font-medium">Everything stays intact</span> — members, expenses, and balances are untouched.</>}
+              </p>
+              {!isArchived && (
+                <p className="text-zinc-600 text-xs mb-6 leading-relaxed border-t border-white/5 pt-3">
+                  You can unarchive it anytime from the Archived Trips section.
+                </p>
+              )}
+              <div className={`flex gap-3 ${isArchived ? "mt-6" : ""}`}>
+                <button
+                  onClick={() => setShowArchiveConfirmation(false)}
+                  disabled={isArchiving}
+                  className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleToggleArchive}
+                  disabled={isArchiving}
+                  className={`flex-1 py-2.5 rounded-lg text-white font-bold shadow-lg transition-all disabled:opacity-50 ${
+                    isArchived
+                      ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20"
+                      : "bg-amber-600 hover:bg-amber-500 shadow-amber-900/20"
+                  }`}
+                >
+                  {isArchiving ? "Please wait..." : isArchived ? "Unarchive" : "Archive"}
                 </button>
               </div>
             </div>

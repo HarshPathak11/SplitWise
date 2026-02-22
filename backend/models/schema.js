@@ -39,6 +39,7 @@ const groupSchema = new mongoose.Schema(
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     tripTotal: { type: Number, default: 0 },
     expenses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Expense" }],
+    hiddenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // users who archived this group
   },
   { timestamps: true }
 );

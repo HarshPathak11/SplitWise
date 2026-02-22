@@ -67,15 +67,26 @@ const createGroup = async (req, res) => {
 
 //Function to Fetch all groups of a user
 const getAllGroupsOfAUser = async (req, res) => {
-  const userId = req.params.id; // Assuming you have the user ID from the request
+  const userId = req.params.id;
+  const showArchived = req.query.archived === "true";
+  const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
   try {
     const groups = await Group.find({ members: userId });
-    res.status(200).json(groups);
+    // Filter: archived = in hiddenBy, active = not in hiddenBy
+    let filtered = groups.filter((g) => {
+      const isHidden = g.hiddenBy?.some((id) => id.toString() === userId);
+      return showArchived ? isHidden : !isHidden;
+    });
+    // Sort by most recently updated, then apply optional limit
+    filtered.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    if (limit) filtered = filtered.slice(0, limit);
+    res.status(200).json(filtered);
   } catch (error) {
     console.error("Error fetching groups:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 const addMembers = async (req, res) => {
   const groupId = req.params.id;
@@ -240,7 +251,7 @@ const getGroupDetails = async (req, res) => {
     const groupId = req.params.id;
 
     const group = await Group.findById(groupId)
-      .select("name description members createdAt updatedAt")
+      .select("name description members hiddenBy createdAt updatedAt")
       .populate("members", "username")
       .lean();
 
@@ -1089,6 +1100,32 @@ const updateGroupDetails = async (req, res) => {
   }
 };
 
+const archiveGroup = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ message: "userId is required" });
+  try {
+    await Group.findByIdAndUpdate(id, { $addToSet: { hiddenBy: userId } });
+    res.status(200).json({ message: "Group archived" });
+  } catch (error) {
+    console.error("archiveGroup error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const unarchiveGroup = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ message: "userId is required" });
+  try {
+    await Group.findByIdAndUpdate(id, { $pull: { hiddenBy: userId } });
+    res.status(200).json({ message: "Group unarchived" });
+  } catch (error) {
+    console.error("unarchiveGroup error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   createGroup,
   getGroupDetails,
@@ -1106,4 +1143,6 @@ export {
   getAllExpensesForASubcategoryInGroup,
   getGroupExpenses,
   updateGroupDetails,
+  archiveGroup,
+  unarchiveGroup,
 };

@@ -15,7 +15,9 @@ import {
     getSubCategoriesForGroup,
     getAllExpensesForASubcategoryInGroup,
     getGroupExpenses,
-    updateGroupDetails
+    updateGroupDetails,
+    archiveGroup,
+    unarchiveGroup,
 } from '../controllers/groups.js';
 import {auth} from '../middleware/auth.js';
 const router = express.Router();
@@ -40,6 +42,8 @@ router.post("/expenses-by-subcategory",auth, getAllExpensesForASubcategoryInGrou
 
 // PUT requests
 router.put("/update/:id", auth, updateGroupDetails);
+router.put("/archive/:id", auth, archiveGroup);
+router.put("/unarchive/:id", auth, unarchiveGroup);
 
 // DELETE requests
 router.delete("/del-expense/:expenseId",auth, deleteExpenseController);
