@@ -1,4 +1,3 @@
-import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import { FaUser, FaChartBar, FaRobot, FaSignOutAlt } from "react-icons/fa";
 import Cookies from "js-cookie";
@@ -62,6 +61,27 @@ const TopNavbar = ({ user }) => {
 
       {/* --- Action Center --- */}
       <div className="flex items-center gap-3 md:gap-4">
+
+        {/* 1. Feature Links – tablet / laptop only */}
+        <div className="[@media(max-width:768px)]:hidden items-center gap-2">
+          <Link to="/FairAI">
+            <button
+              className="p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
+              title="FairAI"
+            >
+              <FaRobot className="text-lg" />
+            </button>
+          </Link>
+
+          <Link to="/analytics">
+            <button
+              className="p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
+              title="Analytics"
+            >
+              <FaChartBar className="text-lg" />
+            </button>
+          </Link>
+        </div>
 
         {/* 2. User Actions Group */}
         <div className="flex items-center gap-2">
