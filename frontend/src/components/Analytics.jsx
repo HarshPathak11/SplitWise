@@ -1,6 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import Cookies from "js-cookie";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { 
