@@ -21,8 +21,29 @@ const usePageTracking = () => {
   }, [location]);
 };
 
+// Routes where the bottom navbar should NOT appear
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/signup",
+  "/features",
+  "/forgot-password",
+  "/documentation",
+];
+
+const isPublicRoute = (pathname) => {
+  if (PUBLIC_ROUTES.includes(pathname)) return true;
+  // Dynamic public routes
+  if (/^\/signup\/.+/.test(pathname)) return true;       // /signup/:referId
+  if (/^\/public-profile\/.+/.test(pathname)) return true; // /public-profile/:userId
+  return false;
+};
+
 const AppLayout = () => {
   usePageTracking();
+
+  const location = useLocation();
+  const showNavbar = !isPublicRoute(location.pathname);
 
   const [showTerms, setShowTerms] = useState(false);
   const [termsList, setTermsList] = useState([]);
@@ -75,7 +96,7 @@ const AppLayout = () => {
   };
 
   return (
-    <div className="pb-20 md:pb-0">
+    <div className={showNavbar ? "pb-20 md:pb-0" : undefined}>
       <Toaster
         position="top-right"
         reverseOrder={false}
@@ -95,15 +116,19 @@ const AppLayout = () => {
         onAccept={handleTermsAccept}
       />
 
-      {/* Global bottom navbar — always visible on mobile */}
-      <BottomNavbar onAddClick={() => setShowQuickExpense(true)} />
+      {/* Bottom navbar — only on protected routes */}
+      {showNavbar && (
+        <>
+          <BottomNavbar onAddClick={() => setShowQuickExpense(true)} />
 
-      {/* Global quick-add modal */}
-      {showQuickExpense && (
-        <QuickAddExpenseModal
-          isOpen={showQuickExpense}
-          onClose={() => setShowQuickExpense(false)}
-        />
+          {/* Global quick-add modal */}
+          {showQuickExpense && (
+            <QuickAddExpenseModal
+              isOpen={showQuickExpense}
+              onClose={() => setShowQuickExpense(false)}
+            />
+          )}
+        </>
       )}
     </div>
   );
