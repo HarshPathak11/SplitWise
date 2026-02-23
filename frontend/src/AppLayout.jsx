@@ -6,6 +6,8 @@ import { useLocation } from "react-router-dom";
 import api from "./utils/api";
 import Cookies from "js-cookie";
 import TermsPopup from "./components/TermsPopup";
+import BottomNavbar from "./components/BottomNavbar";
+import QuickAddExpenseModal from "./components/QuickAddExpenseModal";
 
 const usePageTracking = () => {
   const location = useLocation();
@@ -20,11 +22,11 @@ const usePageTracking = () => {
 };
 
 const AppLayout = () => {
-  usePageTracking(); // 👈 call the hook
+  usePageTracking();
 
-  // Terms Logic
   const [showTerms, setShowTerms] = useState(false);
   const [termsList, setTermsList] = useState([]);
+  const [showQuickExpense, setShowQuickExpense] = useState(false);
 
   useEffect(() => {
     const checkTerms = async () => {
@@ -73,8 +75,7 @@ const AppLayout = () => {
   };
 
   return (
-    <div>
-      {/* <ErrorBoundary> */}
+    <div className="pb-20 md:pb-0">
       <Toaster
         position="top-right"
         reverseOrder={false}
@@ -88,12 +89,22 @@ const AppLayout = () => {
         }}
       />
       <Outlet />
-      {/* </ErrorBoundary> */}
       <TermsPopup
         isOpen={showTerms}
         terms={termsList}
         onAccept={handleTermsAccept}
       />
+
+      {/* Global bottom navbar — always visible on mobile */}
+      <BottomNavbar onAddClick={() => setShowQuickExpense(true)} />
+
+      {/* Global quick-add modal */}
+      {showQuickExpense && (
+        <QuickAddExpenseModal
+          isOpen={showQuickExpense}
+          onClose={() => setShowQuickExpense(false)}
+        />
+      )}
     </div>
   );
 };
