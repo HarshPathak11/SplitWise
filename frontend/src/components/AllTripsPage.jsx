@@ -125,7 +125,7 @@ const AllTripsPage = () => {
                   placeholder="Filter past journeys..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-3 bg-zinc-900/40 backdrop-blur-sm border border-white/5 rounded-2xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:bg-zinc-900/60 focus:border-indigo-500/50 transition-all shadow-lg"
+                  className="block w-full pl-10 pr-10 py-3 bg-zinc-900/40 border border-white/5 rounded-2xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:bg-zinc-900/60 focus:border-indigo-500/50 transition-all shadow-lg"
                 />
                 {searchQuery && (
                   <button
