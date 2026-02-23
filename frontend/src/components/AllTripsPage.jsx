@@ -116,7 +116,7 @@ const AllTripsPage = () => {
 
             {/* Search Bar */}
             <div className="w-full md:w-72 group">
-              <div className="relative transition-all duration-300 transform group-focus-within:-translate-y-1">
+              <div className="relative transition-all duration-300">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
                 </div>
