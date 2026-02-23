@@ -9,10 +9,14 @@ import SwipeToFriends from "./SwipeToFriends";
 import NotificationBanner from "./NotificationBanner";
 import { requestNotificationPermission } from "../../notifications";
 import api from "../utils/api";
+import TermsPopup from "./TermsPopup";
+import QuickActions from "./QuickActions";
+import QuickAddExpenseModal from "./QuickAddExpenseModal";
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [showQuickExpense, setShowQuickExpense] = useState(false);
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   // --- LOGIC SECTION (Unchanged) ---
@@ -87,7 +91,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8 relative selection:bg-indigo-500/30 font-sans">
       {/* Notification Banner */}
       <NotificationBanner />
-      
+
       {/* 1. Controlled Background Theme (Max 2 colors) */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Simple top-down spotlight - Clean, no messy blobs */}
@@ -110,6 +114,9 @@ const Dashboard = () => {
             <div className="relative group perspective-1000">
               <FairFareCard />
             </div>
+
+            {/* Quick Actions Bar */}
+            <QuickActions onQuickExpenseClick={() => setShowQuickExpense(true)} />
 
             {/* Trips Section - Wrapped in a clean container */}
             <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-1 backdrop-blur-sm overflow-hidden">
@@ -146,6 +153,16 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      <TermsPopup user={user} setUser={setUser} />
+
+      {/* Quick Add Expense Modal */}
+      {showQuickExpense && (
+        <QuickAddExpenseModal
+          isOpen={showQuickExpense}
+          onClose={() => setShowQuickExpense(false)}
+          user={user}
+        />
+      )}
     </div>
   );
 };

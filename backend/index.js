@@ -9,6 +9,7 @@ import userRoutes from "./routes/user.js";
 import groupRoutes from "./routes/group.js";
 import expenseRoutes from "./routes/expense.js";
 import promoRoutes from "./routes/promo.js";
+import termsRoutes from "./routes/terms.js";
 import aiRoutes from "./routes/ai.js";
 import session from "express-session";
 
@@ -50,7 +51,10 @@ app.use("/expenses", expenseRoutes);
 // Promo notification route
 app.use("/promo", promoRoutes);
 
-// AI route
+// Terms & Conditions - Legal Versioning
+app.use("/terms", termsRoutes);
+
+// AI Features
 app.use("/ai", aiRoutes);
 
 // ✅ Self-ping function to prevent Render sleeping
@@ -65,6 +69,9 @@ function keepServerAwake() {
 
 keepServerAwake();
 
-app.listen(8000, () => {
-  console.log("Server running on PORT:8000");
+connectDB().then(() => {
+
+  app.listen(8000, () => {
+    console.log("Server running on PORT:8000");
+  });
 });

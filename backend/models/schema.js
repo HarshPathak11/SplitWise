@@ -39,6 +39,9 @@ const groupSchema = new mongoose.Schema(
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     tripTotal: { type: Number, default: 0 },
     expenses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Expense" }],
+    hiddenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // users who archived this group
+    bannerUrl: { type: String, default: null }, // secure_url from Cloudinary
+    bannerId: { type: String, default: null }, // public_id used for deletion
   },
   { timestamps: true }
 );
@@ -67,6 +70,19 @@ const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    legalAgreements: [
+      {
+        version: { type: String, required: true },
+        documentId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Terms",
+          required: true,
+        },
+        agreedAt: { type: Date, default: Date.now },
+      },
+    ],
+    googleId: { type: String, default: null },
+    authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
     password: { type: String, required: true, select: false },
     fcmToken: { type: String, default: null },
     friends: [
@@ -103,6 +119,23 @@ const LabelCategorySchema = new mongoose.Schema({
 },
   { timestamps: true });
 
+// Terms Schema
+const termsSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: ["terms", "privacy"], required: true },
+    version: { type: String, required: true },
+    content: { type: String, required: true }, // Markdown content
+    status: {
+      type: String,
+      enum: ["draft", "published", "archived"],
+      default: "draft",
+    },
+    isActive: { type: Boolean, default: false },
+    publishedAt: { type: Date, default: null }, // When the document was published
+  },
+  { timestamps: true }
+);
+
 // Password hashing middleware
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
@@ -132,4 +165,6 @@ const Group = mongoose.model("Group", groupSchema);
 const FriendRequest = mongoose.model("FriendRequest", friendRequestSchema);
 const LabelCategory = mongoose.model("LabelCategory", LabelCategorySchema);
 
-export { User, Group, Expense, FriendRequest, LabelCategory };
+const Terms = mongoose.model("Terms", termsSchema);
+
+export { User, Group, Expense, FriendRequest, LabelCategory, Terms };
