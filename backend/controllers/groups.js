@@ -7,7 +7,28 @@ import {
 } from "../controllers/Notifications.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import cloudinary from "../config/cloudinary.js";
+import streamifier from "streamifier";
 dotenv.config();
+
+/**
+ * Helper: upload buffer to Cloudinary with banner transformation (Wide aspect ratio)
+ */
+const uploadBannerFromBuffer = (buffer, folder = "trip_banners") =>
+  new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: "image",
+        transformation: [
+          { width: 1200, height: 400, crop: "fill", gravity: "center" },
+          { quality: "auto", fetch_format: "auto" }
+        ],
+      },
+      (error, result) => (error ? reject(error) : resolve(result))
+    );
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
 
 const createGroup = async (req, res) => {
   const { name, description, from, to, members } = req.body;
@@ -67,15 +88,26 @@ const createGroup = async (req, res) => {
 
 //Function to Fetch all groups of a user
 const getAllGroupsOfAUser = async (req, res) => {
-  const userId = req.params.id; // Assuming you have the user ID from the request
+  const userId = req.params.id;
+  const showArchived = req.query.archived === "true";
+  const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
   try {
     const groups = await Group.find({ members: userId });
-    res.status(200).json(groups);
+    // Filter: archived = in hiddenBy, active = not in hiddenBy
+    let filtered = groups.filter((g) => {
+      const isHidden = g.hiddenBy?.some((id) => id.toString() === userId);
+      return showArchived ? isHidden : !isHidden;
+    });
+    // Sort by most recently updated, then apply optional limit
+    filtered.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    if (limit) filtered = filtered.slice(0, limit);
+    res.status(200).json(filtered);
   } catch (error) {
     console.error("Error fetching groups:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 const addMembers = async (req, res) => {
   const groupId = req.params.id;
@@ -240,7 +272,7 @@ const getGroupDetails = async (req, res) => {
     const groupId = req.params.id;
 
     const group = await Group.findById(groupId)
-      .select("name description members createdAt updatedAt")
+      .select("name description members hiddenBy createdAt updatedAt bannerUrl")
       .populate("members", "username")
       .lean();
 
@@ -363,9 +395,8 @@ const addExpenseController = async (req, res) => {
 
     return res.status(400).json({
       success: false,
-      message: `Cannot add expense since ${
-        payer.username
-      } is not friends with ${nonFriendNames.join(", ")}`,
+      message: `Cannot add expense since ${payer.username
+        } is not friends with ${nonFriendNames.join(", ")}`,
     });
   }
 
@@ -473,9 +504,8 @@ const addExpenseController = async (req, res) => {
       if (tokens.length > 0) {
         const payerUser = users.find((u) => u._id.toString() === paidBy.toString());
         const notificationTitle = "Tap to see";
-        const body = `${savedExpense.title} expense has been paid by ${
-          payerUser?.username || "Someone"
-        }. \nAmount: ${savedExpense.amount}`;
+        const body = `${savedExpense.title} expense has been paid by ${payerUser?.username || "Someone"
+          }. \nAmount: ${savedExpense.amount}`;
 
         await sendMultipleNotifications(tokens, notificationTitle, body);
       }
@@ -1089,6 +1119,74 @@ const updateGroupDetails = async (req, res) => {
   }
 };
 
+const archiveGroup = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ message: "userId is required" });
+  try {
+    await Group.findByIdAndUpdate(id, { $addToSet: { hiddenBy: userId } });
+    res.status(200).json({ message: "Group archived" });
+  } catch (error) {
+    console.error("archiveGroup error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const unarchiveGroup = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ message: "userId is required" });
+  try {
+    await Group.findByIdAndUpdate(id, { $pull: { hiddenBy: userId } });
+    res.status(200).json({ message: "Group unarchived" });
+  } catch (error) {
+    console.error("unarchiveGroup error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const uploadGroupBanner = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file || !req.file.buffer)
+      return res.status(400).json({ message: "No file uploaded" });
+
+    const group = await Group.findById(id);
+    if (!group) return res.status(404).json({ message: "Group not found" });
+
+    // Upload to Cloudinary
+    const result = await uploadBannerFromBuffer(req.file.buffer);
+
+    // Delete previous Cloudinary image if it exists
+    if (group.bannerId) {
+      try {
+        await cloudinary.uploader.destroy(group.bannerId);
+      } catch (err) {
+        console.warn(
+          "Failed to delete previous Cloudinary banner:",
+          err.message
+        );
+      }
+    }
+
+    // Update group document directly
+    const updatedGroup = await Group.findByIdAndUpdate(
+      id,
+      {
+        bannerUrl: result.secure_url,
+        bannerId: result.public_id,
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ group: updatedGroup });
+  } catch (err) {
+    console.error("uploadGroupBanner error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 export {
   createGroup,
   getGroupDetails,
@@ -1106,4 +1204,7 @@ export {
   getAllExpensesForASubcategoryInGroup,
   getGroupExpenses,
   updateGroupDetails,
+  archiveGroup,
+  unarchiveGroup,
+  uploadGroupBanner,
 };

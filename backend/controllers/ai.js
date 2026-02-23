@@ -1,4 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Group } from "../models/schema.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const MODELS = [
   "gemini-2.0-flash-lite", // Primary: Fastest & Cheapest
@@ -12,92 +15,92 @@ const MODELS = [
   "gemini-1.5-flash-latest", // Fallback Flash (1.5 latest)
 ];
 
-let currentModelIndex = 0;
-let lastResetDate = new Date().toDateString();
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const parseResponse = (textResult) => {
-  const jsonString = textResult.replace(/```json|```/g, "").trim();
-  return JSON.parse(jsonString);
-};
+export const parseExpensePrompt = async (req, res) => {
+    try {
+        const { prompt, userId } = req.body;
 
-export const parseExpense = async (req, res) => {
-  try {
-    const { text } = req.body;
-    if (!text) {
-      return res.status(400).json({ error: "No text provided" });
-    }
+        if (!prompt || !userId) {
+            return res.status(400).json({ message: "Prompt and User ID are required" });
+        }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        // 1. Fetch user's groups for context
+        const userGroups = await Group.find({ members: userId }).select("name _id");
+        const groupList = userGroups.map(g => ({ name: g.name, id: g._id }));
 
-    // Reset to primary model at the start of a new day
-    const today = new Date().toDateString();
-    if (today !== lastResetDate) {
-      currentModelIndex = 0;
-      lastResetDate = today;
-      console.log("🔄 Daily quota reset: Switching back to primary model.");
-    }
-
-    const prompt = `
-      Extract expense details from the following text: "${text}".
-      Return ONLY a JSON object with the following keys:
-      - amount: number (e.g. 500)
-      - title: string (short description)
-      - paidBy: string (name of person who paid, if mentioned. If "me" or "I", return "current_user")
-      - splitWith: array of strings (names of people to split with. If "everyone", "all", or "split equally", return ["ALL"])
-      - splitMode: string ("equally" or "unequally"). Default "equally" unless "unequally" or specific amounts are mentioned.
-      - splitDetails: array of objects { name: string, amount: number } if specific share amounts are mentioned (e.g. "Alex owes 50").
-      - date: string (YYYY-MM-DD format if mentioned)
+        // 2. Prepare Gemini Prompt
+        const systemPrompt = `
+      You are an AI expense parser for the "FairFare" app. 
+      Your task is to extract expense details from a natural language string.
       
-      If amount is not found, return null for amount.
-      Do not include markdown formatting or backticks. Just the raw JSON.
+      Available Groups for this user:
+      ${JSON.stringify(groupList)}
+
+      Rules:
+      - Extract the 'amount' (Number).
+      - Extract a short, clear 'title' (String).
+      - Identify the 'groupId' by matching the mentioned group in the prompt to the list provided. 
+      - If no group is mentioned or if it doesn't match well, return groupId as null.
+      - Return ONLY a valid JSON object.
+
+      Expected Format:
+      {
+        "amount": 500,
+        "title": "Dinner",
+        "groupId": "matching_id_here_or_null"
+      }
     `;
 
-    let textResult;
-    let successful = false;
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent([
+            systemPrompt,
+            `User Prompt: "${prompt}"`
+        ]);
 
-    // Loop through models until one works or all fail
-    while (currentModelIndex < MODELS.length) {
-      const modelName = MODELS[currentModelIndex];
-      try {
-        // console.log(`Attempting with model: ${modelName}`); // Debug log
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        const response = result.response;
-        textResult = response.text();
-        successful = true;
-        break; // Success! Exit loop
-      } catch (apiError) {
+        const responseText = result.response.text().trim();
+        const cleanJson = responseText.replace(/```json|```/g, "").replace(/JSON/g, "").trim();
 
-        // Handle quota exhaustion (429) OR server overload (503) OR internal error (500)
-        if (
-          (apiError.message.includes("429") && apiError.message.includes("quota")) ||
-          apiError.message.includes("503") ||
-          apiError.message.includes("500")
-        ) {
-          console.warn(`⚠️ Issue with model ${modelName} (${apiError.message.split(']')[0]}). Switching to next model...`);
-          currentModelIndex++; // Move to next model for this and future requests
-        } else {
-          throw apiError; // Throw other errors (e.g. invalid arg) immediately
+        let parsedData;
+        try {
+            parsedData = JSON.parse(cleanJson);
+        } catch (e) {
+            // Fallback parsing if JSON is slightly malformed
+            const amountMatch = cleanJson.match(/"amount":\s*(\d+)/);
+            const titleMatch = cleanJson.match(/"title":\s*"([^"]+)"/);
+            const groupMatch = cleanJson.match(/"groupId":\s*"([^"]+)"/);
+
+            parsedData = {
+                amount: amountMatch ? Number(amountMatch[1]) : null,
+                title: titleMatch ? titleMatch[1] : "Expense",
+                groupId: groupMatch ? groupMatch[1] : null
+            };
         }
-      }
-    }
 
-    if (!successful) {
-      console.error("❌ All AI models exhausted for today.");
-      return res.status(429).json({ error: "Daily AI quota exhausted on ALL models. Please try again tomorrow." });
-    }
+        res.status(200).json(parsedData);
+    } catch (error) {
+        console.error("AI Parsing Error:", error);
 
-    let parsedData;
-    try {
-      parsedData = parseResponse(textResult);
-    } catch (parseError) {
-      console.error("JSON Parse Error:", parseError, "Raw:", textResult);
-      return res.status(500).json({ error: "Failed to parse AI response" });
-    }
+        // Fallback attempt with a different model if 404 occurs
+        if ((error.message.includes("404") || error.message.includes("not found")) && !req._isRetry) {
+            console.log("Retrying with gemini-pro...");
+            req._isRetry = true;
+            req.body.modelOverride = "gemini-2.5-pro";
+            // Recursively call with a flag to prevent infinite loops
+            try {
+                const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+                const result = await model.generateContent([
+                    "Extract amount (Number), title (String), and groupId from this prompt. Return ONLY JSON.",
+                    `Prompt: ${req.body.prompt}`
+                ]);
+                const text = result.response.text();
+                res.status(200).json(JSON.parse(text.replace(/```json|```/g, "")));
+                return;
+            } catch (retryError) {
+                console.error("Retry failed:", retryError);
+            }
+        }
 
-    res.status(200).json(parsedData);
-  } catch (error) {
-    console.error("AI Parse Error:", error);
-    res.status(500).json({ error: "Failed to parse expense" });
-  }
+        res.status(500).json({ message: "Failed to parse expense with AI", error: error.message });
+    }
 };
