@@ -31,9 +31,6 @@ app.use(session({
   cookie: { maxAge: 10 * 60 * 1000 }
 }));
 
-// Connect to MongoDB
-connectDB();
-
 //Ping Route
 app.get("/api/ping", (req, res) => {
   res.send("ponging");
