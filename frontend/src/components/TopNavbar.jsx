@@ -12,6 +12,7 @@ const TopNavbar = ({ user }) => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
+    console.log("Sign out");
     const userId = Cookies.get("id");
     try {
       const response = await axios.post(`${API_BASE}/user/remove-fcm-token`, {
@@ -35,7 +36,7 @@ const TopNavbar = ({ user }) => {
     <nav className="w-full bg-zinc-900/80 backdrop-blur-xl border border-white/5 rounded-2xl px-4 py-3 flex justify-between items-center shadow-lg shadow-black/20 relative">
       {/* --- Brand Logo (left anchor) --- */}
       <div className="flex-shrink-0">
-          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg blur opacity-0 group-hover:opacity-25 transition duration-500"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg blur opacity-0 group-hover:opacity-25 transition duration-500 pointer-events-none"></div>
           <img
             src={dashboardLogoNew}
             alt="Fair Fare"
