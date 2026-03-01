@@ -1,4 +1,3 @@
-import PropTypes from "prop-types";
 import { Link } from "react-router-dom";
 import { FaUser, FaChartBar, FaRobot, FaSignOutAlt } from "react-icons/fa";
 import Cookies from "js-cookie";
@@ -9,10 +8,11 @@ import dashboardLogoNew from "../../public/dashboardLogoNew.png";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-const TopNavbar = () => {
+const TopNavbar = ({ user }) => {
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
+    console.log("Sign out");
     const userId = Cookies.get("id");
     try {
       const response = await axios.post(`${API_BASE}/user/remove-fcm-token`, {
@@ -33,56 +33,61 @@ const TopNavbar = () => {
   };
 
   return (
-    <nav className="w-full bg-zinc-900/80 backdrop-blur-xl border border-white/5 rounded-2xl px-4 py-3 flex justify-between items-center shadow-lg shadow-black/20">
-      {/* --- Brand Logo --- */}
+    <nav className="w-full bg-zinc-900/80 backdrop-blur-xl border border-white/5 rounded-2xl px-4 py-3 flex justify-between items-center shadow-lg shadow-black/20 relative">
+      {/* --- Brand Logo (left anchor) --- */}
       <div className="flex-shrink-0">
-        <Link to="/" className="block relative group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg blur opacity-0 group-hover:opacity-20 transition duration-500"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg blur opacity-0 group-hover:opacity-25 transition duration-500 pointer-events-none"></div>
           <img
             src={dashboardLogoNew}
-            alt="Fair Fare Dashboard"
-            className="relative h-10 w-auto object-contain rounded-lg"
+            alt="Fair Fare"
+            className="relative h-9 w-auto object-contain rounded-lg"
           />
-        </Link>
       </div>
+
+      {/* --- Wordmark (true center) --- */}
+        <span className="text-xl font-bold tracking-tight select-none">
+          <span className="text-white">Fair</span>
+          <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent group-hover:from-indigo-300 group-hover:to-violet-300 transition-all duration-300">
+            Fare
+          </span>
+        </span>
 
       {/* --- Action Center --- */}
       <div className="flex items-center gap-3 md:gap-4">
-        {/* 1. App Tools Group */}
-        <div className="flex items-center gap-2">
-          <Link to="/analytics">
+
+        {/* 1. Feature Links – tablet / laptop only */}
+        <div className="[@media(max-width:768px)]:hidden items-center gap-2">
+          <Link to="/FairAI">
             <button
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 transition-all duration-300 group"
-              title="Analytics Dashboard"
+              className="p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
+              title="FairAI"
             >
-              <span className="hidden md:block text-sm font-medium">
-                Analytics
-              </span>
-              <FaChartBar className="text-lg group-hover:scale-110 transition-transform" />
+              <FaRobot className="text-lg" />
             </button>
           </Link>
 
-          <Link to="/FairAI">
+          <Link to="/analytics">
             <button
-              className="p-2.5 rounded-xl bg-zinc-800/50 border border-white/5 text-zinc-400 hover:text-white hover:bg-gradient-to-br hover:from-purple-500/20 hover:to-pink-500/20 hover:border-purple-500/30 transition-all duration-300 group relative overflow-hidden"
-              title="FairAI Assistant"
+              className="p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
+              title="Analytics"
             >
-              <FaRobot className="text-xl group-hover:animate-pulse" />
+              <FaChartBar className="text-lg" />
             </button>
           </Link>
         </div>
-
-        {/* Divider */}
-        <div className="h-6 w-px bg-white/10 mx-1"></div>
 
         {/* 2. User Actions Group */}
         <div className="flex items-center gap-2">
           <Link to="/profile">
             <button
-              className="p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
+              className="relative p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
               title="Edit Profile"
             >
               <FaUser className="text-lg" />
+              {/* Notification Dot for Missing Gender */}
+              {user && !user.gender && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
+              )}
             </button>
           </Link>
 

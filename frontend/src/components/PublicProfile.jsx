@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
-import logo from "../../public/newIcon-192x192.png";
+const logo = "/newIconV3-192x192.png";
 import { toast } from "react-hot-toast";
-import userIcon from "../../public/userIcon.png";
+const userIcon = "/userIcon.png";
 import Swal from "sweetalert2";
 import {
   ArrowLeft,
@@ -15,6 +14,7 @@ import {
   UserPlus,
   UserMinus,
   LogIn,
+  Clock,
 } from "lucide-react";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -25,18 +25,23 @@ const PublicProfile = () => {
   const [username, setUsername] = useState("");
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
   const [hasError, setHasError] = React.useState(false);
   const [friendId, setFriendId] = useState(null);
+  const [showPhoto, setShowPhoto] = useState(false);
 
   const navigate = useNavigate();
   const { userId } = useParams();
+  const location = useLocation();
   const currentUserId = Cookies.get("id");
+  const fromTransactions = new URLSearchParams(location.search).get("from") === "transactions";
 
   useEffect(() => {
     async function fetchUser() {
       try {
         setLoading(true);
-        const res = await api.get(`${API_BASE}/user/${userId}`); // Adjust this endpoint based on your backend
+        // Use the public endpoint — no auth required
+        const res = await api.get(`${API_BASE}/user/public/${userId}`);
         setLoading(false);
         if (res.status === 200) {
           setFriendId(res?.data?.user?._id);
@@ -47,12 +52,22 @@ const PublicProfile = () => {
 
           if (currentUserId === userId) {
             setIsFriend(true);
-          } else if (currentUserId !== userId) {
+          } else if (currentUserId && currentUserId !== userId) {
             res.data.user.friends.forEach((friend) => {
               if (friend?.friend?._id === currentUserId) {
                 setIsFriend(true);
               }
             });
+
+            // Check if a friend request is already pending
+            try {
+              const reqRes = await api.get(
+                `${API_BASE}/user/friend-request-status/${currentUserId}/${res.data.user._id}`
+              );
+              if (reqRes.data?.pending) setRequestSent(true);
+            } catch (e) {
+              // ignore — just won't show "Request Sent"
+            }
           }
         } else {
           setHasError(true);
@@ -88,6 +103,8 @@ const PublicProfile = () => {
       return;
     }
 
+    if (requestSent) return;
+
     if (!isFriend) {
       // Add Friend Confirmation
       const result = await Swal.fire({
@@ -95,11 +112,11 @@ const PublicProfile = () => {
         text: "They’ll be able to share and split expenses with you.",
         icon: "question",
         showCancelButton: true,
-        confirmButtonText: "Yes, add friend",
+        confirmButtonText: "Yes, send request",
         cancelButtonText: "Cancel",
         background: "#0b0b0b",
         color: "#fff",
-        confirmButtonColor: "#00f5ff",
+        confirmButtonColor: "#128b5fff",
         cancelButtonColor: "#555",
         customClass: {
           popup:
@@ -116,14 +133,14 @@ const PublicProfile = () => {
         });
 
         if (response.status === 200) {
-          setIsFriend(true);
+          setRequestSent(true);
           Swal.fire({
-            title: "Friend Added!",
-            text: `${username} has been added successfully.`,
+            title: "Request Sent!",
+            text: `A friend request has been sent to ${username}.`,
             icon: "success",
             background: "#0b0b0b",
             color: "#fff",
-            confirmButtonColor: "#00f5ff",
+            confirmButtonColor: "#128b5fff",
             customClass: {
               popup:
                 "rounded-2xl shadow-lg backdrop-blur-md border border-white/10",
@@ -228,7 +245,7 @@ const PublicProfile = () => {
               The profile you are looking for does not exist or is private.
             </p>
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/dash")}
               className="w-full px-4 py-2.5 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 transition-colors"
             >
               Return to Dashboard
@@ -241,7 +258,7 @@ const PublicProfile = () => {
           {/* TOP NAVIGATION (Simplified) */}
           <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-10">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/dash")}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition-all text-sm font-medium"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -296,7 +313,8 @@ const PublicProfile = () => {
                     <img
                       src={profilePhotoUrl || userIcon}
                       alt="Profile"
-                      className="w-full h-full rounded-full object-cover bg-slate-800"
+                      onClick={() => setShowPhoto(true)}
+                      className="w-full h-full rounded-full object-cover bg-slate-800 cursor-pointer hover:opacity-90 transition-opacity"
                     />
                     {/* Verified Tick */}
                     <div className="absolute bottom-1 right-1 bg-indigo-500 text-white p-1 rounded-full border-[3px] border-slate-900">
@@ -360,6 +378,18 @@ const PublicProfile = () => {
                   </div>
                 </div>
 
+                {/* Contextual banner when redirected from transaction history */}
+                {fromTransactions && !isFriend && currentUserId && currentUserId !== userId && (
+                  <div className="mb-6 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
+                    <p className="text-sm text-amber-300 font-medium">
+                      🔗 You opened a shared transaction link
+                    </p>
+                    <p className="text-xs text-amber-400/70 mt-1">
+                      Add <strong className="text-white">{username}</strong> as a friend to start tracking expenses together.
+                    </p>
+                  </div>
+                )}
+
                 {/* Primary Action Button */}
                 <button
                   onClick={handleTopRightClick}
@@ -368,21 +398,36 @@ const PublicProfile = () => {
                     ${
                       !currentUserId
                         ? "bg-slate-100 text-slate-900 hover:bg-white border border-transparent"
+                        : currentUserId === userId
+                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default"
                         : isFriend
                         ? "bg-transparent text-red-400 border border-red-500/30 hover:bg-red-500/10 hover:border-red-500/50"
+                        : requestSent
+                        ? "bg-transparent text-amber-400 border border-amber-500/30 cursor-default opacity-80"
                         : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-900/20"
                     }
                   `}
+                  disabled={requestSent || currentUserId === userId}
                 >
                   {!currentUserId ? (
                     <>
                       {" "}
                       <LogIn className="w-4 h-4" /> Login to Connect{" "}
                     </>
+                  ) : currentUserId === userId ? (
+                    <>
+                      {" "}
+                      <ShieldCheck className="w-4 h-4" /> Yes, it's you!{" "}
+                    </>
                   ) : isFriend ? (
                     <>
                       {" "}
                       <UserMinus className="w-4 h-4" /> Remove Connection{" "}
+                    </>
+                  ) : requestSent ? (
+                    <>
+                      {" "}
+                      <Clock className="w-4 h-4" /> Request Sent{" "}
                     </>
                   ) : (
                     <>
@@ -401,6 +446,18 @@ const PublicProfile = () => {
               </p>
             </div>
           </div>
+        </div>
+      )}
+      {showPhoto && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-zoom-out"
+          onClick={() => setShowPhoto(false)}
+        >
+          <img
+            src={profilePhotoUrl || userIcon}
+            alt="Enlarged Profile"
+            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-300"
+          />
         </div>
       )}
     </>

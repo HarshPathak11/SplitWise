@@ -17,7 +17,7 @@ const RecentExpenses = (user) => {
         ) {
           // Sort expenses by createdAt in descending order (most recent first)
           const sortedExpenses = [...parsedUser.recentExpense].sort(
-            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
           );
           // Take the top 4 expenses after sorting.
           const topExpenses = sortedExpenses.slice(0, 3);
@@ -34,9 +34,9 @@ const RecentExpenses = (user) => {
       {/* --- Header --- */}
       <div className="flex justify-between items-center mb-4 md:mb-6">
         <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
-          Recent Activity
+          Recent Expenses
         </h2>
-
+<div className="flex items-center gap-3 md:gap-4">
         <Link to="/allExpenses">
           <button
             type="button"
@@ -48,6 +48,30 @@ const RecentExpenses = (user) => {
             </span>
           </button>
         </Link>
+
+        <Link to="/personal-expenses">
+          <button
+            type="button"
+            className="w-9 h-9 md:w-8 md:h-8 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center transition-all shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95"
+            title="Create New Trip"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 md:h-4 md:w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </button>
+        </Link>
+        </div>
       </div>
 
       {/* --- Expenses List --- */}

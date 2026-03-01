@@ -153,7 +153,7 @@ const AllFriendsPage = () => {
   const handleBack = () => {
     // Always prefer actual browser history if there is one
     if (window.history.length > 1) {
-      navigate(-1);
+      navigate("/dash");
       return;
     }
 
@@ -261,28 +261,56 @@ const AllFriendsPage = () => {
         </div>
 
         {/* --- Friends List --- */}
-        <div className="flex-1 bg-zinc-900/30 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm relative">
+        <div className="min-h-[60vh] bg-zinc-900/30 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm relative">
           {sortedFriends.length === 0 ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-              <div className="w-16 h-16 bg-zinc-800/50 rounded-full flex items-center justify-center mb-4">
-                <svg
-                  className="w-8 h-8 text-zinc-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-              </div>
-              <p className="text-zinc-400 font-medium">No friends found</p>
-              <p className="text-zinc-600 text-sm mt-1">
-                Try a different search or add a new contact.
-              </p>
+            <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
+              {friends.length === 0 ? (
+                // No friends at all — guide them to the add button
+                <>
+                  <div className="w-20 h-20 bg-indigo-500/10 border border-indigo-500/20 rounded-full flex items-center justify-center mb-5">
+                    <svg
+                      className="w-10 h-10 text-indigo-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-white font-semibold text-lg mb-1">No friends yet</p>
+                  <p className="text-zinc-400 text-sm leading-relaxed max-w-xs">
+                    Tap the{" "}
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-600 text-white text-xs font-bold align-middle mx-0.5">+</span>
+                    {" "}button in the top right to add your first friend and start splitting expenses!
+                  </p>
+                </>
+              ) : (
+                // Has friends but search returned nothing
+                <>
+                  <div className="w-16 h-16 bg-zinc-800/50 rounded-full flex items-center justify-center mb-4">
+                    <svg
+                      className="w-8 h-8 text-zinc-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-zinc-400 font-medium">No results for "{searchQuery}"</p>
+                  <p className="text-zinc-600 text-sm mt-1">Try a different name.</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="h-full w-full">

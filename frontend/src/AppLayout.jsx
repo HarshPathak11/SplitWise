@@ -1,8 +1,13 @@
 import { Outlet } from "react-router-dom";
 import ErrorBoundary from "./ErrorBoundary";
 import { Toaster } from "react-hot-toast";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import api from "./utils/api";
+import Cookies from "js-cookie";
+import TermsPopup from "./components/TermsPopup";
+import BottomNavbar from "./components/BottomNavbar";
+import QuickAddExpenseModal from "./components/QuickAddExpenseModal";
 
 const usePageTracking = () => {
   const location = useLocation();
@@ -16,11 +21,88 @@ const usePageTracking = () => {
   }, [location]);
 };
 
+// Routes where the bottom navbar should NOT appear
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/signup",
+  "/features",
+  "/forgot-password",
+  "/documentation",
+  "/transaction-history",
+  "/tripDetails",
+  "/add-expense",
+  "/expense/edit"
+];
+
+const isPublicRoute = (pathname) => {
+  if (PUBLIC_ROUTES.includes(pathname)) return true;
+  // Dynamic public routes
+  if (/^\/signup\/.+/.test(pathname)) return true;       // /signup/:referId
+  if (/^\/public-profile\/.+/.test(pathname)) return true; // /public-profile/:userId
+  if (/^\/transaction-history\/.+/.test(pathname)) return true; // /transaction-history/:id
+  if (/^\/tripDetails\/.+/.test(pathname)) return true; // /tripDetails/:id
+  return false;
+};
+
 const AppLayout = () => {
-  usePageTracking(); // 👈 call the hook
+  usePageTracking();
+
+  const location = useLocation();
+  const showNavbar = !isPublicRoute(location.pathname);
+
+  const [showTerms, setShowTerms] = useState(false);
+  const [termsList, setTermsList] = useState([]);
+  const [showQuickExpense, setShowQuickExpense] = useState(false);
+
+  useEffect(() => {
+    const checkTerms = async () => {
+      const token = Cookies.get("authToken"); // or whatever your token key is
+      const id = Cookies.get("id");
+
+      // Only check if user is logged in
+      if (!token || !id) return;
+
+      try {
+        const response = await api.get("/terms/check-status");
+        if (response.data && response.data.mustSign) {
+          setTermsList(response.data.terms);
+          setShowTerms(true);
+        }
+      } catch (error) {
+        console.error("Error checking terms status:", error);
+      }
+    };
+
+    checkTerms();
+  }, [useLocation().pathname]); // Re-check on route change if you want, or just once on mount. Pathname ensures it runs if they navigate.
+
+  const handleTermsAccept = async (termId) => {
+    try {
+      await api.post("/terms/accept", { termId });
+      
+      // Update local state to mark this term as agreed
+      setTermsList(prev => {
+        const updatedList = prev.map(t => 
+            t._id === termId ? { ...t, hasAgreed: true } : t
+        );
+        
+        // check if all are agreed now
+        const allDone = updatedList.every(t => t.hasAgreed);
+        if (allDone) {
+            setShowTerms(false);
+        }
+        return updatedList;
+      });
+
+    } catch (error) {
+      console.error("Error accepting terms:", error);
+      // You might want to show an error toast here
+    }
+  };
+
   return (
-    <div>
-      {/* <ErrorBoundary> */}
+    <div className={showNavbar ? "pb-20 md:pb-0" : undefined}>
       <Toaster
         position="top-right"
         reverseOrder={false}
@@ -34,7 +116,26 @@ const AppLayout = () => {
         }}
       />
       <Outlet />
-      {/* </ErrorBoundary> */}
+      <TermsPopup
+        isOpen={showTerms}
+        terms={termsList}
+        onAccept={handleTermsAccept}
+      />
+
+      {/* Bottom navbar — only on protected routes */}
+      {showNavbar && (
+        <>
+          <BottomNavbar onAddClick={() => setShowQuickExpense(true)} />
+
+          {/* Global quick-add modal */}
+          {showQuickExpense && (
+            <QuickAddExpenseModal
+              isOpen={showQuickExpense}
+              onClose={() => setShowQuickExpense(false)}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };

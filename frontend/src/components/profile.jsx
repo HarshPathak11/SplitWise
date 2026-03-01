@@ -9,15 +9,14 @@ import {
   Lock,
   Mail,
   CreditCard,
-  Crown,
-  ShieldCheck,
-  Sparkles,
+  Crown
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import { authFetch } from "../utils/authFetch";
 import api from "../utils/api";
+import AvatarSelector from "./AvatarSelector";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -26,6 +25,7 @@ const ProfileEnhanced = () => {
     username: "",
     email: "",
     upiId: "",
+    gender: "",
   });
   const [isUsernameAvailable, setIsUsernameAvailable] = useState(true);
   const [checkingUsername, setCheckingUsername] = useState(false);
@@ -39,11 +39,12 @@ const ProfileEnhanced = () => {
   const [isHoveringPhoto, setIsHoveringPhoto] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
+  
   const navigate = useNavigate();
   const userId = Cookies.get("id");
 
   useEffect(() => {
-    console.log("userId",userId);
+    // console.log("userId",userId);
 
     async function getDetails() {
       if (!user && userId) {
@@ -131,6 +132,10 @@ const ProfileEnhanced = () => {
     setProfile({ ...profile, [name]: value });
   };
 
+  const handleGenderChange = (value) => {
+    setProfile({ ...profile, gender: value });
+  };
+
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0];
     if (!selected) return;
@@ -148,6 +153,31 @@ const ProfileEnhanced = () => {
     reader.readAsDataURL(selected);
   };
 
+  const handleAvatarSelect = async (avatarPath) => {
+    try {
+      const response = await fetch(avatarPath);
+      const blob = await response.blob();
+      const file = new File([blob], "avatar.jpeg", { type: "image/jpeg" });
+      
+      setFile(file);
+      const reader = new FileReader();
+      reader.onload = (ev) => setPreview(ev.target?.result);
+      reader.readAsDataURL(file);
+      
+      // Optional: Automatically upload when selected? 
+      // For now, let's just set it as the file to be uploaded when they click "Update Profile"
+      // or we can simulate the upload immediately if preferred. 
+      // The user request didn't specify immediate upload, but typical "choose avatar" flows might expect it.
+      // However, the current flow requires hitting "Update Profile" to save changes (including photo).
+      // So setting `file` state is consistent with existing behavior.
+      toast.success("Avatar selected! Click 'Update Profile' to save.");
+
+    } catch (error) {
+      console.error("Error loading avatar:", error);
+      toast.error("Failed to load avatar");
+    }
+  };
+
   const saveProfileFields = async (userId) => {
     profile.username = profile.username.trim();
     if (!profile.username) {
@@ -160,6 +190,7 @@ const ProfileEnhanced = () => {
       body: JSON.stringify({
         username: profile.username,
         upiId: profile.upiId,
+        gender: profile.gender,
       }),
     });
   };
@@ -187,8 +218,13 @@ const ProfileEnhanced = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!profile.gender) {
+      toast.error("Please select a gender");
+      return;
+    }
+
     try {
-      const userId = getCookie("id");
+      const userId = Cookies.get("id");
       if (!userId) return;
 
       const response = await saveProfileFields(userId);
@@ -214,6 +250,7 @@ const ProfileEnhanced = () => {
           username: fetchedUser.username || "",
           upiId: fetchedUser.upiId || "",
           email: fetchedUser.email || "",
+          gender: fetchedUser.gender || "Do not disclose",
         });
         setUsername(fetchedUser.username || "");
         if (fetchedUser.profilePhotoUrl)
@@ -229,7 +266,7 @@ const ProfileEnhanced = () => {
   };
 
   const handleShareProfile = async () => {
-    const userId = getCookie("id");
+    const userId = Cookies.get("id");
     const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
     const message = `Hey! 👋
 
@@ -284,23 +321,34 @@ Let's split and share smarter with FairFare! 💸`;
       </div>
 
       {/* --- NAVIGATION --- */}
-      <button
-        onClick={() => navigate("/dash")}
-        className="fixed top-6 left-6 z-50 group"
-      >
-        <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
-          <ArrowLeft className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
-        </div>
-      </button>
+      {/* Only show Back/Share if gender is selected AND SAVED (persisted in user object) */}
+      {user?.gender ? (
+        <>
+          <button
+            onClick={() => navigate("/dash")}
+            className="fixed top-6 left-6 z-50 group"
+          >
+            <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
+              <ArrowLeft className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+            </div>
+          </button>
 
-      <button
-        onClick={handleShareProfile}
-        className="fixed top-6 right-6 z-50 group"
-      >
-        <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
-          <Share2 className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+          <button
+            onClick={handleShareProfile}
+            className="fixed top-6 right-6 z-50 group"
+          >
+            <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
+              <Share2 className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
+            </div>
+          </button>
+        </>
+      ) : (
+        <div className="fixed top-6 left-6 z-50">
+            <p className="text-red-500 font-bold text-sm bg-black/50 px-3 py-2 rounded-xl backdrop-blur-md border border-red-500/30 shadow-lg animate-pulse">
+                Please select Gender & Update Profile to exit
+            </p>
         </div>
-      </button>
+      )}
 
       {/* --- MAIN CARD --- */}
       <div className="relative pt-6 px-2 z-10 w-full max-w-2xl">
@@ -378,6 +426,15 @@ Let's split and share smarter with FairFare! 💸`;
                   <Upload className="w-4 h-4" />
                 </label>
               </div>
+            </div>
+
+            {/* --- DEFAULT AVATAR SELECTION --- */}
+            <div className="mb-10 space-y-4">
+               <AvatarSelector 
+                 gender={profile.gender} 
+                 setGender={(g) => handleGenderChange(g)} 
+                 onSelectAvatar={handleAvatarSelect} 
+               />
             </div>
 
             {/* --- HEADER TEXT --- */}
@@ -464,16 +521,22 @@ Let's split and share smarter with FairFare! 💸`;
 
               {/* Bottom Actions */}
               <div className="pt-4 flex flex-col gap-4">
+                {!profile.gender && (
+                    <p className="text-red-400 text-xs text-center font-bold uppercase tracking-wider animate-pulse">
+                        ⚠️ Select Gender to Unlock Exit
+                    </p>
+                )}
                 <button
                   type="submit"
                   disabled={
                     !profile.upiId ||
                     uploading ||
                     !isUsernameAvailable ||
-                    checkingUsername
+                    checkingUsername ||
+                    !profile.gender
                   }
                   className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 active:scale-[0.98] ${
-                    !profile.upiId || uploading
+                    !profile.upiId || uploading || !profile.gender
                       ? "bg-zinc-800 text-zinc-600 cursor-not-allowed border border-white/5"
                       : "bg-indigo-400/70 text-zinc-950 hover:bg-white hover:shadow-zinc-500/10"
                   }`}

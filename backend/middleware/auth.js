@@ -1,7 +1,7 @@
-// middleware/auth.js
 import jwt from "jsonwebtoken";
+import { User } from "../models/schema.js";
 
-export const auth = (req, res, next) => {
+export const auth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || "";
     const id = req?.headers.id;
@@ -28,6 +28,11 @@ export const auth = (req, res, next) => {
     req.user = {
       id: payload.sub,
     };
+
+    // Update lastActive timestamp (fire and forget)
+    User.findByIdAndUpdate(payload.sub, { lastActive: new Date() }).catch((err) =>
+      console.error("Error updating lastActive:", err)
+    );
 
     return next();
   } catch (err) {

@@ -8,6 +8,7 @@ const expenseSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     category: { type: String, default: null, index: true },
     subcategory: { type: String, default: null, index: true },
+    date: { type: Date, default: Date.now },
     paidBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -38,6 +39,9 @@ const groupSchema = new mongoose.Schema(
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     tripTotal: { type: Number, default: 0 },
     expenses: [{ type: mongoose.Schema.Types.ObjectId, ref: "Expense" }],
+    hiddenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // users who archived this group
+    bannerUrl: { type: String, default: null }, // secure_url from Cloudinary
+    bannerId: { type: String, default: null }, // public_id used for deletion
   },
   { timestamps: true }
 );
@@ -66,6 +70,19 @@ const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    legalAgreements: [
+      {
+        version: { type: String, required: true },
+        documentId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Terms",
+          required: true,
+        },
+        agreedAt: { type: Date, default: Date.now },
+      },
+    ],
+    googleId: { type: String, default: null },
+    authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
     password: { type: String, required: true, select: false },
     fcmToken: { type: String, default: null },
     friends: [
@@ -83,7 +100,13 @@ const userSchema = new mongoose.Schema(
       lastUsed: { type: Date, default: null },
     },
     profilePhotoUrl: { type: String, default: null }, // secure_url from Cloudinary
-    profilePhotoId:  { type: String, default: null }, // public_id used for deletion
+    profilePhotoId: { type: String, default: null }, // public_id used for deletion
+    lastActive: { type: Date, default: null },
+    gender: {
+      type: String,
+      enum: ['Male', 'Female', 'Do not disclose'],
+      // default: 'Do not disclose' // Removed default to force selection
+    },
   },
   { timestamps: true }
 );
@@ -157,6 +180,22 @@ const UserFinancialSnapshotSchema = new mongoose.Schema({
 
 
 
+// Terms Schema
+const termsSchema = new mongoose.Schema(
+  {
+    type: { type: String, enum: ["terms", "privacy"], required: true },
+    version: { type: String, required: true },
+    content: { type: String, required: true }, // Markdown content
+    status: {
+      type: String,
+      enum: ["draft", "published", "archived"],
+      default: "draft",
+    },
+    isActive: { type: Boolean, default: false },
+    publishedAt: { type: Date, default: null }, // When the document was published
+  },
+  { timestamps: true }
+);
 
 // Password hashing middleware
 userSchema.pre("save", async function (next) {
@@ -191,4 +230,6 @@ const UserFinancialSnapshot = mongoose.model(
   UserFinancialSnapshotSchema
 );
 
-export { User, Group, Expense, FriendRequest, LabelCategory, UserFinancialSnapshot };
+const Terms = mongoose.model("Terms", termsSchema);
+
+export { User, Group, Expense, FriendRequest, LabelCategory, Terms, UserFinancialSnapshot };

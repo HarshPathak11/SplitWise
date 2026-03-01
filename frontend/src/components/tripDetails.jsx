@@ -1,12 +1,30 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil, Check, X, ArrowUpRight, Image as ImageIcon, Camera, Loader2 } from "lucide-react";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import { FaChartBar } from "react-icons/fa";
 import { useParams } from "react-router-dom";
+import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+// Helper to generate a unique, vibrant mesh gradient based on string hash
+const generateGradient = (str) => {
+  if (!str) return "linear-gradient(135deg, #1e1b4b, #18181b)";
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const colors = [
+    `hsl(${Math.abs(hash % 360)}, 70%, 40%)`,
+    `hsl(${Math.abs((hash * 1.5) % 360)}, 65%, 35%)`,
+    `hsl(${Math.abs((hash * 2) % 360)}, 60%, 25%)`,
+  ];
+
+  return `linear-gradient(135deg, ${colors[0]}, ${colors[1]}, ${colors[2]})`;
+};
 
 const TripDetails = () => {
   const navigate = useNavigate();
@@ -17,10 +35,104 @@ const TripDetails = () => {
   const [loading, setLoading] = useState(true); // Loading state for the GET request
   const [expenses, setExpenses] = useState([]);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
+  const [showArchiveConfirmation, setShowArchiveConfirmation] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const [cursor, setCursor] = useState(null);
   const [loadingExpenses, setLoadingExpenses] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef(null);
+
+  // Inline editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [bannerLightbox, setBannerLightbox] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const startEditing = () => {
+    setEditName(tripDetails?.name || "");
+    setEditDescription(tripDetails?.description || "");
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+  };
+
+  const saveEditing = async () => {
+    if (!editName.trim()) {
+      toast.error("Trip name cannot be empty.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const storedUser = localStorage.getItem("user");
+      const user = JSON.parse(storedUser);
+      const res = await api.put(`${API_BASE}/group/update/${tripId}`, {
+        name: editName,
+        description: editDescription,
+        userId: user._id,
+      });
+      if (res.status === 200) {
+        setTripDetails((prev) => ({
+          ...prev,
+          name: editName.trim(),
+          description: editDescription.trim(),
+        }));
+        // Update localStorage too
+        const cg = JSON.parse(localStorage.getItem("currentGroup") || "{}");
+        cg.name = editName.trim();
+        cg.description = editDescription.trim();
+        localStorage.setItem("currentGroup", JSON.stringify(cg));
+        toast.success("Trip updated!");
+        setIsEditing(false);
+      }
+    } catch (err) {
+      console.error("Error updating trip:", err);
+      toast.error(err.response?.data?.message || "Failed to update trip.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Basic validation
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please upload an image file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("banner", file);
+
+    setIsUploadingBanner(true);
+    try {
+      const res = await api.put(`${API_BASE}/group/${tripId}/banner`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      if (res.status === 200) {
+        setTripDetails(prev => ({
+          ...prev,
+          bannerUrl: res.data.group.bannerUrl,
+          bannerId: res.data.group.bannerId
+        }));
+        toast.success("Banner updated successfully!");
+      }
+    } catch (err) {
+      console.error("Banner upload error:", err);
+      toast.error("Failed to upload banner.");
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
 
   //Fetching group Meta Data
   useEffect(() => {
@@ -111,7 +223,6 @@ const TripDetails = () => {
   const handleAddMember = () => {
     navigate(`/add-members/${tripId}`);
   };
-  // console.log(expenses)
 
   const handleRemoveMember = () => {
     if (members.length <= 1) {
@@ -137,7 +248,7 @@ const TripDetails = () => {
     localStorage.removeItem("currentGroup");
 
     // Navigate back to the dashboard
-    navigate("/dash");
+    navigate(-1);
   };
 
   const HandleLeaveGroup = async () => {
@@ -173,6 +284,39 @@ const TripDetails = () => {
     } catch (error) {
       console.error("Leave Group Error:", error);
       toast.error("An error occurred while leaving the group.");
+    }
+  };
+  // true if the current user is in this group's hiddenBy list
+  const isArchived = (() => {
+    const userId = Cookies.get("id");
+    return (tripDetails?.hiddenBy || []).some(
+      (id) => id === userId || id?.toString?.() === userId
+    );
+  })();
+
+  const handleToggleArchive = async () => {
+    setIsArchiving(true);
+    try {
+      const userId = Cookies.get("id");
+      if (isArchived) {
+        await api.put(`${API_BASE}/group/unarchive/${tripId}`, { userId });
+        // Refresh group data so isArchived recalculates
+        const res = await api.get(`${API_BASE}/group/get-group/${tripId}`);
+        setTripDetails(res.data);
+        toast.success("Group unarchived! It's back in your trips list.");
+      } else {
+        await api.put(`${API_BASE}/group/archive/${tripId}`, { userId });
+        toast.success("Group archived. Find it anytime in Archived Trips.");
+        localStorage.removeItem("tripMembers");
+        localStorage.removeItem("currentGroup");
+        navigate("/dash");
+      }
+    } catch (err) {
+      console.error("Archive toggle error:", err);
+      toast.error(isArchived ? "Failed to unarchive group." : "Failed to archive group.");
+    } finally {
+      setIsArchiving(false);
+      setShowArchiveConfirmation(false);
     }
   };
 
@@ -211,24 +355,83 @@ const TripDetails = () => {
           >
             <ArrowLeft className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" />
             <span className="text-sm font-medium text-zinc-400 group-hover:text-white transition-colors">
-              Dashboard
+              Back
             </span>
           </button>
 
-          <button
-            onClick={() => setShowLeaveConfirmation(true)}
-            className="text-xs font-bold text-red-500 hover:text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors uppercase tracking-wider border border-transparent hover:border-red-500/20"
-          >
-            Leave Group
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowArchiveConfirmation(true)}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors uppercase tracking-wider border border-transparent ${
+                isArchived
+                  ? "text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/20"
+                  : "text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/20"
+              }`}
+            >
+              {isArchived ? "Unarchive" : "Archive"}
+            </button>
+            <button
+              onClick={() => setShowLeaveConfirmation(true)}
+              className="text-xs font-bold text-red-500 hover:text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors uppercase tracking-wider border border-transparent hover:border-red-500/20"
+            >
+              Leave Group
+            </button>
+          </div>
         </div>
 
         {/* --- HERO SECTION: Compact Mission Brief --- */}
-        <div className="relative bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-xl mb-6">
-          {/* Subtle Top Glow */}
-          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500/50 to-indigo-500/0"></div>
+        <div className="relative bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-xl mb-6 group/banner-container">
 
-          <div className="px-5 py-5 sm:px-6 sm:py-6">
+          {/* Banner Image Area */}
+          <div className="relative h-40 sm:h-56 w-full overflow-hidden bg-zinc-800">
+            {tripDetails?.bannerUrl ? (
+              <img
+                src={tripDetails.bannerUrl}
+                alt="Trip Banner"
+                onClick={() => setBannerLightbox(true)}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover/banner-container:scale-105 cursor-zoom-in"
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center opacity-80"
+                style={{ background: generateGradient(tripDetails?.name) }}
+              >
+                <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"></div>
+                <ImageIcon className="w-12 h-12 text-white/20 relative z-10" />
+              </div>
+            )}
+
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent pointer-events-none"></div>
+
+            {/* Change Banner Action */}
+            <div className="absolute top-4 right-4 opacity-0 group-hover/banner-container:opacity-100 transition-opacity duration-300">
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleBannerUpload}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingBanner}
+                className="flex items-center gap-2 px-3 py-1.5 bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white transition-all active:scale-95"
+              >
+                {isUploadingBanner ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Camera className="w-3.5 h-3.5" />
+                )}
+                {tripDetails?.bannerUrl ? "Change Cover" : "Add Cover"}
+              </button>
+            </div>
+          </div>
+
+          <div className="px-5 py-5 sm:px-6 sm:py-6 relative">
+            {/* Subtle Top Glow */}
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-indigo-500/0 via-indigo-500/50 to-indigo-500/0"></div>
+
             {loading ? (
               <div className="animate-pulse flex justify-between items-center">
                 <div className="space-y-2 w-1/2">
@@ -248,13 +451,60 @@ const TripDetails = () => {
                     </span>
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-500 tracking-tight truncate">
-                    {tripDetails?.name}
-                  </h1>
-
-                  <p className="text-zinc-500 text-sm mt-1 line-clamp-1 max-w-xl font-medium">
-                    {tripDetails?.description || "No description provided."}
-                  </p>
+                  {isEditing ? (
+                    <div className="space-y-3 mt-2">
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-xl font-bold text-white focus:outline-none focus:border-indigo-500/50 transition-colors"
+                        placeholder="Trip name"
+                        autoFocus
+                      />
+                      <input
+                        type="text"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-indigo-500/50 transition-colors"
+                        placeholder="Description (optional)"
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={saveEditing}
+                          disabled={saving}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          {saving ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={cancelEditing}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold transition-colors border border-white/10"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 group/title">
+                        <h1 className="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-zinc-500 tracking-tight truncate">
+                          {tripDetails?.name}
+                        </h1>
+                        <button
+                          onClick={startEditing}
+                          className="p-1 rounded-md hover:bg-white/10 text-zinc-500 hover:text-indigo-400 transition-all"
+                          title="Edit trip details"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <p className="text-zinc-500 text-sm mt-1 line-clamp-1 max-w-xl font-medium">
+                        {tripDetails?.description || "No description provided."}
+                      </p>
+                    </>
+                  )}
                 </div>
 
                 {/* Compact Actions */}
@@ -335,6 +585,7 @@ const TripDetails = () => {
                                   ? member
                                   : member?.username}
                               </span>
+                              <ArrowUpRight className="w-3.5 h-3.5 text-zinc-500 group-hover:text-indigo-400 transition-colors" />
                             </div>
                           </Link>
                         )}
@@ -464,7 +715,85 @@ const TripDetails = () => {
             </div>
           </div>
         )}
+
+        {/* --- ARCHIVE / UNARCHIVE CONFIRMATION MODAL --- */}
+        {showArchiveConfirmation && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
+            <div className={`bg-zinc-900 p-6 rounded-2xl max-w-sm w-full shadow-2xl border ${
+              isArchived ? "border-emerald-500/30 shadow-emerald-900/10" : "border-amber-500/30 shadow-amber-900/10"
+            }`}>
+              {/* Icon */}
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 border ${
+                isArchived ? "bg-emerald-500/10 border-emerald-500/20" : "bg-amber-500/10 border-amber-500/20"
+              }`}>
+                <svg className={`w-6 h-6 ${isArchived ? "text-emerald-400" : "text-amber-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  {isArchived ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  )}
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-1">
+                {isArchived ? "Unarchive this group?" : "Archive this group?"}
+              </h3>
+              <p className="text-zinc-400 text-sm mb-3 leading-relaxed">
+                {isArchived
+                  ? "This group will be restored to your active trips list. Everything is still intact."
+                  : <>This group will be hidden from your dashboard and trips list. <span className="text-zinc-200 font-medium">Everything stays intact</span> — members, expenses, and balances are untouched.</>}
+              </p>
+              {!isArchived && (
+                <p className="text-zinc-600 text-xs mb-6 leading-relaxed border-t border-white/5 pt-3">
+                  You can unarchive it anytime from the Archived Trips section.
+                </p>
+              )}
+              <div className={`flex gap-3 ${isArchived ? "mt-6" : ""}`}>
+                <button
+                  onClick={() => setShowArchiveConfirmation(false)}
+                  disabled={isArchiving}
+                  className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleToggleArchive}
+                  disabled={isArchiving}
+                  className={`flex-1 py-2.5 rounded-lg text-white font-bold shadow-lg transition-all disabled:opacity-50 ${
+                    isArchived
+                      ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20"
+                      : "bg-amber-600 hover:bg-amber-500 shadow-amber-900/20"
+                  }`}
+                >
+                  {isArchiving ? "Please wait..." : isArchived ? "Unarchive" : "Archive"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* --- BANNER LIGHTBOX --- */}
+      {bannerLightbox && tripDetails?.bannerUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setBannerLightbox(false)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setBannerLightbox(false)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          {/* Image — stop propagation so clicking image itself doesn't close */}
+          <img
+            src={tripDetails.bannerUrl}
+            alt="Trip Banner"
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-[95vw] max-h-[90vh] object-contain rounded-xl shadow-2xl"
+          />
+        </div>
+      )}
     </div>
   );
 };

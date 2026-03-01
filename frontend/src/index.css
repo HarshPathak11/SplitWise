@@ -180,3 +180,57 @@
 .animate-slide-up {
   animation: slide-up 0.8s ease-out forwards;
 }
+
+/* Arc Reactor Glow Pulse */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px #6366f1, 0 0 20px #6366f1, 0 0 40px #06b6d4;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 5px #6366f1, 0 0 10px #6366f1, 0 0 20px #06b6d4;
+    opacity: 0.6;
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s infinite ease-in-out;
+}
+
+/* Reverse Spin */
+@keyframes spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 1s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+@keyframes glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes wave {
+  0% { transform: scaleY(1); }
+  50% { transform: scaleY(2); }
+  100% { transform: scaleY(1); }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

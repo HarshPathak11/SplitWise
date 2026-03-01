@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom"; // Import useNavigate and Link for navigation
 import axios from "axios"; // Import axios for HTTP requests
 import { toast } from "react-hot-toast";
@@ -16,6 +16,11 @@ const AddTrip = () => {
   const [search, setSearch] = useState("");
   const [selectAll, setSelectAll] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Refs for input fields to maintain focus after clearing
+  const tripNameRef = useRef(null);
+  const descriptionRef = useRef(null);
+  const searchRef = useRef(null);
 
   // Filtered (visible) friends according to search
   const filteredFriends = friends.filter((f) =>
@@ -186,13 +191,42 @@ const AddTrip = () => {
                   <label className="text-sm font-medium text-zinc-400">
                     Trip Name
                   </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Summer Vacation 2025"
-                    value={tripName}
-                    onChange={(e) => setTripName(e.target.value)}
-                    className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
-                  />
+                  <div className="relative">
+                    <input
+                      ref={tripNameRef}
+                      type="text"
+                      placeholder="e.g. Summer Vacation 2025"
+                      value={tripName}
+                      onChange={(e) => setTripName(e.target.value)}
+                      className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 pr-10 text-white placeholder-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all font-medium"
+                    />
+                    {tripName && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTripName("");
+                          tripNameRef.current?.focus();
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-white/10 text-zinc-500 hover:text-white transition-all"
+                        title="Clear"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Dates Row */}
@@ -227,12 +261,41 @@ const AddTrip = () => {
                   <label className="text-sm font-medium text-zinc-400">
                     Description
                   </label>
-                  <textarea
-                    placeholder="What's the plan?"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all text-sm h-32 resize-none custom-scrollbar"
-                  />
+                  <div className="relative">
+                    <textarea
+                      ref={descriptionRef}
+                      placeholder="What's the plan?"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 pr-10 text-white placeholder-zinc-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all text-sm h-32 resize-none custom-scrollbar"
+                    />
+                    {description && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDescription("");
+                          descriptionRef.current?.focus();
+                        }}
+                        className="absolute right-3 top-3 p-1 rounded-full hover:bg-white/10 text-zinc-500 hover:text-white transition-all"
+                        title="Clear"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -266,12 +329,39 @@ const AddTrip = () => {
                       />
                     </svg>
                     <input
+                      ref={searchRef}
                       type="text"
                       placeholder="Search list..."
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="w-full bg-zinc-900 border border-white/10 rounded-lg py-2 pl-9 pr-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 transition-all"
+                      className="w-full bg-zinc-900 border border-white/10 rounded-lg py-2 pl-9 pr-9 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 transition-all"
                     />
+                    {search && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearch("");
+                          searchRef.current?.focus();
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-white/10 text-zinc-500 hover:text-white transition-all"
+                        title="Clear search"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
 

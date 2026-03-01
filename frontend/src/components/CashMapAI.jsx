@@ -1,21 +1,92 @@
-import React, { useState, useEffect } from "react";
-import { ArrowLeft, Bot, Send, ArrowDown, Zap, Loader2, Copy, Check } from "lucide-react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  ArrowLeft,
+  Send,
+  ArrowDown,
+  Zap,
+  Loader2,
+  Sparkles,
+  TrendingUp,
+  Wallet,
+  PiggyBank,
+  Copy,
+  Check,
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import Cookies from "js-cookie";
-import axios from "axios";
-import userIcon from "../../public/userIcon.png";
 import api from "../utils/api";
-import toast from "react-hot-toast";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+import userIcon from "../../public/userIcon.png";
+import Cookies from "js-cookie";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
+/* ─── Typewriter sub-component ─── */
+function TypewriterText({ text, speed = 14, onComplete }) {
+  const [displayed, setDisplayed] = useState("");
+  const [done, setDone] = useState(false);
+  const idx = useRef(0);
+
+  useEffect(() => {
+    idx.current = 0;
+    setDisplayed("");
+    setDone(false);
+
+    const iv = setInterval(() => {
+      idx.current++;
+      setDisplayed(text.slice(0, idx.current));
+      if (idx.current >= text.length) {
+        clearInterval(iv);
+        setDone(true);
+        onComplete?.();
+      }
+    }, speed);
+    return () => clearInterval(iv);
+  }, [text, speed]);
+
+  return (
+    <div className="cashmap-markdown">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayed}</ReactMarkdown>
+      {!done && <span className="typewriter-cursor">|</span>}
+    </div>
+  );
+}
+
+/* ─── Typing indicator (3-dot bounce) ─── */
+function TypingIndicator() {
+  return (
+    <div className="typing-indicator">
+      <span />
+      <span />
+      <span />
+    </div>
+  );
+}
+
+/* ─── Suggestion chip data ─── */
+const SUGGESTIONS = [
+  { icon: <Wallet className="w-4 h-4" />, label: "Show my balances" },
+  { icon: <TrendingUp className="w-4 h-4" />, label: "Summarize this month" },
+  { icon: <PiggyBank className="w-4 h-4" />, label: "Where can I save?" },
+  { icon: <Sparkles className="w-4 h-4" />, label: "Who owes me money?" },
+];
+
+/* ═══════════════════════════════════════════
+   Main CashMapAI component
+   ═══════════════════════════════════════════ */
 function CashMapAI() {
-  const chatContainerRef = React.useRef(null);
+  const chatContainerRef = useRef(null);
+  const textareaRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
-  const timeoutRef = React.useRef(null);
-  const [copiedIndex, setCopiedIndex] = useState(null);
+  const [animatingIdx, setAnimatingIdx] = useState(null); // index of msg being animated
+  const [copiedIdx, setCopiedIdx] = useState(null);
+
+  const handleCopy = (text, idx) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(null), 2000);
+    });
+  };
+  const timeoutRef = useRef(null);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
 
   const [messages, setMessages] = useState(() => {
@@ -23,8 +94,8 @@ function CashMapAI() {
     if (storedChat) {
       try {
         return JSON.parse(storedChat);
-      } catch (error) {
-        console.error("Error parsing chatMessages:", error);
+      } catch {
+        /* ignore */
       }
     }
     return [
@@ -37,94 +108,113 @@ function CashMapAI() {
   });
 
   const [input, setInput] = useState("");
-  const [dailyCount, setDailyCount] = useState(0);
-
-  const fetchAiUsage = async () => {
-    try {
-      const userId = Cookies.get("id");
-      if (!userId) {
-        console.warn("⚠️ No User ID found in cookies for AI usage fetch.");
-        return;
-      }
-
-      // Consistent with Dashboard.jsx usage: use absolute URL if needed, 
-      // but api utility handles baseURL. Let's try relative first as per standard practice,
-      // or match Dashboard's absolute style if it's proven to work.
-      const response = await api.get(`/user/ai-usage/${userId}`);
-      
-      if (response.data && typeof response.data.usageCount === 'number') {
-        setDailyCount(response.data.usageCount);
-      } else if (response.data && typeof response.data.count === 'number') {
-        setDailyCount(response.data.count);
-      }
-    } catch (error) {
-      console.error("❌ Error fetching AI usage:", error);
+  const [dailyCount, setDailyCount] = useState(() => {
+    const stored = localStorage.getItem("user");
+    const parsedStored = stored ? JSON.parse(stored) : null;
+    let count = 0;
+    if (parsedStored?.aiChatUsage?.count) {
+      count = parseInt(parsedStored.aiChatUsage.count);
     }
-  };
+    localStorage.setItem("dailyAIQueryCounter", count.toString());
+    return parseInt(localStorage.getItem("dailyAIQueryCounter")) || 0;
+  });
 
-  useEffect(() => {
-    const chatEl = chatContainerRef.current;
-    if (!chatEl) return;
+  /* ── Show only welcome greeting = show suggestions ── */
+  const showSuggestions =
+    messages.length === 1 && messages[0].type === "bot" && !isWaitingForResponse;
 
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = chatEl;
-      const buffer = 100;
-      if (scrollTop + clientHeight >= scrollHeight - buffer) {
-        setIsAtBottom(true);
-      } else {
-        setIsAtBottom(false);
-      }
-    };
-
-    chatEl.addEventListener("scroll", handleScroll);
-    return () => chatEl.removeEventListener("scroll", handleScroll);
+  /* ── Scroll helpers ── */
+  const scrollToBottom = useCallback(() => {
+    chatContainerRef.current?.scrollTo({
+      top: chatContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   }, []);
 
+  useEffect(() => {
+    const el = chatContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      setIsAtBottom(scrollTop + clientHeight >= scrollHeight - 100);
+    };
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* ── Auto-hide scrollbar ── */
+  useEffect(() => {
+    const el = chatContainerRef.current;
+    if (!el) return;
+    let t;
+    const h = () => {
+      el.classList.add("show-scrollbar");
+      clearTimeout(t);
+      t = setTimeout(() => el.classList.remove("show-scrollbar"), 1200);
+    };
+    el.addEventListener("scroll", h);
+    return () => {
+      el.removeEventListener("scroll", h);
+      clearTimeout(t);
+    };
+  }, []);
+
+  /* ── Init: reset daily counter if needed ── */
   useEffect(() => {
     scrollToBottom();
-    fetchAiUsage();
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("chatMessages", JSON.stringify(messages));
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setProfilePhotoUrl(JSON.parse(storedUser).profilePhotoUrl);
+      try {
+        const user = JSON.parse(storedUser);
+        const aiChatUsage = user?.aiChatUsage;
+        if (aiChatUsage?.lastUsed) {
+          const hrs =
+            (new Date() - new Date(aiChatUsage.lastUsed)) / (1000 * 60 * 60);
+          if (hrs >= 24) {
+            localStorage.setItem("dailyAIQueryCounter", "0");
+            setDailyCount(0);
+            return;
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    const dc = localStorage.getItem("dailyAIQueryCounter");
+    setDailyCount(parseInt(dc) || 0);
+  }, []);
+
+  /* ── Persist messages ── */
+  useEffect(() => {
+    localStorage.setItem("chatMessages", JSON.stringify(messages));
+    try {
+      setProfilePhotoUrl(
+        JSON.parse(localStorage.getItem("user")).profilePhotoUrl
+      );
+    } catch {
+      /* ignore */
     }
   }, [messages]);
 
-  const scrollToBottom = () => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTo({
-        top: chatContainerRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+  /* ── Auto-scroll during typewriter animation ── */
+  useEffect(() => {
+    if (animatingIdx !== null) {
+      const iv = setInterval(scrollToBottom, 120);
+      return () => clearInterval(iv);
+    }
+  }, [animatingIdx, scrollToBottom]);
+
+  /* ── Textarea auto-resize ── */
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+    const ta = textareaRef.current;
+    if (ta) {
+      ta.style.height = "auto";
+      ta.style.height = Math.min(ta.scrollHeight, 150) + "px";
     }
   };
 
-  useEffect(() => {
-    const chatEl = chatContainerRef.current;
-    if (!chatEl) return;
-
-    let scrollTimeout;
-
-    const handleScroll = () => {
-      chatEl.classList.add("show-scrollbar");
-
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        chatEl.classList.remove("show-scrollbar");
-      }, 1200); // adjust as needed
-    };
-
-    chatEl.addEventListener("scroll", handleScroll);
-
-    return () => {
-      chatEl.removeEventListener("scroll", handleScroll);
-      clearTimeout(scrollTimeout);
-    };
-  }, []);
-
+  /* ── Send message ── */
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -132,17 +222,12 @@ function CashMapAI() {
     const userMessage = { type: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
-    setIsWaitingForResponse(true); // Disable input
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    setIsWaitingForResponse(true);
 
-    const tempBotMessage = {
-      type: "bot",
-      content:
-        "I'm analyzing your spending patterns and will provide insights shortly...",
-    };
-    setMessages((prev) => [...prev, tempBotMessage]);
-    setTimeout(() => nudgeForAIReply(), 200); // add a slight delay to let DOM update
-
-    scrollToBottom();
+    // Add typing indicator placeholder
+    setMessages((prev) => [...prev, { type: "bot", content: "__TYPING__" }]);
+    setTimeout(scrollToBottom, 100);
 
     try {
       const userId = Cookies.get("id") || "";
@@ -151,28 +236,23 @@ function CashMapAI() {
         userId,
         query: input,
       });
+
       clearTimeout(timeoutRef.current);
       setIsWaitingForResponse(false);
 
-      const data = response?.data;
-      const answer = data?.answer || "Sorry, something went wrong!";
-
-      // // Log the model used
-      // if (data?.modelUsed) {
-      //   console.log(`ℹ️ AI response generated using: ${data.modelUsed}`);
-      // }
+      const answer = response?.data?.answer || "Sorry, something went wrong!";
 
       setMessages((prev) => {
         const updated = [...prev];
-        updated.pop(); // Remove analyzing message
+        updated.pop(); // remove typing indicator
+        const newIdx = updated.length;
+        setAnimatingIdx(newIdx);
         return [...updated, { type: "bot", content: answer }];
       });
-      
-      // Update count from the response if available, otherwise fetch
-      if (typeof data?.usageCount === 'number') {
-        setDailyCount(data.usageCount);
-      } else {
-        await fetchAiUsage();
+
+      // Update count from the response if available
+      if (typeof response?.data?.usageCount === 'number') {
+        setDailyCount(response.data.usageCount);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -186,7 +266,7 @@ function CashMapAI() {
 
       setMessages((prev) => {
         const updated = [...prev];
-        updated.pop(); // Remove analyzing message
+        updated.pop();
         return [
           ...updated,
           {
@@ -195,201 +275,249 @@ function CashMapAI() {
           },
         ];
       });
-
-      // Show appropriate toast based on error type
-      if (errorType === 'QUOTA_EXCEEDED') {
-        toast.error("AI quota exceeded. Try again after midnight UTC (5:30 AM IST).", {
-          duration: 5000,
-        });
-      } else if (errorType === 'SERVICE_ERROR') {
-        toast.error("AI service temporarily unavailable. Please try again in a few minutes.", {
-          duration: 4000,
-        });
-      } else {
-        toast.error("Failed to get AI response. Please try again.", {
-          duration: 3000,
-        });
+    } finally {
+      try {
+        const storedUser = localStorage.getItem("user");
+        const user = storedUser ? JSON.parse(storedUser) : {};
+        const userId = user?._id || "";
+        const API_BASE = import.meta.env.VITE_API_BASE_URL;
+        const userResponse = await api.get(`${API_BASE}/user/${userId}`);
+        if (userResponse?.data) {
+          localStorage.setItem(
+            "user",
+            JSON.stringify(userResponse.data.user)
+          );
+          const updatedCount =
+            userResponse.data?.user?.aiChatUsage?.count || 0;
+          localStorage.setItem("dailyAIQueryCounter", updatedCount.toString());
+          setDailyCount(updatedCount);
+        }
+      } catch (err) {
+        console.error("Error fetching updated user data:", err);
       }
     }
   };
 
-  const nudgeForAIReply = () => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTo({
-        top: chatContainerRef.current.scrollHeight - 100, // approx 2-3 lines
-        behavior: "smooth",
+  /* ── Click suggestion chip ── */
+  const handleSuggestion = (label) => {
+    setInput(label);
+    // Trigger send on next tick so input state is set
+    setTimeout(() => {
+      const fakeEvent = { preventDefault: () => { } };
+      // We set input directly and call send
+      handleSendDirect(label);
+    }, 0);
+  };
+
+  const handleSendDirect = async (text) => {
+    if (!text.trim()) return;
+    const userMessage = { type: "user", content: text };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setIsWaitingForResponse(true);
+    setMessages((prev) => [...prev, { type: "bot", content: "__TYPING__" }]);
+    setTimeout(scrollToBottom, 100);
+
+    try {
+      const storedUser = localStorage.getItem("user");
+      const user = storedUser ? JSON.parse(storedUser) : {};
+      const userId = user?._id || "";
+      const response = await api.post("/user/ai", {
+        userId,
+        query: text,
       });
+      console.log(response);
+      clearTimeout(timeoutRef.current);
+      setIsWaitingForResponse(false);
+      const answer = response?.data?.answer || "Sorry, something went wrong!";
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated.pop();
+        const newIdx = updated.length;
+        setAnimatingIdx(newIdx);
+        return [...updated, { type: "bot", content: answer }];
+      });
+
+      // Update count from the response if available
+      if (typeof response?.data?.usageCount === 'number') {
+        setDailyCount(response.data.usageCount);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      clearTimeout(timeoutRef.current);
+      setIsWaitingForResponse(false);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated.pop();
+        return [
+          ...updated,
+          { type: "bot", content: "⚠ Error retrieving response. Please try again." },
+        ];
+      });
+    } finally {
+      try {
+        const storedUser = localStorage.getItem("user");
+        const user = storedUser ? JSON.parse(storedUser) : {};
+        const userId = user?._id || "";
+        const API_BASE = import.meta.env.VITE_API_BASE_URL;
+        const userResponse = await api.get(`${API_BASE}/user/${userId}`);
+        if (userResponse?.data) {
+          localStorage.setItem("user", JSON.stringify(userResponse.data.user));
+          const updatedCount = userResponse.data?.user?.aiChatUsage?.count || 0;
+          localStorage.setItem("dailyAIQueryCounter", updatedCount.toString());
+          setDailyCount(updatedCount);
+        }
+      } catch (err) {
+        console.error("Error fetching updated user data:", err);
+      }
     }
   };
 
+  /* ═══════════════════════════════════════════
+     RENDER
+     ═══════════════════════════════════════════ */
   return (
-    <div className="flex flex-col h-[100dvh] w-full bg-zinc-950 text-zinc-100 overflow-x-hidden overflow-y-hidden relative font-sans selection:bg-indigo-500/30">
-      {/* --- PROFESSIONAL ATMOSPHERIC BACKGROUND --- */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        {/* Subtle top-down spotlight */}
-        <div className="absolute top-0 left-0 right-0 h-[500px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950"></div>
-        {/* Subtle noise texture */}
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+    <div className="cashmap-root">
+      {/* ── Background ── */}
+      <div className="cashmap-bg">
+        <div className="cashmap-bg-orb cashmap-bg-orb--1" />
+        <div className="cashmap-bg-orb cashmap-bg-orb--2" />
       </div>
 
-      {/* --- HEADER --- */}
-      <header className="px-4 py-3 md:py-4 border-b border-white/5 backdrop-blur-xl bg-zinc-900/40 z-30 sticky top-0 transition-all">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link
-            to="/dash"
-            className="group flex items-center text-zinc-400 hover:text-white transition-all duration-300"
-          >
-            <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-white/10 flex items-center justify-center mr-2 transition-colors">
-              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-            </div>
-            <span className="font-medium text-xs md:text-sm tracking-wide uppercase">Dashboard</span>
+      {/* ── Header ── */}
+      <header className="cashmap-header">
+        <div className="cashmap-header-inner">
+          <Link to="/dash" className="cashmap-back">
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back</span>
           </Link>
-          
-          <div className="flex items-center gap-2 md:gap-3 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 shadow-inner">
-            <Bot className="h-4 w-4 md:h-5 md:w-5 text-indigo-400" />
-            <span className="font-bold text-base md:text-lg tracking-tight">
-              Fair<span className="text-zinc-400">AI</span>
+
+          <div className="cashmap-brand">
+            <div className="cashmap-brand-icon">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <span className="cashmap-brand-text">
+              Fair<span>AI</span>
             </span>
           </div>
-          
-          <div className="hidden md:flex items-center gap-2">
-            <div className={`h-2 w-2 rounded-full animate-pulse ${dailyCount >= 10 ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
-            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">Active System</span>
+
+          {/* Query badge */}
+          <div
+            className={`cashmap-query-badge ${dailyCount >= 10 ? "cashmap-query-badge--limit" : ""
+              }`}
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>
+              {dailyCount >= 10 ? "Limit reached" : `${dailyCount}/10`}
+            </span>
           </div>
         </div>
       </header>
 
-      {/* --- STATUS BAR --- */}
-      <div className="px-4 py-2 z-20 max-w-4xl mx-auto w-full relative">
-        <div className={`text-center py-2 px-4 rounded-xl border backdrop-blur-md transition-all duration-500 ${
-          dailyCount >= 10 
-            ? "text-red-400 bg-red-500/10 border-red-500/20" 
-            : "text-zinc-400 bg-white/5 border-white/5"
-        }`}>
-          <p className="text-[11px] md:text-xs font-medium flex items-center justify-center gap-2">
-            <Zap className={`w-3 h-3 ${dailyCount >= 10 ? 'text-red-500' : 'text-indigo-400'}`} />
-            {dailyCount >= 10 
-              ? "System limit reached. Service resumes tomorrow." 
-              : `Token Utilization: ${dailyCount} of 10 daily queries used.`}
-          </p>
-        </div>
-      </div>
-
-      {/* --- CHAT MESSAGES CONTAINER --- */}
-      <main
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 z-10 max-w-4xl mx-auto w-full custom-scrollbar space-y-8"
-      >
-        {messages?.map((message, index) => (
-          <div
-            key={index}
-            className={`flex items-start animate-in fade-in slide-in-from-bottom-2 duration-500 ${
-              message.type === "user" ? "flex-row-reverse" : "flex-row"
-            }`}
-          >
-            {/* Avatar */}
-            <div className={`shrink-0 mt-1 ${message.type === "user" ? "ml-3" : "mr-3"}`}>
-              {message.type === "bot" ? (
-                <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center shadow-lg group hover:border-indigo-500/50 transition-colors">
-                  <Bot className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
+      {/* ── Messages ── */}
+      <div ref={chatContainerRef} className="cashmap-messages custom-scrollbar">
+        <div className="cashmap-messages-inner">
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`cashmap-msg cashmap-msg--${msg.type} msg-enter`}
+              style={{ animationDelay: `${Math.min(i * 40, 300)}ms` }}
+            >
+              {/* Bot avatar */}
+              {msg.type === "bot" && (
+                <div className="cashmap-avatar cashmap-avatar--bot">
+                  <Sparkles className="w-4 h-4" />
                 </div>
-              ) : (
-                <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl overflow-hidden border border-white/10 shadow-lg p-0.5 bg-zinc-900 group">
+              )}
+
+              {/* Content */}
+              <div
+                className={`cashmap-msg-content ${msg.type === "user" ? "cashmap-msg-content--user" : ""
+                  }`}
+              >
+                {msg.content === "__TYPING__" ? (
+                  <TypingIndicator />
+                ) : msg.type === "bot" && i === animatingIdx ? (
+                  <TypewriterText
+                    text={msg.content}
+                    speed={14}
+                    onComplete={() => setAnimatingIdx(null)}
+                  />
+                ) : msg.type === "bot" ? (
+                  <div className="cashmap-markdown">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <div style={{ whiteSpace: "pre-line" }}>{msg.content}</div>
+                )}
+
+                {/* Copy button for bot messages */}
+                {msg.type === "bot" && msg.content !== "__TYPING__" && (
+                  <div className="cashmap-copy-row">
+                    <button
+                      className="cashmap-copy-btn"
+                      onClick={() => handleCopy(msg.content, i)}
+                      title="Copy response"
+                    >
+                      {copiedIdx === i ? (
+                        <><Check className="w-3.5 h-3.5" /> <span>Copied</span></>
+                      ) : (
+                        <><Copy className="w-3.5 h-3.5" /> <span>Copy</span></>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* User avatar */}
+              {msg.type === "user" && (
+                <div className="cashmap-avatar cashmap-avatar--user">
                   <img
                     src={profilePhotoUrl || userIcon}
-                    alt="User"
-                    className="w-full h-full rounded-[10px] object-cover group-hover:scale-110 transition-transform"
+                    alt="You"
+                    className="cashmap-avatar-img"
                   />
                 </div>
               )}
             </div>
+          ))}
 
-            {/* Bubble Content */}
-            <div className={`relative flex flex-col ${message.type === "user" ? "items-end max-w-[80%] md:max-w-[75%]" : "items-start max-w-[80%] md:max-w-[80%]"}`}>
-              <div
-                className={`group relative overflow-hidden px-4 md:px-5 py-3 md:py-4 rounded-2xl shadow-2xl transition-all duration-300 border ${
-                  message.type === "user"
-                    ? "bg-indigo-600 border-indigo-500/30 text-white rounded-tr-none"
-                    : "bg-zinc-900/60 backdrop-blur-md border-white/5 text-zinc-100 rounded-tl-none"
-                }`}
-              >
-                {/* Subtle sheen effect for user messages */}
-                {message.type === "user" && (
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
-                )}
-
-                {/* Content Rendering */}
-                {message.type === "bot" ? (
-                  <div className="markdown-content">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {message.content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="text-sm md:text-[15px] leading-relaxed relative z-10 whitespace-pre-line">{message.content}</div>
-                )}
-
-                {/* Utility buttons for Bot messages */}
-                {message.type === "bot" && message.content !== "I'm analyzing your spending patterns and will provide insights shortly..." && (
-                  <div className="mt-4 pt-3 border-t border-white/5 flex items-center gap-4">
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(message.content);
-                        toast.success("Copied to clipboard");
-                      }}
-                      className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-bold text-zinc-500 hover:text-indigo-400 transition-colors"
-                    >
-                      <Copy className="w-3 h-3" />
-                      Copy text
-                    </button>
-                    <span className="text-[10px] text-zinc-600 uppercase tracking-widest font-mono">FairAI Engine v2.0</span>
-                  </div>
-                )}
-              </div>
-              
-              {/* Copy button for user messages (Overlay Style) */}
-              {message.type === "user" && (
+          {/* Suggestion chips */}
+          {showSuggestions && (
+            <div className="cashmap-suggestions">
+              {SUGGESTIONS.map((s, i) => (
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(message.content);
-                    toast.success("Message copied");
-                  }}
-                  className="mt-1 flex items-center gap-1 text-[10px] text-zinc-600 hover:text-indigo-400 transition-colors uppercase font-bold tracking-tighter"
+                  key={i}
+                  className="cashmap-chip"
+                  onClick={() => handleSuggestion(s.label)}
                 >
-                  <Copy className="w-2.5 h-2.5" />
-                  Copy
+                  {s.icon}
+                  <span>{s.label}</span>
                 </button>
-              )}
+              ))}
             </div>
-          </div>
-        ))}
-      </main>
-
-      {/* --- FLOATING SCROLL BUTTON --- */}
-      {!isAtBottom && (
-        <div className="absolute bottom-28 md:bottom-36 right-6 md:right-10 z-40">
-          <button
-            onClick={scrollToBottom}
-            className="w-10 h-10 md:w-12 md:h-12 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white rounded-full shadow-2xl border border-white/10 transition-all active:scale-95 group"
-          >
-            <ArrowDown className="h-5 w-5 mx-auto text-zinc-400 group-hover:text-white group-hover:translate-y-0.5 transition-all" />
-          </button>
+          )}
         </div>
-      )}
+      </div >
 
-      {/* --- INPUT AREA --- */}
-      <footer className="p-4 md:p-6 border-t border-white/5 backdrop-blur-2xl bg-zinc-900/60 z-30 shrink-0 relative overflow-hidden">
-        {/* Progress indicator glow */}
-        {isWaitingForResponse && (
-          <div className="absolute top-0 left-0 h-[2px] bg-indigo-500 animate-[loading_2s_infinite]"></div>
-        )}
-        
-        <form onSubmit={handleSend} className="max-w-4xl mx-auto flex gap-3 md:gap-4 items-end">
-          <div className="flex-1 relative group">
+      {/* ── Scroll-to-bottom FAB ── */}
+      {
+        !isAtBottom && (
+          <button className="cashmap-scroll-fab" onClick={scrollToBottom}>
+            <ArrowDown className="w-4 h-4" />
+          </button>
+        )
+      }
+
+      {/* ── Input bar ── */}
+      <div className="cashmap-input-bar">
+        <form onSubmit={handleSend} className="cashmap-input-form">
+          <div className="cashmap-input-wrap">
             <textarea
-              rows="1"
+              ref={textareaRef}
+              rows={1}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -398,174 +526,520 @@ function CashMapAI() {
               }}
               placeholder={
                 dailyCount >= 10
-                  ? "Daily limit reached..."
+                  ? "Query limit reached for today"
                   : isWaitingForResponse
-                  ? "Processing context..."
-                  : "How is my spending this week?"
+                    ? "Waiting for response…"
+                    : "Ask about your finances…"
               }
-              className={`w-full bg-zinc-800/50 border border-white/5 rounded-2xl px-4 py-3.5 pr-12 text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all shadow-inner placeholder-zinc-600 text-sm md:text-base resize-none max-h-[150px] overflow-hidden custom-scrollbar ${
-                (dailyCount >= 10 || isWaitingForResponse) && "opacity-50 cursor-not-allowed"
-              }`}
+              className="cashmap-textarea"
               disabled={dailyCount >= 10 || isWaitingForResponse}
-              onInput={(e) => {
-                e.target.style.height = 'auto';
-                const scHeight = e.target.scrollHeight;
-                e.target.style.height = scHeight + 'px';
-                if (scHeight > 150) {
-                  e.target.style.overflowY = 'auto';
-                } else {
-                  e.target.style.overflowY = 'hidden';
-                }
-              }}
             />
-            {/* Character count or extra hint could go here */}
+            <button
+              type="submit"
+              className={`cashmap-send ${!input.trim() || dailyCount >= 10 || isWaitingForResponse
+                ? "cashmap-send--disabled"
+                : ""
+                }`}
+              disabled={
+                !input.trim() || dailyCount >= 10 || isWaitingForResponse
+              }
+            >
+              {isWaitingForResponse ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+            </button>
           </div>
-
-          <button
-            type="submit"
-            className={`shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-2xl transition-all duration-300 shadow-xl flex items-center justify-center border ${
-              dailyCount >= 10 || isWaitingForResponse
-                ? "bg-zinc-800 border-white/5 text-zinc-600 cursor-not-allowed"
-                : "bg-indigo-600 border-indigo-500/50 text-white hover:bg-indigo-500 hover:scale-[1.02] active:scale-95 shadow-indigo-500/20"
-            }`}
-            disabled={dailyCount >= 10 || isWaitingForResponse}
-          >
-            {isWaitingForResponse ? (
-              <Loader2 className="h-5 w-5 md:h-6 md:w-6 animate-spin" />
-            ) : (
-              <Send className="h-5 w-5 md:h-6 md:w-6" />
-            )}
-          </button>
+          <p className="cashmap-disclaimer">
+            Fair AI can make mistakes. Verify important financial info.
+          </p>
         </form>
-        
+
         <div className="mt-3 text-[9px] md:text-[10px] text-center text-zinc-600 uppercase tracking-widest font-medium">
           Powered by FairAI Intelligence • Secure Financial Node
         </div>
-      </footer>
+      </div>
 
+      {/* ═══ STYLES ═══ */}
       <style>{`
-        @keyframes loading {
-          0% { width: 0; left: 0; }
-          50% { width: 40%; left: 30%; }
-          100% { width: 0; left: 100%; }
-        }
+        /* ── GOOGLE FONT ── */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        /* Premium Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { 
-          width: 6px; 
-        }
-        .custom-scrollbar::-webkit-scrollbar-track { 
-          background: rgba(255, 255, 255, 0.02); 
-          border-radius: 10px;
-          margin: 4px 0;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb { 
-          background: rgba(99, 102, 241, 0.2); /* Indigo-500 with low opacity */
-          border-radius: 10px; 
-          border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
-          background: rgba(99, 102, 241, 0.4); 
-        }
-        
-        /* Firefox support */
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(99, 102, 241, 0.2) rgba(255, 255, 255, 0.02);
-        }
-
-        /* Markdown Professional Styling */
-        .markdown-content {
-          font-size: 0.9rem;
-          line-height: 1.6;
+        /* ── ROOT ── */
+        .cashmap-root {
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          height: 100dvh;
+          background: #0a0a0f;
           color: #e4e4e7;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          position: relative;
+          overflow: hidden;
         }
 
-        @media (min-width: 768px) {
-          .markdown-content { font-size: 0.95rem; }
+        /* ── MARKDOWN STYLES ── */
+        .cashmap-markdown {
+          font-family: inherit;
+          line-height: 1.5;
+        }
+        .cashmap-markdown > :first-child { margin-top: 0; }
+        .cashmap-markdown p { margin-bottom: 0.75rem; }
+        .cashmap-markdown p:last-child { margin-bottom: 0; }
+        .cashmap-markdown h1, .cashmap-markdown h2, .cashmap-markdown h3, .cashmap-markdown h4 {
+          font-weight: 600;
+          margin-top: 1.25rem;
+          margin-bottom: 0.5rem;
+          color: #fff;
+        }
+        .cashmap-markdown h1 { font-size: 1.25rem; }
+        .cashmap-markdown h2 { font-size: 1.1rem; }
+        .cashmap-markdown h3 { font-size: 1rem; }
+        .cashmap-markdown ul {
+          list-style-type: disc;
+          padding-left: 1.5rem;
+          margin-bottom: 0.75rem;
+        }
+        .cashmap-markdown ol {
+          list-style-type: decimal;
+          padding-left: 1.5rem;
+          margin-bottom: 0.75rem;
+        }
+        .cashmap-markdown li { margin-bottom: 0.25rem; }
+        .cashmap-markdown strong { font-weight: 700; color: #fff; }
+        .cashmap-markdown a { color: #6366f1; text-decoration: underline; }
+        
+        .typewriter-cursor {
+          display: inline-block;
+          width: 2px;
+          height: 1em;
+          background-color: currentColor;
+          animation: blink 1s step-end infinite;
+          vertical-align: text-bottom;
+          margin-left: 2px;
         }
 
-        .markdown-content h2 {
-          font-size: 1.15rem;
-          font-weight: 700;
-          margin: 1.5rem 0 0.75rem;
-          color: #818cf8;
+        /* ── BACKGROUND ── */
+        .cashmap-bg {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          overflow: hidden;
+        }
+        .cashmap-bg-orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(100px);
+          opacity: 0.12;
+        }
+        .cashmap-bg-orb--1 {
+          width: 500px; height: 500px;
+          background: #6366f1;
+          top: -120px; left: -100px;
+          animation: orbFloat 12s ease-in-out infinite alternate;
+        }
+        .cashmap-bg-orb--2 {
+          width: 400px; height: 400px;
+          background: #06b6d4;
+          bottom: -60px; right: -80px;
+          animation: orbFloat 14s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes orbFloat {
+          0%   { transform: translate(0, 0) scale(1); }
+          100% { transform: translate(30px, -20px) scale(1.08); }
+        }
+
+        /* ── HEADER ── */
+        .cashmap-header {
+          position: sticky;
+          top: 0;
+          z-index: 30;
+          backdrop-filter: blur(16px) saturate(1.4);
+          -webkit-backdrop-filter: blur(16px) saturate(1.4);
+          background: rgba(10, 10, 15, 0.75);
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .cashmap-header-inner {
+          max-width: 820px;
+          margin: 0 auto;
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          justify-content: space-between;
+          padding: 12px 20px;
         }
-        
-        .markdown-content h2::before {
-          content: "";
-          display: inline-block;
-          width: 4px;
-          height: 16px;
-          background: #6366f1;
-          border-radius: 2px;
+        .cashmap-back {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: #a1a1aa;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+          transition: color 0.2s;
         }
-        
-        .markdown-content p { margin-bottom: 0.75rem; }
-        
-        .markdown-content strong {
+        .cashmap-back:hover { color: #fff; }
+
+        .cashmap-brand {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .cashmap-brand-icon {
+          width: 32px; height: 32px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #6366f1, #06b6d4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
           color: #fff;
+        }
+        .cashmap-brand-text {
+          font-weight: 800;
+          font-size: 19px;
+          color: #f4f4f5;
+          letter-spacing: -0.02em;
+        }
+        .cashmap-brand-text span {
+          background: linear-gradient(135deg, #818cf8, #22d3ee);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .cashmap-query-badge {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 12px;
           font-weight: 600;
+          padding: 5px 10px;
+          border-radius: 20px;
+          background: rgba(34, 211, 238, 0.1);
+          color: #22d3ee;
+          border: 1px solid rgba(34, 211, 238, 0.15);
         }
-        
-        .markdown-content ul, .markdown-content ol {
-          margin: 0.75rem 0 0.75rem 1.25rem;
-          list-style-type: none;
-        }
-        
-        .markdown-content li {
-          position: relative;
-          padding-left: 1.25rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .markdown-content ul li::before {
-          content: "•";
-          position: absolute;
-          left: 0;
-          color: #6366f1;
-          font-weight: bold;
-        }
-        
-        .markdown-content code {
-          background-color: rgba(63, 66, 241, 0.15);
-          color: #a5b4fc;
-          padding: 0.1rem 0.3rem;
-          border-radius: 4px;
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 0.85em;
-          border: 1px solid rgba(99, 102, 241, 0.2);
-        }
-        
-        .markdown-content pre {
-          background-color: rgba(0, 0, 0, 0.3);
-          padding: 1rem;
-          border-radius: 12px;
-          overflow-x: auto;
-          margin: 1rem 0;
-          border: 1px solid rgba(255, 255, 255, 0.05);
+        .cashmap-query-badge--limit {
+          background: rgba(239, 68, 68, 0.1);
+          color: #f87171;
+          border-color: rgba(239, 68, 68, 0.2);
         }
 
-        .markdown-content hr {
+        /* ── MESSAGES AREA ── */
+        .cashmap-messages {
+          flex: 1;
+          overflow-y: auto;
+          z-index: 10;
+          padding: 24px 16px 16px;
+        }
+        .cashmap-messages-inner {
+          max-width: 820px;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
+        /* ── SINGLE MESSAGE ── */
+        .cashmap-msg {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          line-height: 1.7;
+          font-size: 15px;
+        }
+        .cashmap-msg--user {
+          justify-content: flex-end;
+        }
+        .cashmap-msg--bot {
+          justify-content: flex-start;
+        }
+
+        /* ── AVATAR ── */
+        .cashmap-avatar {
+          width: 32px; height: 32px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-top: 2px;
+        }
+        .cashmap-avatar--bot {
+          background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(6,182,212,0.2));
+          border: 1px solid rgba(99,102,241,0.25);
+          color: #818cf8;
+        }
+        .cashmap-avatar--user {
+          background: rgba(99,102,241,0.15);
+          border: 1px solid rgba(99,102,241,0.25);
+          overflow: hidden;
+        }
+        .cashmap-avatar-img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+          border-radius: 50%;
+        }
+
+        /* ── MESSAGE CONTENT ── */
+        .cashmap-msg-content {
+          max-width: 85%;
+          color: #d4d4d8;
+          font-weight: 400;
+          background: rgba(24, 24, 30, 0.7);
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          border-radius: 16px;
+          padding: 14px 18px;
+        }
+        .cashmap-msg-content--user {
+          background: linear-gradient(135deg, #4f46e5, #6366f1);
+          color: #fff;
+          padding: 10px 18px;
+          border-radius: 20px 20px 4px 20px;
+          font-weight: 500;
+          max-width: 75%;
+          box-shadow: 0 2px 12px rgba(79,70,229,0.25);
+        }
+
+        /* ── COPY BUTTON ── */
+        .cashmap-copy-row {
+          display: flex;
+          justify-content: flex-start;
+          margin-top: 8px;
+          padding-top: 6px;
+          border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        .cashmap-copy-btn {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 4px 10px;
+          border-radius: 8px;
           border: none;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-          margin: 1.5rem 0;
+          background: transparent;
+          color: #71717a;
+          font-size: 12px;
+          font-weight: 500;
+          font-family: inherit;
+          cursor: pointer;
+          transition: all 0.2s;
         }
-
-        .markdown-content blockquote {
-          background: rgba(99, 102, 241, 0.05);
-          border-left: 2px solid #6366f1;
-          padding: 0.75rem 1rem;
-          margin: 1rem 0;
-          border-radius: 0 8px 8px 0;
-          font-style: italic;
+        .cashmap-copy-btn:hover {
+          background: rgba(255,255,255,0.06);
           color: #a1a1aa;
         }
+        .cashmap-copy-btn:active {
+          transform: scale(0.95);
+        }
+
+        /* ── MESSAGE ENTER ANIMATION ── */
+        @keyframes msgSlideIn {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .msg-enter {
+          animation: msgSlideIn 0.35s ease-out both;
+        }
+
+        /* ── TYPEWRITER CURSOR ── */
+        .typewriter-cursor {
+          display: inline-block;
+          color: #818cf8;
+          font-weight: 300;
+          animation: cursorBlink 0.6s steps(2) infinite;
+          margin-left: 1px;
+        }
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+
+        /* ── TYPING INDICATOR ── */
+        .typing-indicator {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 4px 0;
+        }
+        .typing-indicator span {
+          width: 8px; height: 8px;
+          border-radius: 50%;
+          background: #6366f1;
+          animation: dotBounce 1.4s ease-in-out infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotBounce {
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+          40% { transform: translateY(-8px); opacity: 1; }
+        }
+
+        /* ── SUGGESTION CHIPS ── */
+        .cashmap-suggestions {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+          margin-top: 8px;
+          padding-left: 44px; /* align with bot text */
+        }
+        @media (max-width: 480px) {
+          .cashmap-suggestions {
+            grid-template-columns: 1fr;
+            padding-left: 0;
+          }
+        }
+        .cashmap-chip {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 16px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 14px;
+          color: #a1a1aa;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          text-align: left;
+        }
+        .cashmap-chip:hover {
+          background: rgba(255,255,255,0.08);
+          border-color: rgba(129,140,248,0.3);
+          color: #e4e4e7;
+          transform: translateY(-1px);
+        }
+        .cashmap-chip:active {
+          transform: scale(0.97);
+        }
+
+        /* ── SCROLL FAB ── */
+        .cashmap-scroll-fab {
+          position: fixed;
+          bottom: 120px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 25;
+          width: 36px; height: 36px;
+          border-radius: 50%;
+          background: rgba(24, 24, 27, 0.85);
+          border: 1px solid rgba(255,255,255,0.1);
+          color: #a1a1aa;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          backdrop-filter: blur(8px);
+          transition: all 0.2s;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        .cashmap-scroll-fab:hover {
+          background: rgba(39,39,42,0.95);
+          color: #fff;
+          border-color: rgba(255,255,255,0.2);
+        }
+
+        /* ── INPUT BAR ── */
+        .cashmap-input-bar {
+          z-index: 30;
+          padding: 12px 16px calc(env(safe-area-inset-bottom, 8px) + 12px);
+          background: rgba(10, 10, 15, 0.8);
+          backdrop-filter: blur(16px) saturate(1.4);
+          -webkit-backdrop-filter: blur(16px) saturate(1.4);
+          border-top: 1px solid rgba(255,255,255,0.05);
+          padding-bottom: calc(env(safe-area-inset-bottom, 8px) + 80px);
+        }
+        @media (min-width: 768px) {
+          .cashmap-input-bar {
+            padding-bottom: 16px;
+          }
+        }
+        .cashmap-input-form {
+          max-width: 820px;
+          margin: 0 auto;
+        }
+        .cashmap-input-wrap {
+          display: flex;
+          align-items: flex-end;
+          gap: 0;
+          background: rgba(24, 24, 27, 0.7);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px;
+          padding: 4px 4px 4px 16px;
+          transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .cashmap-input-wrap:focus-within {
+          border-color: rgba(99,102,241,0.4);
+          box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+        }
+
+        .cashmap-textarea {
+          flex: 1;
+          background: transparent;
+          border: none;
+          outline: none;
+          color: #e4e4e7;
+          font-family: inherit;
+          font-size: 14px;
+          padding: 10px 0;
+          resize: none;
+          max-height: 150px;
+          line-height: 1.5;
+        }
+        .cashmap-textarea::placeholder {
+          color: #52525b;
+        }
+        .cashmap-textarea:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .cashmap-send {
+          width: 40px; height: 40px;
+          border-radius: 12px;
+          border: none;
+          background: linear-gradient(135deg, #6366f1, #4f46e5);
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: all 0.2s;
+        }
+        .cashmap-send:hover {
+          filter: brightness(1.15);
+          transform: scale(1.04);
+        }
+        .cashmap-send:active {
+          transform: scale(0.95);
+        }
+        .cashmap-send--disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+          pointer-events: none;
+        }
+
+        .cashmap-disclaimer {
+          text-align: center;
+          font-size: 11px;
+          color: #3f3f46;
+          margin-top: 8px;
+        }
+
+        /* ── SCROLLBAR ── */
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.08);
+          border-radius: 10px;
+        }
+        .custom-scrollbar.show-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.15);
+        }
       `}</style>
-    </div>
+    </div >
   );
 }
 
