@@ -241,7 +241,7 @@ const userLogin = async (req, res) => {
   }
 };
 
-//Get all expenses for a user (cursor-based pagination + search)
+//Get all expenses for a user (cursor-based pagination + search + filters)
 const getAllExpensesForUser = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -253,10 +253,23 @@ const getAllExpensesForUser = async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit || "20", 10), 50);
     const cursor = req.query.cursor ? new Date(req.query.cursor) : null;
     const search = req.query.search ? req.query.search.trim() : "";
+    const filter = req.query.filter || ""; // "personal" or ""
+    const groupIds = req.query.groupIds ? req.query.groupIds.split(",").filter(Boolean) : [];
 
     const baseFilter = {
       $or: [{ paidBy: userId }, { "owedBy.user": userId }],
     };
+
+    // Filter: personal expenses only (no owedBy entries)
+    if (filter === "personal") {
+      baseFilter.owedBy = { $size: 0 };
+      baseFilter.$or = [{ paidBy: userId }];
+    }
+
+    // Filter: specific groups/trips
+    if (groupIds.length > 0) {
+      baseFilter.group = { $in: groupIds };
+    }
 
     // Add search filter if provided
     if (search) {

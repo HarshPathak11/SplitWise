@@ -3,7 +3,8 @@ import {
     getUserFriendExpenses,
     createPersonalExpense,
     getPersonalExpenses,
-    deletePersonalExpense
+    deletePersonalExpense,
+    updatePersonalExpense
 } from '../controllers/expenses.js';
 import { auth } from '../middleware/auth.js';
 
@@ -13,6 +14,7 @@ const router = express.Router();
 router.post('/personal', auth, createPersonalExpense);
 router.get('/personal', auth, getPersonalExpenses);
 router.delete('/personal/:id', auth, deletePersonalExpense);
+router.put('/personal/:id', auth, updatePersonalExpense);
 
 // Friend Expense Routes
 router.get('/:currentUserId/:friendId', auth, getUserFriendExpenses);

@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import api from "../utils/api";
 import { toast } from "react-hot-toast";
 import {
   IndianRupee,
   Trash2,
   Plus,
-  Filter,
   Receipt,
   Mic,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -26,7 +26,9 @@ const PersonalExpense = () => {
     }),
   });
   const [errors, setErrors] = useState({});
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // holds expense to confirm delete
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [editExpense, setEditExpense] = useState(null);
+  const [editForm, setEditForm] = useState({ description: "", amount: "", date: "", time: "" });
   const [isListening, setIsListening] = useState(false);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const recognitionRef = useRef(null);
@@ -108,6 +110,40 @@ const PersonalExpense = () => {
       toast.error("Failed to delete expense");
     } finally {
       setDeleteConfirm(null);
+    }
+  };
+
+  const openEdit = (expense) => {
+    const d = new Date(expense.date);
+    setEditExpense(expense);
+    setEditForm({
+      description: expense.title || expense.description || "",
+      amount: expense.amount.toString(),
+      date: d.toLocaleDateString("en-CA"),
+      time: d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+    });
+  };
+
+  const saveEditExpense = async () => {
+    if (!editExpense) return;
+    if (!editForm.description.trim() || !editForm.amount || parseFloat(editForm.amount) <= 0) {
+      toast.error("Please fill description and a valid amount");
+      return;
+    }
+    try {
+      const combinedDate = new Date(`${editForm.date}T${editForm.time}`);
+      const { data } = await api.put(`/expenses/personal/${editExpense._id}`, {
+        description: editForm.description,
+        amount: parseFloat(editForm.amount),
+        date: combinedDate,
+      });
+      setExpenses(expenses.map((e) => (e._id === data._id ? data : e)));
+      toast.success("Expense updated!");
+    } catch (error) {
+      console.error("Error updating expense:", error);
+      toast.error("Failed to update expense");
+    } finally {
+      setEditExpense(null);
     }
   };
 
@@ -494,18 +530,25 @@ const PersonalExpense = () => {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-4">
-                            <p className="text-lg font-bold text-white">
-                              ₹{expense.amount.toFixed(2)}
-                            </p>
-                            <button
-                              onClick={() => confirmDelete(expense)}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 transition-all hover:bg-red-500/20"
-                              title="Delete Expense"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-lg font-bold text-white">
+                                ₹{expense.amount.toFixed(2)}
+                              </p>
+                              <button
+                                onClick={() => openEdit(expense)}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 transition-all hover:bg-indigo-500/20"
+                                title="Edit Expense"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => confirmDelete(expense)}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 transition-all hover:bg-red-500/20"
+                                title="Delete Expense"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                         </motion.div>
                       );
                     })}
@@ -560,6 +603,91 @@ const PersonalExpense = () => {
                   className="flex-1 px-4 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-all text-sm font-medium"
                 >
                   Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Expense Modal */}
+      <AnimatePresence>
+        {editExpense && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setEditExpense(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-indigo-500/20 rounded-full flex items-center justify-center">
+                  <Pencil className="w-5 h-5 text-indigo-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Edit Expense</h3>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider">Description</label>
+                  <input
+                    type="text"
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                    className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider">Amount</label>
+                  <input
+                    type="number"
+                    value={editForm.amount}
+                    onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                    className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm text-white"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <label className="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider">Date</label>
+                    <input
+                      type="date"
+                      value={editForm.date}
+                      onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                      className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm text-zinc-300 [color-scheme:dark]"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider">Time</label>
+                    <input
+                      type="time"
+                      value={editForm.time}
+                      onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+                      className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm text-zinc-300 [color-scheme:dark]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => setEditExpense(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-zinc-800 border border-white/10 text-zinc-300 hover:bg-zinc-700 transition-all text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveEditExpense}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 transition-all text-sm font-medium"
+                >
+                  Save Changes
                 </button>
               </div>
             </motion.div>

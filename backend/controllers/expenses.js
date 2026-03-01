@@ -146,9 +146,35 @@ const deletePersonalExpense = async (req, res) => {
   }
 };
 
+const updatePersonalExpense = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { description, amount, date } = req.body;
+
+    const expense = await Expense.findOne({ _id: id, paidBy: userId, owedBy: { $size: 0 } });
+
+    if (!expense) {
+      return res.status(404).json({ message: "Expense not found or unauthorized" });
+    }
+
+    if (description !== undefined) expense.title = description;
+    if (amount !== undefined) expense.amount = parseFloat(Number(amount).toFixed(2));
+    if (date !== undefined) expense.date = new Date(date);
+
+    await expense.save();
+
+    res.status(200).json(expense);
+  } catch (error) {
+    console.error("Error updating personal expense:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export {
   getUserFriendExpenses,
   createPersonalExpense,
   getPersonalExpenses,
-  deletePersonalExpense
+  deletePersonalExpense,
+  updatePersonalExpense
 };
