@@ -36,6 +36,7 @@ const ProfileEnhanced = () => {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedAvatarPath, setSelectedAvatarPath] = useState(null); // public path for predefined avatars
   const [isHoveringPhoto, setIsHoveringPhoto] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
@@ -148,34 +149,18 @@ const ProfileEnhanced = () => {
       return;
     }
     setFile(selected);
+    setSelectedAvatarPath(null); // custom upload overrides predefined avatar
     const reader = new FileReader();
     reader.onload = (ev) => setPreview(ev.target?.result);
     reader.readAsDataURL(selected);
   };
 
-  const handleAvatarSelect = async (avatarPath) => {
-    try {
-      const response = await fetch(avatarPath);
-      const blob = await response.blob();
-      const file = new File([blob], "avatar.jpeg", { type: "image/jpeg" });
-      
-      setFile(file);
-      const reader = new FileReader();
-      reader.onload = (ev) => setPreview(ev.target?.result);
-      reader.readAsDataURL(file);
-      
-      // Optional: Automatically upload when selected? 
-      // For now, let's just set it as the file to be uploaded when they click "Update Profile"
-      // or we can simulate the upload immediately if preferred. 
-      // The user request didn't specify immediate upload, but typical "choose avatar" flows might expect it.
-      // However, the current flow requires hitting "Update Profile" to save changes (including photo).
-      // So setting `file` state is consistent with existing behavior.
-      toast.success("Avatar selected! Click 'Update Profile' to save.");
-
-    } catch (error) {
-      console.error("Error loading avatar:", error);
-      toast.error("Failed to load avatar");
-    }
+  const handleAvatarSelect = (avatarSrc, publicPath) => {
+    // Use the public path directly — no Cloudinary upload needed for predefined avatars
+    setSelectedAvatarPath(publicPath);
+    setFile(null); // clear any custom file upload
+    setPreview(avatarSrc);
+    toast.success("Avatar selected! Click 'Update Profile' to save.");
   };
 
   const saveProfileFields = async (userId) => {
@@ -184,14 +169,19 @@ const ProfileEnhanced = () => {
       toast.error("Username cannot be empty");
       return;
     }
+    const payload = {
+      username: profile.username,
+      upiId: profile.upiId,
+      gender: profile.gender,
+    };
+    // If a predefined avatar was selected, include it so the backend saves it directly
+    if (selectedAvatarPath) {
+      payload.avatarUrl = selectedAvatarPath;
+    }
     return authFetch(`${API_BASE}/user/${userId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: profile.username,
-        upiId: profile.upiId,
-        gender: profile.gender,
-      }),
+      body: JSON.stringify(payload),
     });
   };
 
@@ -231,7 +221,8 @@ const ProfileEnhanced = () => {
       const data = await response.json();
       let fetchedUser = data.user;
 
-      if (file) {
+      // Only upload to Cloudinary if a custom file was selected (not a predefined avatar)
+      if (file && !selectedAvatarPath) {
         try {
           const photoResp = await uploadPhoto(userId);
           if (photoResp?.ok) {

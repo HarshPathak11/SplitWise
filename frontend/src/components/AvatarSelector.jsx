@@ -12,8 +12,21 @@ import f3 from "../assets/avatars/Female/3.jpeg";
 import f4 from "../assets/avatars/Female/4.jpeg";
 
 const AvatarSelector = ({ gender, setGender, onSelectAvatar }) => {
-  const maleAvatars = [m1, m2, m3, m4, m5];
-  const femaleAvatars = [f1, f2, f3, f4];
+  // Each avatar has a `src` (Vite-processed for display) and a `publicPath`
+  // (served from /public, used to save directly as profilePhotoUrl without Cloudinary)
+  const maleAvatars = [
+    { src: m1, publicPath: "/Avatars/Male/1.jpeg" },
+    { src: m2, publicPath: "/Avatars/Male/2.jpeg" },
+    { src: m3, publicPath: "/Avatars/Male/3.jpeg" },
+    { src: m4, publicPath: "/Avatars/Male/4.jpeg" },
+    { src: m5, publicPath: "/Avatars/Male/5.jpeg" },
+  ];
+  const femaleAvatars = [
+    { src: f1, publicPath: "/Avatars/Female/1.jpeg" },
+    { src: f2, publicPath: "/Avatars/Female/2.jpeg" },
+    { src: f3, publicPath: "/Avatars/Female/3.jpeg" },
+    { src: f4, publicPath: "/Avatars/Female/4.jpeg" },
+  ];
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -50,15 +63,15 @@ const AvatarSelector = ({ gender, setGender, onSelectAvatar }) => {
         {(gender === "Male" ||
           gender === "Do not disclose" ||
           !gender) &&
-          maleAvatars.map((path, i) => (
+          maleAvatars.map((avatar, i) => (
             <button
               key={`male-${i}`}
               type="button"
-              onClick={() => onSelectAvatar(path)}
+              onClick={() => onSelectAvatar(avatar.src, avatar.publicPath)}
               className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-transparent hover:border-indigo-500 hover:scale-110 transition-all duration-300 group"
             >
               <img
-                src={path}
+                src={avatar.src}
                 alt={`Male Avatar ${i + 1}`}
                 className="w-full h-full object-cover"
               />
@@ -69,15 +82,15 @@ const AvatarSelector = ({ gender, setGender, onSelectAvatar }) => {
         {(gender === "Female" ||
           gender === "Do not disclose" ||
           !gender) &&
-          femaleAvatars.map((path, i) => (
+          femaleAvatars.map((avatar, i) => (
             <button
               key={`female-${i}`}
               type="button"
-              onClick={() => onSelectAvatar(path)}
+              onClick={() => onSelectAvatar(avatar.src, avatar.publicPath)}
               className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-transparent hover:border-fuchsia-500 hover:scale-110 transition-all duration-300 group"
             >
               <img
-                src={path}
+                src={avatar.src}
                 alt={`Female Avatar ${i + 1}`}
                 className="w-full h-full object-cover"
               />

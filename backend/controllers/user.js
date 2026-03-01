@@ -707,17 +707,31 @@ const updateUserProfile = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    const { username, upiId, gender } = req.body;
+    const { username, upiId, gender, avatarUrl } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID" });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(userId, {
-      username,
-      upiId,
-      gender,
-    });
+    const updateFields = { username, upiId, gender };
+
+    // If a predefined avatar URL was sent, save it directly as profilePhotoUrl
+    // This avoids uploading to Cloudinary for built-in avatars
+    if (avatarUrl) {
+      // Delete previous Cloudinary image if it exists
+      const existingUser = await User.findById(userId);
+      if (existingUser?.profilePhotoId) {
+        try {
+          await cloudinary.uploader.destroy(existingUser.profilePhotoId);
+        } catch (err) {
+          console.warn("Failed to delete previous Cloudinary image:", err.message);
+        }
+      }
+      updateFields.profilePhotoUrl = avatarUrl;
+      updateFields.profilePhotoId = null; // no Cloudinary asset for predefined avatars
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateFields, { new: true, select: "-password" });
 
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
