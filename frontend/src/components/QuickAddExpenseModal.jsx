@@ -62,7 +62,8 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
             const userId = Cookies.get("id");
             const response = await api.post("/ai/parse-expense", {
                 prompt: query,
-                userId: userId
+                userId: userId,
+                context: "group_quick",
             });
 
             if (response.status === 200) {
