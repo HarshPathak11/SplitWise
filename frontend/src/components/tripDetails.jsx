@@ -248,7 +248,7 @@ const TripDetails = () => {
     localStorage.removeItem("currentGroup");
 
     // Navigate back to the dashboard
-    navigate("/dash");
+    navigate(-1);
   };
 
   const HandleLeaveGroup = async () => {
@@ -355,7 +355,7 @@ const TripDetails = () => {
           >
             <ArrowLeft className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" />
             <span className="text-sm font-medium text-zinc-400 group-hover:text-white transition-colors">
-              Dashboard
+              Back
             </span>
           </button>
 

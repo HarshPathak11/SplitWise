@@ -30,6 +30,9 @@ const PUBLIC_ROUTES = [
   "/forgot-password",
   "/documentation",
   "/transaction-history",
+  "/tripDetails",
+  "/add-expense",
+  "/expense/edit"
 ];
 
 const isPublicRoute = (pathname) => {
@@ -38,6 +41,7 @@ const isPublicRoute = (pathname) => {
   if (/^\/signup\/.+/.test(pathname)) return true;       // /signup/:referId
   if (/^\/public-profile\/.+/.test(pathname)) return true; // /public-profile/:userId
   if (/^\/transaction-history\/.+/.test(pathname)) return true; // /transaction-history/:id
+  if (/^\/tripDetails\/.+/.test(pathname)) return true; // /tripDetails/:id
   return false;
 };
 
