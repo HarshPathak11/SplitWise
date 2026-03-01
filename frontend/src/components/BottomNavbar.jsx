@@ -27,7 +27,7 @@ const NAV_ITEMS_LEFT = [
     label: "Trips",
     Icon: Compass,
     slotIndex: 2,
-    matchPrefixes: ["/allTrips", "/tripDetails", "/addTrip", "/add-members", "/remove-members"],
+    matchPrefixes: ["/allTrips", "/addTrip", "/add-members", "/remove-members"],
   },
 ];
 
