@@ -505,7 +505,7 @@ const TransactionHistory = () => {
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate("/dash")}
+              onClick={() => navigate(-1)}
               className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             >
               <svg
@@ -781,7 +781,7 @@ const TransactionHistory = () => {
       )}
 
       {/* --- COMMAND BAR (Input) --- */}
-      <div className="p-4 pb-24 md:pb-4 bg-zinc-950/80 backdrop-blur-xl border-t border-white/5 relative z-30">
+      <div className="p-4 bg-zinc-950/80 backdrop-blur-xl border-t border-white/5 relative z-30">
         <div className="max-w-3xl mx-auto flex flex-col gap-3">
           {/* Input Capsule */}
           <div className="flex items-center gap-3 p-1.5 bg-zinc-900 border border-white/10 rounded-2xl shadow-inner focus-within:border-indigo-500/50 transition-colors">

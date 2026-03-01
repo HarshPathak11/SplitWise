@@ -29,6 +29,7 @@ const PUBLIC_ROUTES = [
   "/features",
   "/forgot-password",
   "/documentation",
+  "/transaction-history",
 ];
 
 const isPublicRoute = (pathname) => {
@@ -36,6 +37,7 @@ const isPublicRoute = (pathname) => {
   // Dynamic public routes
   if (/^\/signup\/.+/.test(pathname)) return true;       // /signup/:referId
   if (/^\/public-profile\/.+/.test(pathname)) return true; // /public-profile/:userId
+  if (/^\/transaction-history\/.+/.test(pathname)) return true; // /transaction-history/:id
   return false;
 };
 

@@ -20,7 +20,7 @@ const NAV_ITEMS_LEFT = [
     label: "Friends",
     Icon: Users,
     slotIndex: 1,
-    matchPrefixes: ["/friends", "/addFriend", "/transaction-history"],
+    matchPrefixes: ["/friends", "/addFriend"],
   },
   {
     to: "/allTrips",
