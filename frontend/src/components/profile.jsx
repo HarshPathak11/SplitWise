@@ -269,7 +269,7 @@ ${profileLink}
 📧 Or use my email to add me manually:
 https://fair-fare-phi.vercel.app/addFriend
 
-Email:
+Username:
 ${user?.username}
 
 Let's split and share smarter with FairFare! 💸`;

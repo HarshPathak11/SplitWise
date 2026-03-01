@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
-import { FaArrowDown, FaBell, FaCopy } from "react-icons/fa";
+import { FaArrowDown, FaBell, FaCopy, FaShareAlt } from "react-icons/fa";
 import { Forward } from "lucide-react";
 import Cookies from "js-cookie";
 import api from "../utils/api";
@@ -150,6 +150,196 @@ const TransactionHistory = () => {
       }
     } catch (error) {
       console.error("Error sharing:", error);
+    }
+  };
+
+  const handleShareBalance = async () => {
+    const balanceText = netBalance >= 0
+      ? `Hi ${friendName.username} you owe me ₹${Math.abs(netBalance).toFixed(2)}`
+      : `Hi ${friendName.username} I owe you ₹${Math.abs(netBalance).toFixed(2)}`;
+    let shareText = `💰 Balance Update\n${balanceText}`;
+    if (netBalance >= 0) {
+      shareText += `\n\nPay to UPI: ${storedUser.upiId}`;
+    } else {
+      shareText += `\n\nPay to UPI: ${friendName.upiId}`;
+    }
+    shareText += `\n\n— Tracked on FairFare`;
+
+    // Build a premium screenshot card with pure inline styles (no Tailwind)
+    const isPositive = netBalance >= 0;
+    const accentColor = isPositive ? "#34d399" : "#fb7185";
+    const accentColorDim = isPositive ? "rgba(52,211,153,0.15)" : "rgba(251,113,133,0.15)";
+    const accentBorder = isPositive ? "rgba(52,211,153,0.25)" : "rgba(251,113,133,0.25)";
+
+    const container = document.createElement("div");
+    container.style.cssText = `
+      position: fixed; left: -9999px; top: 0; z-index: -1;
+      width: 420px; padding: 44px 40px 36px;
+      background: linear-gradient(165deg, #111113 0%, #0a0a0c 50%, #0d0d10 100%);
+      border-radius: 24px;
+      border: 1px solid ${accentBorder};
+      display: flex; flex-direction: column; align-items: center;
+      font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    `;
+
+    // Top accent line
+    const topLine = document.createElement("div");
+    topLine.style.cssText = `
+      width: 50px; height: 3px; border-radius: 3px;
+      background: ${accentColor}; margin-bottom: 28px; opacity: 0.6;
+    `;
+    container.appendChild(topLine);
+
+    // "NET POSITION" label
+    const label = document.createElement("div");
+    label.textContent = "NET POSITION";
+    label.style.cssText = `
+      font-size: 10px; font-weight: 700; letter-spacing: 4px;
+      color: #52525b; margin-bottom: 16px; text-transform: uppercase;
+    `;
+    container.appendChild(label);
+
+    // Amount
+    const amountEl = document.createElement("div");
+    const sign = isPositive ? "+" : "-";
+    amountEl.textContent = `${sign}₹${Math.abs(netBalance).toFixed(2)}`;
+    amountEl.style.cssText = `
+      font-size: 48px; font-weight: 700; letter-spacing: -1px;
+      color: ${accentColor};
+      margin-bottom: 12px; font-family: 'Segoe UI', Arial, sans-serif;
+    `;
+    container.appendChild(amountEl);
+
+    // "X owes you" / "You owe X" subtitle badge
+    const subtitle = document.createElement("div");
+    subtitle.style.cssText = `
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 500; color: #a1a1aa;
+      background: ${accentColorDim}; padding: 6px 16px; border-radius: 20px;
+      border: 1px solid ${accentBorder};
+    `;
+    // Status dot
+    const dot = document.createElement("span");
+    dot.style.cssText = `
+      width: 6px; height: 6px; border-radius: 50%;
+      background: ${accentColor}; display: inline-block;
+    `;
+    subtitle.appendChild(dot);
+    const subtitleText = document.createElement("span");
+    subtitleText.textContent = isPositive
+      ? `${friendName.username} owes you`
+      : `You owe ${friendName.username}`;
+    subtitle.appendChild(subtitleText);
+    container.appendChild(subtitle);
+
+    // UPI info (if available)
+    const upiId = storedUser?.upiId;
+    if (upiId) {
+      // Separator
+      const sep = document.createElement("div");
+      sep.style.cssText = `
+        width: 100%; height: 1px; margin: 24px 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+      `;
+      container.appendChild(sep);
+
+      const upiBox = document.createElement("div");
+      upiBox.style.cssText = `
+        width: 100%; display: flex; align-items: center; gap: 14px;
+        padding: 14px 20px; border-radius: 14px;
+        background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15);
+      `;
+      // UPI Icon circle
+      const iconCircle = document.createElement("div");
+      iconCircle.textContent = "₹";
+      iconCircle.style.cssText = `
+        width: 36px; height: 36px; border-radius: 10px;
+        background: rgba(99,102,241,0.12); color: #818cf8;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px; font-weight: 700; flex-shrink: 0;
+      `;
+      upiBox.appendChild(iconCircle);
+
+      const upiTextCol = document.createElement("div");
+      upiTextCol.style.cssText = `display: flex; flex-direction: column; gap: 2px;`;
+      const upiLabel = document.createElement("div");
+      upiLabel.textContent = "PAY VIA UPI";
+      upiLabel.style.cssText = `
+        font-size: 9px; font-weight: 700; letter-spacing: 2px;
+        color: rgba(129,140,248,0.5); text-transform: uppercase;
+      `;
+      const upiValue = document.createElement("div");
+      upiValue.textContent = upiId;
+      upiValue.style.cssText = `
+        font-size: 15px; font-weight: 500; color: #c7d2fe;
+        font-family: 'Segoe UI', Arial, sans-serif;
+      `;
+      upiTextCol.appendChild(upiLabel);
+      upiTextCol.appendChild(upiValue);
+      upiBox.appendChild(upiTextCol);
+      container.appendChild(upiBox);
+    }
+
+    // Branding footer
+    const footerSep = document.createElement("div");
+    footerSep.style.cssText = `
+      width: 100%; height: 1px; margin-top: 24px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+    `;
+    container.appendChild(footerSep);
+
+    const footer = document.createElement("div");
+    footer.textContent = "Tracked on FairFare";
+    footer.style.cssText = `
+      font-size: 10px; font-weight: 500; letter-spacing: 1.5px;
+      color: #27272a; margin-top: 16px; text-transform: uppercase;
+    `; 
+    container.appendChild(footer);
+
+    document.body.appendChild(container);
+
+    try {
+      const canvas = await html2canvas(container, {
+        backgroundColor: "#0a0a0a",
+        scale: 3,
+        useCORS: true,
+        logging: false,
+      });
+
+      document.body.removeChild(container);
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], "balance.png", { type: "image/png" });
+
+      if (
+        navigator.share &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: "Balance Summary",
+            text: shareText,
+          });
+        } catch (shareError) {
+          navigator.clipboard.writeText(shareText);
+          toast.success("Balance text copied!");
+        }
+      } else {
+        const item = new ClipboardItem({ "image/png": blob });
+        await navigator.clipboard.write([item]);
+        toast.success("Balance image copied! Paste in WhatsApp.");
+        setTimeout(() => {
+          navigator.clipboard.writeText(shareText);
+          toast("Balance text copied!", { icon: "🔗" });
+        }, 1500);
+      }
+    } catch (error) {
+      document.body.removeChild(container);
+      console.error("Error sharing balance:", error);
+      toast.error("Failed to share balance");
     }
   };
 
@@ -591,7 +781,7 @@ const TransactionHistory = () => {
 
       {/* --- BALANCE TICKER --- */}
       <div className="relative z-10 py-4 bg-zinc-950/50 border-b border-white/5 backdrop-blur-sm">
-        <div className="max-w-3xl mx-auto flex flex-col items-center">
+        <div id="balance-ticker-card" className="max-w-3xl mx-auto flex flex-col items-center">
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-1">
             Net Position
           </span>
@@ -628,6 +818,17 @@ const TransactionHistory = () => {
               </button>
             </div>
           )}
+
+          {/* Share Balance Button */}
+          <button
+            data-ignore-screenshot="true"
+            onClick={handleShareBalance}
+            className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800/50 hover:bg-indigo-500/10 text-zinc-400 hover:text-indigo-400 border border-transparent hover:border-indigo-500/20 transition-all text-xs font-medium"
+            title="Share Balance"
+          >
+            <FaShareAlt size={12} />
+            Share Balance
+          </button>
         </div>
       </div>
 
