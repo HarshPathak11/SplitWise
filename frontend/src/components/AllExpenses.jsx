@@ -89,7 +89,7 @@ const AllExpensesPage = () => {
 
   // ── Load next page (scroll-triggered) ──
   const loadExpenses = useCallback(async () => {
-    if (!hasMore || loadingMore || searching) return;
+    if (!hasMore || loadingMore || searching || loading) return;
 
     const userId = Cookies.get("id");
     if (!userId) return;
@@ -107,7 +107,11 @@ const AllExpensesPage = () => {
       );
 
       const newExpenses = response.data?.expenses || [];
-      setExpenses((prev) => [...prev, ...newExpenses]);
+      setExpenses((prev) => {
+        const existingIds = new Set(prev.map((e) => e._id));
+        const unique = newExpenses.filter((e) => !existingIds.has(e._id));
+        return [...prev, ...unique];
+      });
       setCursor(response.data.nextCursor);
       setHasMore(Boolean(response.data.nextCursor));
     } catch (error) {
