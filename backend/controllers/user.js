@@ -241,7 +241,7 @@ const userLogin = async (req, res) => {
   }
 };
 
-//Get all expenses for a user
+//Get all expenses for a user (cursor-based pagination + search)
 const getAllExpensesForUser = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -250,13 +250,47 @@ const getAllExpensesForUser = async (req, res) => {
       return res.status(400).json({ message: "User ID is required" });
     }
 
-    const expenses = await Expense.find({
-      $or: [{ paidBy: userId }, { "owedBy.user": userId }],
-    })
-      .populate({ path: "paidBy", select: "username" })
-      .populate({ path: "owedBy.user", select: "username" });
+    const limit = Math.min(parseInt(req.query.limit || "20", 10), 50);
+    const cursor = req.query.cursor ? new Date(req.query.cursor) : null;
+    const search = req.query.search ? req.query.search.trim() : "";
 
-    res.status(200).json({ expenses });
+    const baseFilter = {
+      $or: [{ paidBy: userId }, { "owedBy.user": userId }],
+    };
+
+    // Add search filter if provided
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      baseFilter.$and = [
+        { $or: [{ title: searchRegex }, { category: searchRegex }] },
+      ];
+    }
+
+    const query = { ...baseFilter };
+    if (cursor) query.createdAt = { $lt: cursor };
+
+    // Count total only on the first request (no cursor)
+    const totalCountPromise = !cursor
+      ? Expense.countDocuments(baseFilter)
+      : Promise.resolve(undefined);
+
+    const [expenses, totalCount] = await Promise.all([
+      Expense.find(query)
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .populate({ path: "paidBy", select: "username" })
+        .populate({ path: "owedBy.user", select: "username" })
+        .lean(),
+      totalCountPromise,
+    ]);
+
+    const hasMore = expenses.length === limit;
+    const nextCursor = hasMore ? expenses[expenses.length - 1].createdAt : null;
+
+    const response = { expenses, nextCursor };
+    if (totalCount !== undefined) response.totalCount = totalCount;
+
+    res.status(200).json(response);
   } catch (error) {
     console.error("Error fetching expenses:", error);
     res.status(500).json({ message: "Server error" });

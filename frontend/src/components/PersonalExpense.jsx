@@ -300,11 +300,11 @@ const PersonalExpense = () => {
 
                 {/* Date & Time below Amount; single row on md+ */}
                 <div className="flex flex-col md:flex-row gap-3">
-                  <div className="group flex-1">
+                  <div className="group flex-1 min-w-0">
                     <label className="text-xs font-medium text-zinc-500 mb-1.5 block uppercase tracking-wider">
                       Date
                     </label>
-                    <div className="relative">
+                    <div className="relative overflow-hidden">
                       <input
                         type="date"
                         value={newExpense.date}
@@ -314,7 +314,7 @@ const PersonalExpense = () => {
                             date: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all text-sm text-zinc-300 [color-scheme:dark]"
+                        className="w-full box-border px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all text-sm text-zinc-300 [color-scheme:dark]"
                       />
                     </div>
                     {errors.date && (
@@ -324,11 +324,11 @@ const PersonalExpense = () => {
                     )}
                   </div>
 
-                  <div className="group flex-1">
+                  <div className="group flex-1 min-w-0">
                     <label className="text-xs font-medium text-zinc-500 mb-1.5 block uppercase tracking-wider">
                       Time
                     </label>
-                    <div className="relative">
+                    <div className="relative overflow-hidden">
                       <input
                         type="time"
                         value={newExpense.time}
@@ -338,7 +338,7 @@ const PersonalExpense = () => {
                             time: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all text-sm text-zinc-300 [color-scheme:dark]"
+                        className="w-full box-border px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all text-sm text-zinc-300 [color-scheme:dark]"
                       />
                     </div>
                     {errors.time && (

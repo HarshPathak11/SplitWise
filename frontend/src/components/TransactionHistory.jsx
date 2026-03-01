@@ -505,7 +505,7 @@ const TransactionHistory = () => {
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigate("/dash")}
+              onClick={() => navigate(-1)}
               className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             >
               <svg
