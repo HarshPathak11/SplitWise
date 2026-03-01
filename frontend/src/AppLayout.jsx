@@ -6,6 +6,8 @@ import { useLocation } from "react-router-dom";
 import api from "./utils/api";
 import Cookies from "js-cookie";
 import TermsPopup from "./components/TermsPopup";
+import BottomNavbar from "./components/BottomNavbar";
+import QuickAddExpenseModal from "./components/QuickAddExpenseModal";
 
 const usePageTracking = () => {
   const location = useLocation();
@@ -19,12 +21,35 @@ const usePageTracking = () => {
   }, [location]);
 };
 
-const AppLayout = () => {
-  usePageTracking(); // 👈 call the hook
+// Routes where the bottom navbar should NOT appear
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/signup",
+  "/features",
+  "/forgot-password",
+  "/documentation",
+  "/transaction-history",
+];
 
-  // Terms Logic
+const isPublicRoute = (pathname) => {
+  if (PUBLIC_ROUTES.includes(pathname)) return true;
+  // Dynamic public routes
+  if (/^\/signup\/.+/.test(pathname)) return true;       // /signup/:referId
+  if (/^\/public-profile\/.+/.test(pathname)) return true; // /public-profile/:userId
+  if (/^\/transaction-history\/.+/.test(pathname)) return true; // /transaction-history/:id
+  return false;
+};
+
+const AppLayout = () => {
+  usePageTracking();
+
+  const location = useLocation();
+  const showNavbar = !isPublicRoute(location.pathname);
+
   const [showTerms, setShowTerms] = useState(false);
   const [termsList, setTermsList] = useState([]);
+  const [showQuickExpense, setShowQuickExpense] = useState(false);
 
   useEffect(() => {
     const checkTerms = async () => {
@@ -73,8 +98,7 @@ const AppLayout = () => {
   };
 
   return (
-    <div>
-      {/* <ErrorBoundary> */}
+    <div className={showNavbar ? "pb-20 md:pb-0" : undefined}>
       <Toaster
         position="top-right"
         reverseOrder={false}
@@ -88,12 +112,26 @@ const AppLayout = () => {
         }}
       />
       <Outlet />
-      {/* </ErrorBoundary> */}
       <TermsPopup
         isOpen={showTerms}
         terms={termsList}
         onAccept={handleTermsAccept}
       />
+
+      {/* Bottom navbar — only on protected routes */}
+      {showNavbar && (
+        <>
+          <BottomNavbar onAddClick={() => setShowQuickExpense(true)} />
+
+          {/* Global quick-add modal */}
+          {showQuickExpense && (
+            <QuickAddExpenseModal
+              isOpen={showQuickExpense}
+              onClose={() => setShowQuickExpense(false)}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };

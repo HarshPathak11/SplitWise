@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import axios from "axios";
 import { useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import api from "../utils/api";
@@ -20,8 +19,6 @@ const AddMembers = () => {
       const storedUser = localStorage.getItem("user");
       const existingTripMembers =
         JSON.parse(localStorage.getItem("tripMembers")) || [];
-      // console.log("existingTripMembers", existingTripMembers);
-      // console.log( JSON.parse(localStorage.getItem("user")));
 
       if (storedUser) {
         const user = JSON.parse(storedUser);
@@ -66,7 +63,6 @@ const AddMembers = () => {
 
       const res = await api.post(
         `${API_BASE}/group/add-members/${groupId}`,
-        // `//http://localhost:8000/group/add-members/${groupId}`,
         {
           members: selectedUsernames,
         }
@@ -96,51 +92,62 @@ const AddMembers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-6">
-      {/* Back Button */}
-      <button
-        className="flex items-center text-white mb-6 hover:text-gray-300"
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft className="w-5 h-5 mr-2" />
-        Back
-      </button>
+    <div className="h-screen flex flex-col bg-black text-white overflow-hidden">
 
-      <div className="max-w-3xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold mb-4 text-center">Add Members</h1>
+      {/* ── Fixed Header ── */}
+      <div className="flex-shrink-0 bg-black/95 backdrop-blur-md border-b border-white/10 px-4 sm:px-6 pt-5 pb-4 space-y-4">
+        {/* Back */}
+        <button
+          className="flex items-center text-white hover:text-gray-300 transition-colors"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back
+        </button>
 
-        {/* Search Input */}
-        <input
-          type="text"
-          placeholder="Search friends..."
-          className="w-full px-4 py-2 rounded-lg bg-[#121212] text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-white"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        {/* Title */}
+        <h1 className="text-2xl font-bold text-center">Add Members</h1>
 
-        {/* Selected Friends Display */}
+        {/* Search */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search friends..."
+            className="w-full px-4 py-2 pr-9 rounded-lg bg-[#121212] text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-white"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Selected chips */}
         {selectedFriends.length > 0 && (
-          <div className="mt-4">
-            <p className="text-gray-300 mb-2">Selected:</p>
-            <div className="flex flex-wrap gap-3">
-              {selectedFriends.map((friendItem) => (
-                <span
-                  key={friendItem._id}
-                  className="bg-green-700 px-3 py-1 rounded-full text-sm"
-                >
-                  {friendItem.username}
-                </span>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {selectedFriends.map((friendItem) => (
+              <span
+                key={friendItem._id}
+                className="bg-green-700 px-3 py-1 rounded-full text-sm"
+              >
+                {friendItem.username}
+              </span>
+            ))}
           </div>
         )}
+      </div>
 
-        {/* Friend List Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+      {/* ── Scrollable Grid ── */}
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 pb-28">
+        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {filteredFriends.map((friend) => {
-            const isSelected = selectedFriends.some(
-              (f) => f._id === friend._id
-            );
+            const isSelected = selectedFriends.some((f) => f._id === friend._id);
             return (
               <div
                 key={friend._id}
@@ -156,21 +163,25 @@ const AddMembers = () => {
             );
           })}
         </div>
+      </div>
 
-        {/* Add Members Button */}
-        <div className="text-center pt-6">
-          <button
-            disabled={selectedFriends.length === 0 || isAdding}
-            className={`${
-              selectedFriends.length === 0 || isAdding
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-white hover:bg-gray-200"
-            } text-black font-semibold px-8 py-3 rounded-xl transition text-lg`}
-            onClick={handleAdd}
-          >
-            {isAdding ? "Adding..." : "Add Selected Members"}
-          </button>
-        </div>
+      {/* ── Fixed Bottom Button ── */}
+      <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md border-t border-white/10 px-4 py-4 flex justify-center z-50">
+        <button
+          disabled={selectedFriends.length === 0 || isAdding}
+          className={`${
+            selectedFriends.length === 0 || isAdding
+              ? "bg-gray-600 cursor-not-allowed text-gray-400"
+              : "bg-white hover:bg-gray-200 text-black"
+          } font-semibold px-10 py-3 rounded-xl transition text-lg w-full max-w-sm`}
+          onClick={handleAdd}
+        >
+          {isAdding
+            ? "Adding..."
+            : selectedFriends.length > 0
+            ? `Add ${selectedFriends.length} Member${selectedFriends.length > 1 ? "s" : ""}`
+            : "Add Selected Members"}
+        </button>
       </div>
     </div>
   );

@@ -153,7 +153,7 @@ const AllFriendsPage = () => {
   const handleBack = () => {
     // Always prefer actual browser history if there is one
     if (window.history.length > 1) {
-      navigate(-1);
+      navigate("/dash");
       return;
     }
 

@@ -88,7 +88,7 @@ const Dashboard = () => {
 
   // --- UI SECTION (Redesigned) ---
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8 relative selection:bg-indigo-500/30 font-sans">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8 pb-24 md:pb-8 relative selection:bg-indigo-500/30 font-sans">
       {/* Notification Banner */}
       <NotificationBanner />
 
@@ -129,11 +129,11 @@ const Dashboard = () => {
           {/* --- RIGHT COLUMN (Data & Social) --- */}
           <div className="lg:col-span-5 flex flex-col gap-6 h-full">
             {/* Mobile Swipe Hint */}
-            {isMobile && (
+            {/* {isMobile && (
               <div>
                 <SwipeToFriends />
               </div>
-            )}
+            )} */}
 
             {/* Recent Expenses - The 'Ledger' */}
             <div className="flex-1 bg-zinc-900/50 border border-white/5 rounded-2xl backdrop-blur-sm overflow-hidden flex flex-col">

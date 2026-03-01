@@ -48,6 +48,7 @@ const TripDetails = () => {
   const [editDescription, setEditDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [bannerLightbox, setBannerLightbox] = useState(false);
   const fileInputRef = useRef(null);
 
   const startEditing = () => {
@@ -140,7 +141,6 @@ const TripDetails = () => {
       try {
         const res = await api.get(`${API_BASE}/group/get-group/${tripId}`);
         setTripDetails(res.data);
-        console.log(res.data);
 
         localStorage.setItem("currentGroup", JSON.stringify(res.data));
 
@@ -223,7 +223,6 @@ const TripDetails = () => {
   const handleAddMember = () => {
     navigate(`/add-members/${tripId}`);
   };
-  // console.log(expenses)
 
   const handleRemoveMember = () => {
     if (members.length <= 1) {
@@ -389,7 +388,8 @@ const TripDetails = () => {
               <img
                 src={tripDetails.bannerUrl}
                 alt="Trip Banner"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover/banner-container:scale-105"
+                onClick={() => setBannerLightbox(true)}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover/banner-container:scale-105 cursor-zoom-in"
               />
             ) : (
               <div
@@ -402,7 +402,7 @@ const TripDetails = () => {
             )}
 
             {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent pointer-events-none"></div>
 
             {/* Change Banner Action */}
             <div className="absolute top-4 right-4 opacity-0 group-hover/banner-container:opacity-100 transition-opacity duration-300">
@@ -771,6 +771,29 @@ const TripDetails = () => {
           </div>
         )}
       </div>
+
+      {/* --- BANNER LIGHTBOX --- */}
+      {bannerLightbox && tripDetails?.bannerUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setBannerLightbox(false)}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setBannerLightbox(false)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-10"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          {/* Image — stop propagation so clicking image itself doesn't close */}
+          <img
+            src={tripDetails.bannerUrl}
+            alt="Trip Banner"
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-[95vw] max-h-[90vh] object-contain rounded-xl shadow-2xl"
+          />
+        </div>
+      )}
     </div>
   );
 };

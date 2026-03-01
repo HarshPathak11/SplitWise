@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import TripCard from "./tripCard";
 import Cookies from "js-cookie";
@@ -17,6 +17,10 @@ const AllTripsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [unarchivingId, setUnarchivingId] = useState(null);
   const [restoreTargetId, setRestoreTargetId] = useState(null); // trip pending restore confirmation
+  const [archiveTargetId, setArchiveTargetId] = useState(null); // trip pending archive confirmation
+  const [swipeState, setSwipeState] = useState({}); // { [tripId]: offsetX }
+  const swipeRef = useRef({ startX: 0, tripId: null, swiping: false });
+  const longPressTimer = useRef(null);
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -68,6 +72,61 @@ const AllTripsPage = () => {
     }
   };
 
+  const handleArchive = async (tripId) => {
+    setArchiveTargetId(null);
+    try {
+      const userId = Cookies.get("id");
+      await api.put(`${API_BASE}/group/archive/${tripId}`, { userId });
+      const trip = activeTrips.find((t) => t._id === tripId);
+      setActiveTrips((prev) => prev.filter((t) => t._id !== tripId));
+      if (trip) setArchivedTrips((prev) => [trip, ...prev]);
+      toast.success("Group archived!");
+    } catch (err) {
+      console.error("Archive error:", err);
+      toast.error("Failed to archive group.");
+    }
+  };
+
+  // --- Swipe + long-press gesture handlers for mobile ---
+  const SWIPE_THRESHOLD = 0.30; // 30% of tile width triggers archive
+
+  const handleTouchStart = useCallback((tripId, e) => {
+    const touch = e.touches[0];
+    swipeRef.current = { startX: touch.clientX, tripId, swiping: false };
+    // Also start long-press timer
+    longPressTimer.current = setTimeout(() => {
+      if (!swipeRef.current.swiping) setArchiveTargetId(tripId);
+    }, 600);
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    const touch = e.touches[0];
+    const dx = touch.clientX - swipeRef.current.startX;
+    // If horizontal movement > 10px, treat as swipe (cancel long-press)
+    if (Math.abs(dx) > 10) {
+      swipeRef.current.swiping = true;
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+      setSwipeState((prev) => ({ ...prev, [swipeRef.current.tripId]: dx }));
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((e) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    const { tripId, swiping } = swipeRef.current;
+    if (swiping && tripId) {
+      const tile = e.currentTarget;
+      const tileWidth = tile?.offsetWidth || 300;
+      const currentOffset = swipeState[tripId] || 0;
+      // Check if swipe exceeded threshold
+      if (Math.abs(currentOffset) > tileWidth * SWIPE_THRESHOLD) {
+        setArchiveTargetId(tripId);
+      }
+    }
+    // Snap back
+    if (tripId) setSwipeState((prev) => ({ ...prev, [tripId]: 0 }));
+    swipeRef.current = { startX: 0, tripId: null, swiping: false };
+  }, [swipeState]);
+
   const trips = tab === "active" ? activeTrips : archivedTrips;
   const filteredTrips = trips.filter((trip) =>
     trip.name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -116,7 +175,7 @@ const AllTripsPage = () => {
 
             {/* Search Bar */}
             <div className="w-full md:w-72 group">
-              <div className="relative transition-all duration-300 transform group-focus-within:-translate-y-1">
+              <div className="relative transition-all duration-300">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Search className="h-4 w-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" />
                 </div>
@@ -125,7 +184,7 @@ const AllTripsPage = () => {
                   placeholder="Filter past journeys..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-3 bg-zinc-900/40 backdrop-blur-sm border border-white/5 rounded-2xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:bg-zinc-900/60 focus:border-indigo-500/50 transition-all shadow-lg"
+                  className="block w-full pl-10 pr-10 py-3 bg-zinc-900/40 border border-white/5 rounded-2xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:bg-zinc-900/60 focus:border-indigo-500/50 transition-all shadow-lg"
                 />
                 {searchQuery && (
                   <button
@@ -224,13 +283,49 @@ const AllTripsPage = () => {
             {filteredTrips.map((trip) => (
               <div
                 key={trip._id}
-                className="transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 flex flex-col gap-1"
+                className="flex flex-col gap-1"
+                {...(tab === "active" ? {
+                  onDoubleClick: (e) => { e.preventDefault(); setArchiveTargetId(trip._id); },
+                } : {})}
               >
-                <TripCard
-                  amount={trip.tripTotal}
-                  trip={trip}
-                  onClick={() => handleTripClick(trip)}
-                />
+                {/* Swipe wrapper — active tab only */}
+                <div className="relative overflow-hidden rounded-xl">
+                  {/* Reveal background behind the tile — only visible during swipe */}
+                  {tab === "active" && (swipeState[trip._id] || 0) !== 0 && (
+                    <div className="absolute inset-0 flex items-center justify-between px-6 bg-amber-600/20 rounded-xl">
+                      <div className={`flex items-center gap-2 transition-opacity ${(swipeState[trip._id] || 0) > 0 ? 'opacity-100' : 'opacity-0'}`}>
+                        <Archive className="w-5 h-5 text-amber-400" />
+                        <span className="text-amber-300 text-xs font-bold uppercase tracking-wider">Archive</span>
+                      </div>
+                      <div className={`flex items-center gap-2 transition-opacity ${(swipeState[trip._id] || 0) < 0 ? 'opacity-100' : 'opacity-0'}`}>
+                        <span className="text-amber-300 text-xs font-bold uppercase tracking-wider">Archive</span>
+                        <Archive className="w-5 h-5 text-amber-400" />
+                      </div>
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      transform: `translateX(${swipeState[trip._id] || 0}px)`,
+                      transition: swipeRef.current.swiping && swipeRef.current.tripId === trip._id
+                        ? 'none'
+                        : 'transform 0.3s ease-out',
+                    }}
+                    {...(tab === "active" ? {
+                      onTouchStart: (e) => handleTouchStart(trip._id, e),
+                      onTouchMove: handleTouchMove,
+                      onTouchEnd: handleTouchEnd,
+                    } : {})}
+                    className="relative transform hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300"
+                  >
+                    <TripCard
+                      amount={trip.tripTotal}
+                      trip={trip}
+                      onClick={() => {
+                        if (!swipeRef.current.swiping) handleTripClick(trip);
+                      }}
+                    />
+                  </div>
+                </div>
                 {/* Restore button — only visible in archived tab */}
                 {tab === "archived" && (
                   <button
@@ -292,6 +387,38 @@ const AllTripsPage = () => {
                   className="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-900/20 transition-all"
                 >
                   Restore
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* --- ARCHIVE CONFIRMATION MODAL --- */}
+      {archiveTargetId && (() => {
+        const trip = activeTrips.find((t) => t._id === archiveTargetId);
+        return (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-zinc-900 border border-amber-500/30 p-6 rounded-2xl max-w-sm w-full shadow-2xl shadow-amber-900/10">
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4">
+                <Archive className="w-5 h-5 text-amber-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-1">Archive this group?</h3>
+              <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+                <span className="text-zinc-200 font-semibold">{trip?.name}</span> will be moved to your archived trips. You can restore it anytime.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setArchiveTargetId(null)}
+                  className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleArchive(archiveTargetId)}
+                  className="flex-1 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold shadow-lg shadow-amber-900/20 transition-all"
+                >
+                  Archive
                 </button>
               </div>
             </div>
