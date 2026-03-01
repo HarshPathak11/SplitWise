@@ -16,7 +16,14 @@ const AllExpensesPage = () => {
   const [expenses, setExpenses] = useState([]);
   const [totalCount, setTotalCount] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSearch, setActiveSearch] = useState(""); // debounced value actually sent to API
+  const [activeSearch, setActiveSearch] = useState("");
+
+  // Filters
+  const [activeFilter, setActiveFilter] = useState("all"); // "all" | "personal" | "group"
+  const [selectedGroups, setSelectedGroups] = useState([]); // [{_id, name}, ...]
+  const [groups, setGroups] = useState([]);
+  const [showTripPicker, setShowTripPicker] = useState(false);
+  const [tripSearch, setTripSearch] = useState("");
 
   // Pagination
   const [cursor, setCursor] = useState(null);
@@ -29,83 +36,87 @@ const AllExpensesPage = () => {
   const loaderRef = useRef(null);
   const debounceTimer = useRef(null);
 
-  // ── Debounced search ──
+  // ── Build query params ──
+  const buildParams = useCallback((overrideCursor) => {
+    const params = { limit: PAGE_SIZE };
+    if (overrideCursor) params.cursor = overrideCursor;
+    if (activeSearch) params.search = activeSearch;
+    if (activeFilter === "personal") params.filter = "personal";
+    if (activeFilter === "group" && selectedGroups.length > 0) {
+      params.groupIds = selectedGroups.map((g) => g._id).join(",");
+    }
+    return params;
+  }, [activeSearch, activeFilter, selectedGroups]);
+
+  // ── Fetch user's groups on mount ──
   useEffect(() => {
-    // Clear previous timer
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-
-    const trimmed = searchQuery.trim();
-
-    // If search didn't actually change, skip
-    if (trimmed === activeSearch) return;
-
-    debounceTimer.current = setTimeout(() => {
-      setActiveSearch(trimmed);
-    }, DEBOUNCE_MS);
-
-    return () => {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    };
-  }, [searchQuery]);
-
-  // ── When activeSearch changes, reset list and fetch from server ──
-  useEffect(() => {
-    // Skip the initial mount (handled by fetchInitial)
-    if (loading) return;
-
-    const searchExpenses = async () => {
+    const fetchGroups = async () => {
       const userId = Cookies.get("id");
       if (!userId) return;
-
-      setSearching(true);
-      setCursor(null);
-      setHasMore(true);
-
       try {
-        const params = { limit: PAGE_SIZE };
-        if (activeSearch) params.search = activeSearch;
-
-        const response = await api.post(
-          `${API_BASE}/user/all-expenses?${new URLSearchParams(params)}`,
-          { userId }
-        );
-
-        const results = response.data?.expenses || [];
-        setExpenses(results);
-        setCursor(response.data.nextCursor);
-        setHasMore(Boolean(response.data.nextCursor));
-        if (response.data.totalCount !== undefined) {
-          setTotalCount(response.data.totalCount);
-        }
-      } catch (error) {
-        console.error("Error searching expenses:", error);
-      } finally {
-        setSearching(false);
+        const res = await api.get(`${API_BASE}/group/user-groups/${userId}`);
+        setGroups(Array.isArray(res.data) ? res.data : res.data?.groups || []);
+      } catch (err) {
+        console.error("Error fetching groups:", err);
       }
     };
+    fetchGroups();
+  }, []);
 
-    searchExpenses();
-  }, [activeSearch]);
+  // ── Debounced search ──
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    const trimmed = searchQuery.trim();
+    if (trimmed === activeSearch) return;
+    debounceTimer.current = setTimeout(() => setActiveSearch(trimmed), DEBOUNCE_MS);
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  }, [searchQuery]);
 
-  // ── Load next page (scroll-triggered) ──
-  const loadExpenses = useCallback(async () => {
-    if (!hasMore || loadingMore || searching || loading) return;
-
+  // ── Common fetch function (resets list) ──
+  const fetchFresh = useCallback(async () => {
     const userId = Cookies.get("id");
     if (!userId) return;
 
-    setLoadingMore(true);
+    setSearching(true);
+    setCursor(null);
+    setHasMore(true);
 
     try {
-      const params = { limit: PAGE_SIZE };
-      if (cursor) params.cursor = cursor;
-      if (activeSearch) params.search = activeSearch;
-
+      const params = buildParams(null);
       const response = await api.post(
         `${API_BASE}/user/all-expenses?${new URLSearchParams(params)}`,
         { userId }
       );
+      const results = response.data?.expenses || [];
+      setExpenses(results);
+      setCursor(response.data.nextCursor);
+      setHasMore(Boolean(response.data.nextCursor));
+      if (response.data.totalCount !== undefined) setTotalCount(response.data.totalCount);
+    } catch (error) {
+      console.error("Error fetching expenses:", error);
+    } finally {
+      setSearching(false);
+    }
+  }, [buildParams]);
 
+  // ── Re-fetch when search or filter changes ──
+  useEffect(() => {
+    if (loading) return;
+    fetchFresh();
+  }, [activeSearch, activeFilter, selectedGroups]);
+
+  // ── Load next page (scroll-triggered) ──
+  const loadExpenses = useCallback(async () => {
+    if (!hasMore || loadingMore || searching || loading) return;
+    const userId = Cookies.get("id");
+    if (!userId) return;
+    setLoadingMore(true);
+    try {
+      const params = buildParams(cursor);
+      const response = await api.post(
+        `${API_BASE}/user/all-expenses?${new URLSearchParams(params)}`,
+        { userId }
+      );
       const newExpenses = response.data?.expenses || [];
       setExpenses((prev) => {
         const existingIds = new Set(prev.map((e) => e._id));
@@ -119,26 +130,22 @@ const AllExpensesPage = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [cursor, hasMore, loadingMore, searching, activeSearch]);
+  }, [cursor, hasMore, loadingMore, searching, buildParams, loading]);
 
-  // ── Fetch initial page + count on mount ──
+  // ── Initial page + count on mount ──
   useEffect(() => {
     const fetchInitial = async () => {
       const userId = Cookies.get("id");
       if (!userId) { setLoading(false); return; }
-
       try {
         const response = await api.post(
           `${API_BASE}/user/all-expenses?${new URLSearchParams({ limit: PAGE_SIZE })}`,
           { userId }
         );
-        const firstPage = response.data?.expenses || [];
-        setExpenses(firstPage);
+        setExpenses(response.data?.expenses || []);
         setCursor(response.data.nextCursor);
         setHasMore(Boolean(response.data.nextCursor));
-        if (response.data.totalCount !== undefined) {
-          setTotalCount(response.data.totalCount);
-        }
+        if (response.data.totalCount !== undefined) setTotalCount(response.data.totalCount);
       } catch (error) {
         console.error("Error fetching initial expenses:", error);
       } finally {
@@ -148,43 +155,53 @@ const AllExpensesPage = () => {
     fetchInitial();
   }, []);
 
-  // ── IntersectionObserver for infinite scroll ──
+  // ── IntersectionObserver ──
   useEffect(() => {
     if (loading || loadingMore || searching || !hasMore) return;
-
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadExpenses();
-        }
-      },
+      (entries) => { if (entries[0].isIntersecting) loadExpenses(); },
       { threshold: 1 }
     );
-
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
-    }
-
-    return () => {
-      if (loaderRef.current) {
-        observer.unobserve(loaderRef.current);
-      }
-    };
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => { if (loaderRef.current) observer.unobserve(loaderRef.current); };
   }, [loaderRef.current, hasMore, loading, loadingMore, searching]);
 
   // ── Scroll fallback ──
   useEffect(() => {
     const onScroll = () => {
-      const bottom =
-        window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
-      if (bottom) loadExpenses();
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) loadExpenses();
     };
-
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, [cursor, hasMore, loadingMore, searching]);
 
-  const isSearchActive = activeSearch.length > 0;
+  // ── Helpers ──
+  const isFiltered = activeFilter !== "all" || activeSearch.length > 0;
+
+  const handleFilterChange = (filter) => {
+    if (filter === activeFilter) return;
+    setActiveFilter(filter);
+    if (filter !== "group") setSelectedGroups([]);
+  };
+
+  const toggleGroup = (group) => {
+    setSelectedGroups((prev) => {
+      const exists = prev.some((g) => g._id === group._id);
+      return exists ? prev.filter((g) => g._id !== group._id) : [...prev, group];
+    });
+  };
+
+  const removeGroup = (groupId) => {
+    setSelectedGroups((prev) => {
+      const next = prev.filter((g) => g._id !== groupId);
+      if (next.length === 0 && activeFilter === "group") setActiveFilter("all");
+      return next;
+    });
+  };
+
+  const filteredTrips = groups.filter((g) =>
+    g.name?.toLowerCase().includes(tripSearch.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 relative overflow-hidden flex flex-col">
@@ -196,45 +213,88 @@ const AllExpensesPage = () => {
       </div>
 
       <div className="relative z-10 w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col h-full flex-1">
-        {/* --- CONTROL HEADER --- */}
+        {/* --- HEADER --- */}
         <div className="flex flex-col gap-4 mb-6">
-          {/* Top Row: Back & Title */}
+          {/* Back & Title */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
               className="group p-2 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg"
-              title="Back"
             >
               <FaArrowLeft className="text-sm text-zinc-400 group-hover:text-indigo-400 transition-colors" />
             </button>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight uppercase flex items-center gap-2">
-                Transaction Archive
-                <span className="md:hidden flex h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
-              </h1>
-            </div>
+            <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight uppercase flex items-center gap-2">
+              Transaction Archive
+              <span className="md:hidden flex h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+            </h1>
           </div>
 
-          {/* Bottom Row: Search & Stats */}
+          {/* Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { key: "all", label: "All" },
+              { key: "personal", label: "Personal" },
+              { key: "group", label: "By Trip" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => {
+                  handleFilterChange(key);
+                  if (key === "group") setShowTripPicker(true);
+                }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all duration-200 border ${
+                  activeFilter === key
+                    ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300 shadow-sm shadow-indigo-500/10"
+                    : "bg-zinc-900/50 border-white/5 text-zinc-400 hover:border-white/15 hover:text-zinc-300"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+
+            {/* Show + button to add more trips when some are already selected */}
+            {activeFilter === "group" && selectedGroups.length > 0 && (
+              <button
+                onClick={() => setShowTripPicker(true)}
+                className="px-2.5 py-1.5 rounded-full text-xs font-medium border border-dashed border-white/10 text-zinc-400 hover:border-indigo-500/40 hover:text-indigo-300 transition-all"
+              >
+                + Add Trip
+              </button>
+            )}
+          </div>
+
+          {/* Selected Trip Chips */}
+          {selectedGroups.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedGroups.map((g) => (
+                <span
+                  key={g._id}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium"
+                >
+                  {g.name}
+                  <button
+                    onClick={() => removeGroup(g._id)}
+                    className="hover:text-white transition-colors ml-0.5"
+                    title={`Remove ${g.name}`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Search & Stats Row */}
           <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search Input */}
             <div className="relative flex-1 group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 {searching ? (
                   <div className="w-4 h-4 border-2 border-zinc-600 border-t-indigo-400 rounded-full animate-spin"></div>
                 ) : (
-                  <svg
-                    className="h-4 w-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
+                  <svg className="h-4 w-4 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 )}
               </div>
@@ -249,7 +309,6 @@ const AllExpensesPage = () => {
                 <button
                   onClick={() => setSearchQuery("")}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-white transition-colors"
-                  title="Clear search"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -258,16 +317,13 @@ const AllExpensesPage = () => {
               )}
             </div>
 
-            {/* Stats Badge */}
             {!loading && totalCount !== null && (
               <div className="flex items-center justify-between sm:justify-start gap-3 px-4 py-2.5 rounded-xl bg-zinc-900/50 border border-white/5 backdrop-blur-md shrink-0">
                 <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">
-                  {isSearchActive ? "Results" : "Total Records"}
+                  {isFiltered ? "Results" : "Total Records"}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-mono font-bold text-white leading-none">
-                    {totalCount}
-                  </span>
+                  <span className="text-sm font-mono font-bold text-white leading-none">{totalCount}</span>
                   <div className={`w-1.5 h-1.5 rounded-full ${hasMore ? "bg-indigo-500 animate-pulse" : "bg-emerald-500"}`}></div>
                 </div>
               </div>
@@ -281,42 +337,38 @@ const AllExpensesPage = () => {
             {loading ? (
               <div className="h-full flex flex-col items-center justify-center gap-4">
                 <div className="w-10 h-10 border-2 border-zinc-800 border-t-indigo-500 rounded-full animate-spin"></div>
-                <span className="text-[10px] font-mono text-zinc-500 animate-pulse uppercase tracking-widest">
-                  Accessing Database...
-                </span>
+                <span className="text-[10px] font-mono text-zinc-500 animate-pulse uppercase tracking-widest">Accessing Database...</span>
               </div>
             ) : searching ? (
               <div className="h-full flex flex-col items-center justify-center gap-4">
                 <div className="w-8 h-8 border-2 border-zinc-800 border-t-indigo-500 rounded-full animate-spin"></div>
-                <span className="text-[10px] font-mono text-zinc-500 animate-pulse uppercase tracking-widest">
-                  Searching...
-                </span>
+                <span className="text-[10px] font-mono text-zinc-500 animate-pulse uppercase tracking-widest">Searching...</span>
+              </div>
+            ) : activeFilter === "group" && selectedGroups.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center opacity-60">
+                <div className="w-16 h-16 bg-zinc-800/50 rounded-2xl flex items-center justify-center mb-4 border border-dashed border-zinc-700">
+                  <svg className="w-8 h-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <h3 className="text-zinc-300 font-bold text-sm">Select Trips</h3>
+                <p className="text-zinc-500 text-xs mt-1">Choose one or more trips to filter expenses.</p>
+                <button
+                  onClick={() => setShowTripPicker(true)}
+                  className="mt-4 px-4 py-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-xs font-medium hover:bg-indigo-500/30 transition-all"
+                >
+                  Choose Trips
+                </button>
               </div>
             ) : expenses.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-60">
                 <div className="w-16 h-16 bg-zinc-800/50 rounded-2xl flex items-center justify-center mb-4 border border-dashed border-zinc-700">
-                  <svg
-                    className="w-8 h-8 text-zinc-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
+                  <svg className="w-8 h-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h3 className="text-zinc-300 font-bold text-sm">
-                  {isSearchActive ? "No Results Found" : "No Expenses Yet"}
-                </h3>
-                <p className="text-zinc-500 text-xs mt-1">
-                  {isSearchActive
-                    ? "Try a different search term."
-                    : "Start recording expenses to see them here."}
-                </p>
+                <h3 className="text-zinc-300 font-bold text-sm">{isFiltered ? "No Results Found" : "No Expenses Yet"}</h3>
+                <p className="text-zinc-500 text-xs mt-1">{isFiltered ? "Try adjusting your search or filters." : "Start recording expenses to see them here."}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -334,21 +386,13 @@ const AllExpensesPage = () => {
                     beneficiaries={expense.owedBy}
                   />
                 ))}
-
-                {/* Sentinel for IntersectionObserver */}
                 <div ref={loaderRef} className="h-1 w-full"></div>
-
-                {/* Loading more indicator */}
                 {loadingMore && (
                   <div className="py-6 flex flex-col items-center gap-2">
                     <div className="w-6 h-6 border-2 border-zinc-800 border-t-indigo-500 rounded-full animate-spin"></div>
-                    <span className="text-[10px] font-mono text-zinc-500 animate-pulse uppercase tracking-widest">
-                      Loading more...
-                    </span>
+                    <span className="text-[10px] font-mono text-zinc-500 animate-pulse uppercase tracking-widest">Loading more...</span>
                   </div>
                 )}
-
-                {/* List End Marker */}
                 {!hasMore && !loadingMore && (
                   <div className="py-6 flex justify-center">
                     <div className="h-1 w-12 bg-zinc-800/50 rounded-full"></div>
@@ -359,6 +403,113 @@ const AllExpensesPage = () => {
           </div>
         </div>
       </div>
+
+      {/* ═══════════ TRIP PICKER POPUP ═══════════ */}
+      {showTripPicker && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => { setShowTripPicker(false); setTripSearch(""); }}
+        >
+          <div
+            className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-5 pb-0">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">Select Trips</h3>
+                <button
+                  onClick={() => { setShowTripPicker(false); setTripSearch(""); }}
+                  className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Search within popup */}
+              <div className="relative mb-3">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-4 w-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  value={tripSearch}
+                  onChange={(e) => setTripSearch(e.target.value)}
+                  placeholder="Search trips..."
+                  autoFocus
+                  className="block w-full bg-zinc-800/50 border border-zinc-700/50 rounded-xl py-2.5 pl-10 pr-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+                />
+              </div>
+            </div>
+
+            {/* Trip list */}
+            <div className="px-5 pb-2 max-h-60 overflow-y-auto custom-scrollbar">
+              {filteredTrips.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-zinc-500 text-sm">No trips found</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {filteredTrips.map((g) => {
+                    const isSelected = selectedGroups.some((sg) => sg._id === g._id);
+                    return (
+                      <button
+                        key={g._id}
+                        onClick={() => toggleGroup(g)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
+                          isSelected
+                            ? "bg-indigo-500/15 border border-indigo-500/30"
+                            : "hover:bg-zinc-800/60 border border-transparent"
+                        }`}
+                      >
+                        {/* Checkbox */}
+                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
+                          isSelected
+                            ? "bg-indigo-500 border-indigo-500"
+                            : "border-zinc-600"
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm font-medium truncate ${isSelected ? "text-indigo-200" : "text-zinc-300"}`}>
+                            {g.name}
+                          </p>
+                          {g.members && (
+                            <p className="text-[10px] text-zinc-500 mt-0.5">
+                              {g.members.length} member{g.members.length !== 1 ? "s" : ""}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-5 pt-3 border-t border-white/5 flex items-center justify-between">
+              <span className="text-xs text-zinc-500">
+                {selectedGroups.length} trip{selectedGroups.length !== 1 ? "s" : ""} selected
+              </span>
+              <button
+                onClick={() => { setShowTripPicker(false); setTripSearch(""); }}
+                className="px-4 py-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 text-xs font-medium hover:bg-indigo-500/30 transition-all"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
