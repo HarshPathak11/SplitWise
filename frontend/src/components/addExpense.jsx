@@ -293,7 +293,9 @@ const AddExpense = () => {
 
     try {
       const { data } = await api.post("/ai/parse-expense", {
-        text: transcript,
+        prompt: transcript,
+        context: "group_detailed",
+        memberNames: members.map((m) => m.username),
       });
 
       // 1. Amount

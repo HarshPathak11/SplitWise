@@ -173,7 +173,8 @@ const PersonalExpense = () => {
 
     try {
       const { data } = await api.post("/ai/parse-expense", {
-        text: transcript,
+        prompt: transcript,
+        context: "personal",
       });
 
       const updatedExpense = { ...newExpense };
