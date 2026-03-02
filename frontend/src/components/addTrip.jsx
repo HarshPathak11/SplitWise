@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Import useNavigate and Link for navigation
-import axios from "axios"; // Import axios for HTTP requests
+import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
 import api from "../utils/api";
+import DatePicker from "./DatePicker";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AddTrip = () => {
@@ -16,6 +17,8 @@ const AddTrip = () => {
   const [search, setSearch] = useState("");
   const [selectAll, setSelectAll] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [createdTripName, setCreatedTripName] = useState("");
 
   // Refs for input fields to maintain focus after clearing
   const tripNameRef = useRef(null);
@@ -122,7 +125,14 @@ const AddTrip = () => {
       }
 
       // console.log("Trip created:", res.data);
-      navigate("/dash");
+      const createdGroup = res.data.group;
+      setCreatedTripName(createdGroup.name || tripName);
+      setShowSuccess(true);
+
+      // Navigate after the animation plays
+      setTimeout(() => {
+        navigate(`/tripDetails/${createdGroup._id}`);
+      }, 1600);
     } catch (error) {
       console.error("Error creating trip:", error);
     }
@@ -130,6 +140,72 @@ const AddTrip = () => {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col relative font-sans selection:bg-indigo-500/30">
+
+      {/* ---- SUCCESS OVERLAY ---- */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-zinc-950/95 backdrop-blur-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Glow ring */}
+            <motion.div
+              className="absolute w-40 h-40 rounded-full bg-indigo-500/20 blur-3xl"
+              initial={{ scale: 0 }}
+              animate={{ scale: 2.5, opacity: 0 }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+            />
+
+            {/* Checkmark circle */}
+            <motion.div
+              className="relative w-24 h-24 rounded-full border-2 border-indigo-500 flex items-center justify-center mb-6"
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
+            >
+              <motion.div
+                className="absolute inset-0 rounded-full bg-indigo-600/20"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+              />
+              <svg className="w-12 h-12 text-indigo-400" viewBox="0 0 24 24" fill="none">
+                <motion.path
+                  d="M5 13l4 4L19 7"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ delay: 0.4, duration: 0.5, ease: "easeOut" }}
+                />
+              </svg>
+            </motion.div>
+
+            {/* Text */}
+            <motion.p
+              className="text-xl font-bold text-white mb-1"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+            >
+              Trip Created!
+            </motion.p>
+            <motion.p
+              className="text-sm text-zinc-500 font-medium"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.75, duration: 0.4 }}
+            >
+              Opening <span className="text-indigo-400">{createdTripName}</span>…
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* --- BACKGROUND (Dashboard Theme) --- */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 left-0 right-0 h-[500px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950"></div>
@@ -231,27 +307,21 @@ const AddTrip = () => {
 
                 {/* Dates Row */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-400">
-                      From
-                    </label>
-                    <input
-                      type="date"
+                  <div className="relative">
+                    <DatePicker
+                      label="From"
+                      placeholder="Start date"
                       value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
-                      className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all text-sm uppercase font-mono text-zinc-300"
+                      onChange={(val) => setFromDate(val)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-zinc-400">
-                      To
-                    </label>
-                    <input
-                      type="date"
+                  <div className="relative">
+                    <DatePicker
+                      label="To"
+                      placeholder="End date"
                       value={toDate}
                       min={fromDate}
-                      onChange={(e) => setToDate(e.target.value)}
-                      className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all text-sm uppercase font-mono text-zinc-300"
+                      onChange={(val) => setToDate(val)}
                     />
                   </div>
                 </div>
