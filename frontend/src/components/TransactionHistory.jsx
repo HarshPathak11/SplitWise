@@ -6,6 +6,7 @@ import { Forward } from "lucide-react";
 import Cookies from "js-cookie";
 import api from "../utils/api";
 import html2canvas from "html2canvas";
+import { motion, AnimatePresence } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TransactionHistory = () => {
@@ -29,6 +30,7 @@ const TransactionHistory = () => {
   const [showPaidConfirm, setShowPaidConfirm] = useState(false);
   const [showReceivedConfirm, setShowReceivedConfirm] = useState(false);
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
+  const [successOverlay, setSuccessOverlay] = useState(null); // { type: 'paid'|'received', amount: number }
   const userId = storedUser?._id;
 
   // Handle shared links: if friendId is the logged-in user, swap with sharer's ID
@@ -555,7 +557,8 @@ const TransactionHistory = () => {
         note: text,
         friendFcmToken: friendName?.fcmToken,
       });
-      toast.success("Paid transaction added!");
+      setSuccessOverlay({ type: "paid", amount: paidAmount });
+      setTimeout(() => setSuccessOverlay(null), 2000);
       setAmount(0);
       setText("");
       // Silent refetch to avoid flickering
@@ -599,7 +602,8 @@ const TransactionHistory = () => {
         note: text,
         friendFcmToken: friendName?.fcmToken,
       });
-      toast.success("Received transaction added!");
+      setSuccessOverlay({ type: "received", amount: receivedAmount });
+      setTimeout(() => setSuccessOverlay(null), 2000);
       setAmount(0);
       setText("");
       // Silent refetch to avoid flickering
@@ -744,8 +748,120 @@ const TransactionHistory = () => {
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none"></div>
 
+      {/* --- SUCCESS CELEBRATION OVERLAY --- */}
+      <AnimatePresence>
+        {successOverlay && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => setSuccessOverlay(null)}
+          >
+            {/* Glow ring */}
+            <motion.div
+              className={`absolute w-44 h-44 rounded-full blur-3xl ${
+                successOverlay.type === "paid" ? "bg-rose-500/20" : "bg-emerald-500/20"
+              }`}
+              initial={{ scale: 0 }}
+              animate={{ scale: 2.5, opacity: 0 }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+            />
+
+            {/* Particle burst */}
+            {[...Array(8)].map((_, i) => (
+              <motion.div
+                key={i}
+                className={`absolute w-2 h-2 rounded-full ${
+                  successOverlay.type === "paid" ? "bg-rose-400" : "bg-emerald-400"
+                }`}
+                initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                animate={{
+                  scale: [0, 1, 0.5],
+                  x: Math.cos((i * Math.PI * 2) / 8) * 80,
+                  y: Math.sin((i * Math.PI * 2) / 8) * 80,
+                  opacity: [1, 1, 0],
+                }}
+                transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+              />
+            ))}
+
+            {/* Checkmark circle */}
+            <motion.div
+              className={`relative w-24 h-24 rounded-full border-2 flex items-center justify-center mb-5 ${
+                successOverlay.type === "paid"
+                  ? "border-rose-500"
+                  : "border-emerald-500"
+              }`}
+              initial={{ scale: 0, rotate: -60 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.05 }}
+            >
+              <motion.div
+                className={`absolute inset-0 rounded-full ${
+                  successOverlay.type === "paid"
+                    ? "bg-rose-600/20"
+                    : "bg-emerald-600/20"
+                }`}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.25, duration: 0.3 }}
+              />
+              <svg className={`w-12 h-12 ${
+                successOverlay.type === "paid" ? "text-rose-400" : "text-emerald-400"
+              }`} viewBox="0 0 24 24" fill="none">
+                <motion.path
+                  d="M5 13l4 4L19 7"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ delay: 0.35, duration: 0.4, ease: "easeOut" }}
+                />
+              </svg>
+            </motion.div>
+
+            {/* Text */}
+            <motion.p
+              className="text-xl font-bold text-white mb-1"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.3 }}
+            >
+              {successOverlay.type === "paid" ? "Payment Recorded!" : "Receipt Recorded!"}
+            </motion.p>
+            <motion.p
+              className={`text-3xl font-mono font-bold tracking-tight ${
+                successOverlay.type === "paid" ? "text-rose-400" : "text-emerald-400"
+              }`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.3 }}
+            >
+              {successOverlay.type === "paid" ? "-" : "+"}₹{successOverlay.amount.toFixed(2)}
+            </motion.p>
+            <motion.p
+              className="text-xs text-zinc-500 mt-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              Tap anywhere to dismiss
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* --- HEADER: The Control Panel --- */}
-      <div className="relative z-20 bg-zinc-900/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/20">
+      <motion.div
+        initial={{ opacity: 0, x: -30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-20 bg-zinc-900/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/20"
+      >
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
@@ -831,10 +947,15 @@ const TransactionHistory = () => {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* --- BALANCE TICKER --- */}
-      <div className="relative z-10 py-4 bg-zinc-950/50 border-b border-white/5 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, x: 30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+        className="relative z-10 py-4 bg-zinc-950/50 border-b border-white/5 backdrop-blur-sm"
+      >
         <div id="balance-ticker-card" className="max-w-3xl mx-auto flex flex-col items-center">
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 mb-1">
             Net Position
@@ -884,7 +1005,7 @@ const TransactionHistory = () => {
             Share Balance
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* --- STREAM AREA --- */}
       <div
@@ -1036,7 +1157,12 @@ const TransactionHistory = () => {
       )}
 
       {/* --- COMMAND BAR (Input) --- */}
-      <div className="p-4 bg-zinc-950/80 backdrop-blur-xl border-t border-white/5 relative z-30">
+      <motion.div
+        initial={{ opacity: 0, x: -30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+        className="p-4 bg-zinc-950/80 backdrop-blur-xl border-t border-white/5 relative z-30"
+      >
         <div className="max-w-3xl mx-auto flex flex-col gap-3">
           {/* Input Capsule */}
           <div className="flex items-center gap-3 p-1.5 bg-zinc-900 border border-white/10 rounded-2xl shadow-inner focus-within:border-indigo-500/50 transition-colors">
@@ -1107,139 +1233,195 @@ const TransactionHistory = () => {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* --- CONFIRMATION MODAL - SETTLE UP --- */}
-      {showConfirm && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">
-              Execute Settlement?
-            </h3>
-            <p className="text-sm text-zinc-400 mb-6">
-              This will zero out all pending balances with{" "}
-              <strong className="text-white">{friendName.username}</strong>.
-              Confirm authorization?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleConfirmNo}
-                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800"
-              >
-                Abort
-              </button>
-              <button
-                onClick={handleConfirmYes}
-                disabled={loading}
-                className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showConfirm && (
+          <motion.div
+            className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl"
+              initial={{ opacity: 0, scale: 0.85, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+            >
+              <h3 className="text-lg font-bold text-white mb-2">
+                Execute Settlement?
+              </h3>
+              <p className="text-sm text-zinc-400 mb-6">
+                This will zero out all pending balances with{" "}
+                <strong className="text-white">{friendName.username}</strong>.
+                Confirm authorization?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleConfirmNo}
+                  className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800"
+                >
+                  Abort
+                </button>
+                <button
+                  onClick={handleConfirmYes}
+                  disabled={loading}
+                  className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20"
+                >
+                  Confirm
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* --- CONFIRMATION MODAL - PAID --- */}
-      {showPaidConfirm && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">
-              Confirm Payment?
-            </h3>
-            <p className="text-sm text-zinc-400 mb-4">
-              You are recording that <strong className="text-rose-400">you paid ₹{Math.abs(amount)}</strong> to{" "}
-              <strong className="text-white">{friendName.username}</strong>.
-              Or on behalf of <strong className="text-white">{friendName.username}</strong>.
-            </p>
-            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
-              <strong className="text-zinc-300">Note:</strong> "{text}"<br />
-              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will reduce your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe less. If you already owe them, you'll owe more.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowPaidConfirm(false)}
-                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePaid}
-                className="flex-1 py-2.5 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-500 shadow-lg shadow-rose-900/20 transition-colors"
-              >
-                Confirm Payment
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showPaidConfirm && (
+          <motion.div
+            className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl"
+              initial={{ opacity: 0, scale: 0.85, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+            >
+              <h3 className="text-lg font-bold text-white mb-2">
+                Confirm Payment?
+              </h3>
+              <p className="text-sm text-zinc-400 mb-4">
+                You are recording that <strong className="text-rose-400">you paid ₹{Math.abs(amount)}</strong> to{" "}
+                <strong className="text-white">{friendName.username}</strong>.
+                Or on behalf of <strong className="text-white">{friendName.username}</strong>.
+              </p>
+              <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+                <strong className="text-zinc-300">Note:</strong> "{text}"<br />
+                <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will reduce your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe less. If you already owe them, you'll owe more.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPaidConfirm(false)}
+                  className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePaid}
+                  className="flex-1 py-2.5 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-500 shadow-lg shadow-rose-900/20 transition-colors"
+                >
+                  Confirm Payment
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* --- CONFIRMATION MODAL - RECEIVED --- */}
-      {showReceivedConfirm && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">
-              Confirm Receipt?
-            </h3>
-            <p className="text-sm text-zinc-400 mb-4">
-              You are recording that you <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> from{" "}
-              <strong className="text-white">{friendName.username}</strong>.
-              Or <strong className="text-white">{friendName.username}</strong> paid <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> on your behalf.
-            </p>
-            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
-              <strong className="text-zinc-300">Note:</strong> "{text}"<br />
-              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will increase your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe more. If you owed them, you'll owe less.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowReceivedConfirm(false)}
-                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleReceived}
-                className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transition-colors"
-              >
-                Confirm Receipt
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showReceivedConfirm && (
+          <motion.div
+            className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl"
+              initial={{ opacity: 0, scale: 0.85, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+            >
+              <h3 className="text-lg font-bold text-white mb-2">
+                Confirm Receipt?
+              </h3>
+              <p className="text-sm text-zinc-400 mb-4">
+                You are recording that you <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> from{" "}
+                <strong className="text-white">{friendName.username}</strong>.
+                Or <strong className="text-white">{friendName.username}</strong> paid <strong className="text-emerald-400">received ₹{Math.abs(amount)}</strong> on your behalf.
+              </p>
+              <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+                <strong className="text-zinc-300">Note:</strong> "{text}"<br />
+                <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will increase your balance by ₹{Math.abs(amount)}. If they owed you money, they will owe more. If you owed them, you'll owe less.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowReceivedConfirm(false)}
+                  className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReceived}
+                  className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20 transition-colors"
+                >
+                  Confirm Receipt
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* --- CONFIRMATION MODAL - SEND REMINDER --- */}
-      {showReminderConfirm && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-2">
-              Send Payment Reminder?
-            </h3>
-            <p className="text-sm text-zinc-400 mb-4">
-              Do you want to send a reminder to{" "}
-              <strong className="text-white">{friendName.username}</strong> to settle the balance between you guys?
-            </p>
-            <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
-              <strong className="text-zinc-300">Current Balance:</strong> <span className="text-emerald-400">+₹{Math.abs(netBalance).toFixed(2)}</span><br />
-              <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will send a push notification to {friendName.username} reminding them about the pending balance.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowReminderConfirm(false)}
-                className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSendReminder}
-                className="flex-1 py-2.5 rounded-lg bg-yellow-600 text-white font-medium hover:bg-yellow-500 shadow-lg shadow-yellow-900/20 transition-colors"
-              >
-                Send Reminder
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showReminderConfirm && (
+          <motion.div
+            className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl"
+              initial={{ opacity: 0, scale: 0.85, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+            >
+              <h3 className="text-lg font-bold text-white mb-2">
+                Send Payment Reminder?
+              </h3>
+              <p className="text-sm text-zinc-400 mb-4">
+                Do you want to send a reminder to{" "}
+                <strong className="text-white">{friendName.username}</strong> to settle the balance between you guys?
+              </p>
+              <p className="text-xs text-zinc-500 bg-zinc-800/50 border border-white/5 rounded-lg p-3 mb-6">
+                <strong className="text-zinc-300">Current Balance:</strong> <span className="text-emerald-400">+₹{Math.abs(netBalance).toFixed(2)}</span><br />
+                <strong className="text-zinc-300 mt-2 block">Effect:</strong> This will send a push notification to {friendName.username} reminding them about the pending balance.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowReminderConfirm(false)}
+                  className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendReminder}
+                  className="flex-1 py-2.5 rounded-lg bg-yellow-600 text-white font-medium hover:bg-yellow-500 shadow-lg shadow-yellow-900/20 transition-colors"
+                >
+                  Send Reminder
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

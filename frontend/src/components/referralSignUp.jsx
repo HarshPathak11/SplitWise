@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import { auth, googleProvider } from "../../firebase";
 import { signInWithPopup } from "firebase/auth";
 import api from "../utils/api";
+import { motion } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ReferralSignUp = () => {
@@ -148,7 +149,12 @@ const ReferralSignUp = () => {
       </div>
 
       {/* --- NAVIGATION: Back Button --- */}
-      <div className="absolute top-8 left-8 z-50">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.6, 0.2, 1] }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="absolute top-8 left-8 z-50"
+      >
         <button
           onClick={() => navigate("/")}
           className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-md"
@@ -158,10 +164,15 @@ const ReferralSignUp = () => {
             Home
           </span>
         </button>
-      </div>
+      </motion.div>
 
       {/* --- MAIN CARD --- */}
-      <div className="relative z-10 w-full max-w-md p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: [0, 0.4, 0.15, 1], y: 0 }}
+        transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
+        className="relative z-10 w-full max-w-md p-4"
+      >
         {/* Glow behind card */}
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent rounded-3xl blur-xl opacity-50 pointer-events-none"></div>
 
@@ -187,8 +198,8 @@ const ReferralSignUp = () => {
             {/* Step 1: User Details (Hide if OTP sent to focus on verification, or keep visible disabled) */}
             <div
               className={`space-y-4 transition-all duration-500 ${otpSent
-                  ? "opacity-50 pointer-events-none grayscale"
-                  : "opacity-100"
+                ? "opacity-50 pointer-events-none grayscale"
+                : "opacity-100"
                 }`}
             >
               {/* Full Name */}
@@ -218,8 +229,8 @@ const ReferralSignUp = () => {
                   // Use readOnly if the email is in the URL
                   readOnly={!!searchParams.get("email")}
                   className={`w-full border rounded-xl px-4 py-3 text-white placeholder-white/20 focus:outline-none transition-all ${searchParams.get("email")
-                      ? "bg-white/5 border-white/5 cursor-not-allowed opacity-70" // Style for auto-filled state
-                      : "bg-white/5 border-white/10 focus:bg-white/10 focus:border-white/20"
+                    ? "bg-white/5 border-white/5 cursor-not-allowed opacity-70" // Style for auto-filled state
+                    : "bg-white/5 border-white/10 focus:bg-white/10 focus:border-white/20"
                     }`}
                 />
                 {searchParams.get("email") && (
@@ -348,7 +359,7 @@ const ReferralSignUp = () => {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Styles */}
       <style>{`

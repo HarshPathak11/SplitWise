@@ -12,6 +12,47 @@ import api from "../utils/api";
 import TermsPopup from "./TermsPopup";
 import QuickActions from "./QuickActions";
 import QuickAddExpenseModal from "./QuickAddExpenseModal";
+import { motion } from "framer-motion";
+
+// Stagger container — children animate one after another
+const stagger = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+// Each card pops in with spring overshoot + slides up
+const popIn = {
+  hidden: { opacity: 0, scale: 0.92, y: 20 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 22,
+    },
+  },
+};
+
+// Header slides down with a gentle spring
+const headerDrop = {
+  hidden: { opacity: 0, y: -24 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 200,
+      damping: 20,
+    },
+  },
+};
 
 const Dashboard = () => {
   const [user, setUser] = useState(null);
@@ -104,53 +145,67 @@ const Dashboard = () => {
         {/* Grid Layout: 7 cols for Main, 5 cols for Data/Friends */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           {/* --- LEFT COLUMN (Primary Actions) --- */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            animate="show"
+            className="lg:col-span-7 flex flex-col gap-6"
+          >
             {/* Header Area */}
-            <div className="pl-1">
+            <motion.div variants={headerDrop} className="pl-1">
               <TopNavbar user={user} />
-            </div>
+            </motion.div>
 
             {/* Main Card Wrapper - Giving it a 'Premium Device' feel */}
-            <div className="relative group perspective-1000">
+            <motion.div variants={popIn} className="relative group perspective-1000">
               <FairFareCard />
-            </div>
+            </motion.div>
 
             {/* Quick Actions Bar */}
-            <QuickActions onQuickExpenseClick={() => setShowQuickExpense(true)} />
+            <motion.div variants={popIn}>
+              <QuickActions onQuickExpenseClick={() => setShowQuickExpense(true)} />
+            </motion.div>
 
             {/* Trips Section - Wrapped in a clean container */}
-            <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-1 backdrop-blur-sm overflow-hidden">
+            <motion.div
+              variants={popIn}
+              className="bg-zinc-900/50 border border-white/5 rounded-2xl p-1 backdrop-blur-sm overflow-hidden"
+            >
               <div className="p-4 md:p-6">
                 <TripsSection user={user} />
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           {/* --- RIGHT COLUMN (Data & Social) --- */}
-          <div className="lg:col-span-5 flex flex-col gap-6 h-full">
-            {/* Mobile Swipe Hint */}
-            {/* {isMobile && (
-              <div>
-                <SwipeToFriends />
-              </div>
-            )} */}
-
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            animate="show"
+            className="lg:col-span-5 flex flex-col gap-6 h-full"
+          >
             {/* Recent Expenses - The 'Ledger' */}
-            <div className="flex-1 bg-zinc-900/50 border border-white/5 rounded-2xl backdrop-blur-sm overflow-hidden flex flex-col">
+            <motion.div
+              variants={popIn}
+              className="flex-1 bg-zinc-900/50 border border-white/5 rounded-2xl backdrop-blur-sm overflow-hidden flex flex-col"
+            >
               <div className="p-4 md:p-6 flex-1">
                 <RecentExpenses user={user} />
               </div>
-            </div>
+            </motion.div>
 
             {/* Friends Section - The 'Contacts' */}
             {!isMobile && (
-              <div className="bg-zinc-900/50 border border-white/5 rounded-2xl backdrop-blur-sm overflow-hidden">
+              <motion.div
+                variants={popIn}
+                className="bg-zinc-900/50 border border-white/5 rounded-2xl backdrop-blur-sm overflow-hidden"
+              >
                 <div className="p-4 md:p-6">
                   <FriendsSection user={user} />
                 </div>
-              </div>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         </div>
       </div>
       <TermsPopup user={user} setUser={setUser} />

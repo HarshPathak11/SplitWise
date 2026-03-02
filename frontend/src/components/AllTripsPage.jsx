@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { ArrowLeft, Search, Map, Layers, Archive, RotateCcw } from "lucide-react";
 import api from "../utils/api";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -144,7 +145,12 @@ const AllTripsPage = () => {
       {/* --- HEADER --- */}
       <div className="relative z-20 pt-6 px-4 pb-4">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: -15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="flex items-center justify-between mb-8"
+          >
             <button
               onClick={() => navigate("/dash")}
               className="group flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 backdrop-blur-md transition-all duration-300 active:scale-95 shadow-lg"
@@ -154,10 +160,15 @@ const AllTripsPage = () => {
                 Dashboard
               </span>
             </button>
-          </div>
+          </motion.div>
 
           {/* Title & Search */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5">
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+            className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5"
+          >
             <div>
               <div className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-indigo-500/10 border border-indigo-500/20 mb-3">
                 <Map className="w-3 h-3 text-indigo-400" />
@@ -198,10 +209,15 @@ const AllTripsPage = () => {
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* --- TABS --- */}
-          <div className="flex items-center gap-1 mt-5 bg-zinc-900/50 rounded-xl p-1 w-fit border border-white/5">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease: "easeOut", delay: 0.25 }}
+            className="flex items-center gap-1 mt-5 bg-zinc-900/50 rounded-xl p-1 w-fit border border-white/5"
+          >
             <button
               onClick={() => setTab("active")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -234,12 +250,17 @@ const AllTripsPage = () => {
                 </span>
               )}
             </button>
-          </div>
+          </motion.div>
         </div>
       </div>
 
       {/* --- MAIN CONTENT --- */}
-      <div className="relative z-10 flex-1 w-full max-w-6xl mx-auto px-4 pb-20 overflow-y-auto custom-scrollbar">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.35 }}
+        className="relative z-10 flex-1 w-full max-w-6xl mx-auto px-4 pb-20 overflow-y-auto custom-scrollbar"
+      >
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 opacity-70">
             <div className="relative">
@@ -353,7 +374,7 @@ const AllTripsPage = () => {
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
       <style>{`
       .custom-scrollbar::-webkit-scrollbar { width: 6px; }

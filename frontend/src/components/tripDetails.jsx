@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Pencil, Check, X, ArrowUpRight, Image as ImageIcon, Camera, Loader2, CalendarDays, Trash2 } from "lucide-react";
 import DatePicker from "./DatePicker";
-import ExpenseCard from "./expenseCard"; // Ensure this path is correct
+import ExpenseCard from "./expenseCard";
+import { motion } from "framer-motion";
 import { FaChartBar } from "react-icons/fa";
 import { useParams } from "react-router-dom";
 import Cookies from "js-cookie";
@@ -392,7 +393,12 @@ const TripDetails = () => {
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-8">
         {/* --- NAVIGATION BAR --- */}
-        <div className="flex justify-between items-center mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="flex justify-between items-center mb-8"
+        >
           <button
             onClick={handleBackClick}
             className="group flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all backdrop-blur-md"
@@ -421,10 +427,15 @@ const TripDetails = () => {
               Leave Group
             </button>
           </div>
-        </div>
+        </motion.div>
 
         {/* --- HERO SECTION: Compact Mission Brief --- */}
-        <div className="relative bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-xl mb-6 group/banner-container">
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.15 }}
+          className="relative bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-xl mb-6 group/banner-container"
+        >
 
           {/* Banner Image Area */}
           <div className="relative h-40 sm:h-56 w-full overflow-hidden bg-zinc-800">
@@ -617,11 +628,16 @@ const TripDetails = () => {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* --- LEFT COLUMN: The Crew (Members) --- */}
-          <div className="lg:col-span-4 space-y-4 sm:space-y-6">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
+            className="lg:col-span-4 space-y-4 sm:space-y-6"
+          >
             <div className="bg-zinc-900/30 border border-white/5 rounded-2xl p-4 sm:p-5 backdrop-blur-sm lg:sticky lg:top-6">
               <div className="flex justify-between items-center mb-4 sm:mb-6">
                 <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
@@ -708,10 +724,15 @@ const TripDetails = () => {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* --- RIGHT COLUMN: The Log (Expenses) --- */}
-          <div className="lg:col-span-8">
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut", delay: 0.45 }}
+            className="lg:col-span-8"
+          >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 Mission Log
@@ -774,7 +795,7 @@ const TripDetails = () => {
               )}
               <div ref={loaderRef} className="h-1 w-full"></div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* --- LEAVE CONFIRMATION MODAL --- */}

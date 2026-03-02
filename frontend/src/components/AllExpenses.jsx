@@ -4,6 +4,7 @@ import ExpenseCard from "./expenseCard";
 import { FaArrowLeft } from "react-icons/fa";
 import Cookies from "js-cookie";
 import api from "../utils/api";
+import { motion } from "framer-motion";
 
 const PAGE_SIZE = 20;
 const DEBOUNCE_MS = 300;
@@ -216,7 +217,12 @@ const AllExpensesPage = () => {
         {/* --- HEADER --- */}
         <div className="flex flex-col gap-4 mb-6">
           {/* Back & Title */}
-          <div className="flex items-center gap-3">
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45, ease: [0.25, 1, 0.5, 1] }}
+            className="flex items-center gap-3"
+          >
             <button
               onClick={() => navigate(-1)}
               className="group p-2 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg"
@@ -227,10 +233,15 @@ const AllExpensesPage = () => {
               Transaction Archive
               <span className="md:hidden flex h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
             </h1>
-          </div>
+          </motion.div>
 
           {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2">
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45, ease: [0.25, 1, 0.5, 1], delay: 0.1 }}
+            className="flex flex-wrap items-center gap-2"
+          >
             {[
               { key: "all", label: "All" },
               { key: "personal", label: "Personal" },
@@ -261,7 +272,7 @@ const AllExpensesPage = () => {
                 + Add Trip
               </button>
             )}
-          </div>
+          </motion.div>
 
           {/* Selected Trip Chips */}
           {selectedGroups.length > 0 && (
@@ -287,7 +298,12 @@ const AllExpensesPage = () => {
           )}
 
           {/* Search & Stats Row */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <motion.div
+            initial={{ opacity: 0, scaleX: 0.8 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            transition={{ duration: 0.4, ease: "easeOut", delay: 0.2 }}
+            className="flex flex-col sm:flex-row gap-3"
+          >
             <div className="relative flex-1 group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 {searching ? (
@@ -328,11 +344,16 @@ const AllExpensesPage = () => {
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
 
         {/* --- CONTENT LIST --- */}
-        <div className="flex-1 bg-zinc-900/30 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm relative shadow-inner">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
+          className="flex-1 bg-zinc-900/30 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm relative shadow-inner"
+        >
           <div className="absolute inset-0 overflow-y-auto p-3 sm:p-4 custom-scrollbar">
             {loading ? (
               <div className="h-full flex flex-col items-center justify-center gap-4">
@@ -401,7 +422,7 @@ const AllExpensesPage = () => {
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* ═══════════ TRIP PICKER POPUP ═══════════ */}

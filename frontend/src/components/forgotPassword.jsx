@@ -4,6 +4,7 @@ import Cookies from "js-cookie";
 import { ArrowLeft, Mail, KeyRound, ShieldCheck, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../utils/api";
+import { motion } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ForgotPassword = () => {
@@ -77,7 +78,12 @@ const ForgotPassword = () => {
       </div>
 
       {/* --- NAVIGATION: Back Button --- */}
-      <div className="absolute top-8 left-8 z-50">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+        className="absolute top-8 left-8 z-50"
+      >
         <button
           onClick={() => navigate("/login")}
           className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-md"
@@ -87,10 +93,15 @@ const ForgotPassword = () => {
             Back to Login
           </span>
         </button>
-      </div>
+      </motion.div>
 
       {/* --- MAIN CARD --- */}
-      <div className="relative z-10 w-full max-w-md px-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 22, delay: 0.1 }}
+        className="relative z-10 w-full max-w-md px-4"
+      >
         {/* Glow behind card */}
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent rounded-3xl blur-xl opacity-50 pointer-events-none"></div>
 
@@ -204,7 +215,7 @@ const ForgotPassword = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Styles for animation (Matched to SignUp) */}
       <style>{`

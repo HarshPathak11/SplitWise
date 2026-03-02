@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { authFetch } from "../utils/authFetch";
 import api from "../utils/api";
 import AvatarSelector from "./AvatarSelector";
+import { motion } from "framer-motion";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -342,7 +343,13 @@ Let's split and share smarter with FairFare! 💸`;
       )}
 
       {/* --- MAIN CARD --- */}
-      <div className="relative pt-6 px-2 z-10 w-full max-w-2xl">
+      <motion.div
+        initial={{ opacity: 0, rotateX: 8 }}
+        animate={{ opacity: 1, rotateX: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        style={{ perspective: 800 }}
+        className="relative pt-6 px-2 z-10 w-full max-w-2xl"
+      >
         <div className="bg-zinc-900/40 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/5 overflow-hidden relative">
           {/* --- BANNER --- */}
           <div className="relative h-40 bg-gradient-to-br from-slate-800 via-slate-900 to-black overflow-hidden group">
@@ -553,7 +560,7 @@ Let's split and share smarter with FairFare! 💸`;
             </form>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

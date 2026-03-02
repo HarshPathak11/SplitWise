@@ -3,6 +3,7 @@ import { X, Receipt, CheckCircle, Search, Sparkles, Wand2, Loader2, Mic, MicOff 
 import api from "../utils/api";
 import toast from "react-hot-toast";
 import Cookies from "js-cookie";
+import { motion, AnimatePresence } from "framer-motion";
 
 const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
     const [description, setDescription] = useState("");
@@ -191,16 +192,31 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm transition-opacity"
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm"
                 onClick={onClose}
             />
 
             {/* Modal Content */}
-            <div className="relative w-full max-w-md bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.85, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="relative w-full max-w-md bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+            >
 
                 {/* Header */}
-                <div className="p-4 border-b border-white/5 flex items-center justify-between bg-zinc-900/50">
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1, duration: 0.3, ease: "easeOut" }}
+                    className="p-4 border-b border-white/5 flex items-center justify-between bg-zinc-900/50"
+                >
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
                             <Sparkles className="w-5 h-5" />
@@ -213,10 +229,15 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                     <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-zinc-500">
                         <X className="w-5 h-5" />
                     </button>
-                </div>
+                </motion.div>
 
                 {/* Body */}
-                <div className="p-6 flex flex-col gap-6 max-h-[85vh] overflow-y-auto scrollbar-hide">
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15, duration: 0.35, ease: "easeOut" }}
+                    className="p-6 flex flex-col gap-6 max-h-[85vh] overflow-y-auto scrollbar-hide"
+                >
 
                     {/* Integrated Magic Box - The Hero UI */}
                     <div className="relative">
@@ -378,8 +399,8 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                         </form>
                     )}
 
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
         </div>
     );
 };

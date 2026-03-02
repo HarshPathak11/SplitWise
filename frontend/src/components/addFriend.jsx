@@ -19,7 +19,7 @@ import {
   UserCheck, // Imported UserCheck
 } from "lucide-react";
 import api from "../utils/api";
-// import { convertOffsetToTimes } from "framer-motion";
+import { motion } from "framer-motion";
 
 const AddFriend = () => {
   const navigate = useNavigate();
@@ -313,7 +313,12 @@ const AddFriend = () => {
       </div>
 
       {/* --- TOP NAVIGATION BAR --- */}
-      <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-50">
+      <motion.div
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 180, damping: 14 }}
+        className="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-50"
+      >
         <button
           onClick={() => {
             sessionStorage.removeItem("selectedFriends");
@@ -409,10 +414,15 @@ const AddFriend = () => {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* --- MAIN INTERFACE --- */}
-      <div className="relative z-10 w-full max-w-lg">
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 150, damping: 18, delay: 0.1 }}
+        className="relative z-10 w-full max-w-lg"
+      >
         <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
           {/* Header */}
           <div className="px-8 pt-8 pb-6 text-center">
@@ -616,7 +626,7 @@ const AddFriend = () => {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* --- EMAIL INVITE MODAL --- */}
       {showInviteModal && (

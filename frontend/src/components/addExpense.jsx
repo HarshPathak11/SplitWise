@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Mic, Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 import api from "../utils/api";
 
@@ -26,6 +27,7 @@ const AddExpense = () => {
   const [calcExpr, setCalcExpr] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const [resultOverlay, setResultOverlay] = useState(null); // { type: 'success'|'error', amount?: number, message?: string }
   const recognitionRef = useRef(null); // Ref to store recognition instance
 
   const handleStopListening = () => {
@@ -207,8 +209,10 @@ const AddExpense = () => {
         return;
       }
 
-      if (response.status === 200) toast.success("Expense added successfully!");
-      // console.log("Expense created successfully", response.data);
+      if (response.status === 200) {
+        const addedAmount = parseFloat(mainAmount) || 0;
+        setResultOverlay({ type: "success", amount: addedAmount, message: "Expense Added!" });
+      }
       // Reset form fields
       setTitle("");
       setMainAmount("");
@@ -220,8 +224,9 @@ const AddExpense = () => {
       localStorage.removeItem("currentGroup");
 
       setTimeout(() => {
+        setResultOverlay(null);
         navigate(-1);
-      }, 100); // 0.5 seconds is usually enough
+      }, 1800);
     } catch (error) {
       console.error("Error creating expense:", error);
       const errorMsg =
@@ -230,6 +235,8 @@ const AddExpense = () => {
           error.response.data.message) ||
         "Error creating expense. Please try again.";
       toast.error(errorMsg);
+      setResultOverlay({ type: "error", message: errorMsg });
+      setTimeout(() => setResultOverlay(null), 2500);
     } finally {
       setIsLoading(false); // ✅ Stop loading
     }
@@ -416,7 +423,12 @@ const AddExpense = () => {
 
       <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col h-full flex-1 p-4 sm:p-6">
         {/* --- HEADER --- */}
-        <div className="flex items-center gap-4 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: -15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="flex items-center gap-4 mb-8"
+        >
           <button
             onClick={() => navigate(-1)}
             className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg"
@@ -426,10 +438,15 @@ const AddExpense = () => {
           <h1 className="text-xl font-bold text-white tracking-tight uppercase">
             New Transaction
           </h1>
-        </div>
+        </motion.div>
 
         {/* --- MAIN FORM --- */}
-        <div className="flex-1 space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
+          className="flex-1 space-y-6"
+        >
           {/* 1. AMOUNT INPUT (Hero) */}
           <div className="flex flex-col items-center justify-center py-8">
             <span className="text-zinc-500 text-sm font-medium uppercase tracking-widest mb-2">
@@ -672,10 +689,15 @@ const AddExpense = () => {
               })}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* --- FOOTER ACTIONS --- */}
-        <div className="mt-8 sticky bottom-4 z-20">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.16 }}
+          className="mt-8 sticky bottom-4 z-20"
+        >
           {/* Unequal Split Validator Bar */}
           {splitMode === "unequally" && (
             <div
@@ -715,8 +737,161 @@ const AddExpense = () => {
               "Confirm Transaction"
             )}
           </button>
-        </div>
+        </motion.div>
       </div>
+
+      {/* --- SUCCESS / ERROR OVERLAY --- */}
+      <AnimatePresence>
+        {resultOverlay && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => setResultOverlay(null)}
+          >
+            {resultOverlay.type === "success" ? (
+              <>
+                {/* Glow */}
+                <motion.div
+                  className="absolute w-44 h-44 rounded-full blur-3xl bg-emerald-500/20"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 2.5, opacity: 0 }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                />
+                {/* Particles */}
+                {[...Array(8)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-2 h-2 rounded-full bg-emerald-400"
+                    initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                    animate={{
+                      scale: [0, 1, 0.5],
+                      x: Math.cos((i * Math.PI * 2) / 8) * 80,
+                      y: Math.sin((i * Math.PI * 2) / 8) * 80,
+                      opacity: [1, 1, 0],
+                    }}
+                    transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                  />
+                ))}
+                {/* Checkmark */}
+                <motion.div
+                  className="relative w-24 h-24 rounded-full border-2 border-emerald-500 flex items-center justify-center mb-5"
+                  initial={{ scale: 0, rotate: -60 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.05 }}
+                >
+                  <motion.div
+                    className="absolute inset-0 rounded-full bg-emerald-600/20"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.25, duration: 0.3 }}
+                  />
+                  <svg className="w-12 h-12 text-emerald-400" viewBox="0 0 24 24" fill="none">
+                    <motion.path
+                      d="M5 13l4 4L19 7"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ delay: 0.35, duration: 0.4, ease: "easeOut" }}
+                    />
+                  </svg>
+                </motion.div>
+                <motion.p
+                  className="text-xl font-bold text-white mb-1"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  {resultOverlay.message}
+                </motion.p>
+                {resultOverlay.amount && (
+                  <motion.p
+                    className="text-3xl font-mono font-bold text-emerald-400 tracking-tight"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    ₹{resultOverlay.amount.toFixed(2)}
+                  </motion.p>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Error glow */}
+                <motion.div
+                  className="absolute w-44 h-44 rounded-full blur-3xl bg-red-500/20"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 2, opacity: 0 }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                />
+                {/* X mark */}
+                <motion.div
+                  className="relative w-24 h-24 rounded-full border-2 border-red-500 flex items-center justify-center mb-5"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1, x: [0, -8, 8, -6, 6, 0] }}
+                  transition={{ scale: { type: "spring", stiffness: 200, damping: 14 }, x: { delay: 0.3, duration: 0.4 } }}
+                >
+                  <motion.div
+                    className="absolute inset-0 rounded-full bg-red-600/20"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, duration: 0.3 }}
+                  />
+                  <svg className="w-12 h-12 text-red-400" viewBox="0 0 24 24" fill="none">
+                    <motion.path
+                      d="M18 6L6 18"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ delay: 0.3, duration: 0.3 }}
+                    />
+                    <motion.path
+                      d="M6 6l12 12"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ delay: 0.45, duration: 0.3 }}
+                    />
+                  </svg>
+                </motion.div>
+                <motion.p
+                  className="text-xl font-bold text-white mb-1"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  Something went wrong
+                </motion.p>
+                <motion.p
+                  className="text-sm text-zinc-400 text-center max-w-xs"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  {resultOverlay.message}
+                </motion.p>
+              </>
+            )}
+            <motion.p
+              className="text-xs text-zinc-500 mt-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              Tap anywhere to dismiss
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* --- VOICE LISTENING MODAL --- */}
       {isListening && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">

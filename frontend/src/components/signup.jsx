@@ -10,6 +10,7 @@ import ReactMarkdown from "react-markdown";
 import { auth, googleProvider } from "../../firebase";
 import { signInWithPopup } from "firebase/auth";
 import api from "../utils/api";
+import { motion } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PRIVACY_TEMPLATES = [
@@ -309,7 +310,12 @@ const SignUp = () => {
       </div>
 
       {/* --- NAVIGATION: Back Button --- */}
-      <div className="absolute top-8 left-8 z-50">
+      <motion.div
+        initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+        animate={{ opacity: 1, rotate: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute top-8 left-8 z-50"
+      >
         <button
           onClick={() => navigate("/")}
           className="group flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-md"
@@ -319,10 +325,15 @@ const SignUp = () => {
             Home
           </span>
         </button>
-      </div>
+      </motion.div>
 
       {/* --- MAIN CARD --- */}
-      <div className="relative z-10 w-full max-w-md px-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, rotate: 2 }}
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+        className="relative z-10 w-full max-w-md px-4"
+      >
         {/* Glow behind card */}
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent rounded-3xl blur-xl opacity-50 pointer-events-none"></div>
 
@@ -541,7 +552,7 @@ const SignUp = () => {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* --- MODAL OVERLAY --- */}
       {activeModal && (

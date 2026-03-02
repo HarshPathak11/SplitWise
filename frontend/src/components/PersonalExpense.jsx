@@ -246,7 +246,12 @@ const PersonalExpense = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <motion.div
+          initial={{ opacity: 0, x: -20, y: -15 }}
+          animate={{ opacity: 1, x: 0, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="flex items-center justify-between mb-4"
+        >
           <Link to="/dash">
             <button className="p-3 rounded-full bg-zinc-900/50 border border-white/5 hover:bg-zinc-800 hover:border-white/10 text-zinc-400 hover:text-white transition-all duration-300 shadow-lg group backdrop-blur-md">
               <svg
@@ -269,11 +274,16 @@ const PersonalExpense = () => {
             Personal Expenses
           </h1>
           <div className="w-12"></div> {/* Spacer for alignment */}
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 flex-1 overflow-visible">
           {/* Add Expense Form - Left Column on Large Screens */}
-          <div className="lg:col-span-4 overflow-y-auto">
+          <motion.div
+            initial={{ opacity: 0, x: -25, y: 20 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+            className="lg:col-span-4 overflow-y-auto"
+          >
             <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-5 lg:p-6 backdrop-blur-xl shadow-xl sticky top-4">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
@@ -422,12 +432,17 @@ const PersonalExpense = () => {
                 </p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
 
 
           {/* Expenses List & Stats - Right Column */}
-          <div className="lg:col-span-8 flex flex-col gap-4 overflow-visible">
+          <motion.div
+            initial={{ opacity: 0, x: 25, y: -20 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+            className="lg:col-span-8 flex flex-col gap-4 overflow-visible"
+          >
             {/* Stats Cards */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-zinc-900/50 border border-white/10 rounded-xl p-4 backdrop-blur-md flex items-center justify-between">
@@ -554,7 +569,7 @@ const PersonalExpense = () => {
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 

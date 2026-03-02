@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import FriendCard from "./FriendCard"; // ✅ adjust path as needed
+import FriendCard from "./FriendCard";
 import { FaArrowLeft } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import { FixedSizeList as List } from "react-window";
 import api from "../utils/api";
 import Cookies from "js-cookie";
+import { motion } from "framer-motion";
 
 const AllFriendsPage = () => {
   const navigate = useNavigate();
@@ -140,7 +141,7 @@ const AllFriendsPage = () => {
       // Extract error message from backend response
       const errorMessage = error.response?.data?.message || "Could not delete friend. Try again.";
       const balance = error.response?.data?.balance;
-      
+
       // Show balance info if available
       if (balance !== undefined) {
         toast.error(`${errorMessage} Current balance: ₹${Math.abs(balance).toFixed(2)}`);
@@ -188,7 +189,12 @@ const AllFriendsPage = () => {
 
       <div className="relative z-10 flex flex-col h-full max-w-2xl mx-auto w-full p-4 sm:p-6">
         {/* --- Header --- */}
-        <div className="relative flex items-center justify-center mb-8">
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0.6 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="relative flex items-center justify-center mb-8"
+        >
           {/* Back Button */}
           <div className="absolute left-0">
             <button
@@ -204,10 +210,15 @@ const AllFriendsPage = () => {
           <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
             Your Contacts
           </h1>
-        </div>
+        </motion.div>
 
         {/* --- Search & Add --- */}
-        <div className="flex items-center gap-3 mb-6 bg-zinc-900/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md">
+        <motion.div
+          initial={{ opacity: 0, scaleX: 0.7 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+          className="flex items-center gap-3 mb-6 bg-zinc-900/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md"
+        >
           <div className="flex-1 flex items-center px-3">
             <svg
               className="w-4 h-4 text-zinc-500 mr-2"
@@ -258,10 +269,15 @@ const AllFriendsPage = () => {
               </svg>
             </button>
           </Link>
-        </div>
+        </motion.div>
 
         {/* --- Friends List --- */}
-        <div className="min-h-[60vh] bg-zinc-900/30 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm relative">
+        <motion.div
+          initial={{ opacity: 0, y: 20, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut", delay: 0.3 }}
+          className="min-h-[60vh] bg-zinc-900/30 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm relative"
+        >
           {sortedFriends.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
               {friends.length === 0 ? (
@@ -349,7 +365,7 @@ const AllFriendsPage = () => {
               </List>
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </div>
   );

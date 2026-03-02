@@ -2,15 +2,16 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { 
-  Calendar, 
-  ChevronDown, 
-  Trophy, 
-  TrendingUp, 
-  Target, 
-  ArrowLeft 
+import {
+  Calendar,
+  ChevronDown,
+  Trophy,
+  TrendingUp,
+  Target,
+  ArrowLeft
 } from "lucide-react";
 import api from "../utils/api";
+import { motion } from "framer-motion";
 
 export default function Analytics() {
   const [topCategories, setTopCategories] = useState([]);
@@ -162,7 +163,12 @@ export default function Analytics() {
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* --- HEADER: Mission Status --- */}
-        <div className="flex items-center gap-4 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: [0, 0.5, 0.3, 1], y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="flex items-center gap-4 mb-8"
+        >
           <Link to={group ? `/tripDetails/${group._id}` : "/dash"}>
             <button className="group p-3 rounded-full bg-zinc-900/50 border border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300 backdrop-blur-md shadow-lg shadow-black/20">
               <ArrowLeft className="w-5 h-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
@@ -181,10 +187,15 @@ export default function Analytics() {
               FINANCIAL INTELLIGENCE UNIT
             </p>
           </div>
-        </div>
+        </motion.div>
 
         {/* --- CONTROL DECK (Filters) --- */}
-        <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-2 mb-8 backdrop-blur-sm flex flex-col sm:flex-row gap-4 items-center justify-between shadow-lg">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25, delay: 0.15 }}
+          className="bg-zinc-900/40 border border-white/5 rounded-2xl p-2 mb-8 backdrop-blur-sm flex flex-col sm:flex-row gap-4 items-center justify-between shadow-lg"
+        >
           {/* Timeframe Dial */}
           <div className="relative group w-full sm:w-auto">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-indigo-400">
@@ -226,10 +237,15 @@ export default function Analytics() {
               />
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* --- HUD STATS (Scoreboard) --- */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
+        >
           {/* Main Score: Total Spent */}
           <div className="col-span-1 md:col-span-2 relative overflow-hidden bg-gradient-to-br from-indigo-950/50 to-zinc-900/50 border border-indigo-500/20 rounded-3xl p-6 shadow-2xl group">
             {/* Background Pattern */}
@@ -292,8 +308,8 @@ export default function Analytics() {
                   ₹
                   {topCategories.length > 0
                     ? Math.round(
-                        totalSpending / topCategories.length
-                      ).toLocaleString()
+                      totalSpending / topCategories.length
+                    ).toLocaleString()
                     : 0}
                 </p>
               </div>
@@ -302,12 +318,17 @@ export default function Analytics() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* --- MAIN VISUALIZER GRID --- */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* LEFT: Holographic Chart */}
-          <div className="lg:col-span-5 bg-zinc-900/30 border border-white/5 rounded-3xl p-6 flex flex-col items-center justify-center relative min-h-[400px] shadow-inner">
+          <motion.div
+            initial={{ opacity: 0, x: -35, rotate: -2 }}
+            animate={{ opacity: 1, x: 0, rotate: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.45 }}
+            className="lg:col-span-5 bg-zinc-900/30 border border-white/5 rounded-3xl p-6 flex flex-col items-center justify-center relative min-h-[400px] shadow-inner"
+          >
             {loading ? (
               <div className="flex flex-col items-center gap-4">
                 <div className="w-16 h-16 border-4 border-zinc-800 border-t-indigo-500 rounded-full animate-spin"></div>
@@ -369,10 +390,15 @@ export default function Analytics() {
                 </div>
               </>
             )}
-          </div>
+          </motion.div>
 
           {/* RIGHT: Leaderboard (XP Bars) */}
-          <div className="lg:col-span-7 space-y-4">
+          <motion.div
+            initial={{ opacity: 0, x: 35 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.55 }}
+            className="lg:col-span-7 space-y-4"
+          >
             <div className="flex items-center gap-2 mb-4 px-2">
               <Trophy
                 size={18}
@@ -415,15 +441,14 @@ export default function Analytics() {
                         <div className="flex items-center gap-4">
                           {/* Rank Badge */}
                           <div
-                            className={`w-8 h-8 flex items-center justify-center rounded-lg font-black text-sm border ${
-                              index === 0
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg font-black text-sm border ${index === 0
                                 ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/30 shadow-[0_0_10px_rgba(234,179,8,0.2)]"
                                 : index === 1
-                                ? "bg-zinc-400/10 text-zinc-300 border-zinc-400/30"
-                                : index === 2
-                                ? "bg-orange-700/10 text-orange-400 border-orange-700/30"
-                                : "bg-zinc-800/50 text-zinc-500 border-zinc-700/30"
-                            }`}
+                                  ? "bg-zinc-400/10 text-zinc-300 border-zinc-400/30"
+                                  : index === 2
+                                    ? "bg-orange-700/10 text-orange-400 border-orange-700/30"
+                                    : "bg-zinc-800/50 text-zinc-500 border-zinc-700/30"
+                              }`}
                           >
                             {index + 1}
                           </div>
@@ -461,7 +486,7 @@ export default function Analytics() {
                 );
               })}
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>

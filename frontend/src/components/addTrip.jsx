@@ -212,7 +212,12 @@ const AddTrip = () => {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]"></div>
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-10 flex flex-col h-full">
+      <motion.div
+        initial={{ opacity: 0, scale: 1.06 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-10 max-w-5xl mx-auto w-full p-4 sm:p-6 lg:p-10 flex flex-col h-full"
+      >
         {/* --- HEADER --- */}
         <div className="flex items-center gap-4 mb-8">
           <Link to="/dash">
@@ -562,7 +567,7 @@ const AddTrip = () => {
             </div>
           </form>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
