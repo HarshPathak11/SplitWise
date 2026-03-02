@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Check, X, ArrowUpRight, Image as ImageIcon, Camera, Loader2 } from "lucide-react";
+import { ArrowLeft, Pencil, Check, X, ArrowUpRight, Image as ImageIcon, Camera, Loader2, CalendarDays, Trash2 } from "lucide-react";
+import DatePicker from "./DatePicker";
 import ExpenseCard from "./expenseCard"; // Ensure this path is correct
 import { FaChartBar } from "react-icons/fa";
 import { useParams } from "react-router-dom";
@@ -36,6 +37,7 @@ const TripDetails = () => {
   const [expenses, setExpenses] = useState([]);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [showArchiveConfirmation, setShowArchiveConfirmation] = useState(false);
+  const [showBannerDeleteConfirm, setShowBannerDeleteConfirm] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [cursor, setCursor] = useState(null);
   const [loadingExpenses, setLoadingExpenses] = useState(false);
@@ -46,14 +48,35 @@ const TripDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editFrom, setEditFrom] = useState("");
+  const [editTo, setEditTo] = useState("");
   const [saving, setSaving] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [bannerLightbox, setBannerLightbox] = useState(false);
   const fileInputRef = useRef(null);
 
+  const formatDateForPicker = (d) => {
+    if (!d) return "";
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return "";
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const formatDateDisplay = (d) => {
+    if (!d) return null;
+    const date = new Date(d);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
   const startEditing = () => {
     setEditName(tripDetails?.name || "");
     setEditDescription(tripDetails?.description || "");
+    setEditFrom(formatDateForPicker(tripDetails?.from));
+    setEditTo(formatDateForPicker(tripDetails?.to));
     setIsEditing(true);
   };
 
@@ -73,6 +96,8 @@ const TripDetails = () => {
       const res = await api.put(`${API_BASE}/group/update/${tripId}`, {
         name: editName,
         description: editDescription,
+        from: editFrom || null,
+        to: editTo || null,
         userId: user._id,
       });
       if (res.status === 200) {
@@ -80,6 +105,8 @@ const TripDetails = () => {
           ...prev,
           name: editName.trim(),
           description: editDescription.trim(),
+          from: editFrom || null,
+          to: editTo || null,
         }));
         // Update localStorage too
         const cg = JSON.parse(localStorage.getItem("currentGroup") || "{}");
@@ -129,6 +156,23 @@ const TripDetails = () => {
     } catch (err) {
       console.error("Banner upload error:", err);
       toast.error("Failed to upload banner.");
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
+
+  const handleBannerDelete = async () => {
+    if (!tripDetails?.bannerUrl) return;
+    setIsUploadingBanner(true);
+    try {
+      const res = await api.delete(`${API_BASE}/group/${tripId}/banner`);
+      if (res.status === 200) {
+        setTripDetails(prev => ({ ...prev, bannerUrl: null, bannerId: null }));
+        toast.success("Banner removed!");
+      }
+    } catch (err) {
+      console.error("Banner delete error:", err);
+      toast.error("Failed to remove banner.");
     } finally {
       setIsUploadingBanner(false);
     }
@@ -404,8 +448,8 @@ const TripDetails = () => {
             {/* Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent pointer-events-none"></div>
 
-            {/* Change Banner Action */}
-            <div className="absolute top-4 right-4 opacity-0 group-hover/banner-container:opacity-100 transition-opacity duration-300">
+            {/* Banner Actions */}
+            <div className="absolute top-4 right-4 flex items-center gap-2">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -425,6 +469,16 @@ const TripDetails = () => {
                 )}
                 {tripDetails?.bannerUrl ? "Change Cover" : "Add Cover"}
               </button>
+              {tripDetails?.bannerUrl && (
+                <button
+                  onClick={() => setShowBannerDeleteConfirm(true)}
+                  disabled={isUploadingBanner}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-red-900/40 hover:bg-red-900/60 backdrop-blur-md border border-red-500/20 rounded-lg text-[10px] font-bold uppercase tracking-wider text-red-300 hover:text-red-200 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Remove
+                </button>
+              )}
             </div>
           </div>
 
@@ -468,6 +522,29 @@ const TripDetails = () => {
                         className="w-full bg-zinc-800 border border-white/10 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-indigo-500/50 transition-colors"
                         placeholder="Description (optional)"
                       />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="relative">
+                          <DatePicker
+                            label="From"
+                            placeholder="Start date"
+                            value={editFrom}
+                            onChange={(val) => setEditFrom(val)}
+                            labelClassName="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider"
+                            buttonClassName="bg-zinc-800 border border-white/10"
+                          />
+                        </div>
+                        <div className="relative">
+                          <DatePicker
+                            label="To"
+                            placeholder="End date"
+                            value={editTo}
+                            min={editFrom}
+                            onChange={(val) => setEditTo(val)}
+                            labelClassName="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider"
+                            buttonClassName="bg-zinc-800 border border-white/10"
+                          />
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={saveEditing}
@@ -503,6 +580,22 @@ const TripDetails = () => {
                       <p className="text-zinc-500 text-sm mt-1 line-clamp-1 max-w-xl font-medium">
                         {tripDetails?.description || "No description provided."}
                       </p>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-zinc-500">
+                        <CalendarDays className="w-3.5 h-3.5 text-indigo-400/60" />
+                        {tripDetails?.from || tripDetails?.to ? (
+                          <>
+                            <span className="font-medium">
+                              {formatDateDisplay(tripDetails.from) || "No start date"}
+                            </span>
+                            <span className="text-zinc-700">→</span>
+                            <span className="font-medium">
+                              {formatDateDisplay(tripDetails.to) || "No end date"}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="italic text-zinc-600">No dates set</span>
+                        )}
+                      </div>
                     </>
                   )}
                 </div>
@@ -765,6 +858,42 @@ const TripDetails = () => {
                   }`}
                 >
                   {isArchiving ? "Please wait..." : isArchived ? "Unarchive" : "Archive"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- DELETE BANNER CONFIRMATION MODAL --- */}
+        {showBannerDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in">
+            <div className="bg-zinc-900 border border-red-500/30 p-6 rounded-2xl max-w-sm w-full shadow-2xl shadow-red-900/10">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center mb-4 bg-red-500/10 border border-red-500/20">
+                <Trash2 className="w-6 h-6 text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Remove cover image?
+              </h3>
+              <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+                The cover image will be permanently deleted. This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBannerDeleteConfirm(false)}
+                  disabled={isUploadingBanner}
+                  className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowBannerDeleteConfirm(false);
+                    handleBannerDelete();
+                  }}
+                  disabled={isUploadingBanner}
+                  className="flex-1 py-2.5 rounded-lg bg-red-600 text-white font-bold hover:bg-red-500 shadow-lg shadow-red-900/20 transition-all disabled:opacity-50"
+                >
+                  {isUploadingBanner ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>

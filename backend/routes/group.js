@@ -19,6 +19,7 @@ import {
     archiveGroup,
     unarchiveGroup,
     uploadGroupBanner,
+    deleteGroupBanner,
 } from '../controllers/groups.js';
 import { auth } from '../middleware/auth.js';
 import upload from '../middleware/multer.js';
@@ -50,6 +51,7 @@ router.put('/:id/banner', auth, upload.single('banner'), uploadGroupBanner);
 
 // DELETE requests
 router.delete("/del-expense/:expenseId", auth, deleteExpenseController);
+router.delete('/:id/banner', auth, deleteGroupBanner);
 
 
 export default router;

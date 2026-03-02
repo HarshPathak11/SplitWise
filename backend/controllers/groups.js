@@ -244,35 +244,12 @@ const removeMembers = async (req, res) => {
   }
 };
 
-// const getGroupDetails = async (req, res) => {
-//   const groupId = req.params.id; // Assuming you have the group ID from the request
-//   try {
-//     const group = await Group.findById(groupId)
-//       .populate("members", "username email")
-//       .populate({
-//         path: "expenses",
-//         populate: [
-//           { path: "paidBy", select: "username email" },
-//           { path: "owedBy.user", select: "username email" },
-//         ],
-//       });
-
-//     if (!group) {
-//       return res.status(404).json({ message: "Group not found" });
-//     }
-//     res.status(200).json(group);
-//   } catch (error) {
-//     console.error("Error fetching group details:", error);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// };
-
 const getGroupDetails = async (req, res) => {
   try {
     const groupId = req.params.id;
 
     const group = await Group.findById(groupId)
-      .select("name description members hiddenBy createdAt updatedAt bannerUrl")
+      .select("name description members hiddenBy createdAt updatedAt bannerUrl from to")
       .populate("members", "username")
       .lean();
 
@@ -852,35 +829,6 @@ const getExpenseController = async (req, res) => {
   }
 };
 
-//Get top categories for a user
-// const getTopCategoriesForGroupExpense = async (req, res) => {
-//   try {
-//     const { groupId } = req.params;
-//     if (!groupId) {
-//       return res.status(400).json({ message: "Group ID is required" });
-//     }
-
-//     const groupObjectId = new mongoose.Types.ObjectId(groupId);
-
-//     const categories = await Expense.aggregate([
-//       { $match: { "group": groupObjectId } },
-//       { $group: { _id: "$category", total: { $sum: "$amount" } } },
-//       { $sort: { total: -1 } },
-//       // { $limit: 4 },
-//     ]);
-
-//     // Optional: rename _id to name for frontend convenience
-//     const formattedCategories = categories.map((cat) => ({
-//       name: cat._id,
-//       total: cat.total,
-//     }));
-
-//     res.status(200).json({ categories: formattedCategories });
-//   } catch (error) {
-//     console.error("Error fetching top categories:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 const getTopCategoriesForGroupExpense = async (req, res) => {
   try {
     const { groupId } = req.params;
@@ -924,68 +872,6 @@ const getTopCategoriesForGroupExpense = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-// //Get subcategories for a user within a category
-// const getSubCategoriesForGroup = async (req, res) => {
-//   try {
-//     const { groupId, category } = req.body;
-
-//     if (!groupId) {
-//       return res.status(400).json({ message: "Group ID is required" });
-//     }
-
-//     const groupObjectId = new mongoose.Types.ObjectId(groupId);
-
-//     const subcategories = await Expense.aggregate([
-//       {
-//         $match: { "group": groupObjectId, ...(category && { category }) },
-//       },
-//       { $group: { _id: "$subcategory", total: { $sum: "$amount" } } },
-//       { $sort: { total: -1 } },
-//     ]);
-
-//     const formattedSubcategories = subcategories.map((sub) => ({
-//       name: sub._id,
-//       total: sub.total,
-//     }));
-
-//     res.status(200).json({ subcategories: formattedSubcategories });
-//   } catch (error) {
-//     console.error("Error fetching subcategories:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-// //Get all expenses for a user in a specific subcategory
-// const getAllExpensesForASubcategoryInGroup = async (req, res) => {
-//   try {
-//     const { groupId, category, subcategory } = req.body;
-
-//     if (!groupId || !category || !subcategory) {
-//       return res.status(400).json({ message: "Incomplete data received" });
-//     }
-
-//     const userObjectId = new mongoose.Types.ObjectId(groupId);
-
-//     // Build the query
-//     const query = {
-//       "group": userObjectId,
-//       category: category,
-//       subcategory: subcategory,
-//     };
-
-//     // Fetch expenses and sort by updatedAt descending
-//     const expenses = await Expense.find(query)
-//       .populate({ path: "paidBy", select: "username" })
-//       .populate({ path: "owedBy.user", select: "username" })
-//       .sort({ updatedAt: -1 });
-
-//     res.status(200).json({ expenses });
-//   } catch (error) {
-//     console.error("Error fetching expenses:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 
 // Get subcategories for a group within a category (with optional timeline filter)
 const getSubCategoriesForGroup = async (req, res) => {
@@ -1077,7 +963,7 @@ const getAllExpensesForASubcategoryInGroup = async (req, res) => {
 
 const updateGroupDetails = async (req, res) => {
   const { id } = req.params;
-  const { name, description, userId } = req.body;
+  const { name, description, userId, from, to } = req.body;
 
   if (!name || name.trim().length === 0) {
     return res.status(400).json({ message: "Trip name is required." });
@@ -1094,6 +980,12 @@ const updateGroupDetails = async (req, res) => {
       const updateFields = { name: name.trim() };
       if (description !== undefined) {
         updateFields.description = description.trim();
+      }
+      if (from !== undefined) {
+        updateFields.from = from || null;
+      }
+      if (to !== undefined) {
+        updateFields.to = to || null;
       }
 
       updatedGroup = await Group.findOneAndUpdate(
@@ -1187,6 +1079,50 @@ const uploadGroupBanner = async (req, res) => {
   }
 };
 
+const deleteGroupBanner = async (req, res) => {
+  const { id } = req.params;
+  const session = await mongoose.startSession();
+
+  try {
+    let updatedGroup = null;
+
+    await session.withTransaction(async () => {
+      const group = await Group.findById(id).session(session);
+      if (!group) throw new Error("NOT_FOUND");
+      if (!group.bannerUrl) throw new Error("NO_BANNER");
+
+      // Delete from Cloudinary if bannerId exists
+      if (group.bannerId) {
+        try {
+          await cloudinary.uploader.destroy(group.bannerId);
+        } catch (err) {
+          console.warn("Failed to delete Cloudinary banner:", err.message);
+        }
+      }
+
+      // Clear banner fields in DB
+      updatedGroup = await Group.findByIdAndUpdate(
+        id,
+        { $set: { bannerUrl: null, bannerId: null } },
+        { new: true, session }
+      );
+    });
+
+    return res.status(200).json({ message: "Banner deleted", group: updatedGroup });
+  } catch (err) {
+    if (err.message === "NOT_FOUND") {
+      return res.status(404).json({ message: "Group not found" });
+    }
+    if (err.message === "NO_BANNER") {
+      return res.status(400).json({ message: "No banner to delete" });
+    }
+    console.error("deleteGroupBanner error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
+  } finally {
+    await session.endSession();
+  }
+};
+
 export {
   createGroup,
   getGroupDetails,
@@ -1207,4 +1143,5 @@ export {
   archiveGroup,
   unarchiveGroup,
   uploadGroupBanner,
+  deleteGroupBanner,
 };
