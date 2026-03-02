@@ -82,11 +82,18 @@ const TransactionHistory = () => {
     }
 
     try {
+      // Get element dimensions for html2canvas (prevents 0-dimension errors on mobile)
+      const rect = element.getBoundingClientRect();
+      const captureWidth = Math.max(rect.width, 340);
+      const captureHeight = Math.max(rect.height, 100);
+
       const canvas = await html2canvas(element, {
         backgroundColor: "#0a0a0a",
         scale: 3, // Increased scale for better text clarity
         useCORS: true,
         logging: false,
+        width: captureWidth,
+        height: captureHeight,
         ignoreElements: (el) => el.tagName === "BUTTON",
         // FIX FOR SMALL SCREENSHOT: Enlarge the card in the clone phase
         onclone: (clonedDoc) => {
@@ -94,6 +101,7 @@ const TransactionHistory = () => {
           if (clonedElement) {
             clonedElement.style.overflow = "visible";
             clonedElement.style.minWidth = "340px";
+            clonedElement.style.width = `${captureWidth}px`;
             clonedElement.style.paddingTop = "36px";
             clonedElement.style.paddingLeft = "24px";
             clonedElement.style.paddingRight = "24px";
@@ -102,11 +110,14 @@ const TransactionHistory = () => {
             // Remove the tight corner override that causes clipping
             clonedElement.style.borderTopRightRadius = "16px";
             clonedElement.style.borderTopLeftRadius = "16px";
+            // Remove any background images that could cause createPattern errors
+            clonedElement.style.backgroundImage = "none";
             // Scale up text for readability in shared image
             const allText = clonedElement.querySelectorAll("h4, span, div");
             allText.forEach((el) => {
               el.style.lineHeight = "1.6";
               el.style.overflow = "visible";
+              el.style.backgroundImage = "none";
               const currentSize = parseFloat(window.getComputedStyle(el).fontSize);
               if (currentSize < 14) el.style.fontSize = `${currentSize * 1.3}px`;
             });
@@ -172,10 +183,14 @@ const TransactionHistory = () => {
     const accentBorder = isPositive ? "rgba(52,211,153,0.25)" : "rgba(251,113,133,0.25)";
 
     const container = document.createElement("div");
+    // FIX: Use opacity:0 instead of left:-9999px to prevent zero-dimension
+    // rendering on mobile browsers. The element must remain in the visible
+    // viewport area so the browser actually computes its layout dimensions.
     container.style.cssText = `
-      position: fixed; left: -9999px; top: 0; z-index: -1;
+      position: fixed; left: 0; top: 0; z-index: -1;
+      opacity: 0; pointer-events: none;
       width: 420px; padding: 44px 40px 36px;
-      background: linear-gradient(165deg, #111113 0%, #0a0a0c 50%, #0d0d10 100%);
+      background: #0d0d10;
       border-radius: 24px;
       border: 1px solid ${accentBorder};
       display: flex; flex-direction: column; align-items: center;
@@ -213,7 +228,7 @@ const TransactionHistory = () => {
     // "X owes you" / "You owe X" subtitle badge
     const subtitle = document.createElement("div");
     subtitle.style.cssText = `
-      display: flex; align-items: center; gap: 8px;
+      display: inline-flex; align-items: center; gap: 8px;
       font-size: 13px; font-weight: 500; color: #a1a1aa;
       background: ${accentColorDim}; padding: 6px 16px; border-radius: 20px;
       border: 1px solid ${accentBorder};
@@ -235,11 +250,11 @@ const TransactionHistory = () => {
     // UPI info (if available)
     const upiId = storedUser?.upiId;
     if (upiId) {
-      // Separator
+      // Separator — use solid color instead of gradient to avoid createPattern issues
       const sep = document.createElement("div");
       sep.style.cssText = `
         width: 100%; height: 1px; margin: 24px 0;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+        background: rgba(255,255,255,0.06);
       `;
       container.appendChild(sep);
 
@@ -249,14 +264,15 @@ const TransactionHistory = () => {
         padding: 14px 20px; border-radius: 14px;
         background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15);
       `;
-      // UPI Icon circle
+      // UPI Icon circle — use text-align instead of flex centering for html2canvas compat
       const iconCircle = document.createElement("div");
       iconCircle.textContent = "₹";
       iconCircle.style.cssText = `
-        width: 36px; height: 36px; border-radius: 10px;
+        width: 36px; height: 36px; min-width: 36px; min-height: 36px;
+        border-radius: 10px;
         background: rgba(99,102,241,0.12); color: #818cf8;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 16px; font-weight: 700; flex-shrink: 0;
+        text-align: center; line-height: 36px;
+        font-size: 16px; font-weight: 700;
       `;
       upiBox.appendChild(iconCircle);
 
@@ -280,11 +296,11 @@ const TransactionHistory = () => {
       container.appendChild(upiBox);
     }
 
-    // Branding footer
+    // Branding footer — use solid color instead of gradient
     const footerSep = document.createElement("div");
     footerSep.style.cssText = `
       width: 100%; height: 1px; margin-top: 24px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+      background: rgba(255,255,255,0.04);
     `;
     container.appendChild(footerSep);
 
@@ -298,12 +314,37 @@ const TransactionHistory = () => {
 
     document.body.appendChild(container);
 
+    // Force a layout reflow so the browser computes actual dimensions
+    // before html2canvas tries to read them. This is critical on mobile.
+    // eslint-disable-next-line no-unused-expressions
+    container.offsetHeight;
+
     try {
+      // Read actual computed dimensions after reflow
+      const containerRect = container.getBoundingClientRect();
+      const captureW = Math.max(containerRect.width, 420);
+      const captureH = Math.max(containerRect.height, 200);
+
       const canvas = await html2canvas(container, {
         backgroundColor: "#0a0a0a",
         scale: 3,
         useCORS: true,
         logging: false,
+        width: captureW,
+        height: captureH,
+        // Strip any remaining gradients/images in the clone to prevent createPattern errors
+        onclone: (clonedDoc, clonedEl) => {
+          clonedEl.style.opacity = "1";
+          clonedEl.style.position = "static";
+          // Remove any background-image on all children to prevent canvas pattern errors
+          const allEls = clonedEl.querySelectorAll("*");
+          allEls.forEach((el) => {
+            const bg = window.getComputedStyle(el).backgroundImage;
+            if (bg && bg !== "none") {
+              el.style.backgroundImage = "none";
+            }
+          });
+        },
       });
 
       document.body.removeChild(container);
@@ -337,9 +378,22 @@ const TransactionHistory = () => {
         }, 1500);
       }
     } catch (error) {
-      document.body.removeChild(container);
+      // Safely remove container if it's still in the DOM
+      if (container.parentNode) {
+        document.body.removeChild(container);
+      }
       console.error("Error sharing balance:", error);
-      toast.error("Failed to share balance");
+      // Fallback: share text only instead of failing silently
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Balance Summary", text: shareText });
+        } else {
+          await navigator.clipboard.writeText(shareText);
+          toast.success("Balance text copied to clipboard!");
+        }
+      } catch (fallbackErr) {
+        toast.error("Failed to share balance");
+      }
     }
   };
 
