@@ -12,6 +12,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import DatePicker from "./DatePicker";
 
 const PersonalExpense = () => {
   const [expenses, setExpenses] = useState([]);
@@ -336,23 +337,20 @@ const PersonalExpense = () => {
 
                 {/* Date & Time below Amount; single row on md+ */}
                 <div className="flex flex-col md:flex-row gap-3">
-                  <div className="group flex-1 min-w-0">
-                    <label className="text-xs font-medium text-zinc-500 mb-1.5 block uppercase tracking-wider">
-                      Date
-                    </label>
-                    <div className="relative overflow-hidden">
-                      <input
-                        type="date"
-                        value={newExpense.date}
-                        onChange={(e) =>
-                          setNewExpense({
-                            ...newExpense,
-                            date: e.target.value,
-                          })
-                        }
-                        className="w-full box-border px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all text-sm text-zinc-300 [color-scheme:dark]"
-                      />
-                    </div>
+                  <div className="group flex-1 min-w-0 relative">
+                    <DatePicker
+                      label="Date"
+                      placeholder="Pick date"
+                      value={newExpense.date}
+                      onChange={(val) =>
+                        setNewExpense({
+                          ...newExpense,
+                          date: val,
+                        })
+                      }
+                      labelClassName="text-xs font-medium text-zinc-500 mb-1.5 block uppercase tracking-wider"
+                      buttonClassName="bg-zinc-800/50 border border-zinc-700/50"
+                    />
                     {errors.date && (
                       <p className="text-red-400 text-xs mt-1 ml-1">
                         {errors.date}
@@ -655,13 +653,14 @@ const PersonalExpense = () => {
                   />
                 </div>
                 <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider">Date</label>
-                    <input
-                      type="date"
+                  <div className="flex-1 relative">
+                    <DatePicker
+                      label="Date"
+                      placeholder="Pick date"
                       value={editForm.date}
-                      onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                      className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm text-zinc-300 [color-scheme:dark]"
+                      onChange={(val) => setEditForm({ ...editForm, date: val })}
+                      labelClassName="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider"
+                      buttonClassName="bg-zinc-800/50 border border-zinc-700/50"
                     />
                   </div>
                   <div className="flex-1">
