@@ -31,6 +31,7 @@ import Expenses from "./components/Expenses";
 import AllFriends from "./components/AllFriends";
 import SetupProfile from "./components/SetupProfile";
 import PersonalExpense from "./components/PersonalExpense";
+import EditPersonalTransaction from "./components/EditPersonalTransaction";
 
 const router = createBrowserRouter([
   {
@@ -106,6 +107,14 @@ path: "personal-expenses",
         element: (
           <ProtectedRoute>
             <EditExpense />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "personal-expense/edit",
+        element: (
+          <ProtectedRoute>
+            <EditPersonalTransaction />
           </ProtectedRoute>
         ),
       },

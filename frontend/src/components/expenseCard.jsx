@@ -1,10 +1,11 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
-import { Trash2, Edit3 } from "lucide-react";
+import { Trash2, Edit3, Loader2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api";
+import { motion, AnimatePresence } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ExpenseCard = ({
@@ -19,21 +20,22 @@ const ExpenseCard = ({
   paidBy, // { _id, username }
   beneficiaries, // [ { user: { _id, username }, amount } ]
   onDelete,
+  isPersonal,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const navigate = useNavigate();
   const allowEdit =
     window.location.pathname !== "/dash" &&
-    window.location.pathname !== "/allExpenses";
+    (window.location.pathname !== "/allExpenses" || isPersonal);
 
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
   };
 
   const handleEdit = () => {
-    // Navigate to /expense/edit/:expenseId
-    navigate(`/expense/edit`, {
+    const editPath = isPersonal ? "/personal-expense/edit" : "/expense/edit";
+    navigate(editPath, {
       state: {
         originalExpense: {
           _id,
@@ -55,25 +57,27 @@ const ExpenseCard = ({
     setShowDeleteModal(true);
   };
 
+  const [deleteStatus, setDeleteStatus] = useState(null); // null | 'loading' | 'success' | 'error'
+
   const confirmDelete = async () => {
     try {
-      await api.delete(
-        `${API_BASE}/group/del-expense/${_id}`
-        // `//http://localhost:8000/group/del-expense/${_id}`
-      );
-      toast.success("Expense deleted");
-      setShowDeleteModal(false);
-      // Option A: reload the page or refetch the expense list
-      // Option B: If parent is controlling a list, you can emit an event or use a callback prop to remove it.
-      // Here we’ll simply remove the card by unmounting it:
-      onDelete(_id);
-      setIsExpanded(false);
-      // Since we don’t have a parent callback, you might force a reload:
-      window.location.reload();
+      setDeleteStatus('loading');
+      const deleteUrl = isPersonal
+        ? `${API_BASE}/expenses/personal/${_id}`
+        : `${API_BASE}/group/del-expense/${_id}`;
+
+      await api.delete(deleteUrl);
+      setDeleteStatus('success');
+      
+      setTimeout(() => {
+        onDelete(_id);
+        setShowDeleteModal(false);
+        setIsExpanded(false);
+        setDeleteStatus(null);
+      }, 1500);
     } catch (err) {
       console.error("Delete error:", err);
-      toast.error("Failed to delete expense");
-      setShowDeleteModal(false);
+      setDeleteStatus('error');
     }
   };
 
@@ -160,7 +164,7 @@ const ExpenseCard = ({
         {/* Right: Amount & Actions */}
         <div className="flex items-center gap-4">
           {/* Actions - Fade in on hover for cleaner look */}
-          <div className="flex items-center gap-1 transition-opacity duration-200 translate-x-2 group-hover:translate-x-0">
+          <div className="flex items-center gap-1 opacity-100 transition-opacity duration-200">
             {allowEdit && (
               <button
                 onClick={handleEdit}
@@ -195,9 +199,8 @@ const ExpenseCard = ({
 
       {/* --- Expanded Details Section --- */}
       <div
-        className={`bg-black/20 border-t border-white/5 overflow-hidden transition-all duration-300 ease-in-out ${
-          isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
+        className={`bg-black/20 border-t border-white/5 overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          }`}
       >
         <div className="p-4 flex flex-col sm:flex-row gap-6 text-sm">
           {/* Payer Info */}
@@ -248,40 +251,87 @@ const ExpenseCard = ({
       {/* --- Delete Confirmation Modal (Embedded) --- */}
       {showDeleteModal && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm delete-modal-content animate-in fade-in duration-200">
-          <div className="w-full max-w-sm bg-zinc-900 border border-red-500/30 rounded-xl p-4 shadow-2xl shadow-red-900/20">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg text-red-500">
-                <Trash2 size={20} />
-              </div>
-              <div>
-                <h4 className="text-white font-medium">Delete Transaction?</h4>
-                <p className="text-xs text-zinc-400 mt-1">
-                  This action cannot be undone. It will affect balances for
-                  everyone involved.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDeleteModal(false);
-                }}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  confirmDelete();
-                }}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/20 transition-all"
-              >
-                Confirm Delete
-              </button>
-            </div>
+          <div className="bg-zinc-900 border border-white/10 p-6 rounded-2xl max-w-sm w-full shadow-2xl relative overflow-hidden delete-modal-content">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
+            
+            <AnimatePresence mode="wait">
+              {deleteStatus === 'success' ? (
+                <motion.div 
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center py-8 relative overflow-hidden"
+                >
+                  {/* Pulsing rings */}
+                  <motion.div 
+                    className="absolute w-24 h-24 rounded-full border border-red-500/30"
+                    animate={{ scale: [1, 2.5], opacity: [0.8, 0] }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "easeOut" }}
+                  />
+                  <motion.div 
+                    className="absolute w-24 h-24 rounded-full border border-red-500/20"
+                    animate={{ scale: [1, 3], opacity: [0.5, 0] }}
+                    transition={{ duration: 1.2, delay: 0.2, repeat: Infinity, ease: "easeOut" }}
+                  />
+                  
+                  <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-6 border-2 border-red-500 relative z-10 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                    <Trash2 className="w-10 h-10 text-red-500 animate-bounce" />
+                  </div>
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter z-10">Purged 💀</h3>
+                  <p className="text-zinc-500 text-[10px] font-mono tracking-[0.3em] mt-2 uppercase z-10">Ledger data erased</p>
+                </motion.div>
+              ) : deleteStatus === 'error' ? (
+                <motion.div 
+                  key="error"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center py-4"
+                >
+                  <div className="w-16 h-16 rounded-full bg-zinc-800 flex items-center justify-center mb-4 border border-white/10">
+                    <span className="text-2xl">⚠️</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-white uppercase italic">Failed</h3>
+                  <p className="text-zinc-500 text-xs mt-1 text-center font-medium">Transmission aborted</p>
+                  <button 
+                    onClick={() => setDeleteStatus(null)}
+                    className="mt-6 px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-white/5 hover:text-white transition-all"
+                  >
+                    Retry Protocol
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div key="confirm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center border border-red-500/20">
+                      <Trash2 className="w-6 h-6 text-red-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white uppercase tracking-tight">Purge Record?</h3>
+                      <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Permanent Erasure</p>
+                    </div>
+                  </div>
+                  <p className="text-zinc-400 text-xs leading-relaxed mb-8">
+                    Are you sure you want to erase this transaction? This action is <span className="text-red-400 font-bold italic">irreversible</span> and will be dropped from all ledger backups.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      disabled={deleteStatus === 'loading'}
+                      onClick={() => setShowDeleteModal(false)}
+                      className="flex-1 py-3 rounded-xl bg-zinc-800 border border-white/5 text-zinc-400 hover:text-white transition-all font-bold text-[10px] uppercase tracking-widest disabled:opacity-50"
+                    >
+                      Abort
+                    </button>
+                    <button
+                      disabled={deleteStatus === 'loading'}
+                      onClick={confirmDelete}
+                      className="flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-900/20 transition-all font-bold text-[10px] uppercase tracking-widest active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {deleteStatus === 'loading' ? <Loader2 size={12} className="animate-spin" /> : "Purge Entry"}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       )}

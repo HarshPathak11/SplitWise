@@ -26,6 +26,7 @@ const EditExpense = () => {
   const [mainAmount, setMainAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [originalCreatedAt, setOriginalCreatedAt] = useState(null); // preserve timestamp
+  const [successOverlay, setSuccessOverlay] = useState(null); // { amount, title }
 
   // Determine groupId from localStorage (same as AddExpense)
   const currentGroup = JSON.parse(
@@ -179,8 +180,11 @@ const EditExpense = () => {
         payload
       );
       if (response.status === 200) {
-        toast.success("Expense updated successfully!");
-        navigate(`/tripDetails/${tripId}`, { state: { expenseEdited: true } });
+        setSuccessOverlay({ amount: totalEntered, title: title });
+        setTimeout(() => {
+          setSuccessOverlay(null);
+          navigate(`/tripDetails/${tripId}`, { state: { expenseEdited: true } });
+        }, 2200);
       }
     } catch (error) {
       console.error("Error updating expense:", error);
@@ -196,7 +200,121 @@ const EditExpense = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 flex flex-col relative">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 flex flex-col relative overflow-hidden">
+      {/* --- SUCCESS CELEBRATION OVERLAY --- */}
+      <AnimatePresence>
+        {successOverlay && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            {/* Background Glow */}
+            <motion.div
+              className="absolute w-64 h-64 rounded-full bg-indigo-500/15 blur-3xl"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 2.5, opacity: 1 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+            />
+
+            {/* Expanding Rings */}
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="absolute w-28 h-28 rounded-full border border-indigo-500/30"
+                initial={{ scale: 0, opacity: 0.8 }}
+                animate={{ scale: 3.5 + i, opacity: 0 }}
+                transition={{ duration: 1.5, delay: 0.2 + i * 0.15, ease: "easeOut" }}
+              />
+            ))}
+
+            {/* Confetti Particles */}
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={`confetti-${i}`}
+                className="absolute w-2 h-2 rounded-full"
+                style={{
+                  background: ['#6366f1', '#8b5cf6', '#ec4899', '#3b82f6', '#06b6d4'][i % 5],
+                }}
+                initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                animate={{
+                  scale: [0, 1.5, 0.8],
+                  x: Math.cos((i * Math.PI * 2) / 12) * 120,
+                  y: Math.sin((i * Math.PI * 2) / 12) * 120,
+                  opacity: [1, 1, 0],
+                }}
+                transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
+              />
+            ))}
+
+            {/* Checkmark Circle */}
+            <motion.div
+              className="relative w-24 h-24 rounded-full border-2 border-indigo-500 flex items-center justify-center mb-6 z-10"
+              initial={{ scale: 0, rotate: -60 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.1 }}
+            >
+              <motion.div
+                className="absolute inset-0 rounded-full bg-indigo-600/20"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+              />
+              <svg className="w-12 h-12 text-indigo-400 z-10" viewBox="0 0 24 24" fill="none">
+                <motion.path
+                  d="M5 13l4 4L19 7"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ delay: 0.4, duration: 0.4, ease: "easeOut" }}
+                />
+              </svg>
+            </motion.div>
+
+            {/* Text */}
+            <motion.h3
+              className="text-2xl font-bold text-white mb-1 z-10 uppercase tracking-tight"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              Record Updated! ✍️
+            </motion.h3>
+            <motion.p
+              className="text-zinc-500 text-[10px] font-mono tracking-widest uppercase mb-8 z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              Group ledger synced successfully
+            </motion.p>
+
+            {/* Amount Card */}
+            <motion.div
+              className="bg-zinc-800/80 border border-indigo-500/20 rounded-2xl px-8 py-5 text-center z-10 shadow-2xl"
+              initial={{ opacity: 0, y: 15, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.65, type: "spring", stiffness: 200 }}
+            >
+              <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-black mb-1">
+                Revised Total
+              </p>
+              <p className="text-4xl font-black text-indigo-400 font-mono">
+                ₹{successOverlay.amount.toLocaleString()}
+              </p>
+              <p className="text-xs text-zinc-400 mt-2 truncate max-w-[200px] font-medium italic">
+                "{successOverlay.title}"
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* --- BACKGROUND FX --- */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] right-[20%] w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[120px]"></div>

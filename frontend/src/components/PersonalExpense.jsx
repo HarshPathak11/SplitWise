@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DatePicker from "./DatePicker";
+import Cookies from "js-cookie";
 
 const PersonalExpense = () => {
   const [expenses, setExpenses] = useState([]);
@@ -30,6 +31,8 @@ const PersonalExpense = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [editExpense, setEditExpense] = useState(null);
   const [editForm, setEditForm] = useState({ description: "", amount: "", date: "", time: "" });
+  const [successOverlay, setSuccessOverlay] = useState(null); // { amount, description }
+  const [deleteOverlay, setDeleteOverlay] = useState(null); // { status: 'success' | 'error', message?: string }
   const [isListening, setIsListening] = useState(false);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
   const recognitionRef = useRef(null);
@@ -65,17 +68,17 @@ const PersonalExpense = () => {
   const addExpense = async () => {
     if (validateForm()) {
       try {
+        const amountNum = parseFloat(newExpense.amount);
+        const desc = newExpense.description;
         // Combine date and time
         const combinedDate = new Date(`${newExpense.date}T${newExpense.time}`);
 
         const payload = {
-          description: newExpense.description,
-          amount: parseFloat(newExpense.amount),
+          description: desc,
+          amount: amountNum,
           date: combinedDate,
         };
         const response = await api.post("/expenses/personal", payload);
-
-        setExpenses([response.data, ...expenses]);
 
         // Reset form but keep today's date
         setNewExpense({
@@ -88,7 +91,19 @@ const PersonalExpense = () => {
           }),
         });
         setErrors({});
-        toast.success("Expense added successfully");
+
+        // Celebration UI
+        setSuccessOverlay({ amount: amountNum, description: desc });
+        
+        // Add to list with animation delay or after celebration starts
+        setTimeout(() => {
+          setExpenses([response.data, ...expenses]);
+        }, 300);
+
+        setTimeout(() => {
+          setSuccessOverlay(null);
+        }, 2200);
+
       } catch (error) {
         console.error("Error adding expense:", error);
         toast.error("Failed to add expense");
@@ -105,10 +120,17 @@ const PersonalExpense = () => {
     try {
       await api.delete(`/expenses/personal/${deleteConfirm._id}`);
       setExpenses(expenses.filter((expense) => expense._id !== deleteConfirm._id));
-      toast.success("Expense deleted successfully");
+      setDeleteOverlay({ status: 'success' });
+      
+      setTimeout(() => {
+        setDeleteOverlay(null);
+      }, 2000);
     } catch (error) {
       console.error("Error deleting expense:", error);
-      toast.error("Failed to delete expense");
+      setDeleteOverlay({ status: 'error', message: error.response?.data?.message || "Purge Failed" });
+      
+      // Auto-clear error overlay after some time or keep it until user clicks?
+      // Usually good to keep until user interaction if it's a big error overlay.
     } finally {
       setDeleteConfirm(null);
     }
@@ -139,10 +161,14 @@ const PersonalExpense = () => {
         date: combinedDate,
       });
       setExpenses(expenses.map((e) => (e._id === data._id ? data : e)));
-      toast.success("Expense updated!");
+      setSuccessOverlay({ amount: data.amount, description: data.title || data.description || "Expense updated", isEdit: true });
+      
+      setTimeout(() => {
+        setSuccessOverlay(null);
+      }, 2200);
     } catch (error) {
       console.error("Error updating expense:", error);
-      toast.error("Failed to update expense");
+      setDeleteOverlay({ status: 'error', message: "Failed to update entry" });
     } finally {
       setEditExpense(null);
     }
@@ -170,13 +196,13 @@ const PersonalExpense = () => {
 
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
-    recognition.lang = "en-US";
+    recognition.lang = "en-IN";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsListening(true);
-      toast.loading("Listening...", { id: "voice-toast" });
+      toast("Listening...", { icon: '🎤', id: "voice-toast" });
     };
 
     recognition.onend = () => {
@@ -213,8 +239,10 @@ const PersonalExpense = () => {
     }, 15000);
 
     try {
+      const userId = Cookies.get("id");
       const { data } = await api.post("/ai/parse-expense", {
         prompt: transcript,
+        userId: userId,
         context: "personal",
       });
 
@@ -241,6 +269,188 @@ const PersonalExpense = () => {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-2 md:p-4 relative selection:bg-indigo-500/30 font-sans overflow-auto">
+      {/* Celebration Overlay */}
+      <AnimatePresence>
+        {successOverlay && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            {/* Background Glow */}
+            <motion.div
+              className="absolute w-64 h-64 rounded-full bg-emerald-500/15 blur-3xl"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 2.5, opacity: 1 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+            />
+
+            {/* Expanding Rings */}
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="absolute w-28 h-28 rounded-full border border-emerald-500/30"
+                initial={{ scale: 0, opacity: 0.8 }}
+                animate={{ scale: 3.5 + i, opacity: 0 }}
+                transition={{ duration: 1.5, delay: 0.2 + i * 0.15, ease: "easeOut" }}
+              />
+            ))}
+
+            {/* Confetti Particles */}
+            {[...Array(12)].map((_, i) => (
+              <motion.div
+                key={`confetti-${i}`}
+                className="absolute w-2 h-2 rounded-full"
+                style={{
+                  background: ['#34d399', '#60a5fa', '#a78bfa', '#f472b6', '#fbbf24'][i % 5],
+                }}
+                initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                animate={{
+                  scale: [0, 1.5, 0.8],
+                  x: Math.cos((i * Math.PI * 2) / 12) * 120,
+                  y: Math.sin((i * Math.PI * 2) / 12) * 120,
+                  opacity: [1, 1, 0],
+                }}
+                transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
+              />
+            ))}
+
+            {/* Checkmark Circle */}
+            <motion.div
+              className="relative w-24 h-24 rounded-full border-2 border-emerald-500 flex items-center justify-center mb-6 z-10"
+              initial={{ scale: 0, rotate: -60 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.1 }}
+            >
+              <motion.div
+                className="absolute inset-0 rounded-full bg-emerald-600/20"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+              />
+              <svg className="w-12 h-12 text-emerald-400 z-10" viewBox="0 0 24 24" fill="none">
+                <motion.path
+                  d="M5 13l4 4L19 7"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ delay: 0.4, duration: 0.4, ease: "easeOut" }}
+                />
+              </svg>
+            </motion.div>
+
+            {/* Text */}
+            <motion.h3
+              className="text-2xl font-bold text-white mb-1 z-10"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              {successOverlay.isEdit ? "Updated! ✨" : "Saved! 💸"}
+            </motion.h3>
+            <motion.p
+              className="text-zinc-400 text-sm mb-8 z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+            >
+              {successOverlay.isEdit ? "Changes synchronized to ledger" : "Transaction added to your records"}
+            </motion.p>
+
+            {/* Amount Card */}
+            <motion.div
+              className="bg-zinc-800/80 border border-emerald-500/20 rounded-2xl px-8 py-5 text-center z-10 shadow-2xl"
+              initial={{ opacity: 0, y: 15, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.65, type: "spring", stiffness: 200 }}
+            >
+              <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-black mb-1">
+                {successOverlay.isEdit ? "Revised Amount" : "Amount Recorded"}
+              </p>
+              <p className="text-4xl font-black text-emerald-400 font-mono">
+                ₹{successOverlay.amount.toLocaleString()}
+              </p>
+              <p className="text-xs text-zinc-400 mt-2 truncate max-w-[200px] font-medium">
+                {successOverlay.description}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Deletion & Error Feedback Overlay */}
+      <AnimatePresence>
+        {deleteOverlay && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {deleteOverlay.status === 'success' ? (
+              <>
+                <motion.div
+                  className="w-24 h-24 rounded-full border-2 border-red-500/50 flex items-center justify-center mb-6 relative"
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", damping: 12 }}
+                >
+                  <motion.div 
+                    className="absolute inset-0 rounded-full bg-red-600/20"
+                    animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  />
+                  <Trash2 className="w-10 h-10 text-red-500 z-10" />
+                </motion.div>
+                <motion.h3
+                  className="text-2xl font-black text-white uppercase tracking-tighter"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  Entry Purged 💀
+                </motion.h3>
+                <motion.p
+                   className="text-[10px] text-zinc-500 font-mono tracking-[0.3em] uppercase mt-2"
+                   initial={{ opacity: 0 }}
+                   animate={{ opacity: 1 }}
+                   transition={{ delay: 0.2 }}
+                >
+                  Ledger data erased
+                </motion.p>
+              </>
+            ) : (
+              <>
+                <motion.div
+                  className="w-20 h-20 rounded-full border-2 border-zinc-700 flex items-center justify-center mb-6"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                >
+                  <div className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center">
+                    <span className="text-2xl">⚠️</span>
+                  </div>
+                </motion.div>
+                <h3 className="text-xl font-bold text-white uppercase italic">
+                  {deleteOverlay.message || "Action Failed"}
+                </h3>
+                <p className="text-zinc-500 text-xs mt-2 font-medium">Transmission aborted</p>
+                <button 
+                  onClick={() => setDeleteOverlay(null)}
+                  className="mt-8 px-6 py-2 bg-zinc-900 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-all shadow-lg active:scale-95"
+                >
+                  Rescue Protocol
+                </button>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-900/20 rounded-full blur-[120px]" />
@@ -481,94 +691,90 @@ const PersonalExpense = () => {
             <div className="bg-zinc-900/50 border border-white/10 rounded-2xl p-4 backdrop-blur-md flex-1 overflow-auto flex flex-col" style={{minHeight: 0}}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Receipt className="w-5 h-5 text-zinc-400" />
+                  <Receipt className="w-5 h-5 text-indigo-400" />
                   Recent Transactions
                 </h2>
-                <span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded-full">
-                  {expenses.length} items
+                <span className="text-xs text-zinc-500 bg-zinc-800 px-3 py-1 rounded-full border border-white/5 font-mono">
+                  {expenses.length} RECORDS
                 </span>
               </div>
 
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-10 text-zinc-500 gap-2">
-                  <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm">Loading expenses...</p>
+                <div className="flex flex-col items-center justify-center py-20 text-zinc-500 gap-4">
+                  <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs font-mono tracking-widest uppercase animate-pulse">Syncing Ledger...</p>
                 </div>
               ) : expenses.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-zinc-500 border-2 border-dashed border-zinc-800 rounded-xl">
-                  <div className="w-16 h-16 bg-zinc-800/50 rounded-full flex items-center justify-center mb-4">
-                    <Receipt className="w-8 h-8 text-zinc-600" />
+                <div className="flex flex-col items-center justify-center py-16 text-zinc-500 border-2 border-dashed border-zinc-800/50 rounded-2xl bg-zinc-900/20">
+                  <div className="w-20 h-20 bg-zinc-800/50 rounded-full flex items-center justify-center mb-5 shadow-inner">
+                    <Receipt className="w-10 h-10 text-zinc-600" />
                   </div>
-                  <p className="text-zinc-400 font-medium">No expenses found</p>
-                  <p className="text-xs text-zinc-600 mt-1">
-                    Add your first expense to get started
+                  <p className="text-zinc-300 font-bold uppercase tracking-wide">Empty Horizon</p>
+                  <p className="text-[10px] text-zinc-600 mt-2 font-mono uppercase tracking-widest">
+                    No transaction data detected
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2 overflow-y-auto flex-1 pr-2 custom-scrollbar">
-                  <AnimatePresence mode="popLayout">
-                    {expenses.map((expense) => {
-
-                      return (
-                        <motion.div
-                          layout
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          key={expense._id}
-                          className="bg-zinc-800/40 hover:bg-zinc-800/60 border border-white/5 p-4 rounded-xl flex items-center justify-between group transition-all"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div>
-                              <h3 className="font-semibold text-zinc-200">
-                                {expense.title || expense.description}
-                              </h3>
-                              <div className="flex items-center gap-2 mt-2 text-xs text-zinc-500 mt-0.5 flex-wrap">
-                                {expense.category && (
-                                  <>
-                                    <span>{expense.category}</span>
-                                    <span>•</span>
-                                  </>
-                                )}
-                                {expense.subcategory && (
-                                  <>
-                                    <span>{expense.subcategory}</span>
-                                  </>
-                                )}
-                                <span>
-                                  {new Date(expense.date).toLocaleDateString()}{" "}
-                                  at{" "}
-                                  {new Date(expense.date).toLocaleTimeString(
-                                    [],
-                                    { hour: "2-digit", minute: "2-digit" },
-                                  )}
-                                </span>
-                              </div>
+                <div className="space-y-3 overflow-y-auto flex-1 pr-1 custom-scrollbar">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {expenses.map((expense, index) => (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, x: -20, scale: 0.98 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9, x: 20 }}
+                        transition={{ 
+                          type: "spring", 
+                          stiffness: 400, 
+                          damping: 30,
+                          delay: index < 10 ? index * 0.05 : 0 
+                        }}
+                        key={expense._id}
+                        className="bg-zinc-900/40 hover:bg-zinc-800/60 border border-white/5 p-4 rounded-xl flex items-center justify-between group transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-zinc-950 flex items-center justify-center text-zinc-500 border border-white/5 group-hover:text-indigo-400 group-hover:border-indigo-500/20 transition-colors">
+                            <Receipt className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-zinc-100 tracking-tight">
+                              {expense.title || expense.description}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1 text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+                              <span>
+                                {new Date(expense.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                              </span>
+                              <span>•</span>
+                              <span>
+                                {new Date(expense.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              </span>
                             </div>
                           </div>
+                        </div>
 
-                            <div className="flex items-center gap-2">
-                              <p className="text-lg font-bold text-white">
-                                ₹{expense.amount.toFixed(2)}
-                              </p>
-                              <button
-                                onClick={() => openEdit(expense)}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 transition-all hover:bg-indigo-500/20"
-                                title="Edit Expense"
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => confirmDelete(expense)}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 transition-all hover:bg-red-500/20"
-                                title="Delete Expense"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                        </motion.div>
-                      );
-                    })}
+                        <div className="flex items-center gap-4">
+                          <p className="text-xl font-black text-white font-mono">
+                            ₹{expense.amount.toLocaleString()}
+                          </p>
+                          <div className="flex items-center gap-1.5 opacity-100 transition-opacity duration-300">
+                            <button
+                              onClick={() => openEdit(expense)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500 hover:text-white transition-all active:scale-90"
+                              title="Edit"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => confirmDelete(expense)}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all active:scale-90"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
                   </AnimatePresence>
                 </div>
               )}
@@ -584,42 +790,48 @@ const PersonalExpense = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
             onClick={() => setDeleteConfirm(null)}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              transition={{ type: "spring", damping: 25, stiffness: 300, mass: 0.8 }}
+              className="bg-zinc-900 border border-white/10 rounded-3xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
-                  <Trash2 className="w-5 h-5 text-red-400" />
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
+              
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 ring-2 ring-red-500/20 ring-offset-4 ring-offset-zinc-900">
+                  <Trash2 className="w-7 h-7 text-red-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">Delete Expense?</h3>
+                <h3 className="text-xl font-black text-white uppercase tracking-tight">Purge Records?</h3>
+                <p className="text-zinc-500 text-xs mt-2 font-medium">This action will permanently delete the transaction.</p>
               </div>
 
-              <p className="text-zinc-400 text-sm mb-1">Are you sure you want to delete this expense?</p>
-              <div className="bg-zinc-800/60 border border-white/5 rounded-xl p-3 mb-5">
-                <p className="text-zinc-200 font-medium">{deleteConfirm.title || deleteConfirm.description}</p>
-                <p className="text-red-400 font-bold text-lg mt-1">₹{deleteConfirm.amount.toFixed(2)}</p>
+              <div className="bg-zinc-800/40 border border-white/5 rounded-2xl p-4 mb-8">
+                <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mb-1">Transaction Label</p>
+                <p className="text-zinc-100 font-bold text-base truncate">{deleteConfirm.title || deleteConfirm.description}</p>
+                <div className="mt-3 flex items-center justify-between">
+                  <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">Cost</p>
+                  <p className="text-red-400 font-black text-2xl font-mono">₹{deleteConfirm.amount.toLocaleString()}</p>
+                </div>
               </div>
 
               <div className="flex gap-3">
                 <button
                   onClick={() => setDeleteConfirm(null)}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-zinc-800 border border-white/10 text-zinc-300 hover:bg-zinc-700 transition-all text-sm font-medium"
+                  className="flex-1 px-4 py-3.5 rounded-2xl bg-zinc-800 border border-white/5 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-all font-bold text-xs uppercase tracking-widest"
                 >
-                  Cancel
+                  Retreat
                 </button>
                 <button
                   onClick={deleteExpense}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-all text-sm font-medium"
+                  className="flex-1 px-4 py-3.5 rounded-2xl bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/20 transition-all font-bold text-xs uppercase tracking-widest active:scale-95"
                 >
-                  Delete
+                  Purge
                 </button>
               </div>
             </motion.div>
@@ -634,78 +846,83 @@ const PersonalExpense = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
             onClick={() => setEditExpense(null)}
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300, mass: 0.8 }}
+              className="bg-zinc-900 border border-white/10 rounded-3xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-indigo-500/20 rounded-full flex items-center justify-center">
-                  <Pencil className="w-5 h-5 text-indigo-400" />
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20 shadow-lg">
+                  <Pencil className="w-6 h-6 text-indigo-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">Edit Expense</h3>
+                <div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-tight">Edit Ledger</h3>
+                  <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Updating Entry ID: {editExpense._id.slice(-6)}</p>
+                </div>
               </div>
 
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider">Description</label>
+              <div className="space-y-5 mb-10">
+                <div className="group">
+                  <label className="text-[10px] font-bold text-zinc-500 mb-2 block uppercase tracking-[0.2em] ml-1">Label</label>
                   <input
                     type="text"
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm text-white"
+                    className="w-full px-4 py-3.5 bg-zinc-950 border border-white/10 rounded-2xl focus:outline-none focus:border-indigo-500/50 text-sm text-white font-medium transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider">Amount</label>
+                  <label className="text-[10px] font-bold text-zinc-500 mb-2 block uppercase tracking-[0.2em] ml-1">Credits (₹)</label>
                   <input
                     type="number"
                     value={editForm.amount}
                     onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 text-sm text-white"
+                    className="w-full px-4 py-3.5 bg-zinc-950 border border-white/10 rounded-2xl focus:outline-none focus:border-green-500/50 text-lg font-black text-white font-mono transition-colors"
                   />
                 </div>
-                <div className="flex gap-3">
-                  <div className="flex-1 relative">
+                <div className="flex gap-4">
+                  <div className="flex-1">
                     <DatePicker
                       label="Date"
                       placeholder="Pick date"
                       value={editForm.date}
                       onChange={(val) => setEditForm({ ...editForm, date: val })}
-                      labelClassName="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider"
-                      buttonClassName="bg-zinc-800/50 border border-zinc-700/50"
+                      labelClassName="text-[10px] font-bold text-zinc-500 mb-2 block uppercase tracking-[0.2em] ml-1"
+                      buttonClassName="bg-zinc-950 border border-white/10 rounded-2xl py-3.5"
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs font-medium text-zinc-500 mb-1 block uppercase tracking-wider">Time</label>
+                    <label className="text-[10px] font-bold text-zinc-500 mb-2 block uppercase tracking-[0.2em] ml-1">Time</label>
                     <input
                       type="time"
                       value={editForm.time}
                       onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
-                      className="w-full px-3 py-2 bg-zinc-800/50 border border-zinc-700/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm text-zinc-300 [color-scheme:dark]"
+                      className="w-full px-3 py-3 bg-zinc-950 border border-white/10 rounded-2xl focus:outline-none focus:border-indigo-500/50 text-sm text-zinc-300 font-mono [color-scheme:dark]"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-5">
+              <div className="flex gap-3">
                 <button
                   onClick={() => setEditExpense(null)}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-zinc-800 border border-white/10 text-zinc-300 hover:bg-zinc-700 transition-all text-sm font-medium"
+                  className="flex-1 px-4 py-4 rounded-2xl bg-zinc-800 border border-white/5 text-zinc-400 hover:text-zinc-200 transition-all font-bold text-xs uppercase tracking-widest"
                 >
-                  Cancel
+                  Discard
                 </button>
                 <button
                   onClick={saveEditExpense}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/30 transition-all text-sm font-medium"
+                  className="flex-1 px-4 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all font-bold text-xs uppercase tracking-widest active:scale-95"
                 >
-                  Save Changes
+                  Commit
                 </button>
               </div>
             </motion.div>

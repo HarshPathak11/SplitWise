@@ -11,7 +11,7 @@ import api from "../utils/api";
 const AddExpense = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { propGroupId } = location.state || {};
+  const { propGroupId, prefillTitle, prefillAmount } = location.state || {};
 
   // State variables
   const [splitMode, setSplitMode] = useState("equally");
@@ -22,6 +22,13 @@ const AddExpense = () => {
   const [members, setMembers] = useState([]); // Combined list: logged-in user + friends
   const [title, setTitle] = useState("");
   const [mainAmount, setMainAmount] = useState("");
+
+  // Pre-fill effect from location state
+  useEffect(() => {
+    if (prefillTitle) setTitle(prefillTitle);
+    if (prefillAmount) setMainAmount(prefillAmount);
+  }, [prefillTitle, prefillAmount]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
   const [calcExpr, setCalcExpr] = useState("");

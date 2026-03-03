@@ -90,6 +90,7 @@ const RecentExpenses = (user) => {
               iconColor={"bg-indigo-500"}
               paidBy={expense?.paidBy}
               beneficiaries={expense?.owedBy}
+              isPersonal={!expense?.group}
             />
           ))
         ) : (

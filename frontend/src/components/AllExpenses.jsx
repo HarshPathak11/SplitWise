@@ -396,6 +396,9 @@ const AllExpensesPage = () => {
                 {expenses.map((expense) => (
                   <ExpenseCard
                     key={expense._id}
+                    _id={expense._id}
+                    isPersonal={expense.owedBy.length === 0}
+                    onDelete={(id) => setExpenses(prev => prev.filter(e => e._id !== id))}
                     title={expense.title}
                     category={expense.category}
                     subcategory={expense.subcategory}

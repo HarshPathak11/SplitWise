@@ -13,8 +13,12 @@ import {
   CreditCard,
   Users,
   Layers,
+  Pencil,
+  Trash2,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import api from "../utils/api";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Expenses() {
   const location = useLocation();
@@ -30,6 +34,7 @@ export default function Expenses() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [expandedExpenseId, setExpandedExpenseId] = useState(null);
+  const [deleteOverlay, setDeleteOverlay] = useState(null); // null | 'success' | 'error'
 
   useEffect(() => {
     if (!userId) return;
@@ -47,23 +52,19 @@ export default function Expenses() {
               ...(startDate && { startDate, endDate }),
             }
           );
-          if (response.data?.expenses) {
-            setExpenses(response.data.expenses || []);
-          }
-
-          return;
+          setExpenses(response.data.expenses);
+        } else {
+          const response = await api.post(
+            `${API_BASE}/user/expenses-by-subcategory`,
+            {
+              userId,
+              category: category,
+              subcategory: subcategory,
+              ...(startDate && { startDate, endDate }),
+            }
+          );
+          setExpenses(response.data.expenses || []);
         }
-
-        const response = await api.post(
-          `${API_BASE}/user/expenses-by-subcategory`,
-          {
-            userId,
-            category: category,
-            subcategory: subcategory,
-            ...(startDate && { startDate, endDate }),
-          }
-        );
-        setExpenses(response.data.expenses || []);
       } catch (error) {
         console.error("Error fetching expenses:", error);
       } finally {
@@ -73,6 +74,35 @@ export default function Expenses() {
 
     fetchExpenses();
   }, [userId, category, subcategory, API_BASE, startDate, endDate]);
+
+  const handleDelete = async (id, isPersonal) => {
+    if (!window.confirm("Are you sure you want to delete this transaction?")) return;
+    try {
+      const deleteUrl = isPersonal 
+        ? `${API_BASE}/expenses/personal/${id}`
+        : `${API_BASE}/group/del-expense/${id}`;
+      
+      await api.delete(deleteUrl);
+      setExpenses(prev => prev.filter(e => e._id !== id));
+      setDeleteOverlay('success');
+      
+      setTimeout(() => {
+        setDeleteOverlay(null);
+      }, 2000);
+    } catch (err) {
+      console.error(err);
+      setDeleteOverlay('error');
+    }
+  };
+
+  const handleEdit = (exp) => {
+    const isPersonal = !exp.group;
+    if (isPersonal) {
+      navigate("/personal-expense/edit", { state: { originalExpense: { ...exp, time: exp.createdAt } } });
+    } else {
+      navigate("/expense/edit", { state: { originalExpense: exp } });
+    }
+  };
 
   const filteredExpenses = expenses
     .filter((exp) => exp.title.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -353,6 +383,23 @@ export default function Expenses() {
                         <span className="text-zinc-600 text-xs font-mono group-hover:text-indigo-400 transition-colors">
                           {((exp.amount / totalAmount) * 100).toFixed(1)}% SHARE
                         </span>
+                        
+                        <div className="flex items-center gap-2 mt-2 justify-end opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleEdit(exp); }}
+                            className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500 hover:text-white transition-all"
+                            title="Edit"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDelete(exp._id, !exp.group); }}
+                            className="p-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
+                            title="Delete"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -432,6 +479,72 @@ export default function Expenses() {
           </div>
         )}
       </div>
+
+      {/* Deletion Feedback Overlay */}
+      <AnimatePresence>
+        {deleteOverlay && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {deleteOverlay === 'success' ? (
+              <>
+                <motion.div
+                  className="w-24 h-24 rounded-full border-2 border-red-500/50 flex items-center justify-center mb-6 relative"
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", damping: 12 }}
+                >
+                  <motion.div 
+                    className="absolute inset-0 rounded-full bg-red-600/20"
+                    animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  />
+                  <Trash2 className="w-10 h-10 text-red-500 z-10" />
+                </motion.div>
+                <motion.h3
+                  className="text-2xl font-black text-white uppercase tracking-tighter"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  Entry Purged 💀
+                </motion.h3>
+                <motion.p
+                   className="text-[10px] text-zinc-500 font-mono tracking-[0.3em] uppercase mt-2"
+                   initial={{ opacity: 0 }}
+                   animate={{ opacity: 1 }}
+                   transition={{ delay: 0.2 }}
+                >
+                  Ledger data erased
+                </motion.p>
+              </>
+            ) : (
+              <>
+                <motion.div
+                  className="w-20 h-20 rounded-full border-2 border-zinc-700 flex items-center justify-center mb-6"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                >
+                  <div className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center">
+                    <span className="text-2xl">⚠️</span>
+                  </div>
+                </motion.div>
+                <h3 className="text-xl font-bold text-white uppercase italic">Purge Failed</h3>
+                <p className="text-zinc-500 text-xs mt-2 font-medium">Transmission aborted</p>
+                <button 
+                  onClick={() => setDeleteOverlay(null)}
+                  className="mt-8 px-6 py-2 bg-zinc-900 border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-all"
+                >
+                  Rescue Protocol
+                </button>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
