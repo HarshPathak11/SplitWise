@@ -179,9 +179,26 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
     };
 
     // --- Navigate to group add-expense ---
-    const handleGroupSelect = (group) => {
-        // Store group in localStorage for addExpense page
-        localStorage.setItem("currentGroup", JSON.stringify(group));
+    const handleGroupSelect = async (group) => {
+        try {
+            // Fetch full group metadata to ensure all members and details are present
+            const response = await api.get(`${API_BASE}/group/get-group/${group._id}`);
+            if (response.status === 200) {
+                localStorage.setItem("currentGroup", JSON.stringify(response.data));
+                
+                // Also set tripMembers for consistency if other components use it
+                const groupMembers = (response.data.members || []).map((m) => ({
+                    _id: m._id,
+                    username: m.username,
+                }));
+                localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
+            }
+        } catch (error) {
+            console.error("Failed to fetch group metadata:", error);
+            // Fallback to storing the group object if fetch fails
+            localStorage.setItem("currentGroup", JSON.stringify(group));
+        }
+
         onClose();
         navigate("/add-expense", { 
             state: { 
