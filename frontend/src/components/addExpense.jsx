@@ -282,7 +282,11 @@ const AddExpense = () => {
     recognition.onerror = (event) => {
       setIsListening(false);
       console.error("Voice error:", event.error);
-      toast.error("Error capturing voice.", { id: "voice-toast" });
+      if (event.error === 'not-allowed') {
+        toast.error("Mic access blocked. Check your browser permissions.", { id: "voice-toast", duration: 5000 });
+      } else {
+        toast.error("Error capturing voice. Try again.", { id: "voice-toast" });
+      }
     };
 
     recognition.start();

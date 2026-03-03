@@ -131,7 +131,9 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
         recognition.onerror = (event) => {
             console.error("Speech Recognition Error:", event.error);
             setIsListening(false);
-            if (event.error !== 'no-speech') {
+            if (event.error === 'not-allowed') {
+                toast.error("Microphone access blocked. Please enable it in browser settings.", { duration: 5000 });
+            } else if (event.error !== 'no-speech') {
                 toast.error("Could not understand. Try again!");
             }
         };
