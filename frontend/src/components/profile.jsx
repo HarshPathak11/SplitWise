@@ -17,7 +17,7 @@ import toast from "react-hot-toast";
 import { authFetch } from "../utils/authFetch";
 import api from "../utils/api";
 import AvatarSelector from "./AvatarSelector";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -316,30 +316,45 @@ Let's split and share smarter with FairFare! 💸`;
       {/* Only show Back/Share if gender is selected AND SAVED (persisted in user object) */}
       {user?.gender ? (
         <>
-          <button
+          <motion.button
             onClick={() => navigate("/dash")}
             className="fixed top-6 left-6 z-50 group"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05 }}
           >
             <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
               <ArrowLeft className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
             </div>
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
             onClick={handleShareProfile}
             className="fixed top-6 right-6 z-50 group"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            whileTap={{ scale: 0.9, rotate: -15 }}
+            whileHover={{ scale: 1.1 }}
           >
             <div className="relative p-3 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/10 shadow-xl hover:border-indigo-500/50 hover:bg-indigo-500/10 transition-all duration-300">
               <Share2 className="h-5 w-5 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
             </div>
-          </button>
+          </motion.button>
         </>
       ) : (
-        <div className="fixed top-6 left-6 z-50">
+        <motion.div
+          className="fixed top-6 left-6 z-50"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
             <p className="text-red-500 font-bold text-sm bg-black/50 px-3 py-2 rounded-xl backdrop-blur-md border border-red-500/30 shadow-lg animate-pulse">
                 Please select Gender & Update Profile to exit
             </p>
-        </div>
+        </motion.div>
       )}
 
       {/* --- MAIN CARD --- */}
@@ -352,33 +367,60 @@ Let's split and share smarter with FairFare! 💸`;
       >
         <div className="bg-zinc-900/40 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/5 overflow-hidden relative">
           {/* --- BANNER --- */}
-          <div className="relative h-40 bg-gradient-to-br from-slate-800 via-slate-900 to-black overflow-hidden group">
+          <motion.div
+            className="relative h-40 bg-gradient-to-br from-slate-800 via-slate-900 to-black overflow-hidden group"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
 
             {/* Subtle Industrial Gradient instead of Gold */}
             <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/50 to-transparent"></div>
 
             {/* Status Badge in Corner */}
-            <div className="absolute top-6 right-8 flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 backdrop-blur-md">
+            <motion.div
+              className="absolute top-6 right-8 flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 backdrop-blur-md"
+              initial={{ opacity: 0, scale: 0.8, x: 20 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              transition={{ delay: 0.4, type: "spring", stiffness: 200, damping: 18 }}
+            >
               <Crown className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
               <span className="text-[10px] font-bold tracking-widest text-amber-300 uppercase">
                 Premium Member
               </span>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           <div className="px-6 sm:px-10 pb-8">
             {/* --- AVATAR SECTION --- */}
-            <div className="relative -mt-20 mb-8 flex flex-col items-center">
+            <motion.div
+              className="relative -mt-20 mb-8 flex flex-col items-center"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
               <div
                 className="relative group cursor-pointer"
                 onMouseEnter={() => setIsHoveringPhoto(true)}
                 onMouseLeave={() => setIsHoveringPhoto(false)}
               >
                 {/* Glowing Ring Effect */}
-                <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-700 opacity-70 blur-md group-hover:opacity-100 transition-opacity duration-500"></div>
+                <motion.div
+                  className="absolute -inset-1 rounded-full bg-gradient-to-br from-amber-300 via-yellow-500 to-amber-700 blur-md"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 0.7, scale: 1 }}
+                  transition={{ delay: 0.35, duration: 0.5 }}
+                  whileHover={{ opacity: 1 }}
+                />
 
-                <div className="relative w-36 h-36 rounded-full p-[3px] bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-700 shadow-2xl">
+                <motion.div
+                  className="relative w-36 h-36 rounded-full p-[3px] bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-700 shadow-2xl"
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 180, damping: 14, delay: 0.25 }}
+                  whileHover={{ scale: 1.04 }}
+                >
                   <div className="w-full h-full rounded-full bg-slate-900 overflow-hidden border-4 border-slate-900 relative">
                     {preview ? (
                       <img
@@ -393,20 +435,24 @@ Let's split and share smarter with FairFare! 💸`;
                     )}
 
                     {/* Overlay for upload */}
-                    <div
-                      className={`absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center transition-all duration-300 ${
-                        isHoveringPhoto
-                          ? "opacity-100 scale-100"
-                          : "opacity-0 scale-90"
-                      }`}
-                    >
-                      <Camera className="w-8 h-8 text-white mb-1" />
-                      <span className="text-[10px] text-white/80 font-medium tracking-wide uppercase">
-                        Change
-                      </span>
-                    </div>
+                    <AnimatePresence>
+                      {isHoveringPhoto && (
+                        <motion.div
+                          className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Camera className="w-8 h-8 text-white mb-1" />
+                          <span className="text-[10px] text-white/80 font-medium tracking-wide uppercase">
+                            Change
+                          </span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                </div>
+                </motion.div>
 
                 <input
                   id="photo-upload"
@@ -417,14 +463,16 @@ Let's split and share smarter with FairFare! 💸`;
                 />
 
                 {/* Floating Action Button */}
-                <label
+                <motion.label
                   htmlFor="photo-upload"
-                  className="absolute bottom-1 right-1 bg-zinc-100 text-zinc-950 rounded-full p-2.5 shadow-lg shadow-black/50 cursor-pointer hover:bg-white hover:scale-105 transition-all"
+                  className="absolute bottom-1 right-1 bg-zinc-100 text-zinc-950 rounded-full p-2.5 shadow-lg shadow-black/50 cursor-pointer hover:bg-white transition-all"
+                  whileHover={{ scale: 1.15 }}
+                  whileTap={{ scale: 0.9 }}
                 >
                   <Upload className="w-4 h-4" />
-                </label>
+                </motion.label>
               </div>
-            </div>
+            </motion.div>
 
             {/* --- DEFAULT AVATAR SELECTION --- */}
             <div className="mb-10 space-y-4">
@@ -436,19 +484,35 @@ Let's split and share smarter with FairFare! 💸`;
             </div>
 
             {/* --- HEADER TEXT --- */}
-            <div className="text-center mb-10">
+            <motion.div
+              className="text-center mb-10"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
               <h2 className="text-3xl font-bold text-white tracking-tight mb-2">
                 {profile.username || "User Profile"}
               </h2>
               <p className="text-zinc-500 text-sm flex items-center justify-center gap-2">
                 Manage your personal identity and preferences
               </p>
-            </div>
+            </motion.div>
 
             {/* --- FORM --- */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <motion.form
+              onSubmit={handleSubmit}
+              className="space-y-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.4 }}
+            >
               {/* Username Field */}
-              <div className="group space-y-2">
+              <motion.div
+                className="group space-y-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.45, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              >
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1">
                   Display Name
                 </label>
@@ -468,16 +532,29 @@ Let's split and share smarter with FairFare! 💸`;
                     } rounded-xl text-white placeholder-zinc-700 focus:bg-zinc-900/80 focus:outline-none transition-all shadow-inner`}
                     placeholder="Choose a unique handle"
                   />
-                  {!isUsernameAvailable && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400 text-xs font-medium bg-red-500/10 px-2 py-1 rounded">
-                      Taken
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {!isUsernameAvailable && (
+                      <motion.div
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400 text-xs font-medium bg-red-500/10 px-2 py-1 rounded"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        Taken
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Email Field (Read Only) */}
-              <div className="group space-y-2">
+              <motion.div
+                className="group space-y-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              >
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1 flex justify-between">
                   <span>Digital ID</span>
                 </label>
@@ -495,10 +572,15 @@ Let's split and share smarter with FairFare! 💸`;
                     <Lock className="h-4 w-4 text-zinc-700" />
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* UPI Field */}
-              <div className="group space-y-2">
+              <motion.div
+                className="group space-y-2"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.55, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              >
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest ml-1 flex items-center gap-2">
                   Payment Handle
                 </label>
@@ -515,16 +597,21 @@ Let's split and share smarter with FairFare! 💸`;
                     placeholder="username@bank"
                   />
                 </div>
-              </div>
+              </motion.div>
 
               {/* Bottom Actions */}
-              <div className="pt-4 flex flex-col gap-4">
+              <motion.div
+                className="pt-4 flex flex-col gap-4"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.4 }}
+              >
                 {!profile.gender && (
                     <p className="text-red-400 text-xs text-center font-bold uppercase tracking-wider animate-pulse">
                         ⚠️ Select Gender to Unlock Exit
                     </p>
                 )}
-                <button
+                <motion.button
                   type="submit"
                   disabled={
                     !profile.upiId ||
@@ -533,31 +620,39 @@ Let's split and share smarter with FairFare! 💸`;
                     checkingUsername ||
                     !profile.gender
                   }
-                  className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 active:scale-[0.98] ${
+                  className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 ${
                     !profile.upiId || uploading || !profile.gender
                       ? "bg-zinc-800 text-zinc-600 cursor-not-allowed border border-white/5"
                       : "bg-indigo-400/70 text-zinc-950 hover:bg-white hover:shadow-zinc-500/10"
                   }`}
+                  whileTap={!(!profile.upiId || uploading || !profile.gender) ? { scale: 0.97 } : {}}
+                  whileHover={!(!profile.upiId || uploading || !profile.gender) ? { scale: 1.02 } : {}}
                 >
                   {uploading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-zinc-400 border-t-zinc-800 rounded-full animate-spin"></span>
+                      <motion.span
+                        className="w-4 h-4 border-2 border-zinc-400 border-t-zinc-800 rounded-full"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      />
                       Processing...
                     </span>
                   ) : (
                     "Update Profile"
                   )}
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
                   type="button"
                   onClick={() => navigate("/change-password")}
                   className="text-xs font-medium text-zinc-600 hover:text-zinc-300 transition-colors text-center"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   Change Password?
-                </button>
-              </div>
-            </form>
+                </motion.button>
+              </motion.div>
+            </motion.form>
           </div>
         </div>
       </motion.div>

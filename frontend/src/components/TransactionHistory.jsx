@@ -650,6 +650,7 @@ const TransactionHistory = () => {
       return;
     }
 
+    const settledAmount = Math.abs(currentBalance);
     try {
       setLoading(true);
       if (currentBalance > 0) {
@@ -673,6 +674,9 @@ const TransactionHistory = () => {
       }
       await fetchData(storedUser, true);
       setNetBalance(0);
+      // Show the settle celebration overlay
+      setSuccessOverlay({ type: "settled", amount: settledAmount });
+      setTimeout(() => setSuccessOverlay(null), 3000);
     } catch (error) {
       toast.error("Please refresh the page first!");
     } finally {
@@ -748,9 +752,9 @@ const TransactionHistory = () => {
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-indigo-900/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* --- SUCCESS CELEBRATION OVERLAY --- */}
+      {/* --- SUCCESS CELEBRATION OVERLAY (Paid / Received) --- */}
       <AnimatePresence>
-        {successOverlay && (
+        {successOverlay && successOverlay.type !== "settled" && (
           <motion.div
             className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md"
             initial={{ opacity: 0 }}
@@ -855,6 +859,192 @@ const TransactionHistory = () => {
         )}
       </AnimatePresence>
 
+      {/* --- SETTLE SUCCESS CELEBRATION OVERLAY --- */}
+      <AnimatePresence>
+        {successOverlay && successOverlay.type === "settled" && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setSuccessOverlay(null)}
+          >
+            {/* Multiple expanding glow rings */}
+            {[0, 0.3, 0.6].map((delay, i) => (
+              <motion.div
+                key={`glow-${i}`}
+                className="absolute w-40 h-40 rounded-full bg-gradient-to-r from-indigo-500/15 to-violet-500/15 blur-3xl"
+                initial={{ scale: 0, opacity: 0.6 }}
+                animate={{ scale: 3 + i, opacity: 0 }}
+                transition={{ duration: 1.5, delay, ease: "easeOut" }}
+              />
+            ))}
+
+            {/* Confetti particles — 12 multicolored */}
+            {[...Array(12)].map((_, i) => {
+              const colors = ["bg-indigo-400", "bg-violet-400", "bg-cyan-400", "bg-amber-400", "bg-emerald-400", "bg-rose-400"];
+              const angle = (i * Math.PI * 2) / 12;
+              const radius = 90 + (i % 3) * 20;
+              return (
+                <motion.div
+                  key={`confetti-${i}`}
+                  className={`absolute rounded-full ${colors[i % colors.length]}`}
+                  style={{ width: i % 2 === 0 ? 8 : 6, height: i % 2 === 0 ? 8 : 6 }}
+                  initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
+                  animate={{
+                    scale: [0, 1.2, 0.6, 0],
+                    x: Math.cos(angle) * radius,
+                    y: Math.sin(angle) * radius,
+                    opacity: [1, 1, 0.8, 0],
+                  }}
+                  transition={{ duration: 1.1, delay: 0.15 + i * 0.04, ease: "easeOut" }}
+                />
+              );
+            })}
+
+            {/* Falling mini sparkle dots */}
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={`sparkle-${i}`}
+                className="absolute w-1 h-1 rounded-full bg-white/60"
+                initial={{
+                  x: (i - 3) * 40 + Math.random() * 20,
+                  y: -60,
+                  opacity: 0,
+                }}
+                animate={{
+                  y: 120,
+                  opacity: [0, 1, 1, 0],
+                }}
+                transition={{ duration: 1.8, delay: 0.5 + i * 0.15, ease: "easeIn" }}
+              />
+            ))}
+
+            {/* Double-ring checkmark */}
+            <motion.div
+              className="relative w-28 h-28 flex items-center justify-center mb-6"
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 180, damping: 14, delay: 0.05 }}
+            >
+              {/* Outer ring */}
+              <motion.div
+                className="absolute inset-0 rounded-full border-2 border-indigo-500/50"
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.4 }}
+              />
+              {/* Inner ring */}
+              <motion.div
+                className="absolute inset-2 rounded-full border-2 border-violet-400"
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+              />
+              {/* Fill glow */}
+              <motion.div
+                className="absolute inset-3 rounded-full bg-gradient-to-br from-indigo-600/25 to-violet-600/25"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+              />
+              {/* Checkmark */}
+              <svg className="w-14 h-14 text-white relative z-10" viewBox="0 0 24 24" fill="none">
+                <motion.path
+                  d="M5 13l4 4L19 7"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ delay: 0.4, duration: 0.5, ease: "easeOut" }}
+                />
+              </svg>
+            </motion.div>
+
+            {/* Title */}
+            <motion.p
+              className="text-2xl font-bold text-white mb-1"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55, duration: 0.35 }}
+            >
+              All Settled! 🎉
+            </motion.p>
+
+            {/* Subtitle */}
+            <motion.p
+              className="text-sm text-zinc-400 mb-4"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.65, duration: 0.3 }}
+            >
+              Balance with <span className="text-white font-medium">{friendName.username}</span> is clear
+            </motion.p>
+
+            {/* Settled amount card */}
+            <motion.div
+              className="flex flex-col items-center bg-zinc-900/60 border border-white/10 rounded-2xl px-8 py-5 backdrop-blur-sm"
+              initial={{ opacity: 0, y: 15, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.75, type: "spring", stiffness: 200, damping: 20 }}
+            >
+              <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 mb-2">Amount Cleared</span>
+              <motion.span
+                className="text-3xl font-mono font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.9, type: "spring", stiffness: 200, damping: 12 }}
+              >
+                ₹{successOverlay.amount.toFixed(2)}
+              </motion.span>
+              <div className="flex items-center gap-2 mt-3">
+                <motion.div
+                  className="h-px bg-zinc-700 flex-1"
+                  initial={{ width: 0 }}
+                  animate={{ width: 40 }}
+                  transition={{ delay: 1.0, duration: 0.3 }}
+                />
+                <motion.span
+                  className="text-xs font-mono text-emerald-400 font-bold"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.1, type: "spring", stiffness: 300, damping: 15 }}
+                >
+                  ₹0.00
+                </motion.span>
+                <motion.div
+                  className="h-px bg-zinc-700 flex-1"
+                  initial={{ width: 0 }}
+                  animate={{ width: 40 }}
+                  transition={{ delay: 1.0, duration: 0.3 }}
+                />
+              </div>
+              <motion.span
+                className="text-[10px] text-emerald-400/70 mt-1 uppercase tracking-wider"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.15 }}
+              >
+                New Balance
+              </motion.span>
+            </motion.div>
+
+            {/* Dismiss hint */}
+            <motion.p
+              className="text-xs text-zinc-600 mt-5"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.3 }}
+            >
+              Tap anywhere to dismiss
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* --- HEADER: The Control Panel --- */}
       <motion.div
         initial={{ opacity: 0, x: -30 }}
@@ -934,17 +1124,26 @@ const TransactionHistory = () => {
             >
               <FaBell size={16} />
             </button>
-            <button
+            <motion.button
               onClick={confirmSettle}
               disabled={loading || txLoading}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-900/30 transition-all duration-300 group whitespace-nowrap ${loading || txLoading
                 ? 'opacity-50 cursor-not-allowed'
-                : 'hover:from-indigo-500 hover:to-violet-500 active:scale-95'
+                : 'hover:from-indigo-500 hover:to-violet-500'
                 }`}
               title="Settle Up"
+              whileTap={!(loading || txLoading) ? { scale: 0.92 } : {}}
+              whileHover={!(loading || txLoading) ? { scale: 1.04 } : {}}
             >
-              {loading || txLoading ? 'Loading...' : 'Settle All'}
-            </button>
+              {loading || txLoading ? (
+                <motion.span
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  Settling...
+                </motion.span>
+              ) : 'Settle All'}
+            </motion.button>
           </div>
         </div>
       </motion.div>
@@ -1239,41 +1438,80 @@ const TransactionHistory = () => {
       <AnimatePresence>
         {showConfirm && (
           <motion.div
-            className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
             <motion.div
-              className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl"
+              className="w-full max-w-sm bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl overflow-hidden relative"
               initial={{ opacity: 0, scale: 0.85, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 10 }}
               transition={{ type: "spring", stiffness: 300, damping: 24 }}
             >
-              <h3 className="text-lg font-bold text-white mb-2">
-                Execute Settlement?
+              {/* Decorative gradient orb */}
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-indigo-600/20 to-violet-600/20 rounded-full blur-2xl pointer-events-none" />
+
+              <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                <span className="text-xl">⚖️</span> Execute Settlement?
               </h3>
-              <p className="text-sm text-zinc-400 mb-6">
+              <p className="text-sm text-zinc-400 mb-4">
                 This will zero out all pending balances with{" "}
                 <strong className="text-white">{friendName.username}</strong>.
-                Confirm authorization?
               </p>
+
+              {/* Balance preview card */}
+              <motion.div
+                className="bg-zinc-800/60 border border-white/5 rounded-xl p-4 mb-5"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.3 }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Current Balance</span>
+                  <span className={`text-lg font-mono font-bold ${
+                    netBalance >= 0 ? "text-emerald-400" : "text-rose-400"
+                  }`}>
+                    {netBalance >= 0 ? "+" : "-"}₹{Math.abs(netBalance).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-px bg-zinc-700" />
+                  <motion.svg
+                    className="w-4 h-4 text-indigo-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    initial={{ rotate: 0 }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  >
+                    <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
+                  </motion.svg>
+                  <div className="flex-1 h-px bg-zinc-700" />
+                </div>
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">After Settlement</span>
+                  <span className="text-lg font-mono font-bold text-emerald-400">₹0.00</span>
+                </div>
+              </motion.div>
+
               <div className="flex gap-3">
                 <button
                   onClick={handleConfirmNo}
-                  className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800"
+                  className="flex-1 py-2.5 rounded-lg border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
                 >
-                  Abort
+                  Cancel
                 </button>
-                <button
+                <motion.button
                   onClick={handleConfirmYes}
                   disabled={loading}
-                  className="flex-1 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 shadow-lg shadow-emerald-900/20"
+                  className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-medium hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-900/30 transition-all"
+                  whileTap={{ scale: 0.96 }}
                 >
-                  Confirm
-                </button>
+                  Settle All
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>
