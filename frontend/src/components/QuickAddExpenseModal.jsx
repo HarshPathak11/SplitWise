@@ -93,9 +93,9 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
         trip.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const filteredFriends = friends.filter(f =>
-        f.friend?.username?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredFriends = friends
+        .filter(f => f.friend?.username?.toLowerCase().includes(searchQuery.toLowerCase()))
+        .sort((a, b) => (a.friend?.username || "").localeCompare(b.friend?.username || ""));
 
     // --- AI Magic ---
     const handleMagicAdd = async (passedPrompt) => {
@@ -999,9 +999,18 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder={mode === "group" ? "Search your groups..." : "Search friends..."}
-                                        className={`w-full bg-zinc-950 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-white text-sm focus:outline-none focus:border-${mode === "group" ? "indigo" : "amber"}-500/50 placeholder:text-zinc-600 transition-colors`}
+                                        className={`w-full bg-zinc-950 border border-white/10 rounded-2xl pl-12 pr-10 py-3.5 text-white text-sm focus:outline-none focus:border-${mode === "group" ? "indigo" : "amber"}-500/50 placeholder:text-zinc-600 transition-colors`}
                                         autoFocus
                                     />
+                                    {searchQuery && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearchQuery("")}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* List */}
