@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 import FriendCard from "./FriendCard";
 import axios from "axios";
@@ -10,6 +10,17 @@ const FriendsSection = ({ user }) => {
   const [friends, setFriends] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
+  const navigate = useNavigate();
+
+  const getInitials = (name) =>
+    name
+      ? name
+          .trim()
+          .split(" ")
+          .map((word) => word[0]?.toUpperCase())
+          .slice(0, 2)
+          .join("")
+      : "U";
 
   useEffect(() => {
     if (user?.friends) {
@@ -213,6 +224,55 @@ const FriendsSection = ({ user }) => {
             : ""
         }`}
       >
+        {/* --- "You" Self Card --- */}
+        <div
+          className="bg-zinc-900/40 backdrop-blur-sm rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all duration-300 mb-2 overflow-hidden cursor-pointer"
+          onClick={() => navigate("/personal-expenses")}
+        >
+          <div className="p-3 sm:p-4 flex justify-between items-center group">
+            <div className="flex items-center gap-3 w-full">
+              {/* Avatar */}
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-zinc-800 border border-indigo-500/30 overflow-hidden flex items-center justify-center flex-shrink-0 shadow-inner ring-2 ring-indigo-500/20">
+                  {user?.profilePhotoUrl ? (
+                    <img
+                      src={user.profilePhotoUrl}
+                      alt="Your profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-indigo-400 font-bold text-sm">
+                      {getInitials(user?.username)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* Info */}
+              <div className="flex flex-col flex-grow min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-zinc-100 truncate group-hover:text-indigo-200 transition-colors">
+                    {user?.username}
+                  </p>
+                  <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-full">
+                    YOU
+                  </span>
+                </div>
+                <p className="text-xs font-medium text-zinc-500 truncate">
+                  Personal Expenses
+                </p>
+              </div>
+            </div>
+            {/* Arrow indicator */}
+            <div className="flex items-center gap-1 z-10">
+              <div className="p-2 rounded-lg text-zinc-500 group-hover:text-indigo-400 transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {sortedFriends.length === 0 ? (
           /* --- Professional Empty State --- */
           <div className="h-40 flex flex-col items-center justify-center border-2 border-dashed border-zinc-800 rounded-xl bg-zinc-900/30 text-center p-4">
