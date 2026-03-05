@@ -29,6 +29,7 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
     const [paidBy, setPaidBy] = useState("");
     const [friendsLoading, setFriendsLoading] = useState(false);
     const [isFriendsFormOpen, setIsFriendsFormOpen] = useState(false);
+    const [includeMe, setIncludeMe] = useState(true);
 
     // AI magic fields
     const [magicPrompt, setMagicPrompt] = useState("");
@@ -230,9 +231,37 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
             return;
         }
 
-        if (mode === "friends" && selectedFriends.length === 0) {
-            toast.error("Please select at least one friend");
+        if (Number(amount) <= 0) {
+            toast.error("Amount must be greater than zero");
             return;
+        }
+
+        if (mode === "friends") {
+            if (!paidBy) {
+                toast.error("Please select who paid for this expense");
+                return;
+            }
+            if (selectedFriends.length === 0) {
+                toast.error("Please select at least one friend to split with");
+                return;
+            }
+
+            // Circular Expense Check: Ensure someone other than the payer owes money
+            const userId = Cookies.get("id");
+            const involvedMembers = includeMe ? [userId, ...selectedFriends] : selectedFriends;
+            const otherDebtors = involvedMembers.filter(id => id !== paidBy);
+            
+            if (otherDebtors.length === 0) {
+                toast.error("You cannot create an expense where only the payer owes money!");
+                return;
+            }
+
+            // User Involvement Validation: User must be either the payer or a debtor
+            const isUserInvolved = (paidBy === userId) || includeMe;
+            if (!isUserInvolved) {
+                toast.error("You must be involved in the expense (either you paid, or you owe).");
+                return;
+            }
         }
 
         try {
@@ -246,17 +275,17 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                 endpoint = "/expenses/personal";
                 payload = {
                     description: description,
-                    amount: Number(amount),
+                    amount: Number(Number(amount).toFixed(2)),
                     date: new Date(),
                 };
             } else if (mode === "friends") {
                 endpoint = "/group/add-expense";
-                // Add current user to involved members
-                const involvedMembers = [userId, ...selectedFriends];
+                // Add current user to involved members only if includeMe is true
+                const involvedMembers = includeMe ? [userId, ...selectedFriends] : selectedFriends;
                 
                 payload = {
                     title: description,
-                    amount: Number(amount),
+                    amount: Number(Number(amount).toFixed(2)),
                     paidBy: paidBy || userId,
                     groupId: null, // No group
                     splitMode: splitMode,
@@ -269,6 +298,7 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                     const totalCustom = Object.values(customAmounts).reduce((sum, val) => sum + Number(val || 0), 0);
                     if (Math.abs(totalCustom - Number(amount)) > 0.01) {
                         toast.error(`Total doesn't match! Your splits add up to ₹${totalCustom.toFixed(2)} but total is ₹${Number(amount).toFixed(2)}`);
+                        setLoading(false);
                         return;
                     }
                 }
@@ -338,6 +368,7 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
         setCustomAmounts({});
         setPaidBy(Cookies.get("id") || "");
         setIsFriendsFormOpen(false);
+        setIncludeMe(true);
         onClose();
     };
 
@@ -593,19 +624,40 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                 {mode === "friends" && selectedFriends.length > 0 && (
                                     <div className="flex flex-col gap-3 p-4 bg-zinc-950/50 rounded-2xl border border-white/5">
                                         <div className="flex flex-col gap-3">
-                                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Splitting With</h4>
-                                            <div className="flex flex-wrap gap-2">
+                                            <div className="flex items-center justify-between">
+                                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Splitting With</h4>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIncludeMe(!includeMe)}
+                                                    className={`px-2 py-1 rounded-md text-[9px] font-bold uppercase transition-all border ${includeMe ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-zinc-800 border-white/5 text-zinc-500'}`}
+                                                >
+                                                    {includeMe ? "Including You" : "Excluding You"}
+                                                </button>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2 items-center">
                                                 {/* Me in the split list */}
-                                                <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-200 text-xs font-medium flex items-center gap-2 shadow-sm shadow-emerald-500/5">
-                                                    <span>You</span>
-                                                    {splitMode === "equally" && amount && (
-                                                        <span className="text-[10px] text-emerald-500/80 font-bold">₹{(Number(amount) / (selectedFriends.length + 1)).toFixed(2)}</span>
-                                                    )}
-                                                </div>
+                                                {includeMe && (
+                                                    <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-200 text-xs font-medium flex items-center gap-2 shadow-sm shadow-emerald-500/5">
+                                                        <span>You</span>
+                                                        {splitMode === "equally" && amount && (
+                                                            <span className="text-[10px] text-emerald-500/80 font-bold">₹{(Number(amount) / (selectedFriends.length + 1)).toFixed(2)}</span>
+                                                        )}
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setIncludeMe(false);
+                                                            }}
+                                                            className="hover:text-emerald-100 p-0.5 rounded-md hover:bg-emerald-500/20"
+                                                        >
+                                                            <X className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                )}
 
                                                 {selectedFriends.map(id => {
                                                     const friendObj = friends.find(f => f.friend._id === id);
-                                                    const share = amount ? (Number(amount) / (selectedFriends.length + 1)).toFixed(2) : "0";
+                                                    const totalSplitters = selectedFriends.length + (includeMe ? 1 : 0);
+                                                    const share = amount ? (Number(amount) / totalSplitters).toFixed(2) : "0";
                                                     return (
                                                         <div key={id} className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs font-medium flex items-center gap-2 transition-all hover:bg-amber-500/15">
                                                             <span>{friendObj?.friend.username}</span>
@@ -624,6 +676,15 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                         </div>
                                                     );
                                                 })}
+
+                                                {/* Add friend button */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsFriendsFormOpen(false)}
+                                                    className="w-7 h-7 rounded-full bg-zinc-800 border border-dashed border-white/10 flex items-center justify-center text-zinc-500 hover:text-amber-400 hover:border-amber-400/50 hover:bg-amber-500/5 transition-all group"
+                                                >
+                                                    <span className="text-lg font-light leading-none group-active:scale-95 transition-transform">+</span>
+                                                </button>
                                             </div>
                                         </div>
                                         
@@ -686,6 +747,11 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                     type="number"
                                                     value={amount}
                                                     onChange={(e) => setAmount(e.target.value)}
+                                                    onBlur={() => {
+                                                        if (amount && !isNaN(amount)) {
+                                                            setAmount(prev => (!isNaN(prev) && prev !== "") ? Number(prev).toFixed(2) : prev);
+                                                        }
+                                                    }}
                                                     placeholder="0"
                                                     className={`w-full bg-zinc-950 border border-white/10 rounded-2xl p-4 text-3xl font-bold text-white text-center focus:outline-none focus:border-${mode === "friends" ? "amber" : "emerald"}-500/50 transition-colors`}
                                                 />
@@ -701,21 +767,29 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                     </div>
                                                     
                                                     {/* Me in unequal input */}
-                                                    <div className="flex items-center gap-4 py-2 border-b border-white/5">
-                                                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">You</div>
-                                                        <span className="text-sm text-zinc-300 flex-1">Your Share</span>
-                                                        <div className="relative w-24">
-                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px]">₹</span>
-                                                            <input 
-                                                                type="number"
-                                                                value={customAmounts[Cookies.get("id")] || ""}
-                                                                onChange={(e) => setCustomAmounts(prev => ({ ...prev, [Cookies.get("id")]: e.target.value }))}
-                                                                className="w-full bg-zinc-950 border border-white/10 rounded-lg py-1.5 pl-6 pr-2 text-white font-mono text-sm focus:outline-none focus:border-amber-500/50"
-                                                                placeholder="0"
-                                                                autoFocus={mode === "friends" && splitMode === "unequally"}
-                                                            />
+                                                    {includeMe && (
+                                                        <div className="flex items-center gap-4 py-2 border-b border-white/5">
+                                                            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">You</div>
+                                                            <span className="text-sm text-zinc-300 flex-1">Your Share</span>
+                                                            <div className="relative w-24">
+                                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px]">₹</span>
+                                                                <input 
+                                                                    type="number"
+                                                                    value={customAmounts[Cookies.get("id")] || ""}
+                                                                    onChange={(e) => setCustomAmounts(prev => ({ ...prev, [Cookies.get("id")]: e.target.value }))}
+                                                                    onBlur={() => {
+                                                                        const val = customAmounts[Cookies.get("id")];
+                                                                        if (val && !isNaN(val)) {
+                                                                            setCustomAmounts(prev => ({ ...prev, [Cookies.get("id")]: Number(val).toFixed(2) }));
+                                                                        }
+                                                                    }}
+                                                                    className="w-full bg-zinc-950 border border-white/10 rounded-lg py-1.5 pl-6 pr-2 text-white font-mono text-sm focus:outline-none focus:border-amber-500/50"
+                                                                    placeholder="0"
+                                                                    autoFocus={mode === "friends" && splitMode === "unequally"}
+                                                                />
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    )}
 
                                                     {selectedFriends.map(id => {
                                                         const friendObj = friends.find(f => f.friend._id === id);
@@ -731,6 +805,12 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                                         type="number"
                                                                         value={customAmounts[id] || ""}
                                                                         onChange={(e) => setCustomAmounts(prev => ({ ...prev, [id]: e.target.value }))}
+                                                                        onBlur={() => {
+                                                                            const val = customAmounts[id];
+                                                                            if (val && !isNaN(val)) {
+                                                                                setCustomAmounts(prev => ({ ...prev, [id]: Number(val).toFixed(2) }));
+                                                                            }
+                                                                        }}
                                                                         className="w-full bg-zinc-950 border border-white/10 rounded-lg py-1.5 pl-6 pr-2 text-white font-mono text-sm focus:outline-none focus:border-amber-500/50"
                                                                         placeholder="0"
                                                                     />
