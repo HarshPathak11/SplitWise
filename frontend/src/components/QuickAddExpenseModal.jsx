@@ -131,18 +131,18 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                             setPaidBy(userId);
                         } else {
                             const foundPayer = friends.find(f => f.friend.username.toLowerCase().includes(response.data.paidBy.toLowerCase()));
-                            if (foundPayer) setPaidBy(foundPayer.friend._id);
+                            if (foundPayer) setPaidBy(foundPayer.friend?._id);
                         }
                     }
                     
                     if (aiSplitWith) {
                         setIsFriendsFormOpen(true);
                         if (aiSplitWith.includes("ALL") || aiSplitWith.includes("everyone")) {
-                            setSelectedFriends(friends.map(f => f.friend._id));
+                            setSelectedFriends(friends.map(f => f.friend?._id));
                         } else {
                             const newSelected = friends
                                 .filter(f => aiSplitWith.some(name => f.friend.username.toLowerCase().includes(name.toLowerCase())))
-                                .map(f => f.friend._id);
+                                .map(f => f.friend?._id);
                             setSelectedFriends(newSelected);
                         }
                     }
@@ -155,8 +155,8 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                         aiSplitDetails.forEach(detail => {
                             const f = friends.find(fr => fr.friend.username.toLowerCase().includes(detail.name.toLowerCase()));
                             if (f) {
-                                newAmounts[f.friend._id] = detail.amount.toString();
-                                if (!newSelected.includes(f.friend._id)) newSelected.push(f.friend._id);
+                                newAmounts[f.friend?._id] = detail.amount.toString();
+                                if (!newSelected.includes(f.friend?._id)) newSelected.push(f.friend?._id);
                             }
                         });
                         
@@ -327,13 +327,13 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
     const handleGroupSelect = async (group) => {
         try {
             // Fetch full group metadata to ensure all members and details are present
-            const response = await api.get(`${API_BASE}/group/get-group/${group._id}`);
+            const response = await api.get(`${API_BASE}/group/get-group/${group?._id}`);
             if (response.status === 200) {
                 localStorage.setItem("currentGroup", JSON.stringify(response.data));
                 
                 // Also set tripMembers for consistency if other components use it
                 const groupMembers = (response.data.members || []).map((m) => ({
-                    _id: m._id,
+                    _id: m?._id,
                     username: m.username,
                 }));
                 localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
@@ -347,7 +347,7 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
         onClose();
         navigate("/add-expense", { 
             state: { 
-                propGroupId: group._id,
+                propGroupId: group?._id,
                 prefillTitle: description,
                 prefillAmount: amount
             } 
@@ -655,7 +655,7 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                 )}
 
                                                 {selectedFriends.map(id => {
-                                                    const friendObj = friends.find(f => f.friend._id === id);
+                                                    const friendObj = friends.find(f => f.friend?._id === id);
                                                     const totalSplitters = selectedFriends.length + (includeMe ? 1 : 0);
                                                     const share = amount ? (Number(amount) / totalSplitters).toFixed(2) : "0";
                                                     return (
@@ -792,7 +792,7 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                     )}
 
                                                     {selectedFriends.map(id => {
-                                                        const friendObj = friends.find(f => f.friend._id === id);
+                                                        const friendObj = friends.find(f => f.friend?._id === id);
                                                         return (
                                                             <div key={id} className="flex items-center gap-4 py-2 border-b last:border-b-0 border-white/5">
                                                                 <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-[10px] font-bold">
@@ -880,7 +880,7 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                             <span className="text-[10px] font-medium truncate w-full text-center">Me</span>
                                                         </button>
                                                         {selectedFriends.map(id => {
-                                                            const friendObj = friends.find(f => f.friend._id === id);
+                                                            const friendObj = friends.find(f => f.friend?._id === id);
                                                             const isPayer = paidBy === id;
                                                             return (
                                                                 <button
@@ -1013,7 +1013,7 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                         </div>
                                     ) : (mode === "group" ? filteredTrips : filteredFriends).length > 0 ? (
                                         (mode === "group" ? filteredTrips : filteredFriends).map((item, index) => {
-                                            const id = mode === "group" ? item._id : item.friend._id;
+                                            const id = mode === "group" ? item?._id : item.friend?._id;
                                             const name = mode === "group" ? item.name : item.friend.username;
                                             const isSelected = mode === "friends" && selectedFriends.includes(id);
 
