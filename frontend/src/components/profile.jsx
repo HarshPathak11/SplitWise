@@ -130,8 +130,9 @@ const ProfileEnhanced = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setUsername(value);
-    setProfile({ ...profile, [name]: value });
+    const sanitizedValue = name === "username" ? value.replace(/\s/g, "") : value;
+    setUsername(sanitizedValue);
+    setProfile({ ...profile, [name]: sanitizedValue });
   };
 
   const handleGenderChange = (value) => {
@@ -211,6 +212,11 @@ const ProfileEnhanced = () => {
 
     if (!profile.gender) {
       toast.error("Please select a gender");
+      return;
+    }
+
+    if (profile.username && /\s/.test(profile.username)) {
+      toast.error("Username cannot contain spaces");
       return;
     }
 
@@ -621,12 +627,12 @@ Let's split and share smarter with FairFare! 💸`;
                     !profile.gender
                   }
                   className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 ${
-                    !profile.upiId || uploading || !profile.gender
+                    !profile.upiId || uploading || !profile.gender || !isUsernameAvailable || checkingUsername
                       ? "bg-zinc-800 text-zinc-600 cursor-not-allowed border border-white/5"
                       : "bg-indigo-400/70 text-zinc-950 hover:bg-white hover:shadow-zinc-500/10"
                   }`}
-                  whileTap={!(!profile.upiId || uploading || !profile.gender) ? { scale: 0.97 } : {}}
-                  whileHover={!(!profile.upiId || uploading || !profile.gender) ? { scale: 1.02 } : {}}
+                  whileTap={!(!profile.upiId || uploading || !profile.gender || !isUsernameAvailable || checkingUsername) ? { scale: 0.97 } : {}}
+                  whileHover={!(!profile.upiId || uploading || !profile.gender || !isUsernameAvailable || checkingUsername) ? { scale: 1.02 } : {}}
                 >
                   {uploading ? (
                     <span className="flex items-center justify-center gap-2">
