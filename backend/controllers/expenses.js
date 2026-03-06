@@ -4,6 +4,7 @@ import { Expense, User } from "../models/schema.js";
 const getUserFriendExpenses = async (req, res) => {
   try {
     const { currentUserId, friendId } = req.params;
+    const { limit, cursor } = req.query;
 
     if (!currentUserId || !friendId) {
       return res.status(400).json({
@@ -18,7 +19,8 @@ const getUserFriendExpenses = async (req, res) => {
       });
     }
 
-    const expenses = await Expense.find({
+    // Base filter: expenses between the two users
+    const baseFilter = {
       $or: [
         {
           paidBy: currentUserId,
@@ -29,16 +31,45 @@ const getUserFriendExpenses = async (req, res) => {
           "owedBy.user": currentUserId,
         },
       ],
-    })
-      .populate("group", "name") // ✅ populate group name if exists
+    };
+
+    // If cursor is provided, only fetch items older than the cursor
+    if (cursor) {
+      baseFilter.createdAt = { $lt: new Date(cursor) };
+    }
+
+    const parsedLimit = limit ? parseInt(limit, 10) : null;
+
+    let query = Expense.find(baseFilter)
+      .populate("group", "name")
       .populate("paidBy", "username email")
       .populate("owedBy.user", "username email")
-      .lean(); // return plain JS objects so we can modify easily
+      .sort({ createdAt: -1 });
 
-    // ✅ Add a safe `groupName` field even if group doesn't exist
+    // If limit is provided, fetch one extra to check if more exist
+    if (parsedLimit) {
+      query = query.limit(parsedLimit + 1);
+    }
+
+    const expenses = await query.lean();
+
+    // Determine hasMore and trim the extra item
+    let hasMore = false;
+    let nextCursor = null;
+    if (parsedLimit && expenses.length > parsedLimit) {
+      hasMore = true;
+      expenses.pop(); // remove the extra probe item
+    }
+
+    // nextCursor is the createdAt of the oldest item in this batch
+    if (parsedLimit && expenses.length > 0) {
+      nextCursor = expenses[expenses.length - 1].createdAt;
+    }
+
+    // Add a safe `groupName` field even if group doesn't exist
     const expensesWithGroupName = expenses.map((exp) => ({
       ...exp,
-      groupName: exp.group?.name || null, // null means no group assigned
+      groupName: exp.group?.name || null,
     }));
 
     // Fetch friend's activity status
@@ -57,6 +88,8 @@ const getUserFriendExpenses = async (req, res) => {
       status: "Success",
       count: expensesWithGroupName.length,
       expenses: expensesWithGroupName,
+      hasMore,
+      nextCursor,
       ...friendActivity,
     });
   } catch (error) {

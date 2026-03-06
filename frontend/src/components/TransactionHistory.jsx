@@ -8,6 +8,7 @@ import api from "../utils/api";
 import html2canvas from "html2canvas";
 import { motion, AnimatePresence } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const PAGE_SIZE = 20;
 
 const TransactionHistory = () => {
   const { friendId } = useParams();
@@ -21,6 +22,9 @@ const TransactionHistory = () => {
   const [loading, setLoading] = useState(true);
   const [txLoading, setTxLoading] = useState(true);
   const [activityInfo, setActivityInfo] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState(null);
 
   const chatContainerRef = useRef(null);
   const bottomRef = useRef(null);
@@ -64,6 +68,11 @@ const TransactionHistory = () => {
     const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 100;
 
     setIsAtBottom(atBottom);
+
+    // Trigger load-more when user scrolls near the top
+    if (scrollTop < 80 && hasMore && !loadingMore) {
+      loadMoreTransactions();
+    }
   };
 
   const scrollToBottom = () => {
@@ -499,13 +508,28 @@ const TransactionHistory = () => {
 
       // 3. Fetch remote data (Transactions & Last Seen)
       if (!silent) setTxLoading(true);
-      const txRes = await api.get(`${API_BASE}/expenses/${currentUserId}/${friendId}`);
-      
-      // Sort & Process transactions
+
+      // If a URL hash is present (deep link to specific tx), load all transactions
+      // so we can guarantee the linked tx is in the list. Otherwise paginate.
+      const urlHash = window.location.hash.replace("#", "");
+      const usePagination = !urlHash;
+      const queryParams = usePagination ? `?limit=${PAGE_SIZE}` : "";
+      const txRes = await api.get(`${API_BASE}/expenses/${currentUserId}/${friendId}${queryParams}`);
+
+      // API returns newest-first; reverse for chat-style display (oldest at top)
       const sortedTransactions = txRes.data.expenses.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
       setTransactions(sortedTransactions.reverse());
+
+      // Set pagination state
+      if (usePagination) {
+        setHasMore(txRes.data.hasMore || false);
+        setNextCursor(txRes.data.nextCursor || null);
+      } else {
+        setHasMore(false);
+        setNextCursor(null);
+      }
 
       // Extract activity info
       if (txRes.data.lastAtive) {
@@ -520,6 +544,42 @@ const TransactionHistory = () => {
       console.error(err);
     } finally {
       setTxLoading(false);
+    }
+  }
+
+  // Load older transactions when scrolling to top
+  async function loadMoreTransactions() {
+    if (!hasMore || loadingMore || !nextCursor) return;
+    setLoadingMore(true);
+    try {
+      const currentUserId = Cookies.get("id");
+      const el = chatContainerRef.current;
+      const prevScrollHeight = el ? el.scrollHeight : 0;
+
+      const txRes = await api.get(
+        `${API_BASE}/expenses/${currentUserId}/${friendId}?limit=${PAGE_SIZE}&cursor=${nextCursor}`
+      );
+
+      const olderTransactions = txRes.data.expenses
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .reverse();
+
+      // Prepend older transactions
+      setTransactions((prev) => [...olderTransactions, ...prev]);
+      setHasMore(txRes.data.hasMore || false);
+      setNextCursor(txRes.data.nextCursor || null);
+
+      // Preserve scroll position so the view doesn't jump
+      requestAnimationFrame(() => {
+        if (el) {
+          const newScrollHeight = el.scrollHeight;
+          el.scrollTop = newScrollHeight - prevScrollHeight;
+        }
+      });
+    } catch (err) {
+      console.error("Error loading more transactions:", err);
+    } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -1236,6 +1296,28 @@ const TransactionHistory = () => {
             </div>
           ) : (
             <>
+              {/* Load-more skeleton at top */}
+              {loadingMore && (
+                <div className="flex flex-col items-center gap-3 mb-6">
+                  {[1, 2].map((i) => (
+                    <div key={`load-more-${i}`} className={`w-full max-w-[70%] h-20 bg-zinc-900/50 rounded-xl border border-white/5 animate-pulse flex flex-col p-4 gap-2 ${i % 2 === 0 ? 'self-end' : 'self-start'}`}>
+                      <div className="w-1/3 h-3 bg-zinc-800 rounded"></div>
+                      <div className="w-1/2 h-2 bg-zinc-800/50 rounded"></div>
+                      <div className="mt-auto self-end w-1/4 h-5 bg-indigo-900/20 rounded"></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* "All caught up" indicator */}
+              {!hasMore && transactions.length > 0 && !loadingMore && (
+                <div className="flex items-center gap-3 justify-center mb-6 opacity-40">
+                  <div className="h-px w-12 bg-zinc-700"></div>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Beginning of history</span>
+                  <div className="h-px w-12 bg-zinc-700"></div>
+                </div>
+              )}
+
               {transactions.map((tx) => {
                 const isUser = tx.paidBy._id === userId;
                 const owedEntry = isUser
