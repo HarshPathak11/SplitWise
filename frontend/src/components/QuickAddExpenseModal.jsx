@@ -659,8 +659,17 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                     const totalSplitters = selectedFriends.length + (includeMe ? 1 : 0);
                                                     const share = amount ? (Number(amount) / totalSplitters).toFixed(2) : "0";
                                                     return (
-                                                        <div key={id} className="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs font-medium flex items-center gap-2 transition-all hover:bg-amber-500/15">
-                                                            <span>{friendObj?.friend?.username}</span>
+                                                        <div key={id} className="px-2 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-200 text-xs font-medium flex items-center gap-2 transition-all hover:bg-amber-500/15">
+                                                            <div className="w-5 h-5 rounded-full overflow-hidden bg-amber-500/20 border border-amber-500/30 flex-shrink-0">
+                                                                {friendObj?.friend?.profilePhotoUrl ? (
+                                                                    <img src={friendObj.friend.profilePhotoUrl} alt="" className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-amber-400">
+                                                                        {friendObj?.friend?.username?.[0]?.toUpperCase()}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <span className="truncate max-w-[80px]">{friendObj?.friend?.username}</span>
                                                             {splitMode === "equally" && amount && (
                                                                 <span className="text-[10px] text-amber-500/80 font-bold">₹{share}</span>
                                                             )}
@@ -795,10 +804,16 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                         const friendObj = friends.find(f => f.friend?._id === id);
                                                         return (
                                                             <div key={id} className="flex items-center gap-4 py-2 border-b last:border-b-0 border-white/5">
-                                                                <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-[10px] font-bold">
-                                                                    {friendObj?.friend?.username?.[0]?.toUpperCase()}
+                                                                <div className="w-8 h-8 rounded-full overflow-hidden bg-amber-500/10 border border-amber-500/20 flex-shrink-0 flex items-center justify-center">
+                                                                    {friendObj?.friend?.profilePhotoUrl ? (
+                                                                        <img src={friendObj.friend.profilePhotoUrl} alt="" className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <span className="text-[10px] font-bold text-amber-400">
+                                                                            {friendObj?.friend?.username?.[0]?.toUpperCase()}
+                                                                        </span>
+                                                                    )}
                                                                 </div>
-                                                                <span className="text-sm text-zinc-300 flex-1">{friendObj?.friend.username}</span>
+                                                                <span className="text-sm text-zinc-300 flex-1 truncate">{friendObj?.friend?.username}</span>
                                                                 <div className="relative w-24">
                                                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-[10px]">₹</span>
                                                                     <input 
@@ -876,7 +891,11 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                             onClick={() => setPaidBy(Cookies.get("id"))}
                                                             className={`flex-shrink-0 px-4 py-3 rounded-xl border transition-all flex flex-col items-center gap-1 min-w-[80px] ${paidBy === Cookies.get("id") ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-zinc-950 border-white/5 text-zinc-400 hover:border-amber-500/30'}`}
                                                         >
-                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${paidBy === Cookies.get("id") ? 'bg-white/20' : 'bg-zinc-800'}`}>You</div>
+                                                            <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold ${paidBy === Cookies.get("id") ? 'bg-white/20' : 'bg-zinc-800'}`}>
+                                                                {user?.profilePhotoUrl ? (
+                                                                    <img src={user.profilePhotoUrl} alt="" className="w-full h-full object-cover" />
+                                                                ) : "You"}
+                                                            </div>
                                                             <span className="text-[10px] font-medium truncate w-full text-center">Me</span>
                                                         </button>
                                                         {selectedFriends.map(id => {
@@ -889,10 +908,14 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                                     onClick={() => setPaidBy(id)}
                                                                     className={`flex-shrink-0 px-4 py-3 rounded-xl border transition-all flex flex-col items-center gap-1 min-w-[80px] ${isPayer ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-zinc-950 border-white/5 text-zinc-400 hover:border-amber-500/30'}`}
                                                                 >
-                                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isPayer ? 'bg-white/20' : 'bg-zinc-800'}`}>
-                                                                        {friendObj?.friend.username?.[0]?.toUpperCase()}
+                                                                    <div className={`w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold ${isPayer ? 'bg-white/20' : 'bg-zinc-800'}`}>
+                                                                        {friendObj?.friend?.profilePhotoUrl ? (
+                                                                            <img src={friendObj.friend.profilePhotoUrl} alt="" className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            friendObj?.friend?.username?.[0]?.toUpperCase()
+                                                                        )}
                                                                     </div>
-                                                                    <span className="text-[10px] font-medium truncate w-full text-center">{friendObj?.friend.username}</span>
+                                                                    <span className="text-[10px] font-medium truncate w-full text-center">{friendObj?.friend?.username}</span>
                                                                 </button>
                                                             );
                                                         })}
@@ -1049,12 +1072,20 @@ const QuickAddExpenseModal = ({ isOpen, onClose, user }) => {
                                                     whileTap={{ scale: 0.98 }}
                                                 >
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                                                        <div className={`w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center transition-colors ${
                                                             mode === "group" 
                                                                 ? "bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500/20" 
                                                                 : "bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20"
                                                         }`}>
-                                                            {mode === "group" ? <Users className="w-5 h-5" /> : <Wallet className="w-5 h-5" />}
+                                                            {mode === "group" ? (
+                                                                <Users className="w-5 h-5" />
+                                                            ) : (
+                                                                item.friend?.profilePhotoUrl ? (
+                                                                    <img src={item.friend.profilePhotoUrl} alt="" className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <span className="text-sm font-bold uppercase">{item.friend?.username?.[0]}</span>
+                                                                )
+                                                            )}
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-medium text-white">{name}</p>
