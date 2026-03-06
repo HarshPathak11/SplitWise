@@ -32,7 +32,8 @@ const PUBLIC_ROUTES = [
   "/transaction-history",
   "/tripDetails",
   "/add-expense",
-  "/expense/edit"
+  "/expense/edit",
+  "/personal-expenses"
 ];
 
 const isPublicRoute = (pathname) => {
@@ -80,17 +81,17 @@ const AppLayout = () => {
   const handleTermsAccept = async (termId) => {
     try {
       await api.post("/terms/accept", { termId });
-      
+
       // Update local state to mark this term as agreed
       setTermsList(prev => {
-        const updatedList = prev.map(t => 
-            t._id === termId ? { ...t, hasAgreed: true } : t
+        const updatedList = prev.map(t =>
+          t._id === termId ? { ...t, hasAgreed: true } : t
         );
-        
+
         // check if all are agreed now
         const allDone = updatedList.every(t => t.hasAgreed);
         if (allDone) {
-            setShowTerms(false);
+          setShowTerms(false);
         }
         return updatedList;
       });

@@ -139,17 +139,67 @@ const createPersonalExpense = async (req, res) => {
 const getPersonalExpenses = async (req, res) => {
   try {
     const userId = req.user.id;
-    const expenses = await Expense.find({
-      paidBy: userId,
-      owedBy: {$size: 0},
-    }).sort({ date: -1 });
+    const { limit, cursor } = req.query;
 
+    const baseFilter = {
+      paidBy: userId,
+      owedBy: { $size: 0 },
+    };
+
+    // If cursor is provided, only fetch items older than the cursor
+    if (cursor) {
+      baseFilter.date = { $lt: new Date(cursor) };
+    }
+
+    const parsedLimit = limit ? parseInt(limit, 10) : null;
+
+    let query = Expense.find(baseFilter).sort({ date: -1 });
+
+    if (parsedLimit) {
+      query = query.limit(parsedLimit + 1);
+    }
+
+    const expenses = await query.lean();
+
+    // Determine hasMore and trim the extra item
+    let hasMore = false;
+    let nextCursor = null;
+    if (parsedLimit && expenses.length > parsedLimit) {
+      hasMore = true;
+      expenses.pop();
+    }
+
+    if (parsedLimit && expenses.length > 0) {
+      nextCursor = expenses[expenses.length - 1].date;
+    }
+
+    // Compute total spending (across ALL personal expenses, not just this page)
+    const totalAgg = await Expense.aggregate([
+      { $match: { paidBy: new mongoose.Types.ObjectId(userId), owedBy: { $size: 0 } } },
+      { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } },
+    ]);
+    const totalSpending = totalAgg.length > 0 ? totalAgg[0].total : 0;
+    const totalCount = totalAgg.length > 0 ? totalAgg[0].count : 0;
+
+    // If limit was provided, return structured response
+    if (parsedLimit) {
+      return res.status(200).json({
+        expenses,
+        hasMore,
+        nextCursor,
+        totalSpending,
+        totalCount,
+      });
+    }
+
+    // Backward compatible: return plain array when no limit
     res.status(200).json(expenses);
   } catch (error) {
     console.error("Error fetching personal expenses:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 const deletePersonalExpense = async (req, res) => {
   const session = await mongoose.startSession();
