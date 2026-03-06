@@ -578,6 +578,11 @@ const userDetails = async (req, res) => {
     }
     // console.log("User sent:",user);
 
+    // Filter out null friends (where the friend document was deleted)
+    if (user.friends) {
+      user.friends = user.friends.filter(f => f.friend !== null);
+    }
+
     res.status(200).json({ user: user });
   } catch (err) {
     console.error("Error fetching user details:", err);

@@ -312,7 +312,7 @@ const AddExpense = () => {
       const { data } = await api.post("/ai/parse-expense", {
         prompt: transcript,
         context: "group_detailed",
-        memberNames: members.map((m) => m.username),
+        memberNames: members.filter(m => m).map((m) => m.username),
       });
 
       // 1. Amount
@@ -329,7 +329,7 @@ const AddExpense = () => {
         } else {
           // Fuzzy match name in members list
           const payer = members.find((m) =>
-            m.username.toLowerCase().includes(data.paidBy.toLowerCase())
+            m && m.username.toLowerCase().includes(data.paidBy.toLowerCase())
           );
           if (payer) setPaidBy(payer._id);
         }
@@ -349,7 +349,7 @@ const AddExpense = () => {
               memberId = storedUser._id;
             } else {
               const friend = members.find((m) =>
-                m.username.toLowerCase().includes(detail.name.toLowerCase())
+                m && m.username.toLowerCase().includes(detail.name.toLowerCase())
               );
               if (friend) memberId = friend._id;
             }
@@ -381,7 +381,7 @@ const AddExpense = () => {
             const newSelected = [];
             data.splitWith.forEach((name) => {
                 const friend = members.find((m) =>
-                m.username.toLowerCase().includes(name.toLowerCase())
+                    m && m.username.toLowerCase().includes(name.toLowerCase())
                 );
                 if (friend) newSelected.push(friend._id);
             });
@@ -397,7 +397,7 @@ const AddExpense = () => {
             // Fallback for simple case
             const friend = members.find(
             (m) =>
-                m.username.toLowerCase().includes(data.friendName.toLowerCase())
+                m && m.username.toLowerCase().includes(data.friendName.toLowerCase())
             );
 
             if (friend) {
