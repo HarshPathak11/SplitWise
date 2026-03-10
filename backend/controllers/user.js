@@ -293,14 +293,17 @@ const getAllExpensesForUser = async (req, res) => {
         .limit(limit)
         .populate({ path: "paidBy", select: "username" })
         .populate({ path: "owedBy.user", select: "username" })
+        .populate({ path: "group", select: "name" })
         .lean(),
       totalCountPromise,
     ]);
 
-    const hasMore = expenses.length === limit;
-    const nextCursor = hasMore ? expenses[expenses.length - 1].createdAt : null;
+    const nextCursor = expenses.length === limit ? expenses[expenses.length - 1].createdAt : null;
 
-    const response = { expenses, nextCursor };
+    const response = { 
+      expenses, 
+      nextCursor 
+    };
     if (totalCount !== undefined) response.totalCount = totalCount;
 
     res.status(200).json(response);

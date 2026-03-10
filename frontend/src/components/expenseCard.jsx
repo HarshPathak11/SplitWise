@@ -21,6 +21,7 @@ const ExpenseCard = ({
   beneficiaries, // [ { user: { _id, username }, amount } ]
   onDelete,
   isPersonal,
+  groupName,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -158,6 +159,14 @@ const ExpenseCard = ({
             <p className="text-[10px] text-zinc-500 mt-1 font-mono tracking-wide opacity-60">
               {date}
             </p>
+
+            {groupName && (
+              <div className="mt-1 flex items-center">
+                <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 text-[9px] font-bold border border-indigo-500/20 uppercase tracking-tighter">
+                  {groupName}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

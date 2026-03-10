@@ -789,8 +789,8 @@ const TripDetails = () => {
                     iconColor={"bg-indigo-500"} // Maintaining the theme
                     paidBy={expense.paidBy}
                     beneficiaries={expense.owedBy}
-                    isPersonal={!expense.group}
                     onDelete={handleDeleteExpense}
+                    isPersonal={false}
                   />
                 ))
               )}

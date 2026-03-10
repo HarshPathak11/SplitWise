@@ -408,6 +408,7 @@ const AllExpensesPage = () => {
                     iconColor={"bg-indigo-500"}
                     paidBy={expense.paidBy}
                     beneficiaries={expense.owedBy}
+                    groupName={expense.group?.name}
                   />
                 ))}
                 <div ref={loaderRef} className="h-1 w-full"></div>
