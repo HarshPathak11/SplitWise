@@ -179,30 +179,30 @@ const TripDetails = () => {
     }
   };
 
+  const fetchMeta = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const res = await api.get(`${API_BASE}/group/get-group/${tripId}`);
+      setTripDetails(res.data);
+
+      localStorage.setItem("currentGroup", JSON.stringify(res.data));
+
+      const groupMembers = (res.data.members || []).map((m) => ({
+        _id: m._id,
+        username: m.username,
+      }));
+
+      localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
+      setMembers(groupMembers);
+    } catch (e) {
+      toast.error("Failed to load trip");
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
   //Fetching group Meta Data
   useEffect(() => {
-    const fetchMeta = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`${API_BASE}/group/get-group/${tripId}`);
-        setTripDetails(res.data);
-
-        localStorage.setItem("currentGroup", JSON.stringify(res.data));
-
-        const groupMembers = (res.data.members || []).map((m) => ({
-          _id: m._id,
-          username: m.username,
-        }));
-
-        localStorage.setItem("tripMembers", JSON.stringify(groupMembers));
-        setMembers(groupMembers);
-      } catch (e) {
-        toast.error("Failed to load trip");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMeta();
   }, [tripId]);
 
@@ -369,17 +369,8 @@ const TripDetails = () => {
     // 2a) Filter it out of local `expenses`
     setExpenses((prev) => prev.filter((exp) => exp._id !== deletedExpenseId));
 
-    // 2b) Also remove it from the `currentGroup` in localStorage
-    const rawCurrentGroup = localStorage.getItem("currentGroup");
-    if (rawCurrentGroup) {
-      try {
-        const cg = JSON.parse(rawCurrentGroup);
-        cg.expenses = cg.expenses.filter((exp) => exp._id !== deletedExpenseId);
-        localStorage.setItem("currentGroup", JSON.stringify(cg));
-      } catch (e) {
-        console.error("Failed to remove expense from localStorage:", e);
-      }
-    }
+    // 2c) Re-fetch meta silently to update totals/balances
+    fetchMeta(true);
   };
 
   return (
