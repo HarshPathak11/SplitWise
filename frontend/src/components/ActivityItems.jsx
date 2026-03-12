@@ -1,0 +1,196 @@
+import { useState } from "react";
+import { X, Check, UserPlus, FilePlus, Edit2, Trash2, DollarSign, Bell, Users } from "lucide-react";
+import { motion } from "framer-motion";
+import api from "../utils/api";
+import { toast } from "react-hot-toast";
+import PropTypes from "prop-types";
+
+const ActivityItems = ({
+  _id,
+  sender,
+  message,
+  type,
+  createdAt,
+  isRead,
+  onStatusChange,
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [localIsRead, setLocalIsRead] = useState(isRead);
+
+  // Format time
+  const formatTime = (timestamp) => {
+    const now = new Date();
+    const notifTime = new Date(timestamp);
+    const diffMs = now - notifTime;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+
+    return notifTime.toLocaleDateString();
+  };
+
+  // Get notification icon color based on type
+  const getTypeColor = () => {
+    switch (type) {
+      case "friend_request":
+      case "friend_added":
+        return "from-blue-500 to-cyan-500";
+      case "expense_added":
+      case "expense_edited":
+        return "from-green-500 to-emerald-500";
+      case "expense_deleted":
+        return "from-red-500 to-pink-500";
+      case "payment_received":
+      case "payment_reminder":
+        return "from-yellow-500 to-orange-500";
+      case "group_invite":
+      case "group_expense_added":
+        return "from-purple-500 to-pink-500";
+      default:
+        return "from-indigo-500 to-purple-500";
+    }
+  };
+
+  const getTypeIcon = () => {
+    switch (type) {
+      case "friend_request":
+      case "friend_added":
+        return <UserPlus className="w-4 h-4 text-blue-400" />;
+      case "expense_added":
+        return <FilePlus className="w-4 h-4 text-green-400" />;
+      case "group_expense_added":
+        return <Users className="w-4 h-4 text-purple-400" />;
+      case "expense_edited":
+        return <Edit2 className="w-4 h-4 text-green-400" />;
+      case "expense_deleted":
+        return <Trash2 className="w-4 h-4 text-red-400" />;
+      case "payment_received":
+        return <DollarSign className="w-4 h-4 text-yellow-400" />;
+      case "payment_reminder":
+        return <Bell className="w-4 h-4 text-yellow-400" />;
+      case "group_invite":
+        return <Users className="w-4 h-4 text-purple-400" />;
+      default:
+        return null;
+    }
+  };
+
+  const handleMarkAsRead = async () => {
+    if (localIsRead) return;
+
+    setIsLoading(true);
+    try {
+      await api.put(`/activity/${_id}/read`);
+      setLocalIsRead(true);
+      onStatusChange?.();
+      toast.success("Marked as read");
+    } catch (error) {
+      console.error("Error marking as read:", error);
+      toast.error("Failed to mark as read");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: 100 }}
+      transition={{ duration: 0.3 }}
+      className={`relative p-4 rounded-xl border transition-all duration-200 ${
+        localIsRead
+          ? "bg-zinc-900/30 border-white/5 hover:border-white/10"
+          : "bg-gradient-to-r from-indigo-500/5 to-purple-500/5 border-indigo-500/20 hover:border-indigo-500/40"
+      }`}
+    >
+      {/* Unread indicator */}
+      {!localIsRead && (
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-l-xl"></div>
+      )}
+
+      <div className="flex gap-3">
+        {/* Avatar */}
+        <div className="flex-shrink-0">
+          {sender?.profilePhotoUrl ? (
+            <img
+              src={sender.profilePhotoUrl}
+              alt={sender.username}
+              className="w-12 h-12 rounded-full object-cover border border-white/10"
+            />
+          ) : (
+            <div
+              className={`w-12 h-12 rounded-full bg-gradient-to-br ${getTypeColor()} flex items-center justify-center text-white font-semibold text-lg`}
+            >
+              {sender?.username?.[0]?.toUpperCase() || "N"}
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* sender name and time */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {getTypeIcon()}
+              <span className="font-semibold text-white truncate">
+                {sender?.username || "Someone"}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-400 bg-white/5 px-2 py-0.5 rounded-full">
+                {type.replace(/_/g, " ")}
+              </span>
+            </div>
+            <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
+              {formatTime(createdAt)}
+            </span>
+          </div>
+
+          {/* message body */}
+          <p className= "text-sm text-gray-200 leading-relaxed break-words mt-1">
+            {message}
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex-shrink-0 flex items-start gap-2">
+          {!localIsRead && (
+            <button
+              onClick={handleMarkAsRead}
+              disabled={isLoading}
+              className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors duration-200 disabled:opacity-50"
+              title="Mark as read"
+            >
+              <Check size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Unread dot badge (if not read) */}
+      {!localIsRead && (
+        <div className="absolute right-3 top-3 w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+      )}
+    </motion.div>
+  );
+};
+
+ActivityItems.propTypes = {
+  _id: PropTypes.string.isRequired,
+  sender: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    username: PropTypes.string.isRequired,
+    profilePhotoUrl: PropTypes.string,
+  }),
+  message: PropTypes.string.isRequired,
+  type: PropTypes.string.isRequired,
+  createdAt: PropTypes.string.isRequired,
+  isRead: PropTypes.bool.isRequired,
+  onStatusChange: PropTypes.func,
+};
+
+export default ActivityItems;

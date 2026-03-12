@@ -1,6 +1,7 @@
 import { Group } from "../models/schema.js";
 import { User } from "../models/schema.js";
 import { Expense } from "../models/schema.js";
+import { Notification } from "../models/schema.js";
 import {
   sendOneNotification,
   sendMultipleNotifications,
@@ -163,7 +164,7 @@ const addMembers = async (req, res) => {
 
     await group.save();
 
-    // Step 3: 🔔 Notify newly added members
+    // Step 3: 🔔 Notify newly added members and create activity entries
     if (newMembers.length > 0) {
       const users = await User.find(
         { _id: { $in: newMembers } },
@@ -177,6 +178,22 @@ const addMembers = async (req, res) => {
         const title = "Added to a Group";
         const body = `You have been added to the group "${group.name}".`;
         await sendMultipleNotifications(tokens, title, body); // ✅ send in one request
+      }
+
+      // Activity notifications
+      const adderUserId = req.user?.id;
+      for (const user of users) {
+        try {
+          await Notification.create({
+            recipient: user._id,
+            sender: adderUserId,
+            type: "group_invite",
+            message: `You were added to the group "${group.name}"`,
+            referenceId: group._id,
+          });
+        } catch (notifErr) {
+          console.error("Error creating activity notification for group invite:", notifErr);
+        }
       }
     }
 
@@ -486,6 +503,30 @@ const addExpenseController = async (req, res) => {
 
         await sendMultipleNotifications(tokens, notificationTitle, body);
       }
+
+      // Create Activity notifications for each user owing money
+      const payerUsername = users.find((u) => u._id.toString() === paidBy.toString())?.username || "Someone";
+      const groupName = savedExpense.group ? (await Group.findById(savedExpense.group).select("name"))?.name : null;
+      
+      for (const owed of savedExpense.owedBy) {
+        if (owed.user.toString() === paidBy.toString()) continue; // Don't notify the payer about themselves
+        
+        const message = groupName
+          ? `You were added to "${savedExpense.title}" in ${groupName}`
+          : `You were added to "${savedExpense.title}"`;
+        const notifType = groupName ? "group_expense_added" : "expense_added";
+        try {
+          await Notification.create({
+            recipient: owed.user,
+            sender: paidBy,
+            type: notifType,
+            message,
+            referenceId: savedExpense._id,
+          });
+        } catch (notifError) {
+          console.error("Error creating activity notification:", notifError);
+        }
+      }
     }
 
     return res.status(200).json({ success: true, expense: savedExpense });
@@ -572,6 +613,7 @@ const addafterDeleteExpenseController = async (req, res) => {
     involvedMembers, // array of user _ids who are part of the expense splitting
     customAmounts, // object mapping user _id to amount (for uneven splits)
     createdAt: clientCreatedAt, // optionally provided by client to preserve original timestamp
+    action, // optionally "edit" when updating existing expense
   } = req.body;
 
   // Basic validation
@@ -695,6 +737,40 @@ const addafterDeleteExpenseController = async (req, res) => {
           const notificationBody = `Expense "${title}" has been updated for ₹${amount}.`;
           await sendMultipleNotifications(tokens, title, notificationBody);
         }
+
+        // Create Activity notifications for each user owing money
+        const payerUser = await User.findById(paidBy).select("username");
+        const payerUsername = payerUser?.username || "Someone";
+        const groupName = groupId ? (await Group.findById(groupId).select("name"))?.name : null;
+        const isEdit = req.body.action === "edit";
+
+        for (const owed of savedExpense.owedBy) {
+          if (owed.user.toString() === paidBy.toString()) continue;
+          
+          const message = isEdit
+            ? groupName
+              ? `${payerUsername} edited the expense "${savedExpense.title}" in ${groupName}`
+              : `${payerUsername} edited the expense "${savedExpense.title}"`
+            : groupName
+              ? `${payerUsername} added you to "${savedExpense.title}" in ${groupName}`
+              : `${payerUsername} added you to "${savedExpense.title}"`;
+          const notifType = isEdit
+            ? "expense_edited"
+            : groupName
+              ? "group_expense_added"
+              : "expense_added";
+          try {
+            await Notification.create({
+              recipient: owed.user,
+              sender: paidBy,
+              type: notifType,
+              message,
+              referenceId: savedExpense._id,
+            });
+          } catch (notifError) {
+            console.error("Error creating activity notification:", notifError);
+          }
+        }
       } catch (notifyErr) {
         console.error("Error sending expense edited notification:", notifyErr);
       }
@@ -779,8 +855,8 @@ const deleteExpenseController = async (req, res) => {
       return res.status(404).json({ success: false, message: "Expense not found" });
     }
 
-    // 6) 🔔 Notify group members AFTER commit
-    if (deletedExpense.group && action !== "edit") {
+    // 6) 🔔 Notify group members AFTER commit and create activity entries
+    if (deletedExpense.group) {
       const group = await Group.findById(deletedExpense.group).populate(
         "members",
         "fcmToken username"
@@ -788,9 +864,28 @@ const deleteExpenseController = async (req, res) => {
       if (group && group.members.length > 0) {
         const tokens = group.members.map((m) => m.fcmToken).filter(Boolean);
         if (tokens.length > 0) {
-          const title = "Expense Deleted";
-          const body = `An expense "${deletedExpense.title}" of amount ₹${deletedExpense.amount} has been deleted from group "${group.name}".`;
+          const title = action === "edit" ? "Expense Edited" : "Expense Deleted";
+          const body = action === "edit"
+            ? `An expense "${deletedExpense.title}" of amount ₹${deletedExpense.amount} has been edited in group "${group.name}".`
+            : `An expense "${deletedExpense.title}" of amount ₹${deletedExpense.amount} has been deleted from group "${group.name}".`;
           await sendMultipleNotifications(tokens, title, body);
+        }
+
+        // Add activity notifications for members (exclude payer maybe?)
+        for (const member of group.members) {
+          try {
+            await Notification.create({
+              recipient: member._id,
+              sender: deletedExpense.paidBy,
+              type: action === "edit" ? "expense_edited" : "expense_deleted",
+              message: action === "edit"
+                ? `An expense \"${deletedExpense.title}\" was edited in ${group.name}`
+                : `An expense \"${deletedExpense.title}\" was deleted from ${group.name}`,
+              referenceId: deletedExpense._id,
+            });
+          } catch (notifErr) {
+            console.error("Error creating activity notification for deletion/edit:", notifErr);
+          }
         }
       }
     }

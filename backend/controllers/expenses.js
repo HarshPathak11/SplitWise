@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { Expense, User } from "../models/schema.js";
+import { Expense, User, Notification } from "../models/schema.js";
 
 const getUserFriendExpenses = async (req, res) => {
   try {
@@ -220,6 +220,19 @@ const deletePersonalExpense = async (req, res) => {
       }, { session });
     });
 
+    // create activity log for deletion
+    try {
+      await Notification.create({
+        recipient: userId,
+        sender: userId,
+        type: "expense_deleted",
+        message: "You deleted a personal expense",
+        referenceId: id,
+      });
+    } catch (notifErr) {
+      console.error("Error creating activity for personal expense deletion:", notifErr);
+    }
+
     res.status(200).json({ message: "Expense deleted successfully" });
   } catch (error) {
     console.error("Error deleting personal expense:", error);
@@ -246,6 +259,19 @@ const updatePersonalExpense = async (req, res) => {
     if (date !== undefined) expense.date = new Date(date);
 
     await expense.save();
+
+    // log edit activity
+    try {
+      await Notification.create({
+        recipient: userId,
+        sender: userId,
+        type: "expense_edited",
+        message: "You edited a personal expense",
+        referenceId: expense._id,
+      });
+    } catch (notifErr) {
+      console.error("Error creating activity for personal expense edit:", notifErr);
+    }
 
     res.status(200).json(expense);
   } catch (error) {

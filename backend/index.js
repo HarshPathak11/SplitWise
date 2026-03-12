@@ -11,6 +11,7 @@ import expenseRoutes from "./routes/expense.js";
 import promoRoutes from "./routes/promo.js";
 import termsRoutes from "./routes/terms.js";
 import aiRoutes from "./routes/ai.js";
+import activityRoutes from "./routes/activity.js";
 import session from "express-session";
 
 const app = express();
@@ -53,6 +54,9 @@ app.use("/terms", termsRoutes);
 
 // AI Features
 app.use("/ai", aiRoutes);
+
+// Activity/Notifications
+app.use("/activity", activityRoutes);
 
 // ✅ Self-ping function to prevent Render sleeping
 function keepServerAwake() {

@@ -32,6 +32,7 @@ import AllFriends from "./components/AllFriends";
 import SetupProfile from "./components/SetupProfile";
 import PersonalExpense from "./components/PersonalExpense";
 import EditPersonalTransaction from "./components/EditPersonalTransaction";
+import ActivityPage from "./components/ActivityPage";
 
 const router = createBrowserRouter([
   {
@@ -51,6 +52,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "activity/:userId",
+        element: (
+          <ProtectedRoute>
+            <ActivityPage />
           </ProtectedRoute>
         ),
       },

@@ -1,9 +1,31 @@
 import { Link } from "react-router-dom";
-import { FaUser, FaChartBar, FaRobot} from "react-icons/fa";
+import { FaUser, FaChartBar, FaRobot, FaBell } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import api from "../utils/api";
+import Cookies from "js-cookie";
 import dashboardLogoNew from "../../public/dashboardLogoNew.png";
 const TopNavbar = ({ user }) => {
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (user && user._id) {
+      fetchUnreadCount();
+      // Optionally poll every 30 seconds for new notifications
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await api.get(`/activity/${user._id}/unread-count`);
+      setUnreadCount(response.data.unreadCount);
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  };
 
   return (
     <nav className="w-full bg-zinc-900/80 backdrop-blur-xl border border-white/5 rounded-2xl px-4 py-3 flex justify-between items-center shadow-lg shadow-black/20 relative">
@@ -51,6 +73,21 @@ const TopNavbar = ({ user }) => {
 
         {/* 2. User Actions Group */}
         <div className="flex items-center gap-2">
+          <Link to={`/activity/${user?._id}`}>
+            <button
+              className="relative p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
+              title="Activity"
+            >
+              <FaBell className="text-lg" />
+              {/* Unread Notification Badge */}
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-5 h-5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-[0_0_12px_rgba(99,102,241,0.6)]">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+          </Link>
+
           <Link to="/profile">
             <button
               className="relative p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"

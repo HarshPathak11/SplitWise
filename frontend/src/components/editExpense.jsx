@@ -161,6 +161,7 @@ const EditExpense = () => {
       involvedMembers: selected,
       customAmounts: splitMode === "unequally" ? amounts : {},
       createdAt: originalCreatedAt, // preserve original timestamp
+      action: "edit",
     };
 
     try {

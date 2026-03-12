@@ -157,6 +157,48 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   }
 };
 
+// Notification schema
+const notificationSchema = new mongoose.Schema(
+  {
+    recipient: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+    sender: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+    type: {
+      type: String,
+      enum: [
+        "friend_request",
+        "friend_added",
+        "expense_added",
+        "payment_received",
+        "payment_reminder",
+        "group_invite",
+        "expense_edited",
+        "expense_deleted",
+        "group_expense_added",
+      ],
+      required: true,
+    },
+    message: { type: String, required: true },
+    referenceId: { type: mongoose.Schema.Types.ObjectId }, // expenseId / groupId etc
+    isRead: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+  },
+  { timestamps: true }
+);
+
+notificationSchema.index({ recipient: 1, createdAt: -1 });
+notificationSchema.index({ recipient: 1, isRead: 1 });
+
 expenseSchema.index({ paidBy: 1, "owedBy.user": 1 });
 
 const Expense = mongoose.model("Expense", expenseSchema);
@@ -164,7 +206,8 @@ const User = mongoose.model("User", userSchema);
 const Group = mongoose.model("Group", groupSchema);
 const FriendRequest = mongoose.model("FriendRequest", friendRequestSchema);
 const LabelCategory = mongoose.model("LabelCategory", LabelCategorySchema);
+const Notification = mongoose.model("Notification", notificationSchema);
 
 const Terms = mongoose.model("Terms", termsSchema);
 
-export { User, Group, Expense, FriendRequest, LabelCategory, Terms };
+export { User, Group, Expense, FriendRequest, LabelCategory, Terms, Notification };

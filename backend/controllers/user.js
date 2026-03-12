@@ -1,4 +1,4 @@
-import { User, Group, Expense, Terms, FriendRequest } from "../models/schema.js";
+import { User, Group, Expense, Terms, FriendRequest, Notification } from "../models/schema.js";
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import {
@@ -672,18 +672,40 @@ const notifyFriend = async (req, res) => {
   if (!found)
     return res.status(404).json({ message: "Friend not found in friend list" });
 
-  // Send FCM notification if available
+  // attempt push notification if token available
+  let pushSent = false;
   if (friend.fcmToken) {
     const token = friend.fcmToken;
     const title = "Healthy Reminder";
     const body = `It's always good to settle your balances. You owe ${user.username
       } ₹${Math.abs(balance).toFixed(2)}.`;
 
-    await sendOneNotification(token, title, body);
-    return res.status(200).json({ message: "Notification sent successfully!" });
+    try {
+      await sendOneNotification(token, title, body);
+      pushSent = true;
+    } catch (err) {
+      console.error("Error sending FCM reminder:", err);
+    }
   }
 
-  return res.status(404).json({ message: "FCM not found for friend" });
+  // always log activity regardless of token
+  try {
+    await Notification.create({
+      recipient: friend._id,
+      sender: user._id,
+      type: "payment_reminder",
+      message: `Reminder to settle ₹${Math.abs(balance).toFixed(2)}`,
+    });
+  } catch (notifErr) {
+    console.error("Error creating payment reminder activity:", notifErr);
+  }
+
+  // respond according to whether push was sent
+  if (pushSent) {
+    return res.status(200).json({ message: "Notification sent successfully!" });
+  } else {
+    return res.status(200).json({ message: "Activity logged (no FCM token)" });
+  }
 };
 
 const removeFcmToken = async (req, res) => {
@@ -896,6 +918,19 @@ const sendFriendRequest = async (req, res) => {
         );
       }
 
+      // Create Activity notification
+      try {
+        await Notification.create({
+          recipient: toUser._id,
+          sender: fromUser._id,
+          type: "friend_request",
+          message: `sent you a friend request`,
+          referenceId: friendRequest._id,
+        });
+      } catch (notifError) {
+        console.error("Error creating activity notification:", notifError);
+      }
+
       results.push({
         email,
         status: "success",
@@ -943,6 +978,7 @@ const respondToFriendRequest = async (req, res) => {
 
     let resultAction = null;
     let senderUser = null;
+    let acceptorUser = null;
 
     await session.withTransaction(async () => {
       const user = await User.findById(userId).session(session);
@@ -952,6 +988,7 @@ const respondToFriendRequest = async (req, res) => {
         throw new Error("User not found");
       }
       senderUser = fromUser;
+      acceptorUser = user;
 
       let friendRequest;
       if (requestId) {
@@ -994,8 +1031,23 @@ const respondToFriendRequest = async (req, res) => {
 
     if (resultAction === "approve" && senderUser?.fcmToken) {
       const title = "Friend Request Accepted";
-      const body = `Someone accepted your friend request`; // use username if available
-      await sendOneNotification(senderUser.fcmToken, title, `${senderUser.username || "Someone"} accepted your friend request`);
+      const acceptorName = acceptorUser?.username || "Someone";
+      await sendOneNotification(senderUser.fcmToken, title, `${acceptorName} accepted your friend request`);
+    }
+
+    // Create Activity notification (regardless of FCM token)
+    if (resultAction === "approve") {
+      try {
+        const acceptorName = acceptorUser?.username || "Someone";
+        await Notification.create({
+          recipient: senderUser._id,
+          sender: acceptorUser._id,
+          type: "friend_added",
+          message: `accepted your friend request`,
+        });
+      } catch (notifError) {
+        console.error("Error creating activity notification:", notifError);
+      }
     }
 
     if (resultAction === "approve") {
@@ -1033,6 +1085,8 @@ const updateFriendBalance = async (req, res) => {
     let savedExpense = null;
     let friendToNotify = null;
     let userToNotifyAs = null;
+    let payer = null;
+    let owedUser = null;
 
     await session.withTransaction(async () => {
       // Fetch both users
@@ -1056,7 +1110,6 @@ const updateFriendBalance = async (req, res) => {
       }
 
       let userIncrement, friendIncrement;
-      let payer, owedUser;
 
       if (action === "paid") {
         userIncrement = value;
@@ -1119,6 +1172,19 @@ const updateFriendBalance = async (req, res) => {
         "Balance Updated",
         `Your transaction with ${userToNotifyAs.username} has been updated.`
       );
+    }
+
+    // create activity entry
+    try {
+      await Notification.create({
+        recipient: owedUser._id,
+        sender: payer._id,
+        type: "payment_received",
+        message: `₹${value} received`,
+        referenceId: savedExpense._id,
+      });
+    } catch (notifErr) {
+      console.error("Error creating payment received activity:", notifErr);
     }
 
     return res.status(200).json({
