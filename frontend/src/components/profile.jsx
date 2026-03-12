@@ -1,5 +1,13 @@
 import { useState, useEffect, useRef } from "react";
+import { FaSignOutAlt } from "react-icons/fa";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
+import toast from "react-hot-toast";
+import { authFetch } from "../utils/authFetch";
+import api from "../utils/api";
+import AvatarSelector from "./AvatarSelector";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Share2,
@@ -11,13 +19,6 @@ import {
   CreditCard,
   Crown
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
-import toast from "react-hot-toast";
-import { authFetch } from "../utils/authFetch";
-import api from "../utils/api";
-import AvatarSelector from "./AvatarSelector";
-import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -32,7 +33,7 @@ const ProfileEnhanced = () => {
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [username, setUsername] = useState("");
   const controllerRef = useRef(null);
-
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [user, setUser] = useState(null);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -41,7 +42,27 @@ const ProfileEnhanced = () => {
   const [isHoveringPhoto, setIsHoveringPhoto] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  
+  const handleSignOut = async () => {
+    console.log("Sign out");
+    const userId = Cookies.get("id");
+    try {
+      const response = await axios.post(`${API_BASE}/user/remove-fcm-token`, {
+        userId: userId,
+      });
+
+      if (response.status === 200) {
+        Cookies.remove("id");
+        Cookies.remove("last4");
+        localStorage.clear();
+        navigate("/");
+        toast.success("Signed out successfully");
+      }
+    } catch (error) {
+      console.error("Sign out error", error);
+      toast.error("Error signing out. Please try again.");
+    }
+  };
+
   const navigate = useNavigate();
   const userId = Cookies.get("id");
 
@@ -357,9 +378,9 @@ Let's split and share smarter with FairFare! 💸`;
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-            <p className="text-red-500 font-bold text-sm bg-black/50 px-3 py-2 rounded-xl backdrop-blur-md border border-red-500/30 shadow-lg animate-pulse">
-                Please select Gender & Update Profile to exit
-            </p>
+          <p className="text-red-500 font-bold text-sm bg-black/50 px-3 py-2 rounded-xl backdrop-blur-md border border-red-500/30 shadow-lg animate-pulse">
+            Please select Gender & Update Profile to exit
+          </p>
         </motion.div>
       )}
 
@@ -482,11 +503,11 @@ Let's split and share smarter with FairFare! 💸`;
 
             {/* --- DEFAULT AVATAR SELECTION --- */}
             <div className="mb-10 space-y-4">
-               <AvatarSelector 
-                 gender={profile.gender} 
-                 setGender={(g) => handleGenderChange(g)} 
-                 onSelectAvatar={handleAvatarSelect} 
-               />
+              <AvatarSelector
+                gender={profile.gender}
+                setGender={(g) => handleGenderChange(g)}
+                onSelectAvatar={handleAvatarSelect}
+              />
             </div>
 
             {/* --- HEADER TEXT --- */}
@@ -531,11 +552,10 @@ Let's split and share smarter with FairFare! 💸`;
                     name="username"
                     value={profile.username}
                     onChange={handleChange}
-                    className={`block w-full pl-12 pr-4 py-4 bg-zinc-900/40 border ${
-                      isUsernameAvailable
-                        ? "border-white/5 focus:border-indigo-500/50"
-                        : "border-red-500/30"
-                    } rounded-xl text-white placeholder-zinc-700 focus:bg-zinc-900/80 focus:outline-none transition-all shadow-inner`}
+                    className={`block w-full pl-12 pr-4 py-4 bg-zinc-900/40 border ${isUsernameAvailable
+                      ? "border-white/5 focus:border-indigo-500/50"
+                      : "border-red-500/30"
+                      } rounded-xl text-white placeholder-zinc-700 focus:bg-zinc-900/80 focus:outline-none transition-all shadow-inner`}
                     placeholder="Choose a unique handle"
                   />
                   <AnimatePresence>
@@ -613,9 +633,9 @@ Let's split and share smarter with FairFare! 💸`;
                 transition={{ delay: 0.6, duration: 0.4 }}
               >
                 {!profile.gender && (
-                    <p className="text-red-400 text-xs text-center font-bold uppercase tracking-wider animate-pulse">
-                        ⚠️ Select Gender to Unlock Exit
-                    </p>
+                  <p className="text-red-400 text-xs text-center font-bold uppercase tracking-wider animate-pulse">
+                    ⚠️ Select Gender to Unlock Exit
+                  </p>
                 )}
                 <motion.button
                   type="submit"
@@ -626,11 +646,10 @@ Let's split and share smarter with FairFare! 💸`;
                     checkingUsername ||
                     !profile.gender
                   }
-                  className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 ${
-                    !profile.upiId || uploading || !profile.gender || !isUsernameAvailable || checkingUsername
-                      ? "bg-zinc-800 text-zinc-600 cursor-not-allowed border border-white/5"
-                      : "bg-indigo-400/70 text-zinc-950 hover:bg-white hover:shadow-zinc-500/10"
-                  }`}
+                  className={`w-full py-4 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 ${!profile.upiId || uploading || !profile.gender || !isUsernameAvailable || checkingUsername
+                    ? "bg-zinc-800 text-zinc-600 cursor-not-allowed border border-white/5"
+                    : "bg-indigo-400/70 text-zinc-950 hover:bg-white hover:shadow-zinc-500/10"
+                    }`}
                   whileTap={!(!profile.upiId || uploading || !profile.gender || !isUsernameAvailable || checkingUsername) ? { scale: 0.97 } : {}}
                   whileHover={!(!profile.upiId || uploading || !profile.gender || !isUsernameAvailable || checkingUsername) ? { scale: 1.02 } : {}}
                 >
@@ -650,6 +669,17 @@ Let's split and share smarter with FairFare! 💸`;
 
                 <motion.button
                   type="button"
+                  onClick={() => setShowSignOutConfirm(true)}
+                  className="w-full py-3 rounded-xl font-semibold text-sm uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all duration-300 flex items-center justify-center gap-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <FaSignOutAlt className="text-sm" />
+                  Sign Out
+                </motion.button>
+
+                <motion.button
+                  type="button"
                   onClick={() => navigate("/change-password")}
                   className="text-xs font-medium text-zinc-600 hover:text-zinc-300 transition-colors text-center"
                   whileHover={{ scale: 1.03 }}
@@ -662,6 +692,51 @@ Let's split and share smarter with FairFare! 💸`;
           </div>
         </div>
       </motion.div>
+      <AnimatePresence>
+        {showSignOutConfirm && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-[90%] max-w-sm text-center shadow-2xl"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <h3 className="text-lg font-semibold text-white mb-2">
+                Confirm Sign Out
+              </h3>
+
+              <p className="text-zinc-400 text-sm mb-6">
+                Are you sure you want to sign out of your account?
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowSignOutConfirm(false)}
+                  className="flex-1 py-2.5 rounded-lg bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowSignOutConfirm(false);
+                    handleSignOut();
+                  }}
+                  className="flex-1 py-2.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

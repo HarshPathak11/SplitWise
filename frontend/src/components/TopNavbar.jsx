@@ -1,36 +1,9 @@
 import { Link } from "react-router-dom";
-import { FaUser, FaChartBar, FaRobot, FaSignOutAlt } from "react-icons/fa";
-import Cookies from "js-cookie";
+import { FaUser, FaChartBar, FaRobot} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import toast from "react-hot-toast";
 import dashboardLogoNew from "../../public/dashboardLogoNew.png";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
-
 const TopNavbar = ({ user }) => {
   const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    console.log("Sign out");
-    const userId = Cookies.get("id");
-    try {
-      const response = await axios.post(`${API_BASE}/user/remove-fcm-token`, {
-        userId: userId,
-      });
-
-      if (response.status === 200) {
-        Cookies.remove("id");
-        Cookies.remove("last4");
-        localStorage.clear();
-        navigate("/");
-        toast.success("Signed out successfully");
-      }
-    } catch (error) {
-      console.error("Sign out error", error);
-      toast.error("Error signing out. Please try again.");
-    }
-  };
 
   return (
     <nav className="w-full bg-zinc-900/80 backdrop-blur-xl border border-white/5 rounded-2xl px-4 py-3 flex justify-between items-center shadow-lg shadow-black/20 relative">
@@ -90,14 +63,6 @@ const TopNavbar = ({ user }) => {
               )}
             </button>
           </Link>
-
-          <button
-            onClick={handleSignOut}
-            className="p-2.5 rounded-xl bg-transparent hover:bg-red-500/10 text-zinc-400 hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all duration-200"
-            title="Sign Out"
-          >
-            <FaSignOutAlt className="text-lg" />
-          </button>
         </div>
       </div>
     </nav>
