@@ -155,20 +155,6 @@ const ActivityItems = ({
             {message}
           </p>
         </div>
-
-        {/* Actions */}
-        <div className="flex-shrink-0 flex items-start gap-2">
-          {!localIsRead && (
-            <button
-              onClick={handleMarkAsRead}
-              disabled={isLoading}
-              className="p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors duration-200 disabled:opacity-50"
-              title="Mark as read"
-            >
-              <Check size={16} />
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Unread dot badge (if not read) */}

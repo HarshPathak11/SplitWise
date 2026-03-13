@@ -3,7 +3,6 @@ import { FaUser, FaChartBar, FaRobot, FaHeartbeat } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "../utils/api";
-import Cookies from "js-cookie";
 import dashboardLogoNew from "../../public/dashboardLogoNew.png";
 const TopNavbar = ({ user }) => {
   const navigate = useNavigate();

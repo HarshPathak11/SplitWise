@@ -293,7 +293,7 @@ const TripDetails = () => {
     localStorage.removeItem("currentGroup");
 
     // Navigate back to the dashboard
-    navigate(-1);
+    navigate("/dash");
   };
 
   const HandleLeaveGroup = async () => {

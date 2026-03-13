@@ -14,8 +14,6 @@ const ActivityPage = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isDeletingAll, setIsDeletingAll] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const LIMIT = 20;
 
@@ -75,26 +73,6 @@ const ActivityPage = () => {
     }
   };
 
-  const handleDeleteAll = async () => {
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDelete = async () => {
-    setShowDeleteConfirm(false);
-    setIsDeletingAll(true);
-    try {
-      await api.delete(`/activity/${userId}/all`);
-      setNotifications([]);
-      setUnreadCount(0);
-      toast.success("All notifications deleted");
-    } catch (error) {
-      console.error("Error deleting notifications:", error);
-      toast.error("Failed to delete notifications");
-    } finally {
-      setIsDeletingAll(false);
-    }
-  };
-
   const handleLoadMore = () => {
     if (hasMore && !loading) {
       fetchNotifications(page + 1);
@@ -128,20 +106,6 @@ const ActivityPage = () => {
             </h1>
             <div className="w-10"></div>
           </div>
-
-          {/* Action Buttons */}
-          {notifications.length > 0 && (
-            <div className="flex gap-2">
-              <button
-                onClick={handleDeleteAll}
-                disabled={isDeletingAll}
-                className="flex-1 py-2 px-4 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-300 hover:text-red-200 border border-red-500/30 hover:border-red-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm font-medium"
-              >
-                <Trash2 size={16} />
-                Clear All
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Content */}
@@ -196,33 +160,6 @@ const ActivityPage = () => {
           </div>
         )}
       </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-800 p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-lg font-semibold text-white mb-2">Delete All Notifications</h3>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to delete all notifications? This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 rounded-lg bg-zinc-600 hover:bg-zinc-500 text-white transition-colors duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                disabled={isDeletingAll}
-                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isDeletingAll ? "Deleting..." : "Delete All"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
