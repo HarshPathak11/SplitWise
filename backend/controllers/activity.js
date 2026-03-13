@@ -38,13 +38,25 @@ export const getNotifications = async (req, res) => {
 
     const skip = (page - 1) * limit;
 
-    const notifications = await Notification.find({ recipient: userId })
+    // Auto cleanup: delete notifications older than 7 days
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    await Notification.deleteMany({
+      createdAt: { $lt: sevenDaysAgo }
+    });
+
+    const notifications = await Notification.find({
+      recipient: userId,
+      createdAt: { $gte: sevenDaysAgo }
+    })
       .populate("sender", "username profilePhotoUrl")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
-    const total = await Notification.countDocuments({ recipient: userId });
+    const total = await Notification.countDocuments({
+      recipient: userId,
+      createdAt: { $gte: sevenDaysAgo }
+    });
 
     res.json({
       notifications,
@@ -69,9 +81,13 @@ export const getUnreadCount = async (req, res) => {
   try {
     const { userId } = req.params;
 
+    // Only count unread notifications from the last 7 days
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
     const unreadCount = await Notification.countDocuments({
       recipient: userId,
       isRead: false,
+      createdAt: { $gte: sevenDaysAgo }
     });
 
     res.json({ unreadCount });
@@ -114,18 +130,51 @@ export const markAllAsRead = async (req, res) => {
   try {
     const { userId } = req.params;
 
+    // Only mark as read notifications from the last 7 days
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
     const result = await Notification.updateMany(
-      { recipient: userId, isRead: false },
+      {
+        recipient: userId,
+        isRead: false,
+        createdAt: { $gte: sevenDaysAgo }
+      },
       { isRead: true }
     );
 
     res.json({
-      message: "All notifications marked as read",
+      message: "All recent notifications marked as read",
       modifiedCount: result.modifiedCount,
     });
   } catch (error) {
     console.error("Error marking all as read:", error);
     res.status(500).json({ error: "Failed to mark all as read" });
+  }
+};
+
+/**
+ * Delete all notifications for a user
+ * DELETE /notifications/:userId/all
+ */
+export const deleteAllNotifications = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Only delete notifications from the last 7 days (visible ones)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const result = await Notification.deleteMany({
+      recipient: userId,
+      createdAt: { $gte: sevenDaysAgo }
+    });
+
+    res.json({
+      message: "All recent notifications deleted",
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("Error deleting all notifications:", error);
+    res.status(500).json({ error: "Failed to delete notifications" });
   }
 };
 
