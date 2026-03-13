@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FaUser, FaChartBar, FaRobot, FaBell } from "react-icons/fa";
+import { FaUser, FaChartBar, FaRobot, FaHeartbeat } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "../utils/api";
@@ -78,12 +78,10 @@ const TopNavbar = ({ user }) => {
               className="relative p-2.5 rounded-xl bg-transparent hover:bg-white/5 text-zinc-400 hover:text-white border border-transparent hover:border-white/5 transition-all duration-200"
               title="Activity"
             >
-              <FaBell className="text-lg" />
+              <FaHeartbeat className="text-lg" />
               {/* Unread Notification Badge */}
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-5 h-5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-[0_0_12px_rgba(99,102,241,0.6)]">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-[0_0_12px_rgba(99,102,241,0.6)]"></span>
               )}
             </button>
           </Link>
