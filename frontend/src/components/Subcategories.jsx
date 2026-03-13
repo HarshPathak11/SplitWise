@@ -13,6 +13,14 @@ import {
 } from "lucide-react";
 import api from "../utils/api";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function Subcategories() {
@@ -37,6 +45,10 @@ export default function Subcategories() {
     "#8b5cf6", // Violet
     "#f43f5e", // Rose
   ];
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   // Initialize filters from navigation state if provided
   useEffect(() => {

@@ -6,6 +6,14 @@ import { toast } from "react-hot-toast";
 import api from "../utils/api";
 import ActivityItems from "./ActivityItems";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const ActivityPage = () => {
   const navigate = useNavigate();
   const { userId } = useParams();
@@ -16,6 +24,10 @@ const ActivityPage = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const LIMIT = 20;
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   useEffect(() => {
     if (userId) {

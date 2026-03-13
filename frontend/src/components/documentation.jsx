@@ -1,4 +1,13 @@
 import { motion } from "framer-motion";
+import { useEffect } from "react";
+
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
 
 const Documentation = () => {
   const sections = [
@@ -52,6 +61,10 @@ const Documentation = () => {
       video: "AddFriendsVideo.mp4",
     },
   ];
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   return (
     <section className="relative w-full py-24 lg:py-32 overflow-hidden">

@@ -14,6 +14,14 @@ import QuickActions from "./QuickActions";
 import QuickAddExpenseModal from "./QuickAddExpenseModal";
 import { motion } from "framer-motion";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 // Stagger container — children animate one after another
 const stagger = {
   hidden: {},
@@ -68,6 +76,10 @@ const Dashboard = () => {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    handleScrollTop();
   }, []);
 
   useEffect(() => {

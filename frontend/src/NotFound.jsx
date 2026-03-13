@@ -1,6 +1,19 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
+
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
 
 export default function NotFound() {
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
+
   return (
     <div className="h-screen flex flex-col items-center justify-center">
       <h1 className="text-4xl font-bold">404 - Page Not Found</h1>

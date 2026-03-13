@@ -16,6 +16,14 @@ import api from "../utils/api";
 import { motion } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const ReferralSignUp = () => {
   const [username, setUserName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,6 +37,10 @@ const ReferralSignUp = () => {
   const navigate = useNavigate();
   const { referId } = useParams();
   const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   //Set Email when the component mounts
   useEffect(() => {

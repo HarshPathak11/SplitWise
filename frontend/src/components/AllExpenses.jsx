@@ -6,6 +6,14 @@ import Cookies from "js-cookie";
 import api from "../utils/api";
 import { motion } from "framer-motion";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const PAGE_SIZE = 20;
 const DEBOUNCE_MS = 300;
 
@@ -48,6 +56,10 @@ const AllExpensesPage = () => {
     }
     return params;
   }, [activeSearch, activeFilter, selectedGroups]);
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   // ── Fetch user's groups on mount ──
   useEffect(() => {

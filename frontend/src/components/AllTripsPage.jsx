@@ -7,6 +7,14 @@ import api from "../utils/api";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const AllTripsPage = () => {
@@ -22,6 +30,10 @@ const AllTripsPage = () => {
   const [swipeState, setSwipeState] = useState({}); // { [tripId]: offsetX }
   const swipeRef = useRef({ startX: 0, tripId: null, swiping: false });
   const longPressTimer = useRef(null);
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   useEffect(() => {
     const fetchTrips = async () => {

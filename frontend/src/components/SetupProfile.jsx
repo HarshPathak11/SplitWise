@@ -6,6 +6,14 @@ import toast from "react-hot-toast";
 import { authFetch } from "../utils/authFetch";
 import AvatarSelector from "./AvatarSelector";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const SetupProfile = () => {
@@ -78,6 +86,10 @@ const SetupProfile = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        handleScrollTop();
+    }, []);
 
     useEffect(() => {
         // Optional: Check if already set up?

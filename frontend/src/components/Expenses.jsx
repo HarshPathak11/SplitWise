@@ -18,6 +18,14 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import api from "../utils/api";
+
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Expenses() {
@@ -35,6 +43,10 @@ export default function Expenses() {
   const [sortBy, setSortBy] = useState("date");
   const [expandedExpenseId, setExpandedExpenseId] = useState(null);
   const [deleteOverlay, setDeleteOverlay] = useState(null); // null | 'success' | 'error'
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   useEffect(() => {
     if (!userId) return;

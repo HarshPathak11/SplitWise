@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 import { ArrowLeft, Mail, KeyRound, ShieldCheck, Loader2 } from "lucide-react";
@@ -7,6 +7,14 @@ import api from "../utils/api";
 import { motion } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -14,6 +22,10 @@ const ForgotPassword = () => {
   const [otpGenerated, setOtpGenerated] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   const handleSendOtp = async () => {
     setLoading(true);

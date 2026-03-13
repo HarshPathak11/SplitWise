@@ -16,6 +16,14 @@ import { Link } from "react-router-dom";
 import api from "../utils/api";
 import userIcon from "../../public/userIcon.png";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 /* ─── Typewriter sub-component ─── */
 function TypewriterText({ text, speed = 14, onComplete }) {
   const [displayed, setDisplayed] = useState("");
@@ -126,6 +134,10 @@ function CashMapAI() {
       top: chatContainerRef.current.scrollHeight,
       behavior: "smooth",
     });
+  }, []);
+
+  useEffect(() => {
+    handleScrollTop();
   }, []);
 
   useEffect(() => {

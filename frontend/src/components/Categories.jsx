@@ -5,6 +5,14 @@ import Cookie from "js-cookie";
 import { Package, TrendingUp, Layers } from "lucide-react";
 import api from "../utils/api";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const API_BASE = "http://localhost:8000"; // replace with your backend base URL
 
 export default function Categories() {
@@ -13,6 +21,10 @@ export default function Categories() {
 
   const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   // Fetch subcategories from backend
   useEffect(() => {

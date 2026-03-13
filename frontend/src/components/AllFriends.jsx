@@ -9,6 +9,14 @@ import api from "../utils/api";
 import Cookies from "js-cookie";
 import { motion } from "framer-motion";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const AllFriendsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,6 +34,10 @@ const AllFriendsPage = () => {
           .slice(0, 2)
           .join("")
       : "U";
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   // Load user from localStorage on mount
   useEffect(() => {

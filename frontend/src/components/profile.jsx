@@ -20,6 +20,14 @@ import {
   Crown
 } from "lucide-react";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const ProfileEnhanced = () => {
@@ -65,6 +73,10 @@ const ProfileEnhanced = () => {
 
   const navigate = useNavigate();
   const userId = Cookies.get("id");
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   useEffect(() => {
     // console.log("userId",userId);

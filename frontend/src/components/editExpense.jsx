@@ -7,6 +7,14 @@ import {
 import { toast } from "react-hot-toast";
 import api from "../utils/api";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const EditExpense = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -32,6 +40,10 @@ const EditExpense = () => {
     localStorage.getItem("currentGroup") || "null"
   );
   const groupId = currentGroup ? currentGroup._id : null;
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   // Load group members from localStorage
   useEffect(() => {

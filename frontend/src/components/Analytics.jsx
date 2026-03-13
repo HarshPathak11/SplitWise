@@ -13,6 +13,14 @@ import {
 import api from "../utils/api";
 import { motion } from "framer-motion";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 export default function Analytics() {
   const [topCategories, setTopCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -25,6 +33,10 @@ export default function Analytics() {
   const group = location?.state?.group;
   const [isLarge, setIsLarge] = useState(false);
   const [timeframe, setTimeframe] = useState(group?.name ? "all" : "month");
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsLarge(window.innerWidth >= 768);

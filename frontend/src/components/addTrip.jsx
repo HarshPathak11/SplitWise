@@ -6,6 +6,14 @@ import api from "../utils/api";
 import DatePicker from "./DatePicker";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const AddTrip = () => {
   const navigate = useNavigate(); // Initialize the navigation hook
   const [friends, setFriends] = useState([]);
@@ -29,6 +37,10 @@ const AddTrip = () => {
   const filteredFriends = friends.filter((f) =>
     f.friend?.username?.toLowerCase().includes(search.toLowerCase())
   );
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));

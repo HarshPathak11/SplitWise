@@ -6,6 +6,14 @@ import api from "../utils/api";
 import DatePicker from "./DatePicker";
 import { motion, AnimatePresence } from "framer-motion";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const EditPersonalTransaction = () => {
     const navigate = useNavigate();
     const { state } = useLocation();
@@ -20,6 +28,10 @@ const EditPersonalTransaction = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [successOverlay, setSuccessOverlay] = useState(false);
     const [errorOverlay, setErrorOverlay] = useState(null);
+
+    useEffect(() => {
+        handleScrollTop();
+    }, []);
 
     useEffect(() => {
         if (originalExpense) {

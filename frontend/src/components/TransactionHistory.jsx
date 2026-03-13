@@ -10,6 +10,14 @@ import { motion, AnimatePresence } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const PAGE_SIZE = 20;
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const TransactionHistory = () => {
   const { friendId } = useParams();
   const navigate = useNavigate();
@@ -36,6 +44,10 @@ const TransactionHistory = () => {
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const [successOverlay, setSuccessOverlay] = useState(null); // { type: 'paid'|'received', amount: number }
   const userId = storedUser?._id;
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   // Handle shared links: if friendId is the logged-in user, swap with sharer's ID
   useEffect(() => {

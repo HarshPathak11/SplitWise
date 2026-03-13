@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash, FaArrowLeft, FaLock } from "react-icons/fa"; // Added FaLock for UI icon
@@ -6,6 +6,14 @@ import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
 
 const ChangePassword = () => {
   const [email, setEmail] = useState(""); // For the email input
@@ -20,6 +28,10 @@ const ChangePassword = () => {
   const [otpSent, setOtpSent] = useState(false); // To track if OTP has been sent
   const [otpGenerated, setOtpGenerated] = useState(""); // To store the generated OTP
   const navigate = useNavigate();
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = Cookies.get("id");
 

@@ -8,6 +8,14 @@ import api from "../utils/api";
 import { motion, AnimatePresence } from "framer-motion";
 import DatePicker from "./DatePicker";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const PAGE_SIZE = 20;
 
@@ -150,6 +158,10 @@ const PersonalExpense = () => {
       setLoadingMore(false);
     }
   }
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   useEffect(() => {
     fetchData();

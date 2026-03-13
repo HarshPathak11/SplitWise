@@ -18,6 +18,14 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../utils/api";
+
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PublicProfile = () => {
@@ -36,6 +44,10 @@ const PublicProfile = () => {
   const location = useLocation();
   const currentUserId = Cookies.get("id");
   const fromTransactions = new URLSearchParams(location.search).get("from") === "transactions";
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   useEffect(() => {
     async function fetchUser() {

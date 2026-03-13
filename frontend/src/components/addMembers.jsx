@@ -6,6 +6,14 @@ import { toast } from "react-hot-toast";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const AddMembers = () => {
   const navigate = useNavigate();
   const [friends, setFriends] = useState([]);
@@ -13,6 +21,10 @@ const AddMembers = () => {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const { groupId } = useParams();
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   useEffect(() => {
     try {

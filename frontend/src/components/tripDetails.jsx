@@ -11,6 +11,14 @@ import toast from "react-hot-toast";
 import api from "../utils/api";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 // Helper to generate a unique, vibrant mesh gradient based on string hash
 const generateGradient = (str) => {
   if (!str) return "linear-gradient(135deg, #1e1b4b, #18181b)";
@@ -200,6 +208,10 @@ const TripDetails = () => {
       if (!silent) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   //Fetching group Meta Data
   useEffect(() => {

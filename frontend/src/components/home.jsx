@@ -7,6 +7,14 @@ import Documentation from "./documentation";
 import FAQ from "./FaqSection";
 import Navbar from "./Navbar";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const LandingPage = () => {
   const navigate = useNavigate();
   const [showInstallSteps, setShowInstallSteps] = useState(false);
@@ -15,6 +23,11 @@ const LandingPage = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
   // const [showInstallButton, setShowInstallButton] = useState(false);
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
+
   useEffect(() => {
     // Detect iOS device
     const userAgent = navigator.userAgent;

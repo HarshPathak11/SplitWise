@@ -6,6 +6,14 @@ import { motion, AnimatePresence } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 import api from "../utils/api";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 // Accepts an optional groupId prop so that it can be passed directly if available
 const AddExpense = () => {
   const navigate = useNavigate();
@@ -21,6 +29,10 @@ const AddExpense = () => {
   const [members, setMembers] = useState([]); // Combined list: logged-in user + friends
   const [title, setTitle] = useState("");
   const [mainAmount, setMainAmount] = useState("");
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   // Pre-fill effect from location state
   useEffect(() => {

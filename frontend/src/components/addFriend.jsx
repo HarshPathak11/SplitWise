@@ -18,6 +18,14 @@ import {
   Sparkles,
   UserCheck, // Imported UserCheck
 } from "lucide-react";
+
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
 import api from "../utils/api";
 import { motion } from "framer-motion";
 
@@ -50,6 +58,10 @@ const AddFriend = () => {
   const controllerRef = useRef(null);
 
   const userId = Cookies.get("id");
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   // 1. Fetch Request & Existing Friends
   useEffect(() => {

@@ -12,6 +12,14 @@ import { auth, googleProvider } from "../../firebase";
 import { signInWithPopup } from "firebase/auth";
 import { motion } from "framer-motion";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const LogIn = () => {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -22,6 +30,10 @@ const LogIn = () => {
 
   const queryParams = new URLSearchParams(location.search);
   const redirectPath = queryParams.get("redirect") || "/dash"; // fallback to dashboard or home
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   //UseEffect to Check if user logged in before or not if yes then directly take them to dashboard
   useEffect(() => {

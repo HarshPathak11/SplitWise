@@ -13,6 +13,14 @@ import api from "../utils/api";
 import { motion } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const PRIVACY_TEMPLATES = [
   // Template 1 (Short Version)
   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500" key="p1">
@@ -117,6 +125,10 @@ const SignUp = () => {
   const [loadingDocs, setLoadingDocs] = useState(true);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    handleScrollTop();
+  }, []);
 
   useEffect(() => {
     if (!activeModal) {
