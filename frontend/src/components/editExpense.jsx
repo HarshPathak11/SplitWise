@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft
 } from "lucide-react";
-import axios from "axios";
 import { toast } from "react-hot-toast";
 import api from "../utils/api";
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const EditExpense = () => {
   const navigate = useNavigate();
@@ -53,8 +52,7 @@ const EditExpense = () => {
     const fetchExpense = async () => {
       try {
         const { data } = await api.get(
-          `${API_BASE}/group/expense/${expenseId}`
-          // `//http://localhost:8000/group/expense/${expenseId}`
+          `/group/expense/${expenseId}`
         );
         // console.log(data)
         if (data.success) {
@@ -156,7 +154,7 @@ const EditExpense = () => {
       title: title,
       amount: totalEntered,
       paidBy: paidBy,
-      groupId: groupId,
+      groupId: tripId,
       splitMode: splitMode,
       involvedMembers: selected,
       customAmounts: splitMode === "unequally" ? amounts : {},
@@ -169,15 +167,13 @@ const EditExpense = () => {
 
       // 1) DELETE the old expense
       await api.delete(
-        `${API_BASE}/group/del-expense/${expenseId}`,
-        // `//http://localhost:8000/group/del-expense/${expenseId}`,
+        `/group/del-expense/${expenseId}`,
         { data: { action: "edit" } }
       );
 
       // 2) POST the new one
       const response = await api.post(
-        `${API_BASE}/group/del-add-expense`,
-        // `//http://localhost:8000/group/del-add-expense`,
+        `/group/del-add-expense`,
         payload
       );
       if (response.status === 200) {
