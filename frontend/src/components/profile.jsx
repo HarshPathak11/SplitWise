@@ -402,12 +402,12 @@ Let's split and share smarter with FairFare! 💸`;
         animate={{ opacity: 1, rotateX: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         style={{ perspective: 800 }}
-        className="relative pt-6 px-2 z-10 w-full max-w-2xl"
+        className="relative pt-4 md:pt-6 px-4 md:px-6 z-10 w-full max-w-2xl"
       >
         <div className="bg-zinc-900/40 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/5 overflow-hidden relative">
           {/* --- BANNER --- */}
           <motion.div
-            className="relative h-40 bg-gradient-to-br from-slate-800 via-slate-900 to-black overflow-hidden group"
+            className="relative h-32 md:h-40 bg-gradient-to-br from-slate-800 via-slate-900 to-black overflow-hidden group"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
@@ -419,7 +419,7 @@ Let's split and share smarter with FairFare! 💸`;
 
             {/* Status Badge in Corner */}
             <motion.div
-              className="absolute top-6 right-8 flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 backdrop-blur-md"
+              className="absolute top-4 md:top-6 right-4 md:right-8 flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 backdrop-blur-md"
               initial={{ opacity: 0, scale: 0.8, x: 20 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               transition={{ delay: 0.4, type: "spring", stiffness: 200, damping: 18 }}
@@ -434,7 +434,7 @@ Let's split and share smarter with FairFare! 💸`;
           <div className="px-6 sm:px-10 pb-8">
             {/* --- AVATAR SECTION --- */}
             <motion.div
-              className="relative -mt-20 mb-8 flex flex-col items-center"
+              className="relative -mt-16 md:-mt-20 mb-8 flex flex-col items-center"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
@@ -454,7 +454,7 @@ Let's split and share smarter with FairFare! 💸`;
                 />
 
                 <motion.div
-                  className="relative w-36 h-36 rounded-full p-[3px] bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-700 shadow-2xl"
+                  className="relative w-24 h-24 md:w-36 md:h-36 rounded-full p-[3px] bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-700 shadow-2xl"
                   initial={{ scale: 0, rotate: -45 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: "spring", stiffness: 180, damping: 14, delay: 0.25 }}
@@ -529,7 +529,7 @@ Let's split and share smarter with FairFare! 💸`;
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
-              <h2 className="text-3xl font-bold text-white tracking-tight mb-2">
+              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-2">
                 {profile.username || "User Profile"}
               </h2>
               <p className="text-zinc-500 text-sm flex items-center justify-center gap-2">

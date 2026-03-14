@@ -101,7 +101,7 @@ const ActivityPage = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-black p-4 md:p-6">
+      <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-black p-4 md:p-6 pb-20 md:pb-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">

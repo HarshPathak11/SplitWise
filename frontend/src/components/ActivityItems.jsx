@@ -103,7 +103,7 @@ const ActivityItems = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 100 }}
       transition={{ duration: 0.3 }}
-      className={`relative p-4 rounded-xl border transition-all duration-200 ${
+      className={`relative p-3 md:p-4 rounded-xl border transition-all duration-200 ${
         localIsRead
           ? "bg-zinc-900/30 border-white/5 hover:border-white/10"
           : "bg-gradient-to-r from-indigo-500/5 to-purple-500/5 border-indigo-500/20 hover:border-indigo-500/40"
@@ -111,21 +111,21 @@ const ActivityItems = ({
     >
       {/* Unread indicator */}
       {!localIsRead && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-l-xl"></div>
+        <div className="absolute left-0 top-0 bottom-0 w-0.5 md:w-1 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-l-xl"></div>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex gap-2 md:gap-3">
         {/* Avatar */}
         <div className="flex-shrink-0">
           {sender?.profilePhotoUrl ? (
             <img
               src={sender.profilePhotoUrl}
               alt={sender.username}
-              className="w-12 h-12 rounded-full object-cover border border-white/10"
+              className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border border-white/10"
             />
           ) : (
             <div
-              className={`w-12 h-12 rounded-full bg-gradient-to-br ${getTypeColor()} flex items-center justify-center text-white font-semibold text-lg`}
+              className={`w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br ${getTypeColor()} flex items-center justify-center text-white font-semibold text-sm md:text-lg`}
             >
               {sender?.username?.[0]?.toUpperCase() || "N"}
             </div>
@@ -135,23 +135,23 @@ const ActivityItems = ({
         {/* Content */}
         <div className="flex-1 min-w-0">
           {/* sender name and time */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex items-start md:items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
               {getTypeIcon()}
-              <span className="font-semibold text-white truncate">
+              <span className="font-semibold text-white text-sm md:text-base truncate">
                 {sender?.username || "Someone"}
               </span>
-              <span className="text-[10px] uppercase tracking-wider text-gray-400 bg-white/5 px-2 py-0.5 rounded-full">
+              <span className="text-[9px] md:text-[10px] uppercase tracking-wider text-gray-400 bg-white/5 px-1.5 md:px-2 py-0.5 rounded-full">
                 {type.replace(/_/g, " ")}
               </span>
             </div>
-            <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
+            <span className="text-[10px] md:text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
               {formatTime(createdAt)}
             </span>
           </div>
 
           {/* message body */}
-          <p className= "text-sm text-gray-200 leading-relaxed break-words mt-1">
+          <p className="text-xs md:text-sm text-gray-200 leading-relaxed break-words mt-1">
             {message}
           </p>
         </div>
@@ -159,7 +159,7 @@ const ActivityItems = ({
 
       {/* Unread dot badge (if not read) */}
       {!localIsRead && (
-        <div className="absolute right-3 top-3 w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+        <div className="absolute right-2 md:right-3 top-2 md:top-3 w-1.5 h-1.5 md:w-2 md:h-2 bg-indigo-500 rounded-full animate-pulse"></div>
       )}
     </motion.div>
   );

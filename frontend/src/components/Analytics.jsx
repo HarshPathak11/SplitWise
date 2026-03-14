@@ -165,7 +165,7 @@ export default function Analytics() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 relative overflow-hidden p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 relative overflow-hidden p-4 sm:p-6 lg:p-8 pb-20 md:pb-6">
       {/* --- BACKGROUND FX: Deep Space/Cyber Atmosphere --- */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-20%] left-[20%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
@@ -187,7 +187,7 @@ export default function Analytics() {
             </button>
           </Link>
           <div>
-            <h1 className="text-xl sm:text-lg font-black text-white tracking-tight uppercase flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight uppercase flex items-center gap-3">
               {group?.name
                 ? `Mission Report: ${group.name}`
                 : "Global Statistics"}
@@ -272,7 +272,7 @@ export default function Analytics() {
                 <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
                 Total Expenditure
               </p>
-              <h2 className="text-5xl sm:text-7xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] font-mono">
+              <h2 className="text-4xl sm:text-5xl lg:text-7xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(99,102,241,0.5)] font-mono">
                 ₹{totalSpending.toLocaleString()}
               </h2>
               <div className="mt-4 inline-flex items-center gap-2 text-xs text-zinc-400 bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/5">
@@ -366,7 +366,7 @@ export default function Analytics() {
                   </span>
                 </div>
 
-                <ResponsiveContainer width="100%" height={350}>
+                <ResponsiveContainer width="100%" height={300} className="sm:h-[350px]">
                   <PieChart>
                     <Pie
                       data={topCategories}
@@ -466,7 +466,7 @@ export default function Analytics() {
                           </div>
 
                           <div>
-                            <h4 className="text-white font-bold text-sm sm:text-base group-hover:text-indigo-300 transition-colors uppercase tracking-tight">
+                            <h4 className="text-sm sm:text-base lg:text-lg font-bold text-white group-hover:text-indigo-300 transition-colors uppercase tracking-tight">
                               {category.name}
                             </h4>
 
@@ -485,7 +485,7 @@ export default function Analytics() {
                         </div>
 
                         <div className="text-right">
-                          <p className="text-white font-mono font-bold text-lg tracking-tight">
+                          <p className="text-white font-mono font-bold text-base sm:text-lg lg:text-xl tracking-tight">
                             ₹{category.total.toLocaleString()}
                           </p>
                           <p className="text-zinc-500 text-[10px] font-bold uppercase bg-black/30 px-1.5 py-0.5 rounded inline-block mt-1">

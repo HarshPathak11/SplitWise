@@ -155,13 +155,13 @@ const Dashboard = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Grid Layout: 7 cols for Main, 5 cols for Data/Friends */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 lg:gap-8">
           {/* --- LEFT COLUMN (Primary Actions) --- */}
           <motion.div
             variants={stagger}
             initial="hidden"
             animate="show"
-            className="lg:col-span-7 flex flex-col gap-6"
+            className="md:col-span-1 lg:col-span-7 flex flex-col gap-6"
           >
             {/* Header Area */}
             <motion.div variants={headerDrop} className="pl-1">
@@ -194,7 +194,7 @@ const Dashboard = () => {
             variants={stagger}
             initial="hidden"
             animate="show"
-            className="lg:col-span-5 flex flex-col gap-6 h-full"
+            className="md:col-span-1 lg:col-span-5 flex flex-col gap-6 h-full"
           >
             {/* Recent Expenses - The 'Ledger' */}
             <motion.div
@@ -220,6 +220,12 @@ const Dashboard = () => {
           </motion.div>
         </div>
       </div>
+      {/* Mobile Swipe to Friends */}
+      {isMobile && (
+        <div className="fixed bottom-20 left-4 right-4 z-20">
+          <SwipeToFriends />
+        </div>
+      )}
       <TermsPopup user={user} setUser={setUser} />
 
       {/* Quick Add Expense Modal */}

@@ -435,7 +435,7 @@ const AddExpense = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 flex flex-col relative">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-indigo-500/30 flex flex-col relative pb-20 md:pb-0">
       {/* --- BACKGROUND FX --- */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] right-[20%] w-[500px] h-[500px] bg-indigo-900/10 rounded-full blur-[120px]"></div>
@@ -494,7 +494,7 @@ const AddExpense = () => {
                 type="button"
                 onClick={handleVoiceInput}
                 disabled={isListening || isProcessingVoice}
-                className={`mt-8 w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl ${
+                className={`mt-6 sm:mt-8 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl ${
                   isListening
                     ? "bg-red-500 animate-pulse ring-4 ring-red-500/50 shadow-[0_0_50px_rgba(220,38,38,0.6)] scale-110"
                     : "bg-gradient-to-br from-red-600 to-red-800 text-white hover:scale-110 hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] border-4 border-red-900/30 active:scale-95"
@@ -502,9 +502,9 @@ const AddExpense = () => {
                 title="Use Voice Command"
             >
                 {isProcessingVoice ? (
-                  <Loader2 className="w-8 h-8 animate-spin text-white/90" />
+                  <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-white/90" />
                 ) : (
-                  <Mic className={`w-8 h-8 text-white drop-shadow-md ${isListening ? "animate-bounce" : ""}`} />
+                  <Mic className={`w-6 h-6 sm:w-8 sm:h-8 text-white drop-shadow-md ${isListening ? "animate-bounce" : ""}`} />
                 )}
             </button>
             <p className="text-zinc-500 text-xs mt-3 font-medium tracking-wide uppercase opacity-60">
@@ -521,12 +521,12 @@ const AddExpense = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="What is this for? (e.g. Dinner, Uber)"
-                className="w-full bg-transparent px-4 py-4 text-lg text-white placeholder-zinc-600 focus:outline-none focus:bg-white/5 transition-colors rounded-xl"
+                className="w-full bg-transparent px-3 sm:px-4 py-3 sm:py-4 text-base sm:text-lg text-white placeholder-zinc-600 focus:outline-none focus:bg-white/5 transition-colors rounded-xl"
               />
             </div>
 
             {/* Payer Selector */}
-            <div className="flex items-center justify-between px-4 py-3 bg-zinc-900/60">
+            <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 bg-zinc-900/60">
               <span className="text-sm text-zinc-400 font-medium">Paid by</span>
               <div className="relative">
                 <select
@@ -638,7 +638,7 @@ const AddExpense = () => {
                   <div
                     key={member._id}
                     onClick={() => handleCheckboxChange(member._id)}
-                    className={`group flex items-center justify-between p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
+                    className={`group flex items-center justify-between p-2.5 sm:p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
                       isSelected
                         ? "bg-indigo-900/10 border-indigo-500/30 shadow-[0_0_15px_-5px_rgba(99,102,241,0.1)]"
                         : "bg-zinc-900/20 border-white/5 hover:border-white/10"
@@ -670,7 +670,7 @@ const AddExpense = () => {
                         )}
                       </div>
                       <span
-                        className={`text-sm font-medium ${
+                        className={`text-sm sm:text-base font-medium ${
                           isSelected
                             ? "text-white"
                             : "text-zinc-500 group-hover:text-zinc-300"
@@ -684,12 +684,12 @@ const AddExpense = () => {
                     {isSelected && (
                       <div onClick={(e) => e.stopPropagation()}>
                         {splitMode === "equally" ? (
-                          <span className="text-emerald-400 font-mono font-medium text-sm">
+                          <span className="text-emerald-400 font-mono font-medium text-sm sm:text-base">
                             ₹{equalSplitAmount}
                           </span>
                         ) : (
-                          <div className="relative w-24">
-                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">
+                          <div className="relative w-20 sm:w-24">
+                            <span className="absolute left-1.5 sm:left-2 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">
                               ₹
                             </span>
                             <input
@@ -700,7 +700,7 @@ const AddExpense = () => {
                                 handleAmountChange(e, member._id)
                               }
                               placeholder="0"
-                              className="w-full bg-zinc-950 border border-zinc-700 rounded-lg py-1.5 pl-5 pr-2 text-right text-white font-mono text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+                              className="w-full bg-zinc-950 border border-zinc-700 rounded-lg py-1 sm:py-1.5 pl-4 sm:pl-5 pr-2 text-right text-white font-mono text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition-colors"
                             />
                           </div>
                         )}
