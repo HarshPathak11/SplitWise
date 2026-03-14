@@ -30,7 +30,7 @@ const RecentExpenses = (user) => {
   }, [user]);
 
   return (
-    <div className="flex flex-col h-full bg-transparent">
+    <div className="flex flex-col bg-transparent">
       {/* --- Header --- */}
       <div className="flex justify-between items-center mb-4 md:mb-6">
         <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">

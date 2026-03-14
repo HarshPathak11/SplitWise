@@ -141,7 +141,7 @@ const Dashboard = () => {
 
   // --- UI SECTION (Redesigned) ---
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8 pb-24 md:pb-8 relative selection:bg-indigo-500/30 font-sans">
+    <div className="bg-zinc-950 text-zinc-100 p-4 md:p-8 md:pb-8 relative selection:bg-indigo-500/30 font-sans">
       {/* Notification Banner */}
       <NotificationBanner />
 
@@ -155,7 +155,7 @@ const Dashboard = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Grid Layout: 7 cols for Main, 5 cols for Data/Friends */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           {/* --- LEFT COLUMN (Primary Actions) --- */}
           <motion.div
             variants={stagger}
@@ -194,7 +194,7 @@ const Dashboard = () => {
             variants={stagger}
             initial="hidden"
             animate="show"
-            className="md:col-span-1 lg:col-span-5 flex flex-col gap-6 h-full"
+            className="md:col-span-1 lg:col-span-5 flex flex-col gap-6"
           >
             {/* Recent Expenses - The 'Ledger' */}
             <motion.div
