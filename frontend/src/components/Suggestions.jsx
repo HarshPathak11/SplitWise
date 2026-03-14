@@ -13,7 +13,7 @@ export default function Suggestions({
   return (
     <div className="border border-gray-800 p-2 rounded-xl bg-zinc-900/30 flex flex-col">
     <div className="flex flex-col md:flex-[0.4] min-h-0">
-      <h3 className="text-xl font-semibold text-white mb-4">Suggested Friends</h3>
+      <h3 className="text-xl font-semibold text-white mb-2">Suggested Friends</h3>
       <div
         ref={listRef}
         onScroll={onScroll}
@@ -55,7 +55,7 @@ export default function Suggestions({
               </div>
               <button
                 className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors duration-200"
-                onClick={() => onSendFriendRequest(suggestion.user.email)}
+                onClick={() => onSendFriendRequest(suggestion.user._id)}
               >
                 Add Friend
               </button>
@@ -68,7 +68,7 @@ export default function Suggestions({
         )}
 
       </div>
-        <div className="text-center">
+        <div className="text-center mt-2">
           <button
             onClick={() => navigate("/addFriend")}
             className="px-6 py-3 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium transition-all duration-200"

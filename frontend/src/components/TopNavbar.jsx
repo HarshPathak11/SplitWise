@@ -80,7 +80,7 @@ const TopNavbar = ({ user }) => {
               <FaHeartbeat className="text-lg" />
               {/* Unread Notification Badge */}
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full shadow-[0_0_12px_rgba(99,102,241,0.6)]"></span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-gradient-to-r from-red-500 to-rose-500 rounded-full shadow-[0_0_12px_rgba(239,68,68,0.6)]"></span>
               )}
             </button>
           </Link>

@@ -105,16 +105,27 @@ const ActivityPage = () => {
     }
   };
 
-  const sendFriendRequest = async (email) => {
+  const sendFriendRequest = async (target) => {
     try {
-      const response = await api.post('/user/friend-requests/send', {
-        fromUserId: userId,
-        toEmail: [email],
-      });
+      const payload = { fromUserId: userId };
+      if (target?.userId) {
+        payload.toUserId = [target.userId];
+      } else if (target?.id) {
+        payload.toUserId = [target.id];
+      } else if (typeof target === 'string') {
+        payload.toUserId = [target];
+      } else if (target?.email) {
+        payload.toEmail = [target.email];
+      } else {
+        toast.error('Invalid friend target');
+        return;
+      }
+
+      const response = await api.post('/user/friend-requests/send', payload);
       if (response.status === 200) {
         toast.success('Friend request sent!');
         // Remove from suggestions
-        setSuggestions(prev => prev.filter(s => s.user.email !== email));
+        setSuggestions((prev) => prev.filter((s) => s.user._id !== target && s.user._id !== target?.userId && s.user._id !== target?.id));
       }
     } catch (error) {
       console.error('Error sending friend request:', error);
@@ -205,7 +216,7 @@ const ActivityPage = () => {
               {/* Activity list (60% height) */}
               <div className="border border-gray-800 p-2 rounded-xl bg-zinc-900/30 flex flex-col">
                 <div className="flex flex-col flex-1 md:flex-[0.6] min-h-0">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-2">
                     <h2 className="text-xl font-semibold text-white">Activity</h2>
                     {unreadCount > 0 && (
                       <span className="text-sm text-indigo-200">{unreadCount} unread</span>

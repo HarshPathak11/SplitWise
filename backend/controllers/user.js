@@ -927,8 +927,8 @@ const inviteFriend = async (req, res) => {
 // Friend Requests: send, list, approve, deny
 const sendFriendRequest = async (req, res) => {
   try {
-    const { fromUserId, toEmail } = req.body;
-    if (!fromUserId || !toEmail) {
+    const { fromUserId, toEmail, toUserId } = req.body;
+    if (!fromUserId || (!toEmail && !toUserId)) {
       return res.status(400).json({ message: "Incomplete data received" });
     }
 
@@ -937,18 +937,33 @@ const sendFriendRequest = async (req, res) => {
       return res.status(404).json({ message: "Sender not found" });
     }
 
-    // Normalize to array
-    const emails = Array.isArray(toEmail) ? toEmail : [toEmail];
+    // Normalize to arrays
+    const emails = Array.isArray(toEmail) ? toEmail : toEmail ? [toEmail] : [];
+    const userIds = Array.isArray(toUserId) ? toUserId : toUserId ? [toUserId] : [];
 
+    const targets = [];
     const results = [];
 
     for (const email of emails) {
       const toUser = await User.findOne({ email });
-
       if (!toUser) {
         results.push({ email, status: "failed", reason: "User not found" });
         continue;
       }
+      targets.push({ toUser, identifier: email });
+    }
+
+    for (const id of userIds) {
+      const toUser = await User.findById(id);
+      if (!toUser) {
+        results.push({ userId: id, status: "failed", reason: "User not found" });
+        continue;
+      }
+      targets.push({ toUser, identifier: toUser.email || id });
+    }
+
+    for (const target of targets) {
+      const { toUser, identifier } = target;
 
       // Check friendship in both directions
       const userHasFriend = fromUser.friends?.some(
@@ -960,7 +975,7 @@ const sendFriendRequest = async (req, res) => {
 
       if (userHasFriend || otherHasFriend) {
         results.push({
-          email,
+          identifier,
           status: "skipped",
           reason: "Already friends or partially friends",
         });
@@ -975,22 +990,21 @@ const sendFriendRequest = async (req, res) => {
 
       if (existingRequest) {
         results.push({
-          email,
+          identifier,
           reason: `Request already sent to ${toUser.username}`,
         });
         continue;
       }
 
-      //Checking if the to user has sent a request to the from user
+      // Checking if the to user has sent a request to the from user
       const existingRequest1 = await FriendRequest.findOne({
         to: fromUser._id,
         from: toUser._id,
       });
 
       if (existingRequest1) {
-        // console.log("Found existing friend request:", existingRequest1);
         results.push({
-          email,
+          identifier,
           reason: `You have a friend request from ${toUser.username}. Please respond to it.`,
         });
         continue;
@@ -1028,7 +1042,7 @@ const sendFriendRequest = async (req, res) => {
       }
 
       results.push({
-        email,
+        identifier,
         status: "success",
         reason: "Request sent to " + toUser.username,
       });
