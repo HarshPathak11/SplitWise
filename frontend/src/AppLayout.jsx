@@ -9,6 +9,14 @@ import TermsPopup from "./components/TermsPopup";
 import BottomNavbar from "./components/BottomNavbar";
 import QuickAddExpenseModal from "./components/QuickAddExpenseModal";
 
+const handleScrollTop = () => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "smooth",
+  });
+};
+
 const usePageTracking = () => {
   const location = useLocation();
 
@@ -18,6 +26,7 @@ const usePageTracking = () => {
         page_path: location.pathname,
       });
     }
+    handleScrollTop();
   }, [location]);
 };
 

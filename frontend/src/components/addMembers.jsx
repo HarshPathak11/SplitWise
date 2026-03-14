@@ -104,7 +104,7 @@ const AddMembers = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-black text-white overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-black text-white overflow-hidden">
 
       {/* ── Fixed Header ── */}
       <div className="flex-shrink-0 bg-black/95 backdrop-blur-md border-b border-white/10 px-4 sm:px-6 pt-5 pb-4 space-y-4">
@@ -178,7 +178,7 @@ const AddMembers = () => {
       </div>
 
       {/* ── Fixed Bottom Button ── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md border-t border-white/10 px-4 py-4 flex justify-center z-50">
+      <div className="fixed bottom-14 left-0 right-0 bg-black/80 backdrop-blur-md border-t border-white/10 px-4 py-4 flex justify-center z-50">
         <button
           disabled={selectedFriends.length === 0 || isAdding}
           className={`${
