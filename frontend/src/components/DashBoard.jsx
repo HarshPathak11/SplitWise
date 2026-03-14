@@ -220,12 +220,6 @@ const Dashboard = () => {
           </motion.div>
         </div>
       </div>
-      {/* Mobile Swipe to Friends */}
-      {isMobile && (
-        <div className="fixed bottom-20 left-4 right-4 z-20">
-          <SwipeToFriends />
-        </div>
-      )}
       <TermsPopup user={user} setUser={setUser} />
 
       {/* Quick Add Expense Modal */}
