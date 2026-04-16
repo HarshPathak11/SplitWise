@@ -141,7 +141,7 @@ const Dashboard = () => {
 
   // --- UI SECTION (Redesigned) ---
   return (
-    <div className="bg-zinc-950 text-zinc-100 p-4 md:p-8 md:pb-8 relative selection:bg-indigo-500/30 font-sans">
+    <div className="bg-zinc-950 text-zinc-100 p-4 pb-20 md:p-8 md:pb-8 relative selection:bg-indigo-500/30 font-sans">
       {/* Notification Banner */}
       <NotificationBanner />
 

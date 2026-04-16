@@ -375,7 +375,7 @@ const AllTripsPage = () => {
             ))}
 
             {/* End of List */}
-            <div className="col-span-full text-center mt-12 opacity-30">
+            <div className="col-span-full text-center opacity-30">
               <div className="flex items-center justify-center gap-4">
                 <div className="h-px w-12 bg-gradient-to-r from-transparent to-zinc-600"></div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">

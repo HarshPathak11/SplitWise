@@ -113,11 +113,7 @@ const AppLayout = () => {
 
   return (
     <div
-      className={
-        showNavbar
-          ? "min-h-screen bg-zinc-950 text-zinc-100 pb-20 md:pb-0"
-          : "min-h-screen bg-zinc-950 text-zinc-100"
-      }
+      className="min-h-screen bg-zinc-950 text-zinc-100"
     >
       <Toaster
         position="top-right"
