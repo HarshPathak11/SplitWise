@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, Trash2, ArrowLeft } from "lucide-react";
+import { Bell, ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { toast } from "react-hot-toast";
 import api from "../utils/api";
 import ActivityItems from "./ActivityItems";
-import Suggestions from "./Suggestions";
 
 const handleScrollTop = () => {
   window.scrollTo({
@@ -23,14 +22,14 @@ const ActivityPage = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [suggestions, setSuggestions] = useState([]);
-  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-  const [suggestionsPage, setSuggestionsPage] = useState(1);
-  const [hasMoreSuggestions, setHasMoreSuggestions] = useState(true);
-  const suggestionsListRef = useRef(null);
-  const activityListRef = useRef(null);
+  const observerTarget = useRef(null);
+  // const [suggestions, setSuggestions] = useState([]);
+  // const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  // const [suggestionsPage, setSuggestionsPage] = useState(1);
+  // const [hasMoreSuggestions, setHasMoreSuggestions] = useState(true);
+  // const [suggestionsListRef = useRef(null);
 
-  const LIMIT = 3; // Only show 3 activities at a time in the scrollable container
+  const LIMIT = 3; // Increased limit so it fills the screen and triggers scrolling
 
   useEffect(() => {
     handleScrollTop();
@@ -42,7 +41,7 @@ const ActivityPage = () => {
         await fetchNotifications();
         await markAllAsReadOnOpen();
         await fetchUnreadCount();
-        await fetchSuggestions();
+        // await fetchSuggestions();
       };
       loadData();
     }
@@ -59,7 +58,18 @@ const ActivityPage = () => {
       if (pageNum === 1) {
         setNotifications(data);
       } else {
-        setNotifications((prev) => [...prev, ...data]);
+        setNotifications((prev) => {
+          const combined = [...prev, ...data];
+
+          const uniqueMap = new Map();
+          combined.forEach((item) => {
+            uniqueMap.set(item._id, item);
+          });
+          data.forEach((item) => {
+            uniqueMap.set(item._id, item);
+          });
+          return Array.from(uniqueMap.values());
+        });
       }
 
       setHasMore(pagination.page < pagination.pages);
@@ -82,56 +92,56 @@ const ActivityPage = () => {
     }
   };
 
-  const fetchSuggestions = async (pageNum = 1) => {
-    try {
-      setSuggestionsLoading(true);
-      const response = await api.get(`/user/friend-suggestions/${userId}`, {
-        params: { page: pageNum, limit: 4 },
-      });
-      const { suggestions: data, pagination } = response.data;
+  // const fetchSuggestions = async (pageNum = 1) => {
+  //   try {
+  //     setSuggestionsLoading(true);
+  //     const response = await api.get(`/user/friend-suggestions/${userId}`, {
+  //       params: { page: pageNum, limit: 4 },
+  //     });
+  //     const { suggestions: data, pagination } = response.data;
+  // 
+  //     if (pageNum === 1) {
+  //       setSuggestions(data);
+  //     } else {
+  //       setSuggestions((prev) => [...prev, ...data]);
+  //     }
+  // 
+  //     setHasMoreSuggestions(pagination.hasMore);
+  //     setSuggestionsPage(pageNum);
+  //   } catch (error) {
+  //     console.error("Error fetching suggestions:", error);
+  //   } finally {
+  //     setSuggestionsLoading(false);
+  //   }
+  // };
 
-      if (pageNum === 1) {
-        setSuggestions(data);
-      } else {
-        setSuggestions((prev) => [...prev, ...data]);
-      }
-
-      setHasMoreSuggestions(pagination.hasMore);
-      setSuggestionsPage(pageNum);
-    } catch (error) {
-      console.error("Error fetching suggestions:", error);
-    } finally {
-      setSuggestionsLoading(false);
-    }
-  };
-
-  const sendFriendRequest = async (target) => {
-    try {
-      const payload = { fromUserId: userId };
-      if (target?.userId) {
-        payload.toUserId = [target.userId];
-      } else if (target?.id) {
-        payload.toUserId = [target.id];
-      } else if (typeof target === 'string') {
-        payload.toUserId = [target];
-      } else if (target?.email) {
-        payload.toEmail = [target.email];
-      } else {
-        toast.error('Invalid friend target');
-        return;
-      }
-
-      const response = await api.post('/user/friend-requests/send', payload);
-      if (response.status === 200) {
-        toast.success('Friend request sent!');
-        // Remove from suggestions
-        setSuggestions((prev) => prev.filter((s) => s.user._id !== target && s.user._id !== target?.userId && s.user._id !== target?.id));
-      }
-    } catch (error) {
-      console.error('Error sending friend request:', error);
-      toast.error('Failed to send friend request');
-    }
-  };
+  // const sendFriendRequest = async (target) => {
+  //   try {
+  //     const payload = { fromUserId: userId };
+  //     if (target?.userId) {
+  //       payload.toUserId = [target.userId];
+  //     } else if (target?.id) {
+  //       payload.toUserId = [target.id];
+  //     } else if (typeof target === 'string') {
+  //       payload.toUserId = [target];
+  //     } else if (target?.email) {
+  //       payload.toEmail = [target.email];
+  //     } else {
+  //       toast.error('Invalid friend target');
+  //       return;
+  //     }
+  // 
+  //     const response = await api.post('/user/friend-requests/send', payload);
+  //     if (response.status === 200) {
+  //       toast.success('Friend request sent!');
+  //       // Remove from suggestions
+  //       setSuggestions((prev) => prev.filter((s) => s.user._id !== target && s.user._id !== target?.userId && s.user._id !== target?.id));
+  //     }
+  //   } catch (error) {
+  //     console.error('Error sending friend request:', error);
+  //     toast.error('Failed to send friend request');
+  //   }
+  // };
 
   const markAllAsReadOnOpen = async () => {
     try {
@@ -151,26 +161,39 @@ const ActivityPage = () => {
     }
   };
 
-  const handleActivityScroll = (e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
-    if (scrollTop + clientHeight >= scrollHeight - 60) {
-      handleLoadMore();
-    }
-  };
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          handleLoadMore();
+        }
+      },
+      { threshold: 1.0 }
+    );
 
-  const handleLoadMoreSuggestions = () => {
-    if (hasMoreSuggestions && !suggestionsLoading) {
-      fetchSuggestions(suggestionsPage + 1);
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
     }
-  };
 
-  const handleSuggestionsScroll = (e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.target;
-    if (scrollTop + clientHeight >= scrollHeight - 60) {
-      handleLoadMoreSuggestions();
-    }
-  };
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasMore, loading, page, userId]);
 
+  // const handleLoadMoreSuggestions = () => {
+  //   if (hasMoreSuggestions && !suggestionsLoading) {
+  //     fetchSuggestions(suggestionsPage + 1);
+  //   }
+  // };
+
+  // const handleSuggestionsScroll = (e) => {
+  //   const { scrollTop, scrollHeight, clientHeight } = e.target;
+  //   if (scrollTop + clientHeight >= scrollHeight - 60) {
+  //     handleLoadMoreSuggestions();
+  //   }
+  // };
 
   const handleStatusChange = () => {
     fetchUnreadCount();
@@ -182,11 +205,11 @@ const ActivityPage = () => {
 
   return (
     <>
-      <div className="bg-zinc-950 text-zinc-100 p-4 md:p-8 md:pb-8 relative selection:bg-indigo-500/30 font-sans">
-        {/* Header */}
+      <div className="bg-zinc-950 text-zinc-100 p-4 md:p-8 min-h-screen flex flex-col selection:bg-indigo-500/30 font-sans">
 
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
             <button
               onClick={handleBack}
               className="p-2 rounded-lg hover:bg-white/5 text-zinc-400 hover:text-white transition-all duration-200"
@@ -194,84 +217,83 @@ const ActivityPage = () => {
             >
               <ArrowLeft size={20} />
             </button>
+
             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
               <Bell size={28} className="text-indigo-400" />
               Activity
             </h1>
-            <div className="w-10"></div>
+            <div className="w-10" />
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col gap-6 min-h-0">
-          {loading && notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center mb-4 animate-pulse">
-                <Bell size={32} className="text-indigo-400" />
-              </div>
-              <p className="text-gray-400">Loading activity...</p>
-            </div>
-          ) : (
-            <>
-              {/* Activity list (60% height) */}
-              <div className="border border-gray-800 p-2 rounded-xl bg-zinc-900/30 flex flex-col">
-                <div className="flex flex-col flex-1 md:flex-[0.6] min-h-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-xl font-semibold text-white">Activity</h2>
-                    {unreadCount > 0 && (
-                      <span className="text-sm text-indigo-200">{unreadCount} unread</span>
-                    )}
-                  </div>
-                  <div
-                    ref={activityListRef}
-                    onScroll={handleActivityScroll}
-                    className="h-64 overflow-y-auto space-y-3 pr-2 pb-2 scrollbar-hide"
-                  >
-                    {notifications.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center mb-4">
-                          <Bell size={32} className="text-indigo-400" />
-                        </div>
-                        <h2 className="text-xl font-semibold text-white mb-2">
-                          No activity yet
-                        </h2>
-                        <p className="text-gray-400">
-                          When something happens, you'll see it here
-                        </p>
-                      </div>
-                    ) : (
-                      <AnimatePresence mode="popLayout">
-                        {notifications.map((notification) => (
-                          <ActivityItems
-                            key={notification._id}
-                            _id={notification._id}
-                            sender={notification.sender}
-                            message={notification.message}
-                            type={notification.type}
-                            createdAt={notification.createdAt}
-                            isRead={notification.isRead}
-                            onStatusChange={handleStatusChange}
-                          />
-                        ))}
-                      </AnimatePresence>
-                    )}
+        {/* Activity Container (FULL HEIGHT) */}
+        <div>
+          {/* Top bar */}
+          <div className="flex items-center justify-between mb-3">
 
+            {unreadCount > 0 && (
+              <span className="text-sm text-indigo-200">
+                {unreadCount} unread
+              </span>
+            )}
+          </div>
 
-                  </div>
+          {/* Scrollable Activity List */}
+          <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
+            {notifications.length === 0 && !loading ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center mb-4">
+                  <Bell size={32} className="text-indigo-400" />
                 </div>
+                <h2 className="text-xl font-semibold text-white mb-2">
+                  No activity yet
+                </h2>
+                <p className="text-gray-400">
+                  When something happens, you'll see it here
+                </p>
               </div>
-              {/* Suggestions (40% height) */}
-              <Suggestions
-                suggestions={suggestions}
-                loading={suggestionsLoading}
-                onSendFriendRequest={sendFriendRequest}
-                onScroll={handleSuggestionsScroll}
-                listRef={suggestionsListRef}
-                hasMore={hasMoreSuggestions}
-              />
-            </>
-          )}
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {notifications.map((notification) => (
+                  <ActivityItems
+                    key={notification._id}
+                    _id={notification._id}
+                    sender={notification.sender}
+                    message={notification.message}
+                    type={notification.type}
+                    createdAt={notification.createdAt}
+                    isRead={notification.isRead}
+                    onStatusChange={handleStatusChange}
+                  />
+                ))}
+              </AnimatePresence>
+            )}
+
+            {/* Scroll Observer Target */}
+            <div ref={observerTarget} className="h-10 w-full flex items-center justify-center py-4 shrink-0">
+              {loading && notifications.length > 0 && (
+                <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              )}
+            </div>
+
+            {!hasMore && notifications.length > 0 && (
+              <div className="text-center text-zinc-500 text-sm py-4 shrink-0">
+                No more activity
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Suggestions (KEEP COMMENTED — DO NOT REMOVE) */}
+        {/* <Suggestions
+    suggestions={suggestions}
+    loading={suggestionsLoading}
+    onSendFriendRequest={sendFriendRequest}
+    onScroll={handleSuggestionsScroll}
+    listRef={suggestionsListRef}
+    hasMore={hasMoreSuggestions}
+  /> */}
+
       </div>
     </>
   );

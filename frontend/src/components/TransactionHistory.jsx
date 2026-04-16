@@ -332,7 +332,7 @@ const TransactionHistory = () => {
     footer.style.cssText = `
       font-size: 10px; font-weight: 500; letter-spacing: 1.5px;
       color: #27272a; margin-top: 16px; text-transform: uppercase;
-    `; 
+    `;
     container.appendChild(footer);
 
     document.body.appendChild(container);
@@ -806,6 +806,33 @@ const TransactionHistory = () => {
       return `Last seen yesterday at ${timeStr}`;
     }
 
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const lastSeenDayDate = new Date(lastSeenDate.getFullYear(), lastSeenDate.getMonth(), lastSeenDate.getDate());
+    const diffDays = Math.round((today - lastSeenDayDate) / (1000 * 60 * 60 * 24));
+
+    if (diffDays >= 30) {
+      const diffMonths = Math.floor(diffDays / 30);
+      const monthWords = ["", "a", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"];
+      if (diffMonths < 12) {
+        return `Last seen ${monthWords[diffMonths]} month${diffMonths > 1 ? "s" : ""} ago`;
+      } else {
+        const diffYears = Math.floor(diffMonths / 12);
+        return diffYears === 1 ? `Last seen a year ago` : `Last seen ${diffYears} years ago`;
+      }
+    }
+
+    if (diffDays >= 21) {
+      return `Last seen three weeks ago`;
+    }
+
+    if (diffDays >= 14) {
+      return `Last seen two weeks ago`;
+    }
+
+    if (diffDays >= 7) {
+      return `Last seen a week ago`;
+    }
+
     return `Last seen on ${lastSeenDate.toLocaleDateString()} at ${timeStr}`;
   };
 
@@ -837,9 +864,8 @@ const TransactionHistory = () => {
           >
             {/* Glow ring */}
             <motion.div
-              className={`absolute w-44 h-44 rounded-full blur-3xl ${
-                successOverlay.type === "paid" ? "bg-rose-500/20" : "bg-emerald-500/20"
-              }`}
+              className={`absolute w-44 h-44 rounded-full blur-3xl ${successOverlay.type === "paid" ? "bg-rose-500/20" : "bg-emerald-500/20"
+                }`}
               initial={{ scale: 0 }}
               animate={{ scale: 2.5, opacity: 0 }}
               transition={{ duration: 1.2, ease: "easeOut" }}
@@ -849,9 +875,8 @@ const TransactionHistory = () => {
             {[...Array(8)].map((_, i) => (
               <motion.div
                 key={i}
-                className={`absolute w-2 h-2 rounded-full ${
-                  successOverlay.type === "paid" ? "bg-rose-400" : "bg-emerald-400"
-                }`}
+                className={`absolute w-2 h-2 rounded-full ${successOverlay.type === "paid" ? "bg-rose-400" : "bg-emerald-400"
+                  }`}
                 initial={{ scale: 0, x: 0, y: 0, opacity: 1 }}
                 animate={{
                   scale: [0, 1, 0.5],
@@ -865,28 +890,25 @@ const TransactionHistory = () => {
 
             {/* Checkmark circle */}
             <motion.div
-              className={`relative w-24 h-24 rounded-full border-2 flex items-center justify-center mb-5 ${
-                successOverlay.type === "paid"
+              className={`relative w-24 h-24 rounded-full border-2 flex items-center justify-center mb-5 ${successOverlay.type === "paid"
                   ? "border-rose-500"
                   : "border-emerald-500"
-              }`}
+                }`}
               initial={{ scale: 0, rotate: -60 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 200, damping: 14, delay: 0.05 }}
             >
               <motion.div
-                className={`absolute inset-0 rounded-full ${
-                  successOverlay.type === "paid"
+                className={`absolute inset-0 rounded-full ${successOverlay.type === "paid"
                     ? "bg-rose-600/20"
                     : "bg-emerald-600/20"
-                }`}
+                  }`}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.25, duration: 0.3 }}
               />
-              <svg className={`w-12 h-12 ${
-                successOverlay.type === "paid" ? "text-rose-400" : "text-emerald-400"
-              }`} viewBox="0 0 24 24" fill="none">
+              <svg className={`w-12 h-12 ${successOverlay.type === "paid" ? "text-rose-400" : "text-emerald-400"
+                }`} viewBox="0 0 24 24" fill="none">
                 <motion.path
                   d="M5 13l4 4L19 7"
                   stroke="currentColor"
@@ -910,9 +932,8 @@ const TransactionHistory = () => {
               {successOverlay.type === "paid" ? "Payment Recorded!" : "Receipt Recorded!"}
             </motion.p>
             <motion.p
-              className={`text-3xl font-mono font-bold tracking-tight ${
-                successOverlay.type === "paid" ? "text-rose-400" : "text-emerald-400"
-              }`}
+              className={`text-3xl font-mono font-bold tracking-tight ${successOverlay.type === "paid" ? "text-rose-400" : "text-emerald-400"
+                }`}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.3 }}
@@ -1124,61 +1145,63 @@ const TransactionHistory = () => {
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-20 bg-zinc-900/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/20"
       >
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="max-w-3xl mx-auto px-3 py-2 flex items-center justify-between">
+
+          {/* LEFT */}
+          <div className="flex items-center gap-1.5">
+
             <button
               onClick={() => navigate(-1)}
-              className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+              className="p-1 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
 
             <Link
               to={`/public-profile/${friendName._id}`}
-              className="flex items-center gap-2 group"
+              className="flex items-center gap-1.5 group"
             >
-              <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-white/10 overflow-hidden relative shadow-inner">
+              <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-white/10 overflow-hidden shadow-inner">
                 {friendName?.profilePhotoUrl ? (
                   <img
                     src={friendName.profilePhotoUrl}
                     alt="User"
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-indigo-400 font-bold">
+                  <div className="w-full h-full flex items-center justify-center text-indigo-400 text-xs font-bold">
                     {friendName.username?.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-bold text-white leading-none mb-2 mt-2 group-hover:text-indigo-300 transition-colors truncate">
+                <h2 className="text-xs font-semibold text-white leading-tight mb-0.5 truncate group-hover:text-indigo-300">
                   {friendName.username}
                 </h2>
-                <div className="flex items-center mt-0 overflow-hidden">
+
+                <div className="flex items-center overflow-hidden">
                   {(txLoading || loading) ? (
-                    <div className="flex items-center gap-1.5 py-1">
-                      <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
-                      <span className="text-[10px] font-mono text-indigo-400/70 animate-pulse tracking-tight">
-                        SYNCING_STATUS...
+                    <div className="flex items-center gap-1 py-0.5">
+                      <div className="w-1 h-1 bg-indigo-500 rounded-full animate-pulse"></div>
+                      <span className="text-[9px] font-mono text-indigo-400/70 animate-pulse tracking-tight">
+                        SYNCING...
                       </span>
                     </div>
                   ) : (
                     <span
-                      className={`text-[10px] font-mono whitespace-nowrap ${getActivityText() === "Active" ? "text-emerald-400 font-bold" : "text-zinc-500"}`}
-                      style={{ wordSpacing: "-0.15em" }}
+                      className={`text-[9px] font-mono whitespace-nowrap ${getActivityText() === "Active"
+                          ? "text-emerald-400 font-semibold"
+                          : "text-zinc-500"
+                        }`}
                     >
                       {getActivityText()}
                     </span>
@@ -1188,24 +1211,26 @@ const TransactionHistory = () => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* RIGHT */}
+          <div className="flex items-center gap-1.5">
+
             <button
               onClick={confirmSendReminder}
-              className="p-2.5 rounded-xl bg-zinc-800/50 hover:bg-yellow-500/10 text-zinc-400 hover:text-yellow-400 border border-transparent hover:border-yellow-500/20 transition-all"
+              className="p-2 rounded-lg bg-zinc-800/50 hover:bg-yellow-500/10 text-zinc-400 hover:text-yellow-400 border border-transparent hover:border-yellow-500/20 transition-all"
               title="Send Reminder"
             >
-              <FaBell size={16} />
+              <FaBell size={14} />
             </button>
             <motion.button
               onClick={confirmSettle}
               disabled={loading || txLoading}
-              className={`flex items-center gap-2 px-2 py-1.5 sm:px-4 sm:py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-900/30 transition-all duration-300 group whitespace-nowrap ${loading || txLoading
-                ? 'opacity-50 cursor-not-allowed'
-                : 'hover:from-indigo-500 hover:to-violet-500'
+              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md transition-all duration-200 ${loading || txLoading
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:from-indigo-500 hover:to-violet-500"
                 }`}
               title="Settle Up"
-              whileTap={!(loading || txLoading) ? { scale: 0.92 } : {}}
-              whileHover={!(loading || txLoading) ? { scale: 1.04 } : {}}
+              whileTap={!(loading || txLoading) ? { scale: 0.95 } : {}}
+              whileHover={!(loading || txLoading) ? { scale: 1.03 } : {}}
             >
               {loading || txLoading ? (
                 <motion.span
@@ -1215,9 +1240,7 @@ const TransactionHistory = () => {
                   Settling...
                 </motion.span>
               ) : (
-                <>
-                  Settle<span className="hidden sm:inline"> All</span>
-                </>
+                <>Settle</>
               )}
             </motion.button>
           </div>
@@ -1569,9 +1592,8 @@ const TransactionHistory = () => {
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Current Balance</span>
-                  <span className={`text-lg font-mono font-bold ${
-                    netBalance >= 0 ? "text-emerald-400" : "text-rose-400"
-                  }`}>
+                  <span className={`text-lg font-mono font-bold ${netBalance >= 0 ? "text-emerald-400" : "text-rose-400"
+                    }`}>
                     {netBalance >= 0 ? "+" : "-"}₹{Math.abs(netBalance).toFixed(2)}
                   </span>
                 </div>

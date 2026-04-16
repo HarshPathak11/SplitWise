@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { X, Check, UserPlus, FilePlus, Edit2, Trash2, DollarSign, Bell, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "../utils/api";
 import { toast } from "react-hot-toast";
 import PropTypes from "prop-types";
 
-const ActivityItems = ({
+const ActivityItems = forwardRef(({
   _id,
   sender,
   message,
@@ -13,7 +13,7 @@ const ActivityItems = ({
   createdAt,
   isRead,
   onStatusChange,
-}) => {
+}, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [localIsRead, setLocalIsRead] = useState(isRead);
 
@@ -99,15 +99,15 @@ const ActivityItems = ({
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 100 }}
       transition={{ duration: 0.3 }}
-      className={`relative p-3 md:p-4 rounded-xl border transition-all duration-200 ${
-        localIsRead
-          ? "bg-zinc-900/30 border-white/5 hover:border-white/10"
-          : "bg-gradient-to-r from-indigo-500/5 to-purple-500/5 border-indigo-500/20 hover:border-indigo-500/40"
-      }`}
+      className={`relative p-3 md:p-4 rounded-xl border transition-all duration-200 ${localIsRead
+        ? "bg-zinc-900/30 border-white/5 hover:border-white/10"
+        : "bg-gradient-to-r from-indigo-500/5 to-purple-500/5 border-indigo-500/20 hover:border-indigo-500/40"
+        }`}
     >
       {/* Unread indicator */}
       {!localIsRead && (
@@ -163,7 +163,7 @@ const ActivityItems = ({
       )}
     </motion.div>
   );
-};
+});
 
 ActivityItems.propTypes = {
   _id: PropTypes.string.isRequired,
