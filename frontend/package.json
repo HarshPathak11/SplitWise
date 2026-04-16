@@ -19,6 +19,7 @@
     "firebase": "^12.1.0",
     "framer-motion": "^11.18.2",
     "frontend": "file:",
+    "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.487.0",
