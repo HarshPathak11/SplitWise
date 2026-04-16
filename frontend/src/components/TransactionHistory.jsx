@@ -5,7 +5,7 @@ import { FaArrowDown, FaBell, FaCopy, FaShareAlt } from "react-icons/fa";
 import { Forward } from "lucide-react";
 import Cookies from "js-cookie";
 import api from "../utils/api";
-import html2canvas from "html2canvas";
+import { toBlob } from "html-to-image";
 import { motion, AnimatePresence } from "framer-motion";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const PAGE_SIZE = 20;
@@ -94,7 +94,7 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleShareTransaction = async (txId, amount, payerUpi) => {
+  const handleShareTransaction = async (txId, amount, friendName, payerUpi) => {
     const element = document.getElementById(`tx-card-${txId}`);
     if (!element) return;
 
@@ -105,51 +105,54 @@ const TransactionHistory = () => {
     }
 
     try {
-      // Get element dimensions for html2canvas (prevents 0-dimension errors on mobile)
-      const rect = element.getBoundingClientRect();
-      const captureWidth = Math.max(rect.width, 340);
-      const captureHeight = Math.max(rect.height, 100);
+      // Create an off-screen container to properly format the transaction card for sharing
+      const container = document.createElement("div");
+      container.style.cssText = `
+        position: fixed; left: 0; top: 0; z-index: -9999;
+        opacity: 0; pointer-events: none;
+        background: #0a0a0a;
+        padding: 32px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      `;
 
-      const canvas = await html2canvas(element, {
+      // Deep clone the transaction card
+      const clone = element.cloneNode(true);
+      // Give the clone an explicit minimum width so it isn't squeezed
+      clone.style.width = "340px";
+      clone.style.minWidth = "340px";
+      // Normalize border radii to rounded for the standalone image
+      clone.style.borderRadius = "16px";
+      clone.style.borderTopRightRadius = "16px";
+      clone.style.borderTopLeftRadius = "16px";
+      
+      container.appendChild(clone);
+      document.body.appendChild(container);
+
+      // Force layout reflow
+      // eslint-disable-next-line no-unused-expressions
+      container.offsetHeight;
+
+      // Read dimensions of the padded container
+      const captureRect = container.getBoundingClientRect();
+
+      const blob = await toBlob(container, {
         backgroundColor: "#0a0a0a",
-        scale: 3, // Increased scale for better text clarity
-        useCORS: true,
-        logging: false,
-        width: captureWidth,
-        height: captureHeight,
-        ignoreElements: (el) => el.tagName === "BUTTON",
-        // FIX FOR SMALL SCREENSHOT: Enlarge the card in the clone phase
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.getElementById(`tx-card-${txId}`);
-          if (clonedElement) {
-            clonedElement.style.overflow = "visible";
-            clonedElement.style.minWidth = "340px";
-            clonedElement.style.width = `${captureWidth}px`;
-            clonedElement.style.paddingTop = "36px";
-            clonedElement.style.paddingLeft = "24px";
-            clonedElement.style.paddingRight = "24px";
-            clonedElement.style.paddingBottom = "28px";
-            clonedElement.style.borderRadius = "16px";
-            // Remove the tight corner override that causes clipping
-            clonedElement.style.borderTopRightRadius = "16px";
-            clonedElement.style.borderTopLeftRadius = "16px";
-            // Remove any background images that could cause createPattern errors
-            clonedElement.style.backgroundImage = "none";
-            // Scale up text for readability in shared image
-            const allText = clonedElement.querySelectorAll("h4, span, div");
-            allText.forEach((el) => {
-              el.style.lineHeight = "1.6";
-              el.style.overflow = "visible";
-              el.style.backgroundImage = "none";
-              const currentSize = parseFloat(window.getComputedStyle(el).fontSize);
-              if (currentSize < 14) el.style.fontSize = `${currentSize * 1.3}px`;
-            });
-          }
-        },
+        pixelRatio: 3, // High-res export
+        width: captureRect.width,
+        height: captureRect.height,
+        style: {
+          opacity: "1", // Make sure it's visible in the screenshot
+          position: "static"
+        }
       });
+      
+      // Cleanup
+      document.body.removeChild(container);
 
-      const dataUrl = canvas.toDataURL("image/png");
-      const blob = await (await fetch(dataUrl)).blob();
+      if (!blob) throw new Error("Could not generate image blob");
+
       const file = new File([blob], "receipt.png", { type: "image/png" });
 
       // MOBILE SHARE LOGIC
@@ -192,9 +195,9 @@ const TransactionHistory = () => {
       ? `Hi ${friendName.username} you owe me ₹${Math.abs(netBalance).toFixed(2)}`
       : `Hi ${friendName.username} I owe you ₹${Math.abs(netBalance).toFixed(2)}`;
     let shareText = `💰 Balance Update\n${balanceText}`;
-    if (netBalance >= 0) {
+    if (netBalance >= 0 && storedUser?.upiId) {
       shareText += `\n\nPay to UPI: ${storedUser.upiId}`;
-    } else {
+    } else if (netBalance < 0 && friendName?.upiId) {
       shareText += `\n\nPay to UPI: ${friendName.upiId}`;
     }
     
@@ -352,32 +355,18 @@ const TransactionHistory = () => {
       const captureW = Math.max(containerRect.width, 420);
       const captureH = Math.max(containerRect.height, 200);
 
-      const canvas = await html2canvas(container, {
+      const blob = await toBlob(container, {
         backgroundColor: "#0a0a0a",
-        scale: 3,
-        useCORS: true,
-        logging: false,
+        pixelRatio: 3,
         width: captureW,
         height: captureH,
-        // Strip any remaining gradients/images in the clone to prevent createPattern errors
-        onclone: (clonedDoc, clonedEl) => {
-          clonedEl.style.opacity = "1";
-          clonedEl.style.position = "static";
-          // Remove any background-image on all children to prevent canvas pattern errors
-          const allEls = clonedEl.querySelectorAll("*");
-          allEls.forEach((el) => {
-            const bg = window.getComputedStyle(el).backgroundImage;
-            if (bg && bg !== "none") {
-              el.style.backgroundImage = "none";
-            }
-          });
-        },
+        style: {
+          opacity: "1",
+          position: "static"
+        }
       });
 
       document.body.removeChild(container);
-
-      const dataUrl = canvas.toDataURL("image/png");
-      const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], "balance.png", { type: "image/png" });
 
       if (
