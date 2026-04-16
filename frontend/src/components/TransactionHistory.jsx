@@ -94,7 +94,7 @@ const TransactionHistory = () => {
     }
   };
 
-  const handleShareTransaction = async (txId, amount, friendName, payerUpi) => {
+  const handleShareTransaction = async (txId, amount, payerUpi) => {
     const element = document.getElementById(`tx-card-${txId}`);
     if (!element) return;
 
@@ -197,6 +197,10 @@ const TransactionHistory = () => {
     } else {
       shareText += `\n\nPay to UPI: ${friendName.upiId}`;
     }
+    
+    const chatLink = `https://fair-fare-phi.vercel.app/transaction-history/${friendId}?sharer=${userId}`;
+    shareText += `\n\nView our transactions: ${chatLink}`;
+
     shareText += `\n\n— Tracked on FairFare`;
 
     // Build a premium screenshot card with pure inline styles (no Tailwind)
