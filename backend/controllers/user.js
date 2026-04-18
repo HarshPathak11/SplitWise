@@ -300,9 +300,9 @@ const getAllExpensesForUser = async (req, res) => {
 
     const nextCursor = expenses.length === limit ? expenses[expenses.length - 1].createdAt : null;
 
-    const response = { 
-      expenses, 
-      nextCursor 
+    const response = {
+      expenses,
+      nextCursor
     };
     if (totalCount !== undefined) response.totalCount = totalCount;
 
@@ -621,101 +621,111 @@ const publicUserDetails = async (req, res) => {
   }
 };
 
-// const getFriendSuggestions = async (req, res) => {
-//   try {
-//     const userId = req.params.userId;
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = parseInt(req.query.limit) || 5;
-//     const skip = (page - 1) * limit;
+const getFriendSuggestions = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const page = Math.max(parseInt(req.query.page || "1", 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || "5", 10), 1), 20);
+    const skip = (page - 1) * limit;
 
-//     // Get user's friends
-//     const user = await User.findById(userId).select('friends').populate({
-//       path: 'friends.friend',
-//       select: '_id'
-//     });
+    const currentUser = await User.findById(userId)
+      .select("friends")
+      .populate({
+        path: "friends.friend",
+        select: "_id",
+      })
+      .lean();
 
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
+    if (!currentUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-//     const friendIds = user.friends
-//       .filter(f => f.friend) // Filter out null friends
-//       .map(f => f.friend._id);
+    const friendIds = new Set(
+      (currentUser.friends || [])
+        .map((friendEntry) => friendEntry.friend?._id?.toString())
+        .filter(Boolean)
+    );
 
-//     // Get friends of friends
-//     const friendsOfFriends = await User.find({
-//       _id: { $in: friendIds }
-//     }).select('friends').populate({
-//       path: 'friends.friend',
-//       select: '_id username profilePhotoUrl createdAt'
-//     });
+    const recentCutoff = new Date();
+    recentCutoff.setDate(recentCutoff.getDate() - 30);
 
-//     // Collect potential suggestions
-//     const suggestionsMap = new Map();
+    const suggestionsMap = new Map();
 
-//     friendsOfFriends.forEach(fof => {
-//       fof.friends
-//         .filter(f => f.friend) // Filter out null friends
-//         .forEach(f => {
-//           const friendId = f.friend._id.toString();
-//           // Exclude user themselves and already friends
-//           if (friendId !== userId && !friendIds.some(fid => fid.toString() === friendId)) {
-//             if (!suggestionsMap.has(friendId)) {
-//               suggestionsMap.set(friendId, {
-//                 user: {
-//                   _id: f.friend._id,
-//                   username: f.friend.username,
-//                   profilePhotoUrl: f.friend.profilePhotoUrl,
-//                   createdAt: f.friend.createdAt
-//                 },
-//                 mutualFriends: 1,
-//                 recentlyJoined: false
-//               });
-//             } else {
-//               suggestionsMap.get(friendId).mutualFriends += 1;
-//             }
-//           }
-//         });
-//     });
+    if (friendIds.size > 0) {
+      const friendsOfFriends = await User.find({
+        _id: { $in: Array.from(friendIds) },
+      })
+        .select("friends")
+        .populate({
+          path: "friends.friend",
+          select: "_id username profilePhotoUrl createdAt",
+        })
+        .lean();
 
-//     // Add recently joined users with mutual friends
-//     const recentUsers = await User.find({
-//       _id: { $ne: userId },
-//       createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } // Last 30 days
-//     }).select('_id username profilePhotoUrl createdAt');
+      for (const friend of friendsOfFriends) {
+        for (const friendEntry of friend.friends || []) {
+          const candidate = friendEntry.friend;
 
-//     recentUsers.forEach(recentUser => {
-//       const recentId = recentUser._id.toString();
-//       if (!friendIds.some(fid => fid.toString() === recentId) && suggestionsMap.has(recentId)) {
-//         suggestionsMap.get(recentId).recentlyJoined = true;
-//       }
-//     });
+          if (!candidate?._id) {
+            continue;
+          }
 
-//     // Convert to array and sort by mutual friends
-//     const allSuggestions = Array.from(suggestionsMap.values())
-//       .sort((a, b) => b.mutualFriends - a.mutualFriends);
+          const candidateId = candidate._id.toString();
+          if (candidateId === String(userId) || friendIds.has(candidateId)) {
+            continue;
+          }
 
-//     // Apply pagination
-//     const totalSuggestions = allSuggestions.length;
-//     const paginatedSuggestions = allSuggestions.slice(skip, skip + limit);
-//     const totalPages = Math.ceil(totalSuggestions / limit);
-//     const hasMore = page < totalPages;
+          const existingSuggestion = suggestionsMap.get(candidateId);
+          if (existingSuggestion) {
+            existingSuggestion.mutualFriends += 1;
+            continue;
+          }
 
-//     res.status(200).json({
-//       suggestions: paginatedSuggestions,
-//       pagination: {
-//         page,
-//         limit,
-//         totalSuggestions,
-//         totalPages,
-//         hasMore
-//       }
-//     });
-//   } catch (err) {
-//     console.error("Error fetching friend suggestions:", err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
+          suggestionsMap.set(candidateId, {
+            user: {
+              _id: candidate._id,
+              username: candidate.username,
+              profilePhotoUrl: candidate.profilePhotoUrl || null,
+              createdAt: candidate.createdAt,
+            },
+            mutualFriends: 1,
+            recentlyJoined: candidate.createdAt
+              ? new Date(candidate.createdAt) >= recentCutoff
+              : false,
+          });
+        }
+      }
+    }
+
+    const allSuggestions = Array.from(suggestionsMap.values()).sort((a, b) => {
+      if (b.mutualFriends !== a.mutualFriends) {
+        return b.mutualFriends - a.mutualFriends;
+      }
+
+      if (Number(b.recentlyJoined) !== Number(a.recentlyJoined)) {
+        return Number(b.recentlyJoined) - Number(a.recentlyJoined);
+      }
+
+      return new Date(b.user.createdAt || 0) - new Date(a.user.createdAt || 0);
+    });
+
+    const paginatedSuggestions = allSuggestions.slice(skip, skip + limit);
+
+    res.status(200).json({
+      suggestions: paginatedSuggestions,
+      pagination: {
+        page,
+        limit,
+        totalSuggestions: allSuggestions.length,
+        totalPages: allSuggestions.length === 0 ? 0 : Math.ceil(allSuggestions.length / limit),
+        hasMore: page * limit < allSuggestions.length,
+      },
+    });
+  } catch (err) {
+    console.error("Error fetching friend suggestions:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 const setFcmToken = async (req, res) => {
   try {
@@ -1814,10 +1824,10 @@ export {
   getAllExpensesForASubcategory,
   removeFcmToken,
   notifyFriend,
+  getFriendSuggestions,
   uploadProfilePhoto,
   getUserLastUpdatedAt,
   checkFriendRequestStatus,
   publicUserDetails,
   googleAuth,
-  // getFriendSuggestions,
 };

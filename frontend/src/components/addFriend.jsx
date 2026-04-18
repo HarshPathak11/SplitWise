@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
 import Cookies from "js-cookie";
 import {
   ArrowLeft,
@@ -27,6 +26,7 @@ const handleScrollTop = () => {
   });
 };
 import api from "../utils/api";
+import Suggestions from "./Suggestions";
 import { motion } from "framer-motion";
 
 const AddFriend = () => {
@@ -52,6 +52,10 @@ const AddFriend = () => {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [friendSuggestions, setFriendSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsPage, setSuggestionsPage] = useState(1);
+  const [hasMoreSuggestions, setHasMoreSuggestions] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [loadingInvite, setLoadingInvite] = useState(false);
   const [existingFriendIds, setExistingFriendIds] = useState(new Set());
@@ -69,9 +73,7 @@ const AddFriend = () => {
       // 1. Fetch pending requests (Keep this API call as requests change frequently)
       if (userId) {
         try {
-          const reqRes = await api.get(
-            `${API_BASE}/user/friend-requests/${userId}`
-          );
+          const reqRes = await api.get(`/user/friend-requests/${userId}`);
           setRequests(reqRes.data || []);
         } catch (e) {
           console.error("Failed to fetch requests", e);
@@ -113,6 +115,52 @@ const AddFriend = () => {
     fetchLocalData();
   }, [userId]);
 
+  const fetchFriendSuggestions = useCallback(async (pageNum = 1) => {
+    if (!userId) {
+      setFriendSuggestions([]);
+      setHasMoreSuggestions(false);
+      return;
+    }
+
+    try {
+      setSuggestionsLoading(true);
+      const response = await api.get(`/user/friend-suggestions/${userId}`, {
+        params: { page: pageNum, limit: 4 },
+      });
+
+      const { suggestions: data = [], pagination = {} } = response.data || {};
+
+      setFriendSuggestions((prev) => {
+        if (pageNum === 1) {
+          return data;
+        }
+
+        const merged = [...prev, ...data];
+        const uniqueSuggestions = new Map();
+
+        merged.forEach((item) => {
+          uniqueSuggestions.set(item.user._id, item);
+        });
+
+        return Array.from(uniqueSuggestions.values());
+      });
+
+      setHasMoreSuggestions(Boolean(pagination.hasMore));
+      setSuggestionsPage(pageNum);
+    } catch (error) {
+      console.error("Error fetching friend suggestions:", error);
+      if (pageNum === 1) {
+        setFriendSuggestions([]);
+      }
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    fetchFriendSuggestions(1);
+  }, [fetchFriendSuggestions]);
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -130,13 +178,13 @@ const AddFriend = () => {
 
   const respond = async (fromUserId, action) => {
     try {
-      await api.post(`${API_BASE}/user/friend-requests/respond`, {
+      await api.post(`/user/friend-requests/respond`, {
         userId,
         fromUserId,
         action,
       });
       // Refresh requests list
-      const res = await api.get(`${API_BASE}/user/friend-requests/${userId}`);
+      const res = await api.get(`/user/friend-requests/${userId}`);
       setRequests(res.data || []);
 
       toast.success(
@@ -178,11 +226,10 @@ const AddFriend = () => {
     const fetchSuggestions = async () => {
       setIsSearching(true);
       try {
-        const url = `${API_BASE}/user/search?username=${encodeURIComponent(
-          debouncedQuery
-        )}`;
-
-        const res = await api.get(url, { signal: controller.signal });
+        const res = await api.get(
+          `/user/search?username=${encodeURIComponent(debouncedQuery)}`,
+          { signal: controller.signal }
+        );
 
         const users = res.data?.users ?? res.data ?? [];
 
@@ -273,7 +320,7 @@ const AddFriend = () => {
     try {
       setLoading(true);
 
-      const response = await api.post(`${API_BASE}/user/friend-requests/send`, {
+      const response = await api.post(`/user/friend-requests/send`, {
         fromUserId: userId,
         toEmail: friends.map((f) => f.email),
       });
@@ -302,7 +349,7 @@ const AddFriend = () => {
     setLoadingInvite(true);
     setInviteSent(false);
     try {
-      await api.post(`${API_BASE}/user/invite`, {
+      await api.post(`/user/invite`, {
         email: inviteEmail,
         userId: userId,
       });
@@ -315,8 +362,47 @@ const AddFriend = () => {
     }
   };
 
+  const handleLoadMoreSuggestions = () => {
+    if (!suggestionsLoading && hasMoreSuggestions) {
+      fetchFriendSuggestions(suggestionsPage + 1);
+    }
+  };
+
+  const handleSendSuggestedFriendRequest = async (suggestion) => {
+    const targetUserId = suggestion?.user?._id;
+
+    if (!userId || !targetUserId) {
+      toast.error("Unable to send friend request right now.");
+      return;
+    }
+
+    try {
+      const response = await api.post(`/user/friend-requests/send`, {
+        fromUserId: userId,
+        toUserId: [targetUserId],
+      });
+
+      const result = response.data?.results?.[0];
+
+      if (result?.status === "success") {
+        toast.success(result.reason || "Friend request sent");
+      } else if (result?.reason) {
+        toast(result.reason, {
+          icon: "🤝",
+        });
+      }
+
+      setFriendSuggestions((prev) =>
+        prev.filter((item) => item.user._id !== targetUserId)
+      );
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+      toast.error("Failed to send friend request");
+    }
+  };
+
   return (
-    <div className="relative bg-slate-950 min-h-screen flex items-center justify-center font-sans selection:bg-cyan-500/30 overflow-hidden p-4">
+    <div className="relative bg-slate-950 min-h-[100dvh] flex items-start lg:items-center justify-center font-sans selection:bg-cyan-500/30 overflow-hidden p-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] lg:p-4 lg:py-4">
       {/* --- ATMOSPHERIC BACKGROUND --- */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[100px] animate-pulse"></div>
@@ -345,16 +431,14 @@ const AddFriend = () => {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setOpen((v) => !v)}
-            className={`group flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all duration-300 shadow-xl ${
-              open || requests.length > 0
-                ? "bg-slate-800 border-cyan-500/50 text-cyan-400"
-                : "bg-slate-900/50 border-white/10 text-slate-400 hover:text-white"
-            }`}
+            className={`group flex items-center justify-center w-12 h-12 rounded-full backdrop-blur-md border transition-all duration-300 shadow-xl ${open || requests.length > 0
+              ? "bg-slate-800 border-cyan-500/50 text-cyan-400"
+              : "bg-slate-900/50 border-white/10 text-slate-400 hover:text-white"
+              }`}
           >
             <Bell
-              className={`w-5 h-5 ${
-                requests.length > 0 ? "animate-swing" : ""
-              }`}
+              className={`w-5 h-5 ${requests.length > 0 ? "animate-swing" : ""
+                }`}
             />
             {requests.length > 0 && (
               <span className="absolute top-0 right-0 flex h-3 w-3">
@@ -433,210 +517,224 @@ const AddFriend = () => {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 150, damping: 18, delay: 0.1 }}
-        className="relative z-10 w-full max-w-lg"
+        className="relative z-10 w-full max-w-7xl lg:h-[calc(100dvh-2rem)]"
       >
-        <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-          {/* Header */}
-          <div className="px-8 pt-8 pb-6 text-center">
-            <div className="inline-flex items-center justify-center gap-2 mb-4 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20">
-              <UserPlus className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">
-                Invite Members
-              </span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6 items-stretch lg:h-full">
+          <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col min-h-0 lg:h-full">
+            {/* Header */}
+            <div className="px-5 sm:px-8 pt-8 pb-6 text-center">
+              <div className="inline-flex items-center justify-center gap-2 mb-4 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+                <UserPlus className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">
+                  Invite Members
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                Build Your Squad
+              </h2>
+              <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
+                Search for friends to start splitting expenses.
+              </p>
             </div>
-            <h2 className="text-3xl font-bold text-white tracking-tight">
-              Build Your Squad
-            </h2>
-            <p className="text-slate-400 text-sm mt-2">
-              Search for friends to start splitting expenses.
-            </p>
-          </div>
 
-          {/* Search Section */}
-          <div className="px-6 sm:px-8 relative z-30 flex flex-col gap-3">
-            <div className="relative group flex-1">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-              <div className="relative flex items-center bg-slate-950 border border-white/10 rounded-xl px-4 py-3 shadow-inner focus-within:border-cyan-500/50 transition-colors">
-                <Search className="w-5 h-5 text-slate-500 mr-3" />
-                <input
-                  type="text"
-                  placeholder="Search by username..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="flex-1 bg-transparent text-white placeholder-slate-600 focus:outline-none text-sm"
-                  autoComplete="off"
-                />
-                {isSearching && (
-                  <div className="w-4 h-4 border-2 border-slate-600 border-t-cyan-500 rounded-full animate-spin"></div>
+            {/* Search Section */}
+            <div className="px-5 sm:px-8 relative z-30 flex flex-col gap-3">
+              <div className="relative group flex-1">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+                <div className="relative flex items-center bg-slate-950 border border-white/10 rounded-xl px-4 py-3 shadow-inner focus-within:border-cyan-500/50 transition-colors">
+                  <Search className="w-5 h-5 text-slate-500 mr-3 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Search by username..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="flex-1 min-w-0 bg-transparent text-white placeholder-slate-600 focus:outline-none text-sm"
+                    autoComplete="off"
+                  />
+                  {isSearching && (
+                    <div className="w-4 h-4 border-2 border-slate-600 border-t-cyan-500 rounded-full animate-spin shrink-0"></div>
+                  )}
+                </div>
+
+                {/* Suggestions Dropdown */}
+                {(suggestions.length > 0 ||
+                  (isSearching && search.length > 0)) && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar ring-1 ring-black/20 z-50">
+                      {suggestions.map((s) => {
+                        const isAlreadyFriend = existingFriendIds.has(s._id);
+
+                        return (
+                          <div
+                            key={s._id}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() =>
+                              !isAlreadyFriend && handleSuggestionClick(s)
+                            }
+                            className={`px-4 py-3 flex items-center gap-3 transition-colors group/item ${isAlreadyFriend
+                              ? "cursor-not-allowed bg-white/5 opacity-60"
+                              : "cursor-pointer hover:bg-white/5"
+                              }`}
+                          >
+                            <img
+                              src={s.profilePhotoUrl}
+                              alt={s.username}
+                              className={`w-10 h-10 rounded-full object-cover border transition-colors ${isAlreadyFriend
+                                ? "border-emerald-500/30 grayscale-[0.5]"
+                                : "border-white/10 group-hover/item:border-cyan-500/50"
+                                }`}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm text-white truncate">
+                                  {s.username}
+                                </span>
+                                {isAlreadyFriend ? (
+                                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/20">
+                                    Friend
+                                  </span>
+                                ) : (
+                                  <ShieldCheck className="w-3 h-3 text-cyan-500 shrink-0" />
+                                )}
+                              </div>
+                              <div className="text-xs text-slate-400 truncate">
+                                {s.email}
+                              </div>
+                            </div>
+
+                            <div
+                              className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all shrink-0 ${isAlreadyFriend
+                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                                : "border-white/10 group-hover/item:bg-cyan-500 group-hover/item:border-cyan-500"
+                                }`}
+                            >
+                              {isAlreadyFriend ? (
+                                <UserCheck className="w-3 h-3" />
+                              ) : (
+                                <UserPlus className="w-3 h-3 text-slate-400 group-hover/item:text-white" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {suggestions.length === 0 && !isSearching && (
+                        <div className="p-4 text-center text-xs text-slate-500">
+                          No users found
+                        </div>
+                      )}
+                    </div>
+                  )}
+              </div>
+
+              {/* NEW: Invite via Email Button */}
+              <button
+                onClick={() => setShowInviteModal(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all text-xs sm:text-sm font-semibold"
+              >
+                <Mail className="w-4 h-4" />
+                Can't find them? Invite via Email
+              </button>
+            </div>
+
+            {/* Selected Friends List */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 py-6 custom-scrollbar max-h-[60dvh] lg:max-h-none">
+              <div className="flex items-center justify-between mb-4 gap-3">
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                  Selected ({friends.length})
+                </span>
+                {friends.length > 0 && (
+                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 shrink-0">
+                    Ready to Add
+                  </span>
                 )}
               </div>
 
-              {/* Suggestions Dropdown */}
-              {(suggestions.length > 0 ||
-                (isSearching && search.length > 0)) && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto custom-scrollbar ring-1 ring-black/20">
-                  {suggestions.map((s) => {
-                    const isAlreadyFriend = existingFriendIds.has(s._id);
-
-                    return (
+              {friends.length === 0 ? (
+                <div className="min-h-40 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-2xl bg-white/5 px-4 text-center">
+                  <Sparkles className="w-6 h-6 text-slate-600 mb-2 opacity-50" />
+                  <p className="text-xs text-slate-500">
+                    No friends selected yet
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {friends.map((friend, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gradient-to-r from-slate-800/50 to-slate-900/50 border border-white/5 group hover:border-white/10 transition-all"
+                    >
                       <div
-                        key={s._id}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() =>
-                          !isAlreadyFriend && handleSuggestionClick(s)
-                        }
-                        className={`px-4 py-3 flex items-center gap-3 transition-colors group/item ${
-                          isAlreadyFriend
-                            ? "cursor-not-allowed bg-white/5 opacity-60"
-                            : "cursor-pointer hover:bg-white/5"
-                        }`}
+                        className="flex items-center gap-3 min-w-0 cursor-pointer"
+                        onClick={() => navigate(`/public-profile/${friend._id}`)}
                       >
-                        <img
-                          src={s.profilePhotoUrl}
-                          alt={s.username}
-                          className={`w-10 h-10 rounded-full object-cover border transition-colors ${
-                            isAlreadyFriend
-                              ? "border-emerald-500/30 grayscale-[0.5]"
-                              : "border-white/10 group-hover/item:border-cyan-500/50"
-                          }`}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-white">
-                              {s.username}
-                            </span>
-                            {isAlreadyFriend ? (
-                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/20">
-                                Friend
-                              </span>
-                            ) : (
-                              <ShieldCheck className="w-3 h-3 text-cyan-500" />
-                            )}
-                          </div>
-                          <div className="text-xs text-slate-400 truncate">
-                            {s.email}
+                        <div className="relative shrink-0">
+                          <img
+                            src={friend.profilePhotoUrl}
+                            alt={friend.username}
+                            className="w-10 h-10 rounded-full object-cover border border-white/10"
+                          />
+                          <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-0.5 border-2 border-slate-900">
+                            <Check className="w-2 h-2 text-black" />
                           </div>
                         </div>
-
-                        <div
-                          className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all ${
-                            isAlreadyFriend
-                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                              : "border-white/10 group-hover/item:bg-cyan-500 group-hover/item:border-cyan-500"
-                          }`}
-                        >
-                          {isAlreadyFriend ? (
-                            <UserCheck className="w-3 h-3" />
-                          ) : (
-                            <UserPlus className="w-3 h-3 text-slate-400 group-hover/item:text-white" />
-                          )}
+                        <div className="min-w-0">
+                          <p className="font-bold text-sm text-white truncate hover:text-cyan-400 transition-colors">
+                            {friend.name ?? friend.username}
+                          </p>
+                          <p className="text-xs text-slate-400 truncate">
+                            {friend.email}
+                          </p>
                         </div>
                       </div>
-                    );
-                  })}
-                  {suggestions.length === 0 && !isSearching && (
-                    <div className="p-4 text-center text-xs text-slate-500">
-                      No users found
+                      <button
+                        onClick={() => handleDeleteFriend(index)}
+                        className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0"
+                        title="Remove"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* NEW: Invite via Email Button */}
-            <button
-              onClick={() => setShowInviteModal(true)}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all text-xs font-semibold"
-            >
-              <Mail className="w-4 h-4" />
-              Can't find them? Invite via Email
-            </button>
-          </div>
-
-          {/* Selected Friends List */}
-          <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 custom-scrollbar">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Selected ({friends.length})
-              </span>
-              {friends.length > 0 && (
-                <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                  Ready to Add
-                </span>
-              )}
-            </div>
-
-            {friends.length === 0 ? (
-              <div className="h-32 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-2xl bg-white/5">
-                <Sparkles className="w-6 h-6 text-slate-600 mb-2 opacity-50" />
-                <p className="text-xs text-slate-500">
-                  No friends selected yet
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {friends.map((friend, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-slate-800/50 to-slate-900/50 border border-white/5 group hover:border-white/10 transition-all"
-                  >
-                    <div
-                      className="flex items-center gap-3 min-w-0 cursor-pointer"
-                      onClick={() => navigate(`/public-profile/${friend._id}`)}
-                    >
-                      <div className="relative">
-                        <img
-                          src={friend.profilePhotoUrl}
-                          alt={friend.username}
-                          className="w-10 h-10 rounded-full object-cover border border-white/10"
-                        />
-                        <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-0.5 border-2 border-slate-900">
-                          <Check className="w-2 h-2 text-black" />
-                        </div>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-sm text-white truncate hover:text-cyan-400 transition-colors">
-                          {friend.name ?? friend.username}
-                        </p>
-                        <p className="text-xs text-slate-400 truncate">
-                          {friend.email}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteFriend(index)}
-                      className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                      title="Remove"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Footer / Action */}
-          <div className="p-6 sm:p-8 pt-4 bg-slate-950/30 border-t border-white/5">
-            <button
-              onClick={handleDone}
-              disabled={friends.length === 0 || loading}
-              className={`w-full py-4 rounded-xl font-bold tracking-widest uppercase text-xs transition-all duration-300 shadow-lg ${
-                friends.length === 0
+            {/* Footer / Action */}
+            <div className="p-5 sm:p-8 pt-4 bg-slate-950/30 border-t border-white/5">
+              <button
+                onClick={handleDone}
+                disabled={friends.length === 0 || loading}
+                className={`w-full py-4 rounded-xl font-bold tracking-widest uppercase text-xs transition-all duration-300 shadow-lg ${friends.length === 0
                   ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5"
                   : "bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white shadow-cyan-500/20 active:scale-[0.98]"
-              }`}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Updating List...
-                </span>
-              ) : (
-                "Confirm Selection"
-              )}
-            </button>
+                  }`}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Updating List...
+                  </span>
+                ) : (
+                  "Confirm Selection"
+                )}
+              </button>
+            </div>
           </div>
+
+          {userId && (
+            <Suggestions
+              suggestions={friendSuggestions}
+              loading={suggestionsLoading}
+              hasMore={hasMoreSuggestions}
+              onLoadMore={handleLoadMoreSuggestions}
+              onProfileClick={(suggestion) => {
+                navigate(`/public-profile/${suggestion.user._id}`);
+              }}
+              onSendFriendRequest={handleSendSuggestedFriendRequest}
+              title="Friend Suggestions"
+              subtitle="Quick adds based on your network."
+              className="lg:h-full"
+            />
+          )}
         </div>
       </motion.div>
 
@@ -716,24 +814,22 @@ const AddFriend = () => {
                   <div className="space-y-4">
                     <div className="relative group">
                       <Mail
-                        className={`absolute left-4 top-5 w-5 h-5 transition-colors ${
-                          inviteEmail &&
+                        className={`absolute left-4 top-5 w-5 h-5 transition-colors ${inviteEmail &&
                           !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)
-                            ? "text-red-400"
-                            : "text-slate-500 group-focus-within:text-cyan-400"
-                        }`}
+                          ? "text-red-400"
+                          : "text-slate-500 group-focus-within:text-cyan-400"
+                          }`}
                       />
                       <input
                         type="email"
                         placeholder="friend@example.com"
                         value={inviteEmail}
                         onChange={(e) => setInviteEmail(e.target.value)}
-                        className={`w-full bg-slate-950 border rounded-xl py-4 pl-12 pr-12 text-white focus:outline-none transition-all ${
-                          inviteEmail &&
+                        className={`w-full bg-slate-950 border rounded-xl py-4 pl-12 pr-12 text-white focus:outline-none transition-all ${inviteEmail &&
                           !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)
-                            ? "border-red-500/50 focus:border-red-500"
-                            : "border-white/10 focus:border-cyan-500/50"
-                        }`}
+                          ? "border-red-500/50 focus:border-red-500"
+                          : "border-white/10 focus:border-cyan-500/50"
+                          }`}
                       />
 
                       {/* --- CLEAR (X) OPTION --- */}

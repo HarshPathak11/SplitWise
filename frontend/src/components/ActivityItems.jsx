@@ -13,9 +13,13 @@ const ActivityItems = forwardRef(({
   createdAt,
   isRead,
   onStatusChange,
+  referenceId,
+  onActivityClick,
 }, ref) => {
   const [isLoading, setIsLoading] = useState(false);
   const [localIsRead, setLocalIsRead] = useState(isRead);
+  const isDeepLinkActivity =
+    String(type || "").includes("expense") || type === "payment_received";
 
   // Format time
   const formatTime = (timestamp) => {
@@ -97,9 +101,30 @@ const ActivityItems = forwardRef(({
     }
   };
 
+  const handleActivityClick = () => {
+    if (!isDeepLinkActivity || !sender?._id || !referenceId) {
+      return;
+    }
+
+    onActivityClick?.({ friendId: sender._id, expenseId: referenceId });
+  };
+
+  const handleKeyDown = (event) => {
+    if (!isDeepLinkActivity) return;
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleActivityClick();
+    }
+  };
+
   return (
     <motion.div
       ref={ref}
+      role={isDeepLinkActivity ? "button" : undefined}
+      tabIndex={isDeepLinkActivity ? 0 : undefined}
+      onClick={handleActivityClick}
+      onKeyDown={handleKeyDown}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 100 }}
@@ -107,7 +132,7 @@ const ActivityItems = forwardRef(({
       className={`relative p-3 md:p-4 rounded-xl border transition-all duration-200 ${localIsRead
         ? "bg-zinc-900/30 border-white/5 hover:border-white/10"
         : "bg-gradient-to-r from-indigo-500/5 to-purple-500/5 border-indigo-500/20 hover:border-indigo-500/40"
-        }`}
+        } ${isDeepLinkActivity ? "cursor-pointer hover:scale-[1.01]" : ""}`}
     >
       {/* Unread indicator */}
       {!localIsRead && (
@@ -177,6 +202,8 @@ ActivityItems.propTypes = {
   createdAt: PropTypes.string.isRequired,
   isRead: PropTypes.bool.isRequired,
   onStatusChange: PropTypes.func,
+  referenceId: PropTypes.string,
+  onActivityClick: PropTypes.func,
 };
 
 export default ActivityItems;

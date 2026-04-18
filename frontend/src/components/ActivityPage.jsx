@@ -29,7 +29,7 @@ const ActivityPage = () => {
   // const [hasMoreSuggestions, setHasMoreSuggestions] = useState(true);
   // const [suggestionsListRef = useRef(null);
 
-  const LIMIT = 3; // Increased limit so it fills the screen and triggers scrolling
+  const LIMIT = 15; // Increased limit so it fills the screen and triggers scrolling
 
   useEffect(() => {
     handleScrollTop();
@@ -199,6 +199,11 @@ const ActivityPage = () => {
     fetchUnreadCount();
   };
 
+  const handleActivityClick = ({ friendId, expenseId }) => {
+    if (!friendId || !expenseId) return;
+    navigate(`/transaction-history/${friendId}#${expenseId}`);
+  };
+
   const handleBack = () => {
     navigate("/dash");
   };
@@ -263,7 +268,9 @@ const ActivityPage = () => {
                     type={notification.type}
                     createdAt={notification.createdAt}
                     isRead={notification.isRead}
+                    referenceId={notification.referenceId}
                     onStatusChange={handleStatusChange}
+                    onActivityClick={handleActivityClick}
                   />
                 ))}
               </AnimatePresence>
