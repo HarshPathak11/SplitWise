@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { Share } from "@capacitor/share";
+import { Clipboard } from "@capacitor/clipboard";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
 const logo = "/newIconV3-192x192.png";
@@ -333,14 +335,33 @@ const PublicProfile = () => {
               onClick={async () => {
                 const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${friendId}`;
                 const message = `Hey! 👋\n\nCheck out my FairFare profile:\n${profileLink}`;
-                if (navigator.share) {
-                  await navigator.share({
-                    title: "FairFare Profile",
-                    text: message,
-                  });
-                } else {
-                  await navigator.clipboard.writeText(profileLink);
-                  alert("Link copied!");
+                
+                try {
+                  const canShare = await Share.canShare();
+                  if (canShare.value) {
+                    await Share.share({
+                      title: "FairFare Profile",
+                      text: message,
+                      url: profileLink,
+                      dialogTitle: "Share Profile",
+                    });
+                  } else {
+                    await Clipboard.write({
+                      string: profileLink
+                    });
+                    toast.success("Link copied to clipboard!");
+                  }
+                } catch (error) {
+                  console.error("Sharing failed", error);
+                  // Fallback for browser or if plugin fails
+                  try {
+                    await Clipboard.write({
+                      string: profileLink
+                    });
+                    toast.success("Link copied!");
+                  } catch (clipError) {
+                    console.error("Clipboard failed", clipError);
+                  }
                 }
               }}
               className="p-2.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-900 border border-transparent hover:border-slate-800 transition-all"

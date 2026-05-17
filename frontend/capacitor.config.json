@@ -1,0 +1,9 @@
+{
+  "appId": "com.FairFare.app",
+  "appName": "FairFare",
+  "webDir": "dist",
+  "server": {
+    "url": "http://10.155.179.198:5173",
+    "cleartext": true
+  }
+}

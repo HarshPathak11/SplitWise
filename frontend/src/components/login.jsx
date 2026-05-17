@@ -67,16 +67,19 @@ const LogIn = () => {
 
       if (response.data.user) {
         const { user, token } = response.data; // ✅ token expected from backend
+        console.log("User logged in successfully: ", user, token);
 
         // existing behaviour
         Cookies.set("id", user._id, { expires: 7 });
+        console.log("User ID: ", user._id);
 
         // ✅ NEW: store JWT securely
         if (token) {
+          console.log("Token: ", token);
           Cookies.set("authToken", token, {
             expires: 7,
-            secure: true,
-            sameSite: "strict",
+            secure: false,
+            sameSite: "lax",
           });
         }
 
@@ -99,6 +102,7 @@ const LogIn = () => {
       const response = await api.post(`/user/google-auth`, {
         idToken,
       });
+      console.log("Google Auth Response:", response);
 
       if (response.status === 200) {
         const { id, token } = response.data;
@@ -108,8 +112,8 @@ const LogIn = () => {
         if (token) {
           Cookies.set("authToken", token, {
             expires: 7,
-            secure: true,
-            sameSite: "strict",
+            secure: false,
+            sameSite: "lax",
           });
         }
 

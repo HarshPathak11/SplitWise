@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { Share } from "@capacitor/share";
+import { Clipboard } from "@capacitor/clipboard";
 import { FaSignOutAlt } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -299,45 +301,32 @@ const ProfileEnhanced = () => {
   const handleShareProfile = async () => {
     const userId = Cookies.get("id");
     const profileLink = `https://fair-fare-phi.vercel.app/public-profile/${userId}`;
-    const message = `Hey! 👋
+    const message = `Hey! 👋\n\nCheck out my FairFare profile:\n\n🔗 Add me as a friend using this link:\n${profileLink}\n\n📧 Or use my email to add me manually:\nhttps://fair-fare-phi.vercel.app/addFriend\n\nUsername:\n${user?.username}\n\nLet's split and share smarter with FairFare! 💸`;
 
-Check out my FairFare profile:
-
-🔗 Add me as a friend using this link:
-${profileLink}
-
-📧 Or use my email to add me manually:
-https://fair-fare-phi.vercel.app/addFriend
-
-Username:
-${user?.username}
-
-Let's split and share smarter with FairFare! 💸`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
+    try {
+      const canShare = await Share.canShare();
+      if (canShare.value) {
+        await Share.share({
           title: "Check out my FairFare profile!",
           text: message,
+          url: profileLink,
+          dialogTitle: "Share Profile",
         });
-      } catch (error) {
-        console.error("Sharing failed:", error);
+      } else {
+        await Clipboard.write({
+          string: profileLink
+        });
+        toast.success("Link copied to clipboard!");
       }
-    } else {
+    } catch (error) {
+      console.error("Sharing failed:", error);
       try {
-        await navigator.clipboard.writeText(profileLink);
-        alert("Link copied to clipboard!");
-      } catch (err) {
-        const textarea = document.createElement("textarea");
-        textarea.value = profileLink;
-        textarea.setAttribute("readonly", "");
-        textarea.style.position = "absolute";
-        textarea.style.left = "-9999px";
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-        alert("Link copied to clipboard!");
+        await Clipboard.write({
+          string: profileLink
+        });
+        toast.success("Link copied to clipboard!");
+      } catch (clipError) {
+        console.error("Clipboard failed", clipError);
       }
     }
   };

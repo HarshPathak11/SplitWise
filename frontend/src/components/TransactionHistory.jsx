@@ -1,4 +1,6 @@
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import { Share } from "@capacitor/share";
+import { Clipboard } from "@capacitor/clipboard";
 import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { FaArrowDown, FaBell, FaCopy, FaShareAlt } from "react-icons/fa";
@@ -105,7 +107,6 @@ const TransactionHistory = () => {
     }
 
     try {
-      // Create an off-screen container to properly format the transaction card for sharing
       const container = document.createElement("div");
       container.style.cssText = `
         position: fixed; left: 0; top: 0; z-index: -9999;
@@ -117,76 +118,58 @@ const TransactionHistory = () => {
         align-items: center;
       `;
 
-      // Deep clone the transaction card
       const clone = element.cloneNode(true);
-      // Give the clone an explicit minimum width so it isn't squeezed
       clone.style.width = "340px";
       clone.style.minWidth = "340px";
-      // Normalize border radii to rounded for the standalone image
       clone.style.borderRadius = "16px";
       clone.style.borderTopRightRadius = "16px";
       clone.style.borderTopLeftRadius = "16px";
       
       container.appendChild(clone);
       document.body.appendChild(container);
-
-      // Force layout reflow
-      // eslint-disable-next-line no-unused-expressions
       container.offsetHeight;
-
-      // Read dimensions of the padded container
       const captureRect = container.getBoundingClientRect();
 
       const blob = await toBlob(container, {
         backgroundColor: "#0a0a0a",
-        pixelRatio: 3, // High-res export
+        pixelRatio: 3,
         width: captureRect.width,
         height: captureRect.height,
         style: {
-          opacity: "1", // Make sure it's visible in the screenshot
+          opacity: "1",
           position: "static"
         }
       });
       
-      // Cleanup
       document.body.removeChild(container);
 
       if (!blob) throw new Error("Could not generate image blob");
 
-      const file = new File([blob], "receipt.png", { type: "image/png" });
+      // Convert blob to base64 for Capacitor Share
+      const reader = new FileReader();
+      const base64Promise = new Promise((resolve) => {
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+      const base64Data = await base64Promise;
 
-      // MOBILE SHARE LOGIC
-      if (
-        navigator.share &&
-        navigator.canShare &&
-        navigator.canShare({ files: [file] })
-      ) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: "Transaction Receipt",
-            text: shareText, // WhatsApp usually prefers text + file on Android
-          });
-        } catch (shareError) {
-          // If sharing both fails, share text first then file
-          console.log("Dual share failed, trying text-only fallback");
-          navigator.clipboard.writeText(shareText);
-          toast.success("Reminder text copied! Now share the image.");
-        }
+      const canShare = await Share.canShare();
+      if (canShare.value) {
+        await Share.share({
+          title: "Transaction Receipt",
+          text: shareText,
+          url: base64Data, // Capacitor handles base64 URLs for file sharing
+          dialogTitle: "Share Receipt",
+        });
       } else {
-        // DESKTOP FALLBACK
-        const item = new ClipboardItem({ "image/png": blob });
-        await navigator.clipboard.write([item]);
-        toast.success("Image copied! Paste in WhatsApp.");
-
-        // Copy text to clipboard after a short delay
-        setTimeout(() => {
-          navigator.clipboard.writeText(shareText);
-          toast("Reminder link copied!", { icon: "🔗" });
-        }, 1500);
+        await Clipboard.write({
+          string: shareText
+        });
+        toast.success("Reminder text copied!");
       }
     } catch (error) {
       console.error("Error sharing:", error);
+      toast.error("Failed to share transaction");
     }
   };
 
@@ -366,47 +349,38 @@ const TransactionHistory = () => {
         }
       });
 
-      document.body.removeChild(container);
-      const file = new File([blob], "balance.png", { type: "image/png" });
+      // Convert blob to base64 for Capacitor Share
+      const reader = new FileReader();
+      const base64Promise = new Promise((resolve) => {
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+      const base64Data = await base64Promise;
 
-      if (
-        navigator.share &&
-        navigator.canShare &&
-        navigator.canShare({ files: [file] })
-      ) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: "Balance Summary",
-            text: shareText,
-          });
-        } catch (shareError) {
-          navigator.clipboard.writeText(shareText);
-          toast.success("Balance text copied!");
-        }
+      const canShare = await Share.canShare();
+      if (canShare.value) {
+        await Share.share({
+          title: "Balance Summary",
+          text: shareText,
+          url: base64Data,
+          dialogTitle: "Share Balance",
+        });
       } else {
-        const item = new ClipboardItem({ "image/png": blob });
-        await navigator.clipboard.write([item]);
-        toast.success("Balance image copied! Paste in WhatsApp.");
-        setTimeout(() => {
-          navigator.clipboard.writeText(shareText);
-          toast("Balance text copied!", { icon: "🔗" });
-        }, 1500);
+        await Clipboard.write({
+          string: shareText
+        });
+        toast.success("Balance text copied!");
       }
     } catch (error) {
-      // Safely remove container if it's still in the DOM
       if (container.parentNode) {
         document.body.removeChild(container);
       }
       console.error("Error sharing balance:", error);
-      // Fallback: share text only instead of failing silently
       try {
-        if (navigator.share) {
-          await navigator.share({ title: "Balance Summary", text: shareText });
-        } else {
-          await navigator.clipboard.writeText(shareText);
-          toast.success("Balance text copied to clipboard!");
-        }
+        await Clipboard.write({
+          string: shareText
+        });
+        toast.success("Balance text copied!");
       } catch (fallbackErr) {
         toast.error("Failed to share balance");
       }

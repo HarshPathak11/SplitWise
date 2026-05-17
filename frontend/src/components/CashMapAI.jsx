@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Clipboard } from "@capacitor/clipboard";
 import {
   ArrowLeft,
   Send,
@@ -85,11 +86,16 @@ function CashMapAI() {
   const [animatingIdx, setAnimatingIdx] = useState(null); // index of msg being animated
   const [copiedIdx, setCopiedIdx] = useState(null);
 
-  const handleCopy = (text, idx) => {
-    navigator.clipboard.writeText(text).then(() => {
+  const handleCopy = async (text, idx) => {
+    try {
+      await Clipboard.write({
+        string: text
+      });
       setCopiedIdx(idx);
       setTimeout(() => setCopiedIdx(null), 2000);
-    });
+    } catch (err) {
+      console.error("Copy failed", err);
+    }
   };
   const timeoutRef = useRef(null);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);

@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import { Clipboard } from "@capacitor/clipboard";
 import { useState } from "react";
 import { FaTrash, FaCopy } from "react-icons/fa";
 import { FiLink } from "react-icons/fi";
@@ -275,8 +276,10 @@ const FriendCard = ({
             </div>
             {friend.upiId && (
               <button
-                onClick={() => {
-                  navigator.clipboard.writeText(friend.upiId);
+                onClick={async () => {
+                  await Clipboard.write({
+                    string: friend.upiId
+                  });
                   toast.success("Copied!");
                 }}
                 className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded transition-colors"

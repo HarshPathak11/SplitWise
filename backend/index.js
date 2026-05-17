@@ -14,8 +14,9 @@ import aiRoutes from "./routes/ai.js";
 import activityRoutes from "./routes/activity.js";
 import { initExpenseCategorizer } from "./service/expenseCategorizer.js";
 import session from "express-session";
+const PORT = process.env.PORT || 8000;
 
-const app = express();
+const app = express(); 
 
 const allowedOrigins = process.env.ORIGIN.split(",");
 
@@ -29,8 +30,13 @@ app.use(
 app.use(session({
   secret: process.env.SESSION_SECRET || 'defaultsecret',
   resave: false,
-  saveUninitialized: true,
-  cookie: { maxAge: 10 * 60 * 1000 }
+  saveUninitialized: false, // Changed to false to prevent empty sessions
+  cookie: { 
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    secure: false,               // MUST be false for http://192.168.1.10
+    httpOnly: true,
+    sameSite: 'lax'              // 'lax' or false helps with cross-origin requests
+  }
 }));
 
 //Ping Route
@@ -73,7 +79,7 @@ keepServerAwake();
 
 connectDB().then(() => {
   initExpenseCategorizer();
-  app.listen(8000, () => {
-    console.log("Server running on PORT:8000");
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://10.155.179.198:${PORT}`);
   });
 });
