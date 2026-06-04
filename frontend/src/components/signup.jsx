@@ -211,34 +211,35 @@ const SignUp = () => {
 
     if (!agreed) {
       toast.error("Please agree to the Terms and Privacy Policy.");
+      return;
+    }
 
-      setLoading(true);
-      try {
-        const response = await axios.post(
-          `${API_BASE}/user/send-otp`,
-          {
-            email,
-            username,
-          }
-        );
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${API_BASE}/user/send-otp`,
+        {
+          email,
+          username,
+        }
+      );
 
-        if (response.status === 200) {
-          setOtpSent(response.data.otp);
-          setOtpGenerated(response.data.otp);
-        }
-      } catch (error) {
-        if (error.response && error.response.status === 410) {
-          toast.error("Email already Taken!");
-        } else if (error.response && error.response.status === 400) {
-          toast.error(error.response.data?.message || "Invalid request.");
-        } else {
-          toast.error("Failed to send OTP.");
-          console.log(error);
-        }
-      } finally {
-        setLoading(false);
+      if (response.status === 200) {
+        setOtpSent(response.data.otp);
+        setOtpGenerated(response.data.otp);
       }
-    };
+    } catch (error) {
+      if (error.response && error.response.status === 410) {
+        toast.error("Email already Taken!");
+      } else if (error.response && error.response.status === 400) {
+        toast.error(error.response.data?.message || "Invalid request.");
+      } else {
+        toast.error("Failed to send OTP.");
+        console.log(error);
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handleOtpVerify = async () => {

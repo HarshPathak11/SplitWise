@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash, FaArrowLeft, FaLock } from "react-icons/fa"; // Added FaLock for UI icon
+import { FaEye, FaEyeSlash, FaArrowLeft } from "react-icons/fa"; // Added FaLock for UI icon
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import api from "../utils/api";
