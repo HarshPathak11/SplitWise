@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 dotenv.config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY?.trim());
 
 const EXPIRY_MONTHS = 6; // expire cache after 6 months
 
@@ -12,9 +12,33 @@ const MAX_REQUESTS = 8; // max requests per WINDOW_MS
 const WINDOW_MS = 60 * 1000; // 1 minute
 
 // ---- Model switching state ----
-let activeModel = "gemini-2.5-flash"; // default
+const MODELS = [
+  "gemini-3-flash-preview",     // Confirmed working in 2026!
+  "gemini-3.1-flash-lite",
+  "gemini-3.1-flash-lite-preview",
+  "gemma-4-31b-it",             // Gemma 4 31B (15 RPM)
+  "gemma-4-26b-a4b-it",         // Gemma 4 26B (15 RPM)
+  "gemini-3-pro-preview",
+  "gemini-flash-lite-latest",
+  "gemini-2.0-flash-lite",
+  "gemini-2.5-flash-lite",
+  "gemini-3.1-pro-preview",
+  "gemini-2.5-flash",
+  "gemini-2.5-pro",
+];
+
+let modelIndex = 0; // track which model we are currently using
 let lastSwitchDate = new Date().toDateString(); // track when quota was last reset
-let triedProToday = false; // flag to avoid looping flash <-> pro
+
+/**
+ * Calculates milliseconds until the next midnight
+ */
+function getMsUntilMidnight() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  return midnight - now;
+}
 
 const PROMPT = `🧾 System Prompt: Expense Categorisation Expert
 
@@ -352,7 +376,7 @@ async function processQueue() {
     const { expenseId, label } = queue.shift();
 
     try {
-      console.log(`Categorizing expense: ${label}`);
+      console.log(`\n[Queue: ${queue.length + 1} remaining] Categorizing: "${label}"`);
 
       const normalized = label.trim().toLowerCase();
 
@@ -406,10 +430,17 @@ async function processQueue() {
       const result = await categorizeExpenseWithGemini(expenseId, label);
 
       if (!result) {
-        // 👇 don’t update cache, just requeue for retry
+        // 👇 all models failed, likely daily quota hit
         queue.push({ expenseId, label });
-        console.log(`⏳ Retry scheduled for: ${label}`);
-        await new Promise((r) => setTimeout(r, 2000)); // optional backoff
+        
+        const waitMs = getMsUntilMidnight();
+        const waitHours = (waitMs / (1000 * 60 * 60)).toFixed(2);
+        
+        console.log(`\n🛑 DAILY QUOTA EXHAUSTED for all models.`);
+        console.log(`⏳ Pausing categorization until midnight (~${waitHours} hours remaining).`);
+        console.log(`📅 Will resume at: ${new Date(Date.now() + waitMs).toLocaleString()}`);
+        
+        await new Promise((r) => setTimeout(r, waitMs));
         continue;
       }
 
@@ -444,13 +475,14 @@ async function categorizeExpenseWithGemini(expenseId, label) {
   try {
     const expense = await Expense.findById(expenseId).populate("group");
 
-    // Reset model to flash at the start of a new day
+    // Reset model to the first one at the start of a new day
     const today = new Date().toDateString();
     if (today !== lastSwitchDate) {
-      activeModel = "gemini-2.5-flash";
-      triedProToday = false;
+      modelIndex = 0;
       lastSwitchDate = today;
     }
+
+    const activeModel = MODELS[modelIndex];
 
     const prompt = `
       ${PROMPT}
@@ -468,6 +500,7 @@ async function categorizeExpenseWithGemini(expenseId, label) {
 
     const model = genAI.getGenerativeModel({ model: activeModel });
 
+    console.log(`📡 Calling Gemini (${activeModel})...`);
     const result = await model.generateContent(prompt);
 
     // Extract the text response safely
@@ -480,26 +513,22 @@ async function categorizeExpenseWithGemini(expenseId, label) {
       subcategory: parsed.subcategory || "Other",
     };
   } catch (err) {
-    console.error(`Gemini error on ${activeModel}:`, err.message);
+    const currentModel = MODELS[modelIndex];
+    console.error(`Gemini error on ${currentModel}:`, err.message);
 
-    // Handle quota exhaustion (429 error with quota info)
-    if (err.message.includes("429") && err.message.includes("quota")) {
-      if (activeModel === "gemini-2.5-flash" && !triedProToday) {
-        console.log("⚠️ Flash quota exceeded. Switching to Pro model...");
-        activeModel = "gemini-2.5-pro";
-        triedProToday = true;
-        return categorizeExpenseWithGemini(expenseId, label); // retry with pro
-      } else {
-        console.log(
-          "⚠️ Both Flash and Pro quotas exhausted. Falling back to Flash until reset."
-        );
-        activeModel = "gemini-2.5-flash"; // stick to flash until next day reset
-        return null;
-      }
+    // Switch to next model on ANY error (Quota, Invalid Key for that model, or Not Found)
+    if (modelIndex < MODELS.length - 1) {
+      modelIndex++;
+      console.log(`🔄 Switching Model: ${currentModel} -> ${MODELS[modelIndex]}`);
+      return categorizeExpenseWithGemini(expenseId, label); // retry with next model
+    } else {
+      console.log(
+        "🚫 All models failed or exhausted for this request."
+      );
+      modelIndex = 0;
+      return null;
     }
-
-    return null;
   }
 }
 
-export { enqueue };
+export { enqueue, queue, isProcessing };
