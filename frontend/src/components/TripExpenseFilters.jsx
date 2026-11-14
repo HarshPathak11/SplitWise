@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import PropTypes from "prop-types";
 import DatePicker from "./DatePicker";
 
@@ -29,6 +29,7 @@ const TripExpenseFilters = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const [monthPickerYear, setMonthPickerYear] = useState(new Date().getFullYear());
   const [draftSearchQuery, setDraftSearchQuery] = useState("");
   const [draftSelectedMembers, setDraftSelectedMembers] = useState([]);
@@ -61,12 +62,14 @@ const TripExpenseFilters = ({
   const openFilters = () => {
     syncDraftValues();
     setIsMonthPickerOpen(false);
+    setIsYearPickerOpen(false);
     setIsOpen(true);
   };
 
   const closeFilters = () => {
     setIsOpen(false);
     setIsMonthPickerOpen(false);
+    setIsYearPickerOpen(false);
     filterButtonRef.current?.focus();
   };
 
@@ -76,6 +79,7 @@ const TripExpenseFilters = ({
     setDraftStartDate("");
     setDraftEndDate("");
     setDraftSelectedMonth("");
+    setIsYearPickerOpen(false);
     onClearAll();
     closeFilters();
   };
@@ -107,6 +111,7 @@ const TripExpenseFilters = ({
     const handleOutsideClick = (event) => {
       if (!monthPickerContainerRef.current?.contains(event.target)) {
         setIsMonthPickerOpen(false);
+        setIsYearPickerOpen(false);
       }
     };
     document.addEventListener("mousedown", handleOutsideClick);
@@ -205,6 +210,7 @@ const TripExpenseFilters = ({
                   : Math.min(Math.max(currentYear, tripStartYear), tripEndYear);
                 setMonthPickerYear(year);
                 setIsMonthPickerOpen((open) => !open);
+                setIsYearPickerOpen(false);
               }}
               className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-zinc-950/60 px-3 py-2.5 text-sm text-zinc-200 hover:border-white/20"
               aria-haspopup="dialog"
@@ -217,9 +223,39 @@ const TripExpenseFilters = ({
             </button>
             {isMonthPickerOpen && (
               <div className="absolute left-0 top-full z-40 mt-2 w-full rounded-2xl border border-white/10 bg-zinc-900 p-3 shadow-2xl shadow-black/40">
-                <select value={monthPickerYear} onChange={(event) => setMonthPickerYear(Number(event.target.value))} className="mb-3 w-full rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white outline-none" aria-label="Select year">
-                  {monthPickerYears.map((year) => <option key={year} value={year}>{year}</option>)}
-                </select>
+                <div className="relative mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsYearPickerOpen((open) => !open)}
+                    className="flex w-full items-center justify-between rounded-lg border border-white/10 bg-zinc-950 px-3 py-2 text-sm font-semibold text-white transition-colors hover:border-indigo-500/50"
+                    aria-haspopup="dialog"
+                    aria-expanded={isYearPickerOpen}
+                  >
+                    {monthPickerYear}
+                    <ChevronDown className={`h-4 w-4 text-zinc-500 transition-transform ${isYearPickerOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {isYearPickerOpen && (
+                    <div className="absolute left-0 top-full z-50 mt-2 grid w-full grid-cols-3 gap-2 rounded-xl border border-white/10 bg-zinc-950 p-2 shadow-xl">
+                      {monthPickerYears.map((year) => (
+                        <button
+                          key={year}
+                          type="button"
+                          onClick={() => {
+                            setMonthPickerYear(year);
+                            setIsYearPickerOpen(false);
+                          }}
+                          className={`rounded-lg px-2 py-2 text-xs font-semibold transition-colors ${
+                            monthPickerYear === year
+                              ? "bg-indigo-600 text-white"
+                              : "text-zinc-400 hover:bg-indigo-500/20 hover:text-white"
+                          }`}
+                        >
+                          {year}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="grid grid-cols-3 gap-2">
                   {MONTH_NAMES.map((monthName, monthIndex) => {
                     const month = `${monthPickerYear}-${String(monthIndex + 1).padStart(2, "0")}`;
