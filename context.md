@@ -2,7 +2,7 @@
 
 A chronological record of the commits on the `main` branch, generated from the local Git history. Each entry includes the commit date, short hash, author, and a concise description taken from the commit message.
 
-**Scope:** 625 commits from 2024-08-25 through 2026-11-14.
+**Scope:** 627 commits from 2024-08-25 through 2026-11-15.
 
 ## 2024-08-25
 
@@ -1090,4 +1090,9 @@ A chronological record of the commits on the `main` branch, generated from the l
 
 - `3a09884` - **SHIKHAR SINGH** - feat: add filter functionality for expenses in tripDetails.jsx - 2026-11-14
 - `5c6e801` - **SHIKHAR SINGH** - feat: add TripExpenseFilters component and backfill expense dates script - 2026-11-14
+- `f6a0b14` - **SHIKHAR SINGH** - updated context.md to the latest commit - 2026-11-14
+
+## 2026-11-15
+
+- `118ad16` - **SHIKHAR SINGH** - feat: enhance TripExpenseFilters with year picker functionality - 2026-11-15
 
